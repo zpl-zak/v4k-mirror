@@ -18316,7 +18316,7 @@ int ui_label_(const char *label, int alignment) {
 
 struct nk_style *style = &ui_ctx->style;
 bool bold = label[0] == '*'; label += bold;
-struct nk_font *font = bold ? nk_glfw.atlas.fonts->next->next /*3rd font*/ : NULL; // list
+struct nk_font *font = bold && nk_glfw.atlas.fonts->next ? nk_glfw.atlas.fonts->next->next /*3rd font*/ : NULL; // list
 
 if( !has_icon ) {
     // set bold style and color if needed
