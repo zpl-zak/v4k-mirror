@@ -873,7 +873,7 @@ int thread_detach( thread_ptr_t thread )
 
         return CloseHandle( (HANDLE) thread ) != 0;
 
-    #elif defined( __linux__ ) || defined( __APPLE__ ) || defined( __ANDROID__ )
+    #elif defined( __linux__ ) || defined( __APPLE__ ) || defined( __ANDROID__ ) || defined( __EMSCRIPTEN__ ) //< @r-lyeh, ems
 
         return pthread_detach( (pthread_t) thread ) == 0;
 

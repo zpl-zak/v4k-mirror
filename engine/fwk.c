@@ -13273,6 +13273,15 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
             "   gl_Position = vec4( texCoord * 2.0 - 1.0, 0.0, 1.0 );\n"
             "   texCoord = texCoord * iResolution;\n"
         "}\n";
+    const char *vs_flip = "#version 130\n"
+        "uniform vec2 iResolution;           // viewport resolution (in pixels)\n"
+        "out vec2 texCoord;\n"
+        "void main() {\n"
+            "   texCoord = vec2( (gl_VertexID << 1) & 2, gl_VertexID & 2 );\n"
+            "   gl_Position = vec4( texCoord * 2.0 - 1.0, 0.0, 1.0 );\n"
+            "   texCoord = texCoord * iResolution;\n"
+            "   texCoord.y = iResolution.y - texCoord.y; // flip Y\n"
+        "}\n";
 
     const char *header = "#version 130\n"
         "#define texture2D texture\n"
@@ -13300,7 +13309,7 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
         "}\n";
 
     char *fs = stringf("%s%s", header, file);
-    s.program = shader(vs, fs, "", "fragColor");
+    s.program = shader(flags ? vs_flip : vs, fs, "", "fragColor");
     FREE(fs);
 
     if( strstr(file, "noise3.jpg"))
@@ -13332,7 +13341,7 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
 
 shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
     if( s->program && s->vao ) {
-        if( s->dims && !texture_rec_begin(&s->tx, s->dims, s->dims) ) {
+        if( s->dims && !texture_rec_begin(&s->tx, s->dims, s->dims / 2) ) {
             return s;
         }
 
@@ -18316,7 +18325,7 @@ int ui_label_(const char *label, int alignment) {
 
 struct nk_style *style = &ui_ctx->style;
 bool bold = label[0] == '*'; label += bold;
-struct nk_font *font = bold ? nk_glfw.atlas.fonts->next->next /*3rd font*/ : NULL; // list
+struct nk_font *font = bold && nk_glfw.atlas.fonts->next ? nk_glfw.atlas.fonts->next->next /*3rd font*/ : NULL; // list
 
 if( !has_icon ) {
     // set bold style and color if needed

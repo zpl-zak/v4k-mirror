@@ -15,9 +15,9 @@ if [ "$1" = "tidy" ]; then
     rm 0?-* 2> /dev/null
     rm fwk.o 2> /dev/null
     rm .art*.zip 2> /dev/null
-    rm demos/lua/.art*.zip 2> /dev/null
+    rm engine/bind/.art*.zip 2> /dev/null
     rm demos/html5/.art*.zip 2> /dev/null
-    rm demos/lua/libfwk* 2> /dev/null
+    rm engine/bind/libfwk* 2> /dev/null
     rm fwk_*.* 2> /dev/null
     rm 3rd_*.* 2> /dev/null
     rm libfwk* 2> /dev/null
@@ -63,7 +63,7 @@ while [ $# -ge 1 ]; do
         echo sh MAKE.bat [tidy]
         echo sh MAKE.bat [split,join]
         echo sh MAKE.bat [cook]
-        echo sh MAKE.bat [sln]
+        echo sh MAKE.bat [proj]
         exit
     fi
     if [ "$1" = "dll" ]; then 
@@ -93,7 +93,7 @@ while [ $# -ge 1 ]; do
     if [ "$1" = "tcc" ]; then 
         export cc="tcc -D__STDC_NO_VLA__"
     fi
-    if [ "$1" = "sln" ]; then
+    if [ "$1" = "proj" ]; then
         if [ "$(uname)" != "Darwin" ]; then
             chmod +x tools/premake5.linux
             tools/premake5.linux gmake
@@ -147,14 +147,14 @@ if [ "$(uname)" != "Darwin" ]; then
     chmod +x tools/xlsx2ini.linux
     chmod +x tools/premake5.linux
     chmod +x tools/ninja.linux
-    chmod +x demos/lua/luajit.linux
+    chmod +x engine/bind/luajit.linux
 
     echo build=$build, type=$dll, cc=$cc, args=$args
 
     # framework (as dynamic library)
     if [ "$dll" = "dll" ]; then
         echo libfwk.so  && $cc -o libfwk.so engine/fwk.c -shared -fPIC -w -lX11 -lm -ldl -lpthread $flags $args
-        cp libfwk.so demos/lua/
+        cp libfwk.so engine/bind/
         export import="libfwk.so -Wl,-rpath,./"
     else
     # framework (static)
@@ -167,15 +167,14 @@ if [ "$(uname)" != "Darwin" ]; then
 
     # demos
     echo hello         && $cc -o hello         hello.c               -lm -ldl -lpthread -lX11 -w -Iengine/ $flags         $args &
-  # echo 00-ui         && $cc -o 00-ui         demos/00-ui.c         -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 01-sprite     && $cc -o 01-sprite     demos/01-sprite.c     -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 02-ddraw      && $cc -o 02-ddraw      demos/02-ddraw.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 03-anims      && $cc -o 03-anims      demos/03-anims.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 04-actor      && $cc -o 04-actor      demos/04-actor.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 04-controller && $cc -o 04-controller demos/04-controller.c -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 05-scene      && $cc -o 05-scene      demos/05-scene.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 06-pbr        && $cc -o 06-pbr        demos/06-pbr.c        -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 07-network    && $cc -o 07-network    demos/07-network.c    -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args
+    echo 00-ui         && $cc -o 00-ui         demos/00-ui.c         -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 01-sprite     && $cc -o 01-sprite     demos/01-sprite.c     -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 02-ddraw      && $cc -o 02-ddraw      demos/02-ddraw.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 03-anims      && $cc -o 03-anims      demos/03-anims.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 04-actor      && $cc -o 04-actor      demos/04-actor.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 05-scene      && $cc -o 05-scene      demos/05-scene.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 06-controller && $cc -o 06-controller demos/06-controller.c -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 07-network    && $cc -o 07-network    demos/07-network.c    -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args
 fi
 
 if [ "$(uname)" = "Darwin" ]; then
@@ -202,14 +201,14 @@ if [ "$(uname)" = "Darwin" ]; then
     chmod +x tools/xlsx2ini.osx
     chmod +x tools/premake5.osx
     chmod +x tools/ninja.osx
-    chmod +x demos/lua/luajit.osx
+    chmod +x engine/bind/luajit.osx
 
     echo build=$build, type=$dll, cc=$cc, args=$args
 
     # framework (as dynamic library)
     if [ "$dll" = "dll" ]; then
         echo libfwk     && cc -ObjC -dynamiclib -o libfwk.dylib engine/fwk.c -framework cocoa -framework iokit -framework audiotoolbox -w $flags $args
-        cp libfwk.dylib demos/lua
+        cp libfwk.dylib engine/bind
         export import=libfwk.dylib
     else
     # framework
@@ -222,15 +221,14 @@ if [ "$(uname)" = "Darwin" ]; then
 
     # demos
     echo hello         && cc -o hello -ObjC   hello.c               -w -Iengine/         $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 00-ui         && cc -o 00-ui         demos/00-ui.c         -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 01-sprite     && cc -o 01-sprite     demos/01-sprite.c     -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 02-ddraw      && cc -o 02-ddraw      demos/02-ddraw.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 03-anims      && cc -o 03-anims      demos/03-anims.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 04-actor      && cc -o 04-actor      demos/04-actor.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 04-controller && cc -o 04-controller demos/04-controller.c -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 05-scene      && cc -o 05-scene      demos/05-scene.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 06-pbr        && cc -o 06-pbr        demos/06-pbr.c        -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 07-network    && cc -o 07-network    demos/07-network.c    -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox
+    echo 00-ui         && cc -o 00-ui         demos/00-ui.c         -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 01-sprite     && cc -o 01-sprite     demos/01-sprite.c     -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 02-ddraw      && cc -o 02-ddraw      demos/02-ddraw.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 03-anims      && cc -o 03-anims      demos/03-anims.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 04-actor      && cc -o 04-actor      demos/04-actor.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 05-scene      && cc -o 05-scene      demos/05-scene.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 06-controller && cc -o 06-controller demos/06-controller.c -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 07-network    && cc -o 07-network    demos/07-network.c    -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox
 fi
 
 exit
@@ -249,17 +247,18 @@ if "%1"=="-h" goto showhelp
 if "%1"=="help" (
     :showhelp
     echo %0                   ; compile everything: `make dll dev` alias
-    echo %0 [help]            ; show this screen
-    echo %0 [docs]            ; generate tools/docs/docs.html file
+    echo %0 [all]             ; build everything
+    echo %0 [bind]            ; generate lua bindings
     echo %0 [cook]            ; cook .zipfiles with tools/cook.ini cookbook
+    echo %0 [docs]            ; generate tools/docs/docs.html file
+    echo %0 [help]            ; show this screen
+    echo %0 [proj]            ; generate a xcode/gmake/ninja/visual studio solution
     echo %0 [sync]            ; sync repo to latest
     echo %0 [tidy]            ; clean up temp files
-    echo %0 [bindings]        ; generate demos/lua bindings
     echo %0 [checkmem]        ; check untracked allocators in FWK
     echo %0 [split^|join]      ; engine/fwk* ^>split^> engine/split/* or engine/split/* ^>join^> engine/fwk*
     echo %0 [amalgamation]    ; combine engine/fwk* into a single-header file
-    echo %0 [sln]             ; generate a xcode/gmake/ninja/visual studio solution
-    echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nofwk^|nodemos^|noeditor] [vis] [-- args]
+    echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nofwk^|nodemos^|editor] [vis] [-- args]
     echo    cl       \
     echo    tcc      ^|
     echo    cc       ^| select compiler. must be accessible in PATH
@@ -272,8 +271,8 @@ if "%1"=="help" (
     echo    static   \ link fwk as static library
     echo    dll      / link fwk as dynamic library (dll^) (default^)
     echo    nofwk    \ do not compile framework
-    echo    nodemos  ^| do not compile demos
-    echo    noeditor / do not compile editor
+    echo    demos    ^| do compile demos
+    echo    editor   / do compile editor
     echo    vis      ^> visualize invokation cmdline.
     echo    args     ^> after `--` separator is found, pass all remaining arguments to compiler as-is
     echo.
@@ -298,10 +297,10 @@ if "%1"=="cook" (
     exit /b
 )
 rem generate bindings
-if "%1"=="bindings" (
+if "%1"=="bind" (
     rem luajit
     tools\luajit tools\luajit_make_bindings.lua > fwk.lua
-    move /y fwk.lua demos\lua
+    move /y fwk.lua engine\bind
 
     exit /b
 )
@@ -349,7 +348,7 @@ rem generate prior files to a github release
 if "%1"=="github" (
     rem call make.bat dll
     call make.bat docs
-    call make.bat bindings
+    call make.bat bind
 
     call make.bat amalgamation
     call make.bat split
@@ -391,7 +390,7 @@ rem tidy environment
 if "%1"=="tidy" (
     move /y ??-*.png demos          > nul 2> nul
     move /y ??-*.c demos            > nul 2> nul
-    del demos\lua\fwk.dll           > nul 2> nul
+    del engine\bind\fwk.dll         > nul 2> nul
     del .temp*.*                    > nul 2> nul
     del *.zip                       > nul 2> nul
     del *.mem                       > nul 2> nul
@@ -427,10 +426,11 @@ set build=dev
 set args=-Iengine
 set other=
 set fwk=yes
-set demos=yes
-set editor=yes
+set hello=yes
+set demos=no
+set editor=no
 set vis=no
-set sln=no
+set proj=no
 set rc=0
 
 :parse_args
@@ -454,7 +454,10 @@ set rc=0
 
     if "%1"=="nofwk"    set "fwk=no" && goto loop
     if "%1"=="nodemos"  set "demos=no" && goto loop
+    if "%1"=="demos"    set "demos=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
+    if "%1"=="editor"   set "editor=yes" && set "hello=no"&& goto loop
+    if "%1"=="all"      set "fwk=yes" && set "demos=yes" && set "editor=yes" && set "hello=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
     if "%1"=="cl"       set "cc=%1" && goto loop
@@ -464,7 +467,7 @@ set rc=0
     if "%1"=="clang"    set "cc=%1" && goto loop
     if "%1"=="clang-cl" set "cc=%1" && goto loop
 
-    if "%1"=="sln"      set "sln=yes" && goto loop
+    if "%1"=="proj"     set "proj=yes" && goto loop
 
     if not "%1"==""     set "other=!other! %1" && set "editor=no" && set "demos=no"
 
@@ -503,9 +506,10 @@ if "!cc!"=="" (
 )
 
 rem solution. @todo: lin/osx
-if "!sln!"=="yes" if not "%vs%"=="" pushd tools && premake5 vs20%vs% & popd
-if "!sln!"=="yes"                   pushd tools && premake5 ninja    & popd
-if "!sln!"=="yes"                   pushd tools && premake5 gmake    & popd & exit /b
+if "!proj!"=="yes" if not "%vs%"=="00" pushd tools && premake5 vs20%vs% & popd
+if "!proj!"=="yes" if     "%vs%"=="00" pushd tools && premake5 vs2013   & popd
+if "!proj!"=="yes"                     pushd tools && premake5 ninja    & popd
+if "!proj!"=="yes"                     pushd tools && premake5 gmake    & popd & exit /b
 
 rem --- pipeline
 rem cl tools/ass2iqe.c   /Fetools/ass2iqe.exe  /nologo /openmp /O2 /Oy /MT /DNDEBUG assimp.lib
@@ -645,30 +649,51 @@ if not "!other!"=="" (
 
 rem framework
 if "!fwk!"=="yes" (
-if "!vis!"=="yes" echo !cc! engine\fwk.c !export! !args! ^&^& if "!dll!"=="dll" copy /y fwk.dll demos\lua ^> nul
-!echo! fwk          && !cc! engine\fwk.c !export! !args!   && if "!dll!"=="dll" copy /y fwk.dll demos\lua  > nul || set rc=1
+if "!vis!"=="yes" echo !cc! engine\fwk.c !export! !args! ^&^& if "!dll!"=="dll" copy /y fwk.dll engine\bind ^> nul
+!echo! fwk          && !cc! engine\fwk.c !export! !args!   && if "!dll!"=="dll" copy /y fwk.dll engine\bind  > nul || set rc=1
 )
 
 rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL
 if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
-rem !echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
-rem !echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
+!echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
+!echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
 )
 
 rem demos
 if "!demos!"=="yes" (
+!echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
+!echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
+!echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1
+!echo! 03-anims      && !cc! !o! 03-anims.exe      demos\03-anims.c         !import! !args! || set rc=1
+!echo! 04-actor      && !cc! !o! 04-actor.exe      demos\04-actor.c         !import! !args! || set rc=1
+!echo! 05-scene      && !cc! !o! 05-scene.exe      demos\05-scene.c         !import! !args! || set rc=1
+!echo! 06-controller && !cc! !o! 06-controller.exe demos\06-controller.c    !import! !args! || set rc=1
+!echo! 07-network    && !cc! !o! 07-network.exe    demos\07-network.c       !import! !args! || set rc=1
+
+!echo! 00-demo       && !cc! !o! 00-demo.exe        demos\00-demo.c         !import! !args! || set rc=1
+!echo! 00-hello      && !cc! !o! 00-hello.exe       demos\00-hello.c        !import! !args! || set rc=1
+!echo! 02-frustum    && !cc! !o! 02-frustum.exe     demos\02-frustum.c      !import! !args! || set rc=1
+!echo! 04-lod        && !cc! !o! 04-lod.exe         demos\04-lod.c          !import! !args! || set rc=1
+!echo! 99-audio      && !cc! !o! 99-audio.exe       demos\99-audio.c        !import! !args! || set rc=1
+!echo! 99-cubemap    && !cc! !o! 99-cubemap.exe     demos\99-cubemap.c      !import! !args! || set rc=1
+!echo! 99-easing     && !cc! !o! 99-easing.exe      demos\99-easing.c       !import! !args! || set rc=1
+!echo! 99-font       && !cc! !o! 99-font.exe        demos\99-font.c         !import! !args! || set rc=1
+!echo! 99-instanced  && !cc! !o! 99-instanced.exe   demos\99-instanced.c    !import! !args! || set rc=1
+!echo! 99-material   && !cc! !o! 99-material.exe    demos\99-material.c     !import! !args! || set rc=1
+!echo! 99-pbr        && !cc! !o! 99-pbr.exe         demos\99-pbr.c          !import! !args! || set rc=1
+!echo! 99-script     && !cc! !o! 99-script.exe      demos\99-script.c       !import! !args! || set rc=1
+!echo! 99-shadertoy  && !cc! !o! 99-shadertoy.exe   demos\99-shadertoy.c    !import! !args! || set rc=1
+!echo! 99-spine      && !cc! !o! 99-spine.exe       demos\99-spine.c        !import! !args! || set rc=1
+!echo! 99-sprite     && !cc! !o! 99-sprite.exe      demos\99-sprite.c       !import! !args! || set rc=1
+!echo! 99-syncdemo   && !cc! !o! 99-syncdemo.exe    demos\99-syncdemo.c     -I.      !args! || set rc=1
+!echo! 99-video      && !cc! !o! 99-video.exe       demos\99-video.c        !import! !args! || set rc=1
+)
+
+rem hello
+if "!hello!"=="yes" (
 !echo! hello         && !cc! !o! hello.exe         hello.c                           !args! || set rc=1
-rem !echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
-rem !echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
-rem !echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1
-rem !echo! 03-anims      && !cc! !o! 03-anims.exe      demos\03-anims.c         !import! !args! || set rc=1
-rem !echo! 04-actor      && !cc! !o! 04-actor.exe      demos\04-actor.c         !import! !args! || set rc=1
-rem !echo! 04-controller && !cc! !o! 04-controller.exe demos\04-controller.c    !import! !args! || set rc=1
-rem !echo! 05-scene      && !cc! !o! 05-scene.exe      demos\05-scene.c         !import! !args! || set rc=1
-rem !echo! 06-pbr        && !cc! !o! 06-pbr.exe        demos\06-pbr.c           !import! !args! || set rc=1
-rem !echo! 07-network    && !cc! !o! 07-network.exe    demos\07-network.c       !import! !args! || set rc=1
 )
 
 rem user-defined apps

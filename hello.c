@@ -3,8 +3,8 @@
 //
 // # quickstart
 // - win/vc       : cl hello.c
-// - win/clang-cl : clang-cl hello.c
-// - win/tcc      : tcc   hello.c -m64
+// - win/clang-cl : clang-cl  hello.c
+// - win/tcc      : tools\tcc hello.c -m64
 // - win/mingw    : gcc   hello.c -lws2_32 -lwinmm -ldbghelp -lole32 -luser32 -lgdi32 -lcomdlg32
 // - win/clang    : clang hello.c -lws2_32 -lwinmm -ldbghelp -lole32 -luser32 -lgdi32 -lcomdlg32
 // - linux        : cc  hello.c -lm -ldl -lpthread -lX11
@@ -12,7 +12,7 @@
 // - osx          : cc -ObjC hello.c -framework cocoa -framework iokit -framework audiotoolbox
 
 #define FWK_IMPLEMENTATION      // unrolls single-header implementation
-#include "./engine/joint/fwk.h" // single-header file
+#include "engine/joint/fwk.h"   // single-header file
 
 int main() {
     // options
@@ -115,6 +115,7 @@ int main() {
                 bool enabled = fx_enabled(i);
                 if( ui_bool(fx_name(i), &enabled) ) fx_enable(i, enabled);
             }
+
             ui_panel_end();
         }
     }
