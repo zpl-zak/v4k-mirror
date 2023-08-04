@@ -15,9 +15,9 @@ if [ "$1" = "tidy" ]; then
     rm 0?-* 2> /dev/null
     rm fwk.o 2> /dev/null
     rm .art*.zip 2> /dev/null
-    rm demos/lua/.art*.zip 2> /dev/null
+    rm engine/bind/.art*.zip 2> /dev/null
     rm demos/html5/.art*.zip 2> /dev/null
-    rm demos/lua/libfwk* 2> /dev/null
+    rm engine/bind/libfwk* 2> /dev/null
     rm fwk_*.* 2> /dev/null
     rm 3rd_*.* 2> /dev/null
     rm libfwk* 2> /dev/null
@@ -147,14 +147,14 @@ if [ "$(uname)" != "Darwin" ]; then
     chmod +x tools/xlsx2ini.linux
     chmod +x tools/premake5.linux
     chmod +x tools/ninja.linux
-    chmod +x demos/lua/luajit.linux
+    chmod +x engine/bind/luajit.linux
 
     echo build=$build, type=$dll, cc=$cc, args=$args
 
     # framework (as dynamic library)
     if [ "$dll" = "dll" ]; then
         echo libfwk.so  && $cc -o libfwk.so engine/fwk.c -shared -fPIC -w -lX11 -lm -ldl -lpthread $flags $args
-        cp libfwk.so demos/lua/
+        cp libfwk.so engine/bind/
         export import="libfwk.so -Wl,-rpath,./"
     else
     # framework (static)
@@ -202,14 +202,14 @@ if [ "$(uname)" = "Darwin" ]; then
     chmod +x tools/xlsx2ini.osx
     chmod +x tools/premake5.osx
     chmod +x tools/ninja.osx
-    chmod +x demos/lua/luajit.osx
+    chmod +x engine/bind/luajit.osx
 
     echo build=$build, type=$dll, cc=$cc, args=$args
 
     # framework (as dynamic library)
     if [ "$dll" = "dll" ]; then
         echo libfwk     && cc -ObjC -dynamiclib -o libfwk.dylib engine/fwk.c -framework cocoa -framework iokit -framework audiotoolbox -w $flags $args
-        cp libfwk.dylib demos/lua
+        cp libfwk.dylib engine/bind
         export import=libfwk.dylib
     else
     # framework
@@ -254,12 +254,12 @@ if "%1"=="help" (
     echo %0 [cook]            ; cook .zipfiles with tools/cook.ini cookbook
     echo %0 [sync]            ; sync repo to latest
     echo %0 [tidy]            ; clean up temp files
-    echo %0 [bindings]        ; generate demos/lua bindings
+    echo %0 [bind]            ; generate lua bindings
     echo %0 [checkmem]        ; check untracked allocators in FWK
     echo %0 [split^|join]      ; engine/fwk* ^>split^> engine/split/* or engine/split/* ^>join^> engine/fwk*
     echo %0 [amalgamation]    ; combine engine/fwk* into a single-header file
     echo %0 [sln]             ; generate a xcode/gmake/ninja/visual studio solution
-    echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nofwk^|nodemos^|noeditor] [vis] [-- args]
+    echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nofwk^|nodemos^|editor] [vis] [-- args]
     echo    cl       \
     echo    tcc      ^|
     echo    cc       ^| select compiler. must be accessible in PATH
@@ -273,7 +273,7 @@ if "%1"=="help" (
     echo    dll      / link fwk as dynamic library (dll^) (default^)
     echo    nofwk    \ do not compile framework
     echo    nodemos  ^| do not compile demos
-    echo    noeditor / do not compile editor
+    echo    editor / do compile editor
     echo    vis      ^> visualize invokation cmdline.
     echo    args     ^> after `--` separator is found, pass all remaining arguments to compiler as-is
     echo.
@@ -298,10 +298,10 @@ if "%1"=="cook" (
     exit /b
 )
 rem generate bindings
-if "%1"=="bindings" (
+if "%1"=="bind" (
     rem luajit
     tools\luajit tools\luajit_make_bindings.lua > fwk.lua
-    move /y fwk.lua demos\lua
+    move /y fwk.lua engine\bind
 
     exit /b
 )
@@ -349,7 +349,7 @@ rem generate prior files to a github release
 if "%1"=="github" (
     rem call make.bat dll
     call make.bat docs
-    call make.bat bindings
+    call make.bat bind
 
     call make.bat amalgamation
     call make.bat split
@@ -391,7 +391,7 @@ rem tidy environment
 if "%1"=="tidy" (
     move /y ??-*.png demos          > nul 2> nul
     move /y ??-*.c demos            > nul 2> nul
-    del demos\lua\fwk.dll           > nul 2> nul
+    del engine\bind\fwk.dll         > nul 2> nul
     del .temp*.*                    > nul 2> nul
     del *.zip                       > nul 2> nul
     del *.mem                       > nul 2> nul
@@ -428,7 +428,7 @@ set args=-Iengine
 set other=
 set fwk=yes
 set demos=yes
-set editor=yes
+set editor=no
 set vis=no
 set sln=no
 set rc=0
@@ -455,6 +455,7 @@ set rc=0
     if "%1"=="nofwk"    set "fwk=no" && goto loop
     if "%1"=="nodemos"  set "demos=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
+    if "%1"=="editor"   set "editor=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
     if "%1"=="cl"       set "cc=%1" && goto loop
@@ -645,16 +646,16 @@ if not "!other!"=="" (
 
 rem framework
 if "!fwk!"=="yes" (
-if "!vis!"=="yes" echo !cc! engine\fwk.c !export! !args! ^&^& if "!dll!"=="dll" copy /y fwk.dll demos\lua ^> nul
-!echo! fwk          && !cc! engine\fwk.c !export! !args!   && if "!dll!"=="dll" copy /y fwk.dll demos\lua  > nul || set rc=1
+if "!vis!"=="yes" echo !cc! engine\fwk.c !export! !args! ^&^& if "!dll!"=="dll" copy /y fwk.dll engine\bind ^> nul
+!echo! fwk          && !cc! engine\fwk.c !export! !args!   && if "!dll!"=="dll" copy /y fwk.dll engine\bind  > nul || set rc=1
 )
 
 rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL
 if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
-rem !echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
-rem !echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
+!echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
+!echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
 )
 
 rem demos
