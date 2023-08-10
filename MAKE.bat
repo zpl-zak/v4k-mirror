@@ -13,14 +13,14 @@ cd `dirname $0`
 # tidy environment
 if [ "$1" = "tidy" ]; then
     rm 0?-* 2> /dev/null
-    rm fwk.o 2> /dev/null
+    rm v4k.o 2> /dev/null
     rm .art*.zip 2> /dev/null
-    rm demos/lua/.art*.zip 2> /dev/null
+    rm engine/bind/.art*.zip 2> /dev/null
     rm demos/html5/.art*.zip 2> /dev/null
-    rm demos/lua/libfwk* 2> /dev/null
-    rm fwk_*.* 2> /dev/null
+    rm engine/bind/libv4k* 2> /dev/null
+    rm v4k_*.* 2> /dev/null
     rm 3rd_*.* 2> /dev/null
-    rm libfwk* 2> /dev/null
+    rm libv4k* 2> /dev/null
     rm -rf *.dSYM 2> /dev/null
     rm *.png 2> /dev/null
     rm *.mp4 2> /dev/null
@@ -36,6 +36,11 @@ if [ "$1" = "split" ]; then
 fi
 if [ "$1" = "join" ]; then
     sh tools/join.bat
+    exit
+fi
+if [ "$1" = "prep" ]; then
+    sh MAKE.bat join
+    sh MAKE.bat amalgamation
     exit
 fi
 # cook
@@ -62,6 +67,8 @@ while [ $# -ge 1 ]; do
         echo sh MAKE.bat [gcc,clang,tcc] [dbg,dev,rel] [dll,static]
         echo sh MAKE.bat [tidy]
         echo sh MAKE.bat [split,join]
+        echo sh MAKE.bat [amalgamation]
+        echo sh MAKE.bat [prep]
         echo sh MAKE.bat [cook]
         echo sh MAKE.bat [sln]
         exit
@@ -147,19 +154,19 @@ if [ "$(uname)" != "Darwin" ]; then
     chmod +x tools/xlsx2ini.linux
     chmod +x tools/premake5.linux
     chmod +x tools/ninja.linux
-    chmod +x demos/lua/luajit.linux
+    chmod +x engine/bind/luajit.linux
 
     echo build=$build, type=$dll, cc=$cc, args=$args
 
     # framework (as dynamic library)
     if [ "$dll" = "dll" ]; then
-        echo libfwk.so  && $cc -o libfwk.so engine/fwk.c -shared -fPIC -w -lX11 -lm -ldl -lpthread $flags $args
-        cp libfwk.so demos/lua/
-        export import="libfwk.so -Wl,-rpath,./"
+        echo libv4k.so  && $cc -o libv4k.so engine/v4k.c -shared -fPIC -w -lX11 -lm -ldl -lpthread $flags $args
+        cp libv4k.so engine/bind/
+        export import="libv4k.so -Wl,-rpath,./"
     else
     # framework (static)
-        echo fwk        && $cc -c engine/fwk.c -w    $flags $args
-        export import=fwk.o
+        echo v4k        && $cc -c engine/v4k.c -w    $flags $args
+        export import=v4k.o
     fi
 
     # editor
@@ -202,19 +209,19 @@ if [ "$(uname)" = "Darwin" ]; then
     chmod +x tools/xlsx2ini.osx
     chmod +x tools/premake5.osx
     chmod +x tools/ninja.osx
-    chmod +x demos/lua/luajit.osx
+    chmod +x engine/bind/luajit.osx
 
     echo build=$build, type=$dll, cc=$cc, args=$args
 
     # framework (as dynamic library)
     if [ "$dll" = "dll" ]; then
-        echo libfwk     && cc -ObjC -dynamiclib -o libfwk.dylib engine/fwk.c -framework cocoa -framework iokit -framework audiotoolbox -w $flags $args
-        cp libfwk.dylib demos/lua
-        export import=libfwk.dylib
+        echo libv4k     && cc -ObjC -dynamiclib -o libv4k.dylib engine/v4k.c -framework cocoa -framework iokit -framework audiotoolbox -w $flags $args
+        cp libv4k.dylib engine/bind
+        export import=libv4k.dylib
     else
     # framework
-        echo fwk        && cc -c -ObjC engine/fwk.c -w $flags $args
-        export import=fwk.o
+        echo v4k        && cc -c -ObjC engine/v4k.c -w $flags $args
+        export import=v4k.o
     fi
 
     # editor
@@ -253,13 +260,17 @@ if "%1"=="help" (
     echo %0 [docs]            ; generate tools/docs/docs.html file
     echo %0 [cook]            ; cook .zipfiles with tools/cook.ini cookbook
     echo %0 [sync]            ; sync repo to latest
+    echo %0 [pull]            ; pull changes from 'latest' upstream
+    echo %0 [git]             ; prepare for commit
+    echo %0 [push]            ; prepare for commit, stage changes and commit them
     echo %0 [tidy]            ; clean up temp files
-    echo %0 [bindings]        ; generate demos/lua bindings
-    echo %0 [checkmem]        ; check untracked allocators in FWK
-    echo %0 [split^|join]      ; engine/fwk* ^>split^> engine/split/* or engine/split/* ^>join^> engine/fwk*
-    echo %0 [amalgamation]    ; combine engine/fwk* into a single-header file
+    echo %0 [bind]            ; generate lua bindings
+    echo %0 [checkmem]        ; check untracked allocators in V4K
+    echo %0 [split^|join]      ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
+    echo %0 [amalgamation]    ; combine engine/v4k* into a single-header file
+    echo %0 [prep]            ; combine split files into a single-header file, ready for use
     echo %0 [sln]             ; generate a xcode/gmake/ninja/visual studio solution
-    echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nofwk^|nodemos^|noeditor] [vis] [-- args]
+    echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nov4k^|nodemos^|editor] [vis] [-- args]
     echo    cl       \
     echo    tcc      ^|
     echo    cc       ^| select compiler. must be accessible in PATH
@@ -269,11 +280,11 @@ if "%1"=="help" (
     echo    dbg      \   debug build: [x] ASAN [x] poison [x] asserts [x] profiler [x] symbols                    [ ] zero optimizations
     echo    dev      ^| develop build: [ ] ASAN [x] poison [x] asserts [x] profiler [x] symbols                    [*] some optimizations (default^)
     echo    rel      / release build: [ ] ASAN [ ] poison [ ] asserts [ ] profiler [x] symbols (cl,clang-cl only^) [x] many optimizations
-    echo    static   \ link fwk as static library
-    echo    dll      / link fwk as dynamic library (dll^) (default^)
-    echo    nofwk    \ do not compile framework
+    echo    static   \ link v4k as static library
+    echo    dll      / link v4k as dynamic library (dll^) (default^)
+    echo    nov4k    \ do not compile framework
     echo    nodemos  ^| do not compile demos
-    echo    noeditor / do not compile editor
+    echo    editor / do compile editor
     echo    vis      ^> visualize invokation cmdline.
     echo    args     ^> after `--` separator is found, pass all remaining arguments to compiler as-is
     echo.
@@ -290,18 +301,18 @@ if "%1"=="sync" (
 rem cook asset files
 if "%1"=="cook" (
     rem generate cooker twice: use multi-threaded version if available (cl). then cook.
-    rem call tools\tcc tools\cook.c -Iengine engine\fwk.c
-    rem             cl tools\cook.c -Iengine engine\fwk.c
+    rem call tools\tcc tools\cook.c -Iengine engine\v4k.c
+    rem             cl tools\cook.c -Iengine engine\v4k.c
     rem cook
     tools\cook
 
     exit /b
 )
 rem generate bindings
-if "%1"=="bindings" (
+if "%1"=="bind" (
     rem luajit
-    tools\luajit tools\luajit_make_bindings.lua > fwk.lua
-    move /y fwk.lua demos\lua
+    tools\luajit tools\luajit_make_bindings.lua > v4k.lua
+    move /y v4k.lua engine\bind
 
     exit /b
 )
@@ -318,49 +329,71 @@ if "%1"=="docs" (
     set /p LAST_MODIFIED=<info.obj
 
     rem ...and generate docs
-    cl   tools\docs\docs.c engine\fwk.c -Iengine %2
-    docs engine\fwk.h --excluded=3rd_glad.h,fwk.h,fwk_compat.h, > fwk.html
-    move /y fwk.html engine\
+    cl   tools\docs\docs.c engine\v4k.c -Iengine %2
+    docs engine\v4k.h --excluded=3rd_glad.h,v4k.h,v4k_compat.h, > v4k.html
+    move /y v4k.html engine\
 
     exit /b
 )
 rem generate single-header distribution
 if "%1"=="amalgamation" (
-echo // This file is intended to be consumed by a compiler. Do not read.  > fwk.h
-echo // **Browse to any of the sources in engine/split/ folder instead** >> fwk.h
-echo // ---------------------------------------------------------------- >> fwk.h
-echo // #define FWK_IMPLEMENTATION early in **one** C file to unroll the >> fwk.h
-echo // implementation. The symbol must be defined in a C (not C++^) file>> fwk.h
-echo // ---------------------------------------------------------------- >> fwk.h
-echo #pragma once                                                        >> fwk.h
-type engine\split\3rd_font_md.h                                          >> fwk.h
-type engine\split\3rd_glad.h                                             >> fwk.h
-type engine\fwk.h                                                        >> fwk.h
-echo #ifdef FWK_IMPLEMENTATION                                           >> fwk.h
-echo #define FWK_3RD                                                     >> fwk.h
-type engine\fwk                                                          >> fwk.h
-type engine\fwk.c                                                        >> fwk.h
-echo #endif // FWK_IMPLEMENTATION                                        >> fwk.h
-move /y fwk.h engine\joint
+echo // This file is intended to be consumed by a compiler. Do not read.  > v4k.h
+echo // **Browse to any of the sources in engine/split/ folder instead** >> v4k.h
+echo // ---------------------------------------------------------------- >> v4k.h
+echo // #define V4K_IMPLEMENTATION early in **one** C file to unroll the >> v4k.h
+echo // implementation. The symbol must be defined in a C (not C++^) file>> v4k.h
+echo // ---------------------------------------------------------------- >> v4k.h
+echo #pragma once                                                        >> v4k.h
+type engine\split\3rd_font_md.h                                          >> v4k.h
+type engine\split\3rd_glad.h                                             >> v4k.h
+type engine\v4k.h                                                        >> v4k.h
+echo #ifdef V4K_IMPLEMENTATION                                           >> v4k.h
+echo #define V4K_3RD                                                     >> v4k.h
+type engine\v4k                                                          >> v4k.h
+type engine\v4k.c                                                        >> v4k.h
+echo #endif // V4K_IMPLEMENTATION                                        >> v4k.h
+move /y v4k.h engine\joint
 exit /b
 )
 
-rem generate prior files to a github release
-if "%1"=="github" (
+rem generate prior files to a git release
+if "%1"=="git" (
     rem call make.bat dll
     call make.bat docs
-    call make.bat bindings
+    call make.bat bind
 
     call make.bat amalgamation
     call make.bat split
 
 rem rd /q /s engine\split
 rem md engine\split
-rem move /y fwk_*.? engine\split\
+rem move /y v4k_*.? engine\split\
 rem move /y 3rd_*.? engine\split\
 
     call make.bat tidy
 
+    exit /b
+)
+
+if "%1"=="pull" (
+    git fetch v4k
+    git merge -Xrename-threshold=50 v4k/main
+    exit /b
+)
+
+if "%1"=="push" (
+    call make.bat tidy
+
+    git status
+    git add .
+    git commit
+
+    exit /b
+)
+
+if "%1"=="prep" (
+    call make.bat join
+    call make.bat amalgamation
     exit /b
 )
 
@@ -376,11 +409,19 @@ if "%1"=="join" (
 
 rem check memory api calls
 if "%1"=="checkmem" (
-    findstr /RNC:"[^_xv]realloc[(]" engine\fwk.c engine\split\fwk*
-    findstr /RNC:"[^_xv]malloc[(]"  engine\fwk.c engine\split\fwk*
-    findstr /RNC:"[^_xv]free[(]"    engine\fwk.c engine\split\fwk*
-    findstr /RNC:"[^_xv]calloc[(]"  engine\fwk.c engine\split\fwk*
-    findstr /RNC:"[^_xv]strdup[(]"  engine\fwk.c engine\split\fwk*
+    findstr /RNC:"[^_xv]realloc[(]"  engine\v4k.c engine\split\v4k*
+    findstr /RNC:"[^_xv]xrealloc[(]" engine\v4k.c engine\split\v4k*
+    findstr /RNC:"[^_xv]malloc[(]"   engine\v4k.c engine\split\v4k*
+    findstr /RNC:"[^_xv]free[(]"     engine\v4k.c engine\split\v4k*
+    findstr /RNC:"[^_xv]calloc[(]"   engine\v4k.c engine\split\v4k*
+    findstr /RNC:"[^_xv]strdup[(]"   engine\v4k.c engine\split\v4k*
+    exit /b
+)
+
+if "%1"=="html5" (
+    pushd demos\html5
+        call make.bat %2
+    popd
     exit /b
 )
 
@@ -391,7 +432,7 @@ rem tidy environment
 if "%1"=="tidy" (
     move /y ??-*.png demos          > nul 2> nul
     move /y ??-*.c demos            > nul 2> nul
-    del demos\lua\fwk.dll           > nul 2> nul
+    del engine\bind\v4k.dll         > nul 2> nul
     del .temp*.*                    > nul 2> nul
     del *.zip                       > nul 2> nul
     del *.mem                       > nul 2> nul
@@ -408,7 +449,7 @@ if "%1"=="tidy" (
     del *.def                       > nul 2> nul
     del *.dll                       > nul 2> nul
     del 3rd_*.*                     > nul 2> nul
-    del fwk_*.*                     > nul 2> nul
+    del v4k_*.*                     > nul 2> nul
 rem del ??-*.*                      > nul 2> nul
     del temp_*.*                    > nul 2> nul
     rd /q /s .vs                    > nul 2> nul
@@ -426,9 +467,9 @@ set dll=dll
 set build=dev
 set args=-Iengine
 set other=
-set fwk=yes
+set v4k=yes
 set demos=yes
-set editor=yes
+set editor=no
 set vis=no
 set sln=no
 set rc=0
@@ -452,9 +493,10 @@ set rc=0
 
     if "%1"=="vis"      set "vis=yes" && goto loop
 
-    if "%1"=="nofwk"    set "fwk=no" && goto loop
+    if "%1"=="nov4k"    set "v4k=no" && goto loop
     if "%1"=="nodemos"  set "demos=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
+    if "%1"=="editor"   set "editor=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
     if "%1"=="cl"       set "cc=%1" && goto loop
@@ -530,10 +572,10 @@ if "!cc!"=="cl" (
 
     if "!dll!"=="static" (
         set export=/c
-        set import=fwk.obj
+        set import=v4k.obj
     ) else (
         set export=/DAPI=EXPORT /LD
-        set import=/DAPI=IMPORT fwk.lib
+        set import=/DAPI=IMPORT v4k.lib
     )
 
     if "!build!"=="rel" (
@@ -554,15 +596,15 @@ if "!cc!"=="cl" (
 
     if "!dll!"=="static" (
         set export=/c
-        set import=fwk.obj
+        set import=v4k.obj
     ) else (
         set export=/DAPI=EXPORT /LD
-        set import=/DAPI=IMPORT fwk.lib
+        set import=/DAPI=IMPORT v4k.lib
     )
 
-    set warnings_fwkc=-Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare
+    set warnings_v4kc=-Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare
     set warnings_demos=-Wno-empty-body -Wno-format-security -Wno-pointer-sign
-    set warnings=!warnings_fwkc! !warnings_demos!
+    set warnings=!warnings_v4kc! !warnings_demos!
 
     if "!build!"=="rel" (
         set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG !args!        /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
@@ -581,10 +623,10 @@ if "!cc!"=="cl" (
 
     if "!dll!"=="static" (
         set export=-c
-        set import=fwk.o
+        set import=v4k.o
     ) else (
         set export=-DAPI=EXPORT -shared
-        set import=-DAPI=IMPORT fwk.def
+        set import=-DAPI=IMPORT v4k.def
     )
 
     if "!build!"=="rel" (
@@ -606,10 +648,10 @@ if "!cc!"=="cl" (
 
     if "!dll!"=="static" (
         set export=-c
-        set import=fwk.o !libs! -Wl,--allow-multiple-definition
+        set import=v4k.o !libs! -Wl,--allow-multiple-definition
     ) else (
-        set export=-DAPI=EXPORT -shared -o fwk.dll !libs! -Wl,--out-implib,fwk.a
-        set import=-DAPI=IMPORT fwk.a
+        set export=-DAPI=EXPORT -shared -o v4k.dll !libs! -Wl,--out-implib,v4k.a
+        set import=-DAPI=IMPORT v4k.a
     )
 
     set args=-Wno-implicit-function-declaration !args!
@@ -635,31 +677,34 @@ echo import=!import!, export=!export!
 if "!cc!"=="tcc" set "cc=call tools\tcc"
 
 rem detect wether user-defined sources use single-header distro
-rem if so, remove API=IMPORT flags and also do not produce fwk.dll by default
+rem if so, remove API=IMPORT flags and also do not produce v4k.dll by default
 if not "!other!"=="" (
-    >nul find "FWK_IMPLEMENTATION" !other! && (
+    >nul find "V4K_IMPLEMENTATION" !other! && (
       set import=
-      set fwk=no
+      set v4k=no
     )
 )
 
 rem framework
-if "!fwk!"=="yes" (
-if "!vis!"=="yes" echo !cc! engine\fwk.c !export! !args! ^&^& if "!dll!"=="dll" copy /y fwk.dll demos\lua ^> nul
-!echo! fwk          && !cc! engine\fwk.c !export! !args!   && if "!dll!"=="dll" copy /y fwk.dll demos\lua  > nul || set rc=1
+if "!v4k!"=="yes" (
+if "!vis!"=="yes" echo !cc! engine\v4k.c !export! !args! ^&^& if "!dll!"=="dll" copy /y v4k.dll engine\bind ^> nul
+!echo! v4k          && !cc! engine\v4k.c !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll engine\bind  > nul || set rc=1
 )
 
 rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL
 if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
-rem !echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
-rem !echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
+!echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
+!echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
 )
 
 rem demos
 if "!demos!"=="yes" (
-!echo! hello         && !cc! !o! hello.exe         hello.c                           !args! || set rc=1
+!echo! hello         && !cc! !o! hello.exe         hello.c                               !args! || set rc=1
+!echo! 99-syncdemo   && !cc! !o! 99-syncdemo.exe   demos\99-syncdemo.c          !import! !args! || set rc=1
+!echo! 99-shadertoy  && !cc! !o! 99-shadertoy.exe  demos\99-shadertoy.c         !import! !args! || set rc=1
+!echo! 99-material   && !cc! !o! 99-material.exe   demos\99-material.c          !import! !args! || set rc=1
 rem !echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
 rem !echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
 rem !echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1

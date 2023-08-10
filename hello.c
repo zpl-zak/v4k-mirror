@@ -1,18 +1,18 @@
-// playground tests for FWK
+// playground tests for V4K
 // - rlyeh, public domain
 //
 // # quickstart
 // - win/vc       : cl hello.c
-// - win/clang-cl : clang-cl hello.c
-// - win/tcc      : tcc   hello.c -m64
+// - win/clang-cl : clang-cl  hello.c
+// - win/tcc      : tools\tcc hello.c -m64
 // - win/mingw    : gcc   hello.c -lws2_32 -lwinmm -ldbghelp -lole32 -luser32 -lgdi32 -lcomdlg32
 // - win/clang    : clang hello.c -lws2_32 -lwinmm -ldbghelp -lole32 -luser32 -lgdi32 -lcomdlg32
 // - linux        : cc  hello.c -lm -ldl -lpthread -lX11
 // - linux/tcc    : tcc hello.c -lm -ldl -lpthread -lX11 -D__STDC_NO_VLA__
 // - osx          : cc -ObjC hello.c -framework cocoa -framework iokit -framework audiotoolbox
 
-#define FWK_IMPLEMENTATION      // unrolls single-header implementation
-#include "./engine/joint/fwk.h" // single-header file
+#define V4K_IMPLEMENTATION      // unrolls single-header implementation
+#include "engine/joint/v4k.h"   // single-header file
 
 int main() {
     // options
@@ -27,7 +27,8 @@ int main() {
 
     // animated models loading (no flags)
     model_t girl = model("kgirl/kgirls01.fbx", 0);
-    compose44( girl.pivot, vec3(0,0,0), eulerq(vec3(-90,0,0)), vec3(2,2,2)); // position, rotation, scale
+    vec3 pos = vec3(0,0,0), sca = vec3(2,2,2), rot = vec3(-90,0,0);
+    compose44( girl.pivot, pos, eulerq(rot), sca); // position, rotation, scale
 
     // camera
     camera_t cam = camera();
@@ -59,17 +60,17 @@ int main() {
         camera_move(&cam, wasdecq.x,wasdecq.y,wasdecq.z);
         camera_fps(&cam, mouse.x,mouse.y);
         window_cursor( !active );
+     
+        // debug draw
+        ddraw_grid(0);
+        if(do_debugdraw) ddraw_demo(); // showcase many debugdraw shapes
+        ddraw_flush();
+        
+        // draw skybox
+        skybox_render(&sky, cam.proj, cam.view);
 
         // apply post-fxs from here
         fx_begin();
-
-            // debug draw
-            ddraw_ground(0);
-            if(do_debugdraw) ddraw_demo(); // showcase many debugdraw shapes
-            ddraw_flush();
-
-            // draw skybox
-            skybox_render(&sky, cam.proj, cam.view);
 
             // animate girl
             float delta = window_delta() * 30; // 30fps anim
@@ -80,6 +81,10 @@ int main() {
 
         // post-fxs end here
         fx_end();
+
+        gizmo(&pos, &rot, &sca);
+        model_render_skeleton(girl, girl.pivot);
+        compose44( girl.pivot, pos, eulerq(rot), sca); // position, rotation, scale
 
         // font demo
         font_print(va(FONT_BOTTOM FONT_RIGHT FONT_H6 "%5.2f FPS", window_fps()));
@@ -115,6 +120,7 @@ int main() {
                 bool enabled = fx_enabled(i);
                 if( ui_bool(fx_name(i), &enabled) ) fx_enable(i, enabled);
             }
+
             ui_panel_end();
         }
     }

@@ -2,7 +2,7 @@
 // - rlyeh, public domain
 //
 // build:
-// cl docs.c && docs ..\..\fwk.h -x=3rd_glad.h,fwk.h,fwk_main.h,fwk_compat.h, > docs.html
+// cl docs.c && docs ..\..\v4k.h -x=3rd_glad.h,v4k.h,v4k_main.h,v4k_compat.h, > docs.html
 //
 // how to document:
 // - start documentation on a blank line with a /// 3 slashes comment.
@@ -67,7 +67,7 @@
 //       union { void *pixels; uint8_t *pixels8; uint16_t *pixels16; uint32_t *pixels32; float *pixelsf; };
 //   } image_t;
 
-#include "fwk.h"
+#include "v4k.h"
 #include <ctype.h>
 
 int DO_CSS = 1;
@@ -822,7 +822,7 @@ int main(int argc, char **argv) {
             // remove extension if present
             char *found = strrchr(section, '.'); if(found) *found = 0;
             // print section in Uppercase form
-            char *name = section + (strbegi(section, "fwk_") ? 4 : 0);
+            char *name = section + (strbegi(section, "v4k_") ? 4 : 0);
             //name[0] = toupper(name[0]);
             printf("## %s\n\n", name);
             // reset
