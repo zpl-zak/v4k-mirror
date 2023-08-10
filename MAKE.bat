@@ -484,7 +484,7 @@ rem del ??-*.*                      > nul 2> nul
     rd /q /s _debug                 > nul 2> nul
     rd /q /s _devel                 > nul 2> nul
     rd /q /s _release               > nul 2> nul
-    rd /q /s _fwk
+    rd /q /s _fwk                   > nul 2> nul
 rem rd /q /s _project               > nul 2> nul
     del tcc.bat                     > nul 2> nul
     del sh.bat                      > nul 2> nul
