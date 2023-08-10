@@ -527,6 +527,7 @@ set other=
 set v4k=yes
 set hello=no
 set demos=no
+set extras=no
 set editor=no
 set vis=no
 set proj=no
@@ -554,6 +555,7 @@ set rc=0
     if "%1"=="nov4k"    set "v4k=no" && goto loop
     if "%1"=="nodemos"  set "demos=no" && goto loop
     if "%1"=="demos"    set "demos=yes" && set "hello=no" && goto loop
+    if "%1"=="extras"   set "extras=yes" && set "demos=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
     if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "hello=no"&& goto loop
@@ -771,6 +773,13 @@ if "!demos!"=="yes" (
 !echo! 05-scene      && !cc! !o! 05-scene.exe      demos\05-scene.c         !import! !args! || set rc=1
 !echo! 06-controller && !cc! !o! 06-controller.exe demos\06-controller.c    !import! !args! || set rc=1
 !echo! 07-network    && !cc! !o! 07-network.exe    demos\07-network.c       !import! !args! || set rc=1
+)
+
+rem extras
+if "!extras!"=="yes" (
+    for %%f in ("demos\99-*") do (
+        !echo! %%~nf         && !cc! !o! %%~nf.exe         demos\%%~nf.c            !import! !args! || set rc=1
+    )
 )
 
 rem hello
