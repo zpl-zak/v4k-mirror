@@ -130,6 +130,8 @@
 
 {{FILE:v4k_netsync.c}}
 
+{{FILE:v4k_shaders.c}}
+
 {{FILE:v4k_render.c}}
 
 {{FILE:v4k_renderdd.c}}

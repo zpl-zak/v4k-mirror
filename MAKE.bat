@@ -255,25 +255,27 @@ if "%1"=="-?" goto showhelp
 if "%1"=="-h" goto showhelp
 if "%1"=="help" (
     :showhelp
-    echo %0                   ; compile everything: `make dll dev` alias
-    echo %0 [help]            ; show this screen
-    echo %0 [docs]            ; generate tools/docs/docs.html file
-    echo %0 [cook]            ; cook .zipfiles with tools/cook.ini cookbook
-    echo %0 [sync]            ; sync repo to latest
-    echo %0 [fwk]             ; prepare files for fwk PR
-    echo %0 [lua]             ; execute lua script with v4k
-    echo %0 [html5]           ; build HTML5 demo
-    echo %0 [web]             ; run Python webserver in html5 dir
-    echo %0 [pull]            ; pull changes from 'latest' upstream
-    echo %0 [git]             ; prepare for commit
-    echo %0 [push]            ; prepare for commit, stage changes and commit them
-    echo %0 [tidy]            ; clean up temp files
-    echo %0 [bind]            ; generate lua bindings
-    echo %0 [checkmem]        ; check untracked allocators in V4K
-    echo %0 [split^|join]      ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
-    echo %0 [amalgamation]    ; combine engine/v4k* into a single-header file
-    echo %0 [prep]            ; combine split files into a single-header file, ready for use
-    echo %0 [sln]             ; generate a xcode/gmake/ninja/visual studio solution
+    echo %0                         ; compile everything: `make dll dev` alias
+    echo %0 [help]                  ; show this screen
+    echo %0 [docs]                  ; generate tools/docs/docs.html file
+    echo %0 [cook]                  ; cook .zipfiles with tools/cook.ini cookbook
+    echo %0 [sync]                  ; sync repo to latest
+    echo %0 [fwk]                   ; prepare files for fwk PR
+    echo %0 [lua]                   ; execute lua script with v4k
+    echo %0 [html5]                 ; build HTML5 demo
+    echo %0 [web]                   ; run Python webserver in html5 dir
+    echo %0 [pull]                  ; pull changes from 'latest' upstream
+    echo %0 [git]                   ; prepare for commit
+    echo %0 [push]                  ; prepare for commit, stage changes and commit them
+    echo %0 [tidy]                  ; clean up temp files
+    echo %0 [bind]                  ; generate lua bindings
+    echo %0 [checkmem]              ; check untracked allocators in V4K
+    echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
+    echo %0 [glsl_split^|glsl_join]  ; join/split GLSL shaders
+    echo %0 [lua]                   ; execute lua script with v4k
+    echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
+    echo %0 [prep]                  ; combine split files into a single-header file, ready for use
+    echo %0 [sln]                   ; generate a xcode/gmake/ninja/visual studio solution
     echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nov4k^|nodemos^|editor] [vis] [-- args]
     echo    cl       \
     echo    tcc      ^|
@@ -374,6 +376,7 @@ if "%1"=="git" (
     call make.bat docs
     call make.bat bind
 
+    call make.bat glsl_join
     call make.bat amalgamation
     call make.bat split
 
@@ -405,6 +408,7 @@ if "%1"=="push" (
 )
 
 if "%1"=="prep" (
+    call make.bat glsl_join
     call make.bat join
     call make.bat amalgamation
     exit /b
@@ -417,6 +421,15 @@ if "%1"=="split" (
 )
 if "%1"=="join" (
     call tools\join
+    exit /b
+)
+
+if "%1"=="glsl_split" (
+    call tools\glsl_split
+    exit /b
+)
+if "%1"=="glsl_join" (
+    call tools\glsl_join
     exit /b
 )
 
