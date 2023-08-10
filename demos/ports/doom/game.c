@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
     doom_init(argc, argv, DOOM_FLAG_MENU_DARKEN_BG);
 
     // Init app
-    window_create(0.75, 0);
+    window_create(0.45, WINDOW_SQUARE);
     window_aspect_lock(DOOM_WIDTH, DOOM_HEIGHT);
     window_title("Pure DOOM");
     window_cursor(false);

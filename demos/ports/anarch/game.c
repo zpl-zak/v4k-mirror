@@ -10,7 +10,6 @@
     whatsoever.
 */
 
-#define V4K_IMPLEMENTATION
 #include "v4k.h"
 
 #ifdef _MSC_VER
@@ -135,11 +134,11 @@ int main() {
 
     SFG_init();
 
-    window_create(0.75, 0);
+    window_create(0.45, WINDOW_SQUARE);
     texture_t t = texture_checker();
 
     while( window_swap() && SFG_mainLoopBody() ) {
-        texture_update(&t, SFG_SCREEN_RESOLUTION_X, SFG_SCREEN_RESOLUTION_Y, 4, screen, TEXTURE_RGB|TEXTURE_LINEAR);
+        texture_update(&t, SFG_SCREEN_RESOLUTION_X, SFG_SCREEN_RESOLUTION_Y, 4, screen, TEXTURE_RGB|TEXTURE_NEAREST);
         fullscreen_quad_rgb(t, 1.0f);
 
         uint16_t samples[128]; // 8 KHz 16-bit mono = 8000/60 = 133 samples/frame -> 256 samples/frame 

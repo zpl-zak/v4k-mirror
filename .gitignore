@@ -5,3 +5,5 @@ emsdk
 demos/html5/*.data 
 demos/html5/*.js
 demos/html5/*.html
+demos/ports/*/*.exe
+demos/ports/doom/.doomrc 
