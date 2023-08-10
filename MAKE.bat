@@ -559,7 +559,7 @@ set rc=0
     if "%1"=="noeditor" set "editor=no" && goto loop
     if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "hello=no"&& goto loop
-    if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "editor=yes" && set "hello=yes" && goto loop
+    if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "extras=yes" && set "editor=yes" && set "hello=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
     if "%1"=="cl"       set "cc=%1" && goto loop
