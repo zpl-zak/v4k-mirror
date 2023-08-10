@@ -4,12 +4,10 @@
 |Commit:        | {{GIT_REVISION}} |
 <!--| Documentation last modified | { {LAST_MODIFIED} } |-->
 
-# [F·W·K {{VERSION}}](https://github.com/r-lyeh/FWK)
+# [V·4·K {{VERSION}}](https://dev.v4.games/zaklaus/v4k)
 ## a b o u t
 
-- https://github.com/r-lyeh/FWK is a 3D game framework in C, with Luajit bindings.
-- Download latest release: https://github.com/r-lyeh/FWK/releases
-- WIP Documentation below. Need extra support? <a href="https://discord.gg/vu6Vt9d">Join us</a>.
+- https://dev.v4.games/zaklaus/v4k is a 3D game framework in C, with Luajit bindings.
 
 ![Image from demo.c](https://i.imgur.com/sInbRoA.gif)
 
