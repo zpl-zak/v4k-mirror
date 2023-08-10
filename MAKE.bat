@@ -401,6 +401,9 @@ if "%1"=="push" (
     git status
     git add .
     git commit
+    if "%2"=="out" (
+        git push
+    )
 
     exit /b
 )
