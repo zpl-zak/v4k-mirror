@@ -555,7 +555,7 @@ set rc=0
     if "%1"=="nov4k"    set "v4k=no" && goto loop
     if "%1"=="nodemos"  set "demos=no" && goto loop
     if "%1"=="demos"    set "demos=yes" && set "hello=no" && goto loop
-    if "%1"=="extras"   set "extras=yes" && set "demos=yes" && set "hello=no" && goto loop
+    if "%1"=="extras"   set "extras=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
     if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "hello=no"&& goto loop
@@ -768,8 +768,10 @@ if "!demos!"=="yes" (
 !echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
 !echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
 !echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1
+!echo! 02-frustum    && !cc! !o! 02-frustum.exe    demos\02-frustum.c       !import! !args! || set rc=1
 !echo! 03-anims      && !cc! !o! 03-anims.exe      demos\03-anims.c         !import! !args! || set rc=1
 !echo! 04-actor      && !cc! !o! 04-actor.exe      demos\04-actor.c         !import! !args! || set rc=1
+!echo! 04-lod        && !cc! !o! 04-lod.exe        demos\04-lod.c           !import! !args! || set rc=1
 !echo! 05-scene      && !cc! !o! 05-scene.exe      demos\05-scene.c         !import! !args! || set rc=1
 !echo! 06-controller && !cc! !o! 06-controller.exe demos\06-controller.c    !import! !args! || set rc=1
 !echo! 07-network    && !cc! !o! 07-network.exe    demos\07-network.c       !import! !args! || set rc=1

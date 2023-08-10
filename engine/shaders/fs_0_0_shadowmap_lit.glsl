@@ -1,7 +1,3 @@
-// #version 140 // inverse() requires v140
-// FILELINE
-
-
 //  uniform mat4 view = mat4(1.0);
 uniform vec3 lightPos = vec3(1.0);
 uniform float doTexture = 1.;

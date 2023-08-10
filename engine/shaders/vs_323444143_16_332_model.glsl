@@ -87,28 +87,28 @@ void main() {
     if(!SKINNED) {
         objPos = att_position;
         v_normal = att_normal;
-        } else {
-            mat3x4 m = vsBoneMatrix[int(att_indexes.x)] * att_weights.x;
-            m += vsBoneMatrix[int(att_indexes.y)] * att_weights.y;
-            m += vsBoneMatrix[int(att_indexes.z)] * att_weights.z;
-            m += vsBoneMatrix[int(att_indexes.w)] * att_weights.w;
-            objPos = vec4(att_position, 1.0) * m;
-            
-            // blendshapes
-            // objPos += evaluate_blend_shape(int(att_vertexindex));
-            
-            v_normal = vec4(att_normal, 0.0) * m;
-            //@todo: tangents
-        }
+    } else {
+        mat3x4 m = vsBoneMatrix[int(att_indexes.x)] * att_weights.x;
+        m += vsBoneMatrix[int(att_indexes.y)] * att_weights.y;
+        m += vsBoneMatrix[int(att_indexes.z)] * att_weights.z;
+        m += vsBoneMatrix[int(att_indexes.w)] * att_weights.w;
+        objPos = vec4(att_position, 1.0) * m;
         
-        //   vec3 tangent = att_tangent.xyz;
-        //   vec3 bitangent = cross(att_normal, att_tangent.xyz) * att_tangent.w;
+        // blendshapes
+        // objPos += evaluate_blend_shape(int(att_vertexindex));
         
-        v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
-        v_normal = normalize(v_normal);
-        v_position = att_position;
-        v_texcoord = att_texcoord;
-        v_color = att_color;
-        gl_Position = VP * att_instanced_matrix * vec4( objPos, 1.0 );
-        do_shadow();
+        v_normal = vec4(att_normal, 0.0) * m;
+        //@todo: tangents
     }
+    
+    //   vec3 tangent = att_tangent.xyz;
+    //   vec3 bitangent = cross(att_normal, att_tangent.xyz) * att_tangent.w;
+    
+    v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
+    v_normal = normalize(v_normal);
+    v_position = att_position;
+    v_texcoord = att_texcoord;
+    v_color = att_color;
+    gl_Position = VP * att_instanced_matrix * vec4( objPos, 1.0 );
+    do_shadow();
+}
