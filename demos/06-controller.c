@@ -9,7 +9,7 @@
 
 int main() {
     // 75% window, MSAAx2 flag
-    window_create(75, WINDOW_MSAA2);
+    window_create(75, WINDOW_MSAA8);
 
     // fx: load all post fx files in all subdirs
     fx_load("fx**.fs");

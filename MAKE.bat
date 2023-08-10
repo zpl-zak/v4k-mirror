@@ -768,6 +768,7 @@ if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !impor
 
 rem demos
 if "!demos!"=="yes" (
+!echo! 00-demo       && !cc! !o! 00-demo.exe       demos\00-demo.c          !import! !args! || set rc=1
 !echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
 !echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
 !echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1

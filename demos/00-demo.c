@@ -20,9 +20,7 @@ int main() {
     window_title(__FILE__);
 
     // load all fx files
-    for(const char **list = file_list("./", "fx**.fs"); *list; list++) {
-        fx_load(*list);
-    }
+    fx_load("fx**.fs");
 
     // load skybox
     skybox_t sky = skybox(flag("--mie") ? 0 : "cubemaps/stardust", 0); // --mie for rayleigh/mie scattering
