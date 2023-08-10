@@ -525,7 +525,7 @@ set build=dev
 set args=-Iengine
 set other=
 set v4k=yes
-set hello=yes
+set hello=no
 set demos=no
 set editor=no
 set vis=no
@@ -555,6 +555,7 @@ set rc=0
     if "%1"=="nodemos"  set "demos=no" && goto loop
     if "%1"=="demos"    set "demos=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
+    if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "hello=no"&& goto loop
     if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "editor=yes" && set "hello=yes" && goto loop
 
