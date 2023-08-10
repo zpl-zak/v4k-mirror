@@ -8,6 +8,7 @@
 - [x] No input (fixed)
 - [x] No gamepads (fixed)
 - [x] No multi-touch (fixed)
+- [x] No threads (fixed)
 - [ ] No audio
 - [ ] No file writing (untested)
 - [ ] No glTexture1D()
