@@ -426,6 +426,33 @@ if "%1"=="html5" (
     exit /b
 )
 
+if "%1"=="fwk" (
+    setlocal enabledelayedexpansion
+    if not exist "_fwk" mkdir "_fwk"
+    xcopy /y "engine\split\3rd_*" "_fwk\"
+    xcopy /y "demos\*.c" "_fwk\"
+    for %%f in ("engine\split\v4k*") do (
+        set "filename=%%~nf"
+        set "newname=fwk!filename:v4k=!%%~xf"
+        echo Copying and renaming "%%f" to "_fwk\!newname!"
+        copy "%%f" "_fwk\!newname!"
+    )
+    for %%f in (_fwk\*) do (
+        set "filename=%%~nxf"
+        if /i not "!filename:~0,4!"=="3rd_" (
+            echo Processing: %%f
+            powershell -command "(Get-Content '%%f') -creplace 'v4k', 'fwk' -creplace 'V4K', 'FWK' | Set-Content '%%f'"
+            rem powershell -command "(Get-Content '%%f') -replace 'V4K', 'FWK' | Set-Content '%%f'"
+        ) else (
+            echo Skipping %%f
+        )
+    )
+
+    echo All done.
+    endlocal
+    exit /b
+)
+
 rem copy demos to root folder. local changes are preserved
 rem echo n | copy /-y demos\*.c 1> nul 2> nul
 
@@ -457,6 +484,7 @@ rem del ??-*.*                      > nul 2> nul
     rd /q /s _debug                 > nul 2> nul
     rd /q /s _devel                 > nul 2> nul
     rd /q /s _release               > nul 2> nul
+    rd /q /s _fwk
 rem rd /q /s _project               > nul 2> nul
     del tcc.bat                     > nul 2> nul
     del sh.bat                      > nul 2> nul
