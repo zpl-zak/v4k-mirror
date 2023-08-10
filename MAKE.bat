@@ -260,6 +260,8 @@ if "%1"=="help" (
     echo %0 [docs]            ; generate tools/docs/docs.html file
     echo %0 [cook]            ; cook .zipfiles with tools/cook.ini cookbook
     echo %0 [sync]            ; sync repo to latest
+    echo %0 [fwk]             ; prepare files for fwk PR
+    echo %0 [lua]             ; execute lua script with v4k
     echo %0 [pull]            ; pull changes from 'latest' upstream
     echo %0 [git]             ; prepare for commit
     echo %0 [push]            ; prepare for commit, stage changes and commit them
@@ -316,6 +318,14 @@ if "%1"=="bind" (
 
     exit /b
 )
+
+if "%1"=="lua" (
+    pushd engine\bind
+        luajit "..\..\%2"
+    popd
+    exit /b
+)
+
 rem generate documentation
 if "%1"=="docs" (
     rem set symbols...
