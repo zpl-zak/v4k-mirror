@@ -262,6 +262,8 @@ if "%1"=="help" (
     echo %0 [sync]            ; sync repo to latest
     echo %0 [fwk]             ; prepare files for fwk PR
     echo %0 [lua]             ; execute lua script with v4k
+    echo %0 [html5]           ; build HTML5 demo
+    echo %0 [web]             ; run Python webserver in html5 dir
     echo %0 [pull]            ; pull changes from 'latest' upstream
     echo %0 [git]             ; prepare for commit
     echo %0 [push]            ; prepare for commit, stage changes and commit them
@@ -433,6 +435,11 @@ if "%1"=="html5" (
     pushd demos\html5
         call make.bat %2
     popd
+    exit /b
+)
+
+if "%1"=="web" (
+    python -m http.server --directory demos\html5 --bind 127.0.0.1 8000
     exit /b
 )
 
@@ -740,10 +747,11 @@ if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !impor
 
 rem demos
 if "!demos!"=="yes" (
-!echo! hello         && !cc! !o! hello.exe         hello.c                               !args! || set rc=1
+rem !echo! hello         && !cc! !o! hello.exe         hello.c                               !args! || set rc=1
 !echo! 99-syncdemo   && !cc! !o! 99-syncdemo.exe   demos\99-syncdemo.c          !import! !args! || set rc=1
 !echo! 99-shadertoy  && !cc! !o! 99-shadertoy.exe  demos\99-shadertoy.c         !import! !args! || set rc=1
 !echo! 99-material   && !cc! !o! 99-material.exe   demos\99-material.c          !import! !args! || set rc=1
+!echo! 99-video      && !cc! !o! 99-video.exe      demos\99-video.c             !import! !args! || set rc=1
 rem !echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
 rem !echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
 rem !echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1

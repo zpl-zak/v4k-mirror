@@ -34,6 +34,10 @@ exit
 
 if "%1"=="" MAKE.bat demo_ui.c
 
+del index.html 2>NUL >NUL
+del index.worker.js 2>NUL >NUL
+del index.data 2>NUL >NUL
+
 rem clone emscripten sdk
 if not exist "emsdk" (
 	git clone https://github.com/emscripten-core/emsdk emsdk
