@@ -44,8 +44,6 @@ def c_to_glsl(input_filename: str):
             if line.strip().endswith('";'):
                 shader_code += line.rstrip('";\n')
                 # Process the captured shader code
-                # shader_code = re.sub(r'/\*.*?\*/', '', shader_code, flags=re.DOTALL)  # Remove C-style comments
-                # shader_code = re.sub(r'//.*', '', shader_code)  # Remove C++ style comments
                 shader_code = shader_code.replace(r'"\n"', '\n').replace(r'\n', '').replace(r'"', '')
                 
                 # Save to a .glsl file
