@@ -16,6 +16,7 @@ int main() {
     shadertoy_t sh = {0};
 
     while(window_swap() && !input(KEY_ESC)) {
+        if( input_down(KEY_F11) ) window_fullscreen( window_has_fullscreen() ^ 1 );
         // selector
         int next = input_down(KEY_UP) || input_down(KEY_LEFT);
         int prev = input_down(KEY_DOWN) || input_down(KEY_RIGHT);
