@@ -3,11 +3,11 @@
 #endif
 uniform mat3x4 vsBoneMatrix[MAX_BONES];
 uniform bool SKINNED = false;
-
+// uniform mat4 M; // RIM
 uniform mat4 VP;
 
 #if 0
-
+// Fetch blend channels from all attached blend deformers.
 for (size_t di = 0; di < mesh->blend_deformers.count; di++) {
     ufbx_blend_deformer *deformer = mesh->blend_deformers.data[di];
     for (size_t ci = 0; ci < deformer->channels.count; ci++) {
@@ -33,31 +33,31 @@ for (size_t i = 0; i < mesh->num_blend_shapes; i++) {
 sg_image blend_shapes = mesh->num_blend_shapes > 0 ? mesh->blend_shape_image : view->empty_blend_shape_image;
 #endif
 
-
+// for blendshapes
 #ifndef MAX_BLENDSHAPES
 #define MAX_BLENDSHAPES 16
 #endif
-uniform vec4 blend_weights[MAX_BLENDSHAPES];
-uniform float f_num_blend_shapes;
-uniform sampler2DArray blend_shapes;
+uniform vec4 blend_weights[MAX_BLENDSHAPES]; // @todo: implement me
+uniform float f_num_blend_shapes; // @todo: implement me
+uniform sampler2DArray blend_shapes; // @todo: implement me
 
-in vec3 att_position;
+in vec3 att_position; // @todo: reorder ass2iqe to emit p3 n3 u2 t3 b3 c4B i4 w4 instead
 in vec2 att_texcoord;
 in vec3 att_normal;
-in vec4 att_tangent;
-in mat4 att_instanced_matrix;
-in vec4 att_indexes;
-in vec4 att_weights;
-in float att_vertexindex;
+in vec4 att_tangent; // vec3 + bi sign
+in mat4 att_instanced_matrix; // for instanced rendering
+in vec4 att_indexes; // @fixme: gles might use ivec4 instead?
+in vec4 att_weights; // @todo: downgrade from float to byte
+in float att_vertexindex; // for blendshapes
 in vec4 att_color;
-in vec3 att_bitangent;
+in vec3 att_bitangent; // @todo: remove? also, ass2iqe might output this
 out vec4 v_color;
 out vec3 v_position;
 out vec3 v_normal, v_normal_ws;
 out vec2 v_texcoord;
 
 
-
+// shadow
 uniform mat4 model, view;
 uniform mat4 cameraToShadowProjector;
 out vec4 vneye;
@@ -69,7 +69,7 @@ void do_shadow() {
     sc = cameraToShadowProjector * model * vec4(att_position, 1.0f);
 }
 
-
+// blendshapes
 vec3 evaluate_blend_shape(int vertex_index) {
     ivec2 coord = ivec2(vertex_index & (2048 - 1), vertex_index >> 11);
     int num_blend_shapes = int(f_num_blend_shapes);
@@ -94,17 +94,17 @@ void main() {
             m += vsBoneMatrix[int(att_indexes.w)] * att_weights.w;
             objPos = vec4(att_position, 1.0) * m;
             
-            
-            
+            // blendshapes
+            // objPos += evaluate_blend_shape(int(att_vertexindex));
             
             v_normal = vec4(att_normal, 0.0) * m;
-            
+            //@todo: tangents
         }
         
+        //   vec3 tangent = att_tangent.xyz;
+        //   vec3 bitangent = cross(att_normal, att_tangent.xyz) * att_tangent.w;
         
-        
-        
-        v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.)));
+        v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
         v_normal = normalize(v_normal);
         v_position = att_position;
         v_texcoord = att_texcoord;

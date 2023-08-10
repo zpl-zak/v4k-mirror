@@ -9,6 +9,6 @@ out vec4 fragColor;
 
 void main() {
     vec4 diff = texture(fsDiffTex, v_texcoord).rgba;
-    vec3 n = normalize(mat3(MVP) * v_normal);
-    fragColor = diff;
+    vec3 n = normalize(mat3(MVP) * v_normal); // transform normal to eye space
+    fragColor = diff;// * vec4(v_normal.xyz, 1);
 }

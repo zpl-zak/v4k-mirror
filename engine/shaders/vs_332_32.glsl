@@ -1,3 +1,4 @@
+//uniform mat4 u_model, u_view, u_proj;
 uniform mat4 u_mvp;
 
 in vec3 att_position;
@@ -9,12 +10,12 @@ out vec3 v_normal;
 out vec3 v_normal_ws;
 out vec2 v_texcoord;
 
-
+// shadow
 uniform mat4 model, view, proj;
-uniform mat4 cameraToShadowProjector;
+uniform mat4 cameraToShadowProjector; // !VSMCUBE
 out vec4 vneye;
 out vec4 vpeye;
-out vec4 sc;
+out vec4 sc; // !VSMCUBE
 void do_shadow() {
     vneye = view * model * vec4(att_normal,   0.0f);
     vpeye = view * model * vec4(att_position, 1.0);
@@ -22,10 +23,10 @@ void do_shadow() {
 }
 
 void main() {
-    
+    //    gl_Position = proj * view * model * vec4(att_position, 1.0);
     gl_Position = u_mvp * vec4(att_position, 1.0);
     v_normal = normalize(att_normal);
-    v_normal_ws = normalize(vec3(model * vec4(att_normal, 0.)));
+    v_normal_ws = normalize(vec3(model * vec4(att_normal, 0.))); // normal world/model space
     v_texcoord = att_texcoord;
     v_color = att_color;
     do_shadow();
