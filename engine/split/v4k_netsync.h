@@ -33,8 +33,9 @@ enum { NETWORK_PORT = 2, NETWORK_IP, NETWORK_LIVE };
 API int64_t network_get(uint64_t key);
 API int64_t network_put(uint64_t key, int64_t value);
 
-API void  network_rpc_insert(const char *signature, void *function);
-API char *network_rpc(unsigned id, const char *cmdline);
+API void network_rpc(const char *signature, void *function);
+API void network_rpc_send_to(int64_t rank, unsigned id, const char *cmdline);
+API void network_rpc_send(unsigned id, const char *cmdline);
 
 // -----------------------------------------------------------------------------
 // low-level api (sockets based)
@@ -45,6 +46,7 @@ API void server_broadcast_bin(const void *ptr, int len);
 API void server_broadcast(const char *msg);
 API void server_terminate();
 API void server_send(int64_t handle, const char *msg);
+API void server_send_bin(int64_t handle, const void *ptr, int len);
 API void server_drop(int64_t handle);
 
 API int64_t  client_join(const char *ip, int port);

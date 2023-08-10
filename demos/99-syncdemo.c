@@ -15,6 +15,12 @@ struct world_t {
     struct npc_t npc[MAX_NPCS];
 } world = {0};
 
+char *show_notification(char *msg) {
+    printf("notif %s\n", msg);
+    ui_notify("server", msg);
+    return NULL;
+}
+
 void bind_netbuffers(int64_t self_id) {
     uint32_t colors[] = { ORANGE,GREEN,RED,CYAN,PURPLE,YELLOW,GRAY,PINK,AQUA };
     for (int64_t i=0; i<MAX_NPCS; ++i) {
@@ -30,6 +36,11 @@ void bind_netbuffers(int64_t self_id) {
         world.player[i].color = colors[i%(sizeof colors / sizeof colors[0])];
         network_buffer(&world.player[i], sizeof(struct player_t), i!=self_id ? NETWORK_RECV : NETWORK_SEND, i /* each client owns exactly 1 buffer */);
     };
+
+    // register server->client rpc
+    if (self_id > 0) {
+        network_rpc("char* show_notification(char*)", show_notification);
+    }
 }
 
 int main() {
@@ -59,6 +70,12 @@ int main() {
                 bind_netbuffers(self_id);
             }
             continue;
+        }
+
+        /* quick hack to broadcast notif from host */
+        if (self_id == 0 && input_down(KEY_F3)) {
+            printf("rpc %s\n", "show_notification \"hi, sailor!\"");
+            network_rpc_send(rand()%4, "show_notification \"hi, sailor!\"");
         }
 
         // camera tracking

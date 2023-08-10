@@ -121,12 +121,11 @@ static void enet_init() {
     }
 }
 
-
 static ENetHost *Server;
 static map(ENetPeer *, int64_t) clients;
 static map(int64_t, ENetPeer *) peers;
 static int64_t next_client_id = 1; // assumes ID 0 is server
-enum { MSG_INIT, MSG_BUF, MSG_RPC };
+enum { MSG_INIT, MSG_BUF, MSG_RPC, MSG_RPC_RESP };
 
 bool server_bind(int max_clients, int port) {
     map_init(clients, less_64, hash_64);
@@ -181,21 +180,25 @@ void server_poll() {
 
                 // @todo: propagate event to user
                 switch (mid) {
-                    case MSG_INIT: {
-                        uint64_t *cid = map_find(clients, event.peer);
-                        if (cid) {
-                            char init_msg[12];
-                            *(uint32_t*)&init_msg[0] = MSG_INIT;
-                            *(uint64_t*)&init_msg[4] = *cid;
-                            ENetPacket *packet = enet_packet_create(init_msg, 12, ENET_PACKET_FLAG_RELIABLE);
-                            enet_peer_send(event.peer, 0, packet);
-                        } else {
-                            PRINTF("ignoring unk MSG_INIT client packet.\n");
-                        }
-                    } break;
-                    default:
-                        PRINTF("recving unk %d sz %d from peer %s\n", mid, sz, dbg);
+                case MSG_INIT: {
+                    uint64_t *cid = map_find(clients, event.peer);
+                    if (cid) {
+                        char init_msg[12];
+                        *(uint32_t*)&init_msg[0] = MSG_INIT;
+                        *(uint64_t*)&init_msg[4] = *cid;
+                        ENetPacket *packet = enet_packet_create(init_msg, 12, ENET_PACKET_FLAG_RELIABLE);
+                        enet_peer_send(event.peer, 0, packet);
+                    } else {
+                        PRINTF("ignoring unk MSG_INIT client packet.\n");
                     }
+                } break;
+                case MSG_RPC:
+                case MSG_RPC_RESP:
+                    // @todo: process and send a response back
+                    break;
+                default:
+                    PRINTF("recving unk %d sz %d from peer %s\n", mid, sz, dbg);
+                }
 
                 /* Clean up the packet now that we're done using it. */
                 enet_packet_destroy( event.packet );
@@ -241,11 +244,15 @@ void client_poll() {
 
                 // @todo: propagate event to user
                 switch (mid) {
-                    case MSG_INIT:
-                        /* handled during client_join */
-                        break;
-                    default:
-                        PRINTF("recving unk %d sz %d from peer %s\n", mid, sz, dbg);
+                case MSG_INIT:
+                    /* handled during client_join */
+                    break;
+                case MSG_RPC:
+                case MSG_RPC_RESP:
+                    // @todo: process and send a response back
+                    break;
+                default:
+                    PRINTF("recving unk %d sz %d from peer %s\n", mid, sz, dbg);
                     }
 
                 /* Clean up the packet now that we're done using it. */
@@ -357,9 +364,13 @@ void server_drop(int64_t handle) {
     server_drop_client(handle);
 }
 
-void server_send(int64_t handle, const char *msg) {
-    ENetPacket *packet = enet_packet_create(msg, strlen(msg) + 1, ENET_PACKET_FLAG_RELIABLE);
+void server_send_bin(int64_t handle, const void *ptr, int len) {
+    ENetPacket *packet = enet_packet_create(ptr, len, ENET_PACKET_FLAG_RELIABLE);
     enet_peer_send(*(ENetPeer **)map_find(peers, handle), 0, packet);
+}
+
+void server_send(int64_t handle, const char *msg) {
+    server_send_bin(handle, msg, strlen(msg)+1);
 }
 
 // ---
@@ -575,9 +586,24 @@ char** network_sync(unsigned timeout_ms) {
                         memcpy(nb->ptr, ptr, *len);
                     }
                 } break;
+                case MSG_RPC: {
+                    unsigned id = *(uint32_t*)ptr; ptr += 4;
+                    char *cmdline = ptr;
+                    char *resp = rpc(id, cmdline);
+                    char *resp_msg = MALLOC(strlen(resp) + 5);
+                    *(uint32_t*)&resp_msg[0] = MSG_RPC_RESP;
+                    memcpy(&resp_msg[4], resp, strlen(resp)+1);
+                    ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 4, ENET_PACKET_FLAG_RELIABLE);
+                    enet_peer_send(event.peer, 0, packet);
+                    FREE(resp_msg);
+                } break;
+                case MSG_RPC_RESP: {
+                    // @todo: react on response?
+                    msg = ptr;
+                } break;
                 default:
-                    break;
                     // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
+                    break;
                 }
                 /* Clean up the packet now that we're done using it. */
                 enet_packet_destroy( event.packet );
@@ -605,4 +631,29 @@ char** network_sync(unsigned timeout_ms) {
 
     array_push(events, NULL);
     return events;
+}
+
+void network_rpc(const char *signature, void *function) {
+    rpc_insert(signature, function);
+}
+
+void network_rpc_send_to(int64_t rank, unsigned id, const char *cmdline) {
+    assert(network_get(NETWORK_RANK) == 0); /* must be a host */
+    unsigned sz = strlen(cmdline) + 8;
+    char *msg = MALLOC(sz);
+    *(uint32_t*)&msg[0] = MSG_RPC;
+    *(uint32_t*)&msg[4] = id;
+    memcpy(&msg[8], cmdline, sz-8);
+    server_send_bin(rank, msg, sz);
+    FREE(msg);
+}
+
+void network_rpc_send(unsigned id, const char *cmdline) {
+    unsigned sz = strlen(cmdline) + 8;
+    char *msg = MALLOC(sz);
+    *(uint32_t*)&msg[0] = MSG_RPC;
+    *(uint32_t*)&msg[4] = id;
+    memcpy(&msg[8], cmdline, sz-8);
+    server_broadcast_bin(msg, sz);
+    FREE(msg);
 }
