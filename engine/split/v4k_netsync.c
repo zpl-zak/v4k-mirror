@@ -639,15 +639,21 @@ void network_rpc(const char *signature, void *function) {
 
 void network_rpc_send_to(int64_t rank, unsigned id, const char *cmdline) {
     assert(network_get(NETWORK_RANK) == 0); /* must be a host */
-    char *msg = va("%*.s%s", 8, "", cmdline); 
+    unsigned sz = strlen(cmdline) + 8;
+    char *msg = MALLOC(sz);
     *(uint32_t*)&msg[0] = MSG_RPC;
     *(uint32_t*)&msg[4] = id;
+    memcpy(&msg[8], cmdline, sz-8);
     server_send_bin(rank, msg, sz);
+    FREE(msg);
 }
 
 void network_rpc_send(unsigned id, const char *cmdline) {
-    char *msg = va("%*.s%s", 8, "", cmdline); 
+    unsigned sz = strlen(cmdline) + 8;
+    char *msg = MALLOC(sz);
     *(uint32_t*)&msg[0] = MSG_RPC;
     *(uint32_t*)&msg[4] = id;
+    memcpy(&msg[8], cmdline, sz-8);
     server_broadcast_bin(msg, sz);
+    FREE(msg);
 }
