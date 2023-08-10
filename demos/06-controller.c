@@ -5,7 +5,7 @@
 //    `make     demos\04-controller.c` (windows)
 // `sh MAKE.bat demos/04-controller.c` (linux, osx)
 
-#include "fwk.h"
+#include "v4k.h"
 
 int main() {
     // 75% window, MSAAx2 flag

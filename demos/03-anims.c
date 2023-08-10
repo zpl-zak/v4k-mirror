@@ -8,7 +8,7 @@
 // @todo: instanced poses, instanced render_bones
 // @todo: ik, modify bone transform (bone space)
 
-#include "fwk.h"
+#include "v4k.h"
 
 typedef struct anims_t {
     int   inuse; // animation number in use
@@ -182,5 +182,5 @@ int main() {
 // @todo: controller demo: anim controller.lua
 
 // this demo supersedes following old sources:
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-anims.c
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-instanced.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-anims.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-instanced.c

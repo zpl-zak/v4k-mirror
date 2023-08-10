@@ -5,7 +5,7 @@
 //    `make     demos\02-ddraw.c` (windows)
 // `sh MAKE.bat demos/02-ddraw.c` (linux, osx)
 
-#include "fwk.h"
+#include "v4k.h"
 
 int main() {
     bool do_colliders_demo = 1;
@@ -116,4 +116,4 @@ int main() {
 }
 
 // this demo supersedes following old sources:
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-collide.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-collide.c

@@ -1,7 +1,7 @@
 // instanced models demo
 // - rlyeh, public domain.
 
-#include "fwk.h"
+#include "v4k.h"
 
 int main() {
     window_create(75, WINDOW_MSAA2);

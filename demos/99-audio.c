@@ -1,7 +1,7 @@
 // audio demo
 // - rlyeh, public domain
 
-#include "fwk.h"
+#include "v4k.h"
 
 int main() {
     // window (80% sized, MSAA x4 flag)

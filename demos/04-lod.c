@@ -1,7 +1,7 @@
 // LOD demo, based on Polygon Reduction Demo by Stan Melax (PD)
 // - rlyeh, public domain.
 
-#include "fwk.h"
+#include "v4k.h"
 
 aabb mesh_bounds(mesh_t *m) {
     aabb b = {{1e9,1e9,1e9},{-1e9,-1e9,-1e9}};

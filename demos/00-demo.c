@@ -1,7 +1,7 @@
 // framework demo
 // - rlyeh, public domain
 
-#include "fwk.h"
+#include "v4k.h"
 
 int main() {
     // options

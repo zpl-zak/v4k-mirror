@@ -4,7 +4,7 @@
 // credits: original lovely demo by rxi (MIT License).
 // see https://github.com/rxi/autobatch/tree/master/demo/cats
 
-#include "fwk.h"
+#include "v4k.h"
 
 texture_t kids, catImage, shadowImage, inputs;
 int NUM_SPRITES = 100, NUM_SPRITES_CHANGED = 1;
@@ -141,7 +141,7 @@ void demo_kids() {
 
 int main(int argc, char **argv) {
     window_create(75.f, 0);
-    window_title("FWK - Sprite");
+    window_title("V4K - Sprite");
 
     // options
     int do_cats = 1;

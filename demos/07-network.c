@@ -5,7 +5,7 @@
 //    `make     demos\07-network.c` (windows)
 // `sh MAKE.bat demos/07-network.c` (linux, osx)
 
-#include "fwk.h"
+#include "v4k.h"
 
 volatile int client_socket = -1;
 volatile int server_socket = -1;
@@ -72,9 +72,9 @@ int main() {
 }
 
 // this demo supersedes following old sources:
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-demo.c
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-script.c
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-socket.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-demo.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-script.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-socket.c
 
 #if 0 // teal
     script_run("local tl=require(\"tl\")\ntl.loader()");
