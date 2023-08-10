@@ -596,7 +596,7 @@ details > summary::-webkit-details-marker {
 |Version:       | 2023.7      |
 |:--------------|:------------|
 |Branch:        | main           |
-|Commit:        | 13               |
+|Commit:        | 17               |
 <!--| Documentation last modified | { {LAST_MODIFIED} } |-->
 
 # [V·4·K 2023.7     ](https://dev.v4.games/zaklaus/v4k)
@@ -653,7 +653,7 @@ void assert_positive( int my_int ) { // lowercase snake_case everywhere
 
 
 - [x] Pipeline: configurable and integrated [asset pipeline](tools/cook.ini).
-- [x] Embedded: single-file header, all dependencies included.
+- [x] Embedded: [single-file header](engine/joint/fwk.h), all dependencies included.
 - [x] Compiler: MSVC, MINGW64, TCC, GCC, clang, clang-cl and emscripten.
 - [x] Linkage: Both static linkage and dynamic .dll/.so/.dylib support. 
 - [x] Platform: Windows, Linux and OSX. Partial HTML5/Web support.
@@ -851,8 +851,9 @@ end
 <details><summary>Quickstart</summary>
 
 
-- Double-click `MAKE.bat` (Win) or `sh MAKE.bat` (Linux/OSX) to compile everything.
-- `MAKE.bat sln` (Win) or `sh MAKE.bat sln` (Linux/OSX) to generate solutions/makefiles.
+- Double-click `MAKE.bat` (Win) or `sh MAKE.bat` (Linux/OSX) to quick start.
+- `MAKE.bat all` (Win) or `sh MAKE.bat all` (Linux/OSX) to build everything.
+- `MAKE.bat proj` (Win) or `sh MAKE.bat proj` (Linux/OSX) to generate solutions/makefiles.
 - `MAKE.bat help` (Win) or `sh MAKE.bat help` (Linux/OSX) for a bunch of options.
 - `MAKE.bat hello.c` (Win) or `sh MAKE.bat hello.c` (Linux/OSX) to build a single executable.
 - Alternatively,
@@ -885,7 +886,7 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 - Similar to the ico/png case above, the cooked .zipfiles can be named after the main executable as well.
 - Dropped files into game window will be imported & saved into [`import/`](engine/art/import/) folder.
 - Update the gamepad controller database by upgrading the [`gamecontrollerdb.txt`](engine/art/input/) file.
-- Depending on your IDE, you might need to browse to [`engine/split/`](engine/split/) sources when debugging V4K.
+- Depending on your IDE, you might need to browse to [`engine/split/`](engine/split/) sources when debugging FWK.
 - Cook assets on demand, as opposed to cook all existing assets on depot, by using `--cook-on-demand` flag.
 - Linux/OSX users can optionally install wine and use the Windows tools instead (by using `--cook-wine` flag).
 - Disable automatic cooking by using `--cook-jobs=0` flag (not recommended).
@@ -901,7 +902,10 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 
 **Artwork**
 [Dean Evans, Raijin](https://youtu.be/RRvYkrrpMKo?t=147 "for the Map song (c)"),
+[FMS_Cat](https://gist.github.com/FMS-Cat/a1ccea3ce866c34706084e3526204f4f "for nicest VHS/VCR shader around (MIT)"),
+[Goblin165cm](https://sketchfab.com/3d-models/halloween-little-witch-ccc023590bfb4789af9322864e42d1ab "for witch 3D model (CC BY 4.0)"),
 [Nuulbee](https://sketchfab.com/3d-models/kgirls01-d2f946f58a8040ae993cda70c97b302c "for kgirls01 3D model (CC BY-NC-ND 4.0)"),
+[Quaternius](https://www.patreon.com/quaternius "for the lovely 3D robots (CC0)"),
 [Rotting Pixels](https://opengameart.org/content/2d-castle-platformer-tileset-16x16 "for castle-tileset (CC0)"),
 [Tom Lewandowski](https://QuestStudios.com "for his MIDI recordings (c)"),
 [Rye Terrell](https://github.com/wwwtyro/glsl-atmosphere "for nicest rayleigh/mie scattering shader around (CC0)"),
@@ -953,6 +957,7 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 [Micha Mettke](https://github.com/vurtun "for their math library (PD)"),
 [Micha Mettke, Chris Willcocks, Dmitry Hrabrov](https://github.com/vurtun/nuklear "for nuklear (PD)"),
 [Michael Galetzka](https://github.com/Cultrarius/Swarmz "for swarmz (UNLICENSE)"),
+[Morten Vassvik](https://github.com/vassvik/mv_easy_font "for mv_easy_font (Unlicense)"),
 [Mārtiņš Možeiko](https://gist.github.com/mmozeiko/68f0a8459ef2f98bcd879158011cc275 "for A* pathfinding (PD)"),
 [Omar Cornut, vaiorabbit](https://github.com/ocornut/imgui/pull/3627 "for tables of unicode ranges (MIT-0)"),
 [Rabia Alhaffar](https://github.com/Rabios/ice_libs "for ice_batt.h (PD)"),
@@ -965,16 +970,12 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 [Stefan Gustavson](https://github.com/stegu/perlin-noise "for simplex noise (PD)"),
 [Sterling Orsten](https://github.com/sgorsten "for their math library (UNLICENSE)"),
 [Tor Andersson](https://github.com/ccxvii/minilibs "for xml.c (PD)"),
-[Vassvik](https://github.com/vassvik/mv_easy_font "for mv_easy_font (Unlicense)"),
 [Wolfgang Draxinger](https://github.com/datenwolf "for their math library (WTFPL2)"), 
 
 <!--
 - [DavidLam](https://en.wikipedia.org/wiki/Tokamak_(software) "for tokamak physics engine (ZLIB)")
-- [FMS_Cat](https://gist.github.com/FMS-Cat/a1ccea3ce866c34706084e3526204f4f "for nicest VHS/VCR shader around (MIT)")
-- [Goblin165cm](https://sketchfab.com/3d-models/halloween-little-witch-ccc023590bfb4789af9322864e42d1ab "for witch 3D model (CC BY 4.0)")
 - [ID Software, David St-Louis](https://github.com/Daivuk/PureDOOM "for PureDOOM (Doom License)")
 - [Miloslav Číž](https://codeberg.org/drummyfish/Anarch "for Anarch (CC0)")
-- [Quaternius](https://www.patreon.com/quaternius "for the lovely 3D robots (CC0)")
 - [Rxi](https://github.com/rxi/autobatch "for lovely sprites & cats demo (MIT)")
 -->
 
@@ -984,15 +985,6 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 
 
 This software is released into the [public domain](https://unlicense.org/). Also dual-licensed as [0-BSD](https://opensource.org/licenses/0BSD) or [MIT (No Attribution)](https://github.com/aws/mit-0) for those countries where public domain is a concern (sigh). Any contribution to this repository is implicitly subjected to the same release conditions aforementioned.
-
-</details>
-
-<details><summary>Links</summary>
-
-
-Still looking for alternatives? [amulet](https://github.com/ianmaclarty/amulet), [aroma](https://github.com/leafo/aroma/), [astera](https://github.com/tek256/astera), [blendelf](https://github.com/jesterKing/BlendELF), [bullordengine](https://github.com/MarilynDafa/Bulllord-Engine), [candle](https://github.com/EvilPudding/candle), [cave](https://github.com/kieselsteini/cave), [chickpea](https://github.com/ivansafrin/chickpea), [corange](https://github.com/orangeduck/Corange), [cute](https://github.com/RandyGaul/cute_framework), [dos-like](https://github.com/mattiasgustavsson/dos-like), [ejoy2d](https://github.com/ejoy/ejoy2d), [exengine](https://github.com/exezin/exengine), [gunslinger](https://github.com/MrFrenik/gunslinger), [hate](https://github.com/excessive/hate), [island](https://github.com/island-org/island), [juno](https://github.com/rxi/juno), [l](https://github.com/Lyatus/L), [lgf](https://github.com/Planimeter/lgf), [limbus](https://github.com/redien/limbus), [love](https://github.com/love2d/love/), [lovr](https://github.com/bjornbytes/lovr), [mini3d](https://github.com/mini3d/mini3d), [mintaro](https://github.com/mackron/mintaro), [mio](https://github.com/ccxvii/mio), [olive.c](https://github.com/tsoding/olive.c), [opensource](https://github.com/w23/OpenSource), [ouzel](https://github.com/elnormous/ouzel/), [pez](https://github.com/prideout/pez), [pixie](https://github.com/mattiasgustavsson/pixie), [punity](https://github.com/martincohen/Punity), [r96](https://github.com/badlogic/r96), [ricotech](https://github.com/dbechrd/RicoTech), [rizz](https://github.com/septag/rizz), [tigr](https://github.com/erkkah/tigr), [yourgamelib](https://github.com/duddel/yourgamelib)
-
-<a href="https://github.com/r-lyeh/V4K/issues"><img alt="Issues" src="https://img.shields.io/github/issues-raw/r-lyeh/V4K.svg"/></a> <a href="https://discord.gg/vu6Vt9d"><img alt="Discord" src="https://img.shields.io/discord/270565488365535232?color=5865F2&label=chat&logo=discord&logoColor=white"/></a>
 </details>
 
 ## config

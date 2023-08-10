@@ -85,7 +85,8 @@ function demos(...)
 end
 
 demos(
-    "bytebeat"
+    "00-hello","01-sprite","02-ddraw","03-character","04-control",
+    "04-scene","05-network","06-pbr"
 )
 
 -- games

@@ -70,7 +70,7 @@ while [ $# -ge 1 ]; do
         echo sh MAKE.bat [amalgamation]
         echo sh MAKE.bat [prep]
         echo sh MAKE.bat [cook]
-        echo sh MAKE.bat [sln]
+        echo sh MAKE.bat [proj]
         exit
     fi
     if [ "$1" = "dll" ]; then 
@@ -100,7 +100,7 @@ while [ $# -ge 1 ]; do
     if [ "$1" = "tcc" ]; then 
         export cc="tcc -D__STDC_NO_VLA__"
     fi
-    if [ "$1" = "sln" ]; then
+    if [ "$1" = "proj" ]; then
         if [ "$(uname)" != "Darwin" ]; then
             chmod +x tools/premake5.linux
             tools/premake5.linux gmake
@@ -174,15 +174,14 @@ if [ "$(uname)" != "Darwin" ]; then
 
     # demos
     echo hello         && $cc -o hello         hello.c               -lm -ldl -lpthread -lX11 -w -Iengine/ $flags         $args &
-  # echo 00-ui         && $cc -o 00-ui         demos/00-ui.c         -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 01-sprite     && $cc -o 01-sprite     demos/01-sprite.c     -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 02-ddraw      && $cc -o 02-ddraw      demos/02-ddraw.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 03-anims      && $cc -o 03-anims      demos/03-anims.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 04-actor      && $cc -o 04-actor      demos/04-actor.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 04-controller && $cc -o 04-controller demos/04-controller.c -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 05-scene      && $cc -o 05-scene      demos/05-scene.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 06-pbr        && $cc -o 06-pbr        demos/06-pbr.c        -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
-  # echo 07-network    && $cc -o 07-network    demos/07-network.c    -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args
+    echo 00-ui         && $cc -o 00-ui         demos/00-ui.c         -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 01-sprite     && $cc -o 01-sprite     demos/01-sprite.c     -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 02-ddraw      && $cc -o 02-ddraw      demos/02-ddraw.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 03-anims      && $cc -o 03-anims      demos/03-anims.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 04-actor      && $cc -o 04-actor      demos/04-actor.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 05-scene      && $cc -o 05-scene      demos/05-scene.c      -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 06-controller && $cc -o 06-controller demos/06-controller.c -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args &
+    echo 07-network    && $cc -o 07-network    demos/07-network.c    -lm -ldl -lpthread -lX11 -w -Iengine/ $flags $import $args
 fi
 
 if [ "$(uname)" = "Darwin" ]; then
@@ -229,15 +228,14 @@ if [ "$(uname)" = "Darwin" ]; then
 
     # demos
     echo hello         && cc -o hello -ObjC   hello.c               -w -Iengine/         $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 00-ui         && cc -o 00-ui         demos/00-ui.c         -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 01-sprite     && cc -o 01-sprite     demos/01-sprite.c     -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 02-ddraw      && cc -o 02-ddraw      demos/02-ddraw.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 03-anims      && cc -o 03-anims      demos/03-anims.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 04-actor      && cc -o 04-actor      demos/04-actor.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 04-controller && cc -o 04-controller demos/04-controller.c -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 05-scene      && cc -o 05-scene      demos/05-scene.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 06-pbr        && cc -o 06-pbr        demos/06-pbr.c        -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
-  # echo 07-network    && cc -o 07-network    demos/07-network.c    -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox
+    echo 00-ui         && cc -o 00-ui         demos/00-ui.c         -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 01-sprite     && cc -o 01-sprite     demos/01-sprite.c     -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 02-ddraw      && cc -o 02-ddraw      demos/02-ddraw.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 03-anims      && cc -o 03-anims      demos/03-anims.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 04-actor      && cc -o 04-actor      demos/04-actor.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 05-scene      && cc -o 05-scene      demos/05-scene.c      -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 06-controller && cc -o 06-controller demos/06-controller.c -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox &
+    echo 07-network    && cc -o 07-network    demos/07-network.c    -w -Iengine/ $import $flags $args -framework cocoa -framework iokit -framework audiotoolbox
 fi
 
 exit
@@ -289,8 +287,8 @@ if "%1"=="help" (
     echo    static   \ link v4k as static library
     echo    dll      / link v4k as dynamic library (dll^) (default^)
     echo    nov4k    \ do not compile framework
-    echo    nodemos  ^| do not compile demos
-    echo    editor / do compile editor
+    echo    demos    ^| do compile demos
+    echo    editor   / do compile editor
     echo    vis      ^> visualize invokation cmdline.
     echo    args     ^> after `--` separator is found, pass all remaining arguments to compiler as-is
     echo.
@@ -527,10 +525,11 @@ set build=dev
 set args=-Iengine
 set other=
 set v4k=yes
-set demos=yes
+set hello=yes
+set demos=no
 set editor=no
 set vis=no
-set sln=no
+set proj=no
 set rc=0
 
 :parse_args
@@ -554,8 +553,10 @@ set rc=0
 
     if "%1"=="nov4k"    set "v4k=no" && goto loop
     if "%1"=="nodemos"  set "demos=no" && goto loop
+    if "%1"=="demos"    set "demos=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
-    if "%1"=="editor"   set "editor=yes" && goto loop
+    if "%1"=="editor"   set "editor=yes" && set "hello=no"&& goto loop
+    if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "editor=yes" && set "hello=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
     if "%1"=="cl"       set "cc=%1" && goto loop
@@ -565,7 +566,7 @@ set rc=0
     if "%1"=="clang"    set "cc=%1" && goto loop
     if "%1"=="clang-cl" set "cc=%1" && goto loop
 
-    if "%1"=="sln"      set "sln=yes" && goto loop
+    if "%1"=="proj"     set "proj=yes" && goto loop
 
     if not "%1"==""     set "other=!other! %1" && set "editor=no" && set "demos=no"
 
@@ -604,9 +605,10 @@ if "!cc!"=="" (
 )
 
 rem solution. @todo: lin/osx
-if "!sln!"=="yes" if not "%vs%"=="" pushd tools && premake5 vs20%vs% & popd
-if "!sln!"=="yes"                   pushd tools && premake5 ninja    & popd
-if "!sln!"=="yes"                   pushd tools && premake5 gmake    & popd & exit /b
+if "!proj!"=="yes" if not "%vs%"=="00" pushd tools && premake5 vs20%vs% & popd
+if "!proj!"=="yes" if     "%vs%"=="00" pushd tools && premake5 vs2013   & popd
+if "!proj!"=="yes"                     pushd tools && premake5 ninja    & popd
+if "!proj!"=="yes"                     pushd tools && premake5 gmake    & popd & exit /b
 
 rem --- pipeline
 rem cl tools/ass2iqe.c   /Fetools/ass2iqe.exe  /nologo /openmp /O2 /Oy /MT /DNDEBUG assimp.lib
@@ -760,20 +762,19 @@ if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !impor
 
 rem demos
 if "!demos!"=="yes" (
-rem !echo! hello         && !cc! !o! hello.exe         hello.c                               !args! || set rc=1
-!echo! 99-syncdemo   && !cc! !o! 99-syncdemo.exe   demos\99-syncdemo.c          !import! !args! || set rc=1
-!echo! 99-shadertoy  && !cc! !o! 99-shadertoy.exe  demos\99-shadertoy.c         !import! !args! || set rc=1
-!echo! 99-material   && !cc! !o! 99-material.exe   demos\99-material.c          !import! !args! || set rc=1
-!echo! 99-video      && !cc! !o! 99-video.exe      demos\99-video.c             !import! !args! || set rc=1
-rem !echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
-rem !echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
-rem !echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1
-rem !echo! 03-anims      && !cc! !o! 03-anims.exe      demos\03-anims.c         !import! !args! || set rc=1
-rem !echo! 04-actor      && !cc! !o! 04-actor.exe      demos\04-actor.c         !import! !args! || set rc=1
-rem !echo! 04-controller && !cc! !o! 04-controller.exe demos\04-controller.c    !import! !args! || set rc=1
-rem !echo! 05-scene      && !cc! !o! 05-scene.exe      demos\05-scene.c         !import! !args! || set rc=1
-rem !echo! 06-pbr        && !cc! !o! 06-pbr.exe        demos\06-pbr.c           !import! !args! || set rc=1
-rem !echo! 07-network    && !cc! !o! 07-network.exe    demos\07-network.c       !import! !args! || set rc=1
+!echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
+!echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
+!echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1
+!echo! 03-anims      && !cc! !o! 03-anims.exe      demos\03-anims.c         !import! !args! || set rc=1
+!echo! 04-actor      && !cc! !o! 04-actor.exe      demos\04-actor.c         !import! !args! || set rc=1
+!echo! 05-scene      && !cc! !o! 05-scene.exe      demos\05-scene.c         !import! !args! || set rc=1
+!echo! 06-controller && !cc! !o! 06-controller.exe demos\06-controller.c    !import! !args! || set rc=1
+!echo! 07-network    && !cc! !o! 07-network.exe    demos\07-network.c       !import! !args! || set rc=1
+)
+
+rem hello
+if "!hello!"=="yes" (
+!echo! hello         && !cc! !o! hello.exe         hello.c                           !args! || set rc=1
 )
 
 rem user-defined apps
