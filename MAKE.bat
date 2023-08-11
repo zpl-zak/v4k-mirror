@@ -391,7 +391,7 @@ rem move /y 3rd_*.? engine\split\
 if "%1"=="pull" (
     git remote add fwk git@github.com:r-lyeh/FWK.git 2>NUL
     git fetch fwk
-    git merge -Xrename-threshold=50 fwk/main
+    git merge -Xrename-threshold=50 --allow-unrelated-histories fwk/main
     exit /b
 )
 
