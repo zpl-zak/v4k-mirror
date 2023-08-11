@@ -473,7 +473,29 @@ if "%1"=="fwk" (
         if /i not "!filename:~0,4!"=="3rd_" (
             echo Processing: %%f
             powershell -command "(Get-Content '%%f') -creplace 'v4k', 'fwk' -creplace 'V4K', 'FWK' | Set-Content '%%f'"
-            rem powershell -command "(Get-Content '%%f') -replace 'V4K', 'FWK' | Set-Content '%%f'"
+        ) else (
+            echo Skipping %%f
+        )
+    )
+
+    echo All done.
+    endlocal
+    exit /b
+)
+
+if "%1"=="back" (
+    setlocal enabledelayedexpansion
+    for %%f in ("_fwk\fwk*") do (
+        set "filename=%%~nf"
+        set "newname=v4k!filename:fwk=!%%~xf"
+        echo Copying and renaming "%%f" to "engine\split\!newname!"
+        copy "%%f" "engine\split\!newname!"
+    )
+    for %%f in (engine\split\*) do (
+        set "filename=%%~nxf"
+        if /i not "!filename:~0,4!"=="3rd_" (
+            echo Processing: %%f
+            powershell -command "(Get-Content '%%f') -creplace 'fwk', 'v4k' -creplace 'FWK', 'V4K' | Set-Content '%%f'"
         ) else (
             echo Skipping %%f
         )

@@ -35571,7 +35571,7 @@ int tls_remote_error(struct TLSContext *context);
 ------------------------------------------------------------------------------
 */
 /********************************************************************************
- Copyright (c) 2016-2021, Eduard Suica
+ Copyright (c) 2016-2023, Eduard Suica
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without modification,
@@ -35681,13 +35681,13 @@ int tls_remote_error(struct TLSContext *context);
 // #endif
 
 #ifndef TLS_MALLOC
-    #define TLS_MALLOC(size)        malloc(size)
+    #define TLS_MALLOC  MALLOC //< @r-lyeh
 #endif
 #ifndef TLS_REALLOC
-    #define TLS_REALLOC(ptr, size)  realloc(ptr, size)
+    #define TLS_REALLOC REALLOC //< @r-lyeh
 #endif
 #ifndef TLS_FREE
-    #define TLS_FREE(ptr)           if (ptr) free(ptr)
+    #define TLS_FREE    FREE //< @r-lyeh
 #endif
 
 #define TLS_ERROR(err, statement)   if (err) statement;
@@ -42997,7 +42997,7 @@ int tls_parse_verify_tls13(struct TLSContext *context, const unsigned char *buf,
     unsigned short signature = ntohs(*(unsigned short *)&buf[3]);
     unsigned short signature_size = ntohs(*(unsigned short *)&buf[5]);
     int valid = 0;
-    CHECK_SIZE(7 + size, buf_len, TLS_NEED_MORE_DATA)
+    CHECK_SIZE(7 + signature_size, buf_len, TLS_NEED_MORE_DATA)
     switch (signature) {
 #ifdef TLS_ECDSA_SUPPORTED
         case 0x0403:
@@ -46726,14 +46726,13 @@ https_status_t https_process( https_t* https )
     #pragma warning( disable: 4548 ) // expression before comma has no effect; expected expression with side-effect
     FD_SET( internal->socket, &sockets_to_check );
     #pragma warning( pop )
-    struct timeval timeout; timeout.tv_sec = 0; timeout.tv_usec = 0;
 
-    int buflen = 65536 * 1024;//< @r-lyeh heap allocated buffer
-    static __thread char *buffer = 0; //< @r-lyeh heap allocated buffer
-    if(!buffer) memset(buffer = (char*)HTTPS_MALLOC(internal->memctx, buflen), 0, buflen); //< @r-lyeh heap allocated buffer
-
-    while( select( (int)( internal->socket + 1 ), &sockets_to_check, NULL, NULL, &timeout ) == 1 )
+    struct timeval timeout;
+    while( (timeout.tv_sec = 1, timeout.tv_usec = 0), select( (int)( internal->socket + 1 ), &sockets_to_check, NULL, NULL, &timeout ) == 1 )
         {
+
+        enum { buflen = 4 * 1024 };
+        char buffer[ buflen ];
 
         int size = recv( internal->socket, buffer, buflen, 0 );
         if( size == -1 )
@@ -46742,8 +46741,9 @@ https_status_t https_process( https_t* https )
             return https->status;
             }
 
-#if is(tcc) && is(64)
+#if is(tcc) && is(win32)
         // hexdump(buffer, size); //< @r-lyeh
+        // printf(">+=%d,%d/%d\n", size,internal->data_size,internal->data_capacity);
 #endif
 
         tls_consume_stream( internal->tls_context, (unsigned char*) buffer, size, 0 );
@@ -46782,7 +46782,6 @@ https_status_t https_process( https_t* https )
         else if( size == 0 )
             {
             char const* status_line = (char const*) internal->data;
-
             int header_size = 0;
             char const* header_end = strstr( status_line, "\r\n\r\n" );
             if( header_end )
