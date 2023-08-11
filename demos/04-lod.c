@@ -3,21 +3,6 @@
 
 #include "v4k.h"
 
-aabb mesh_bounds(mesh_t *m) {
-    aabb b = {{1e9,1e9,1e9},{-1e9,-1e9,-1e9}};
-    for( int i = 0; i < array_count(m->in_vertex3); ++i ) {
-        if( m->in_vertex3[i].x < b.min.x ) b.min.x = m->in_vertex3[i].x;
-        if( m->in_vertex3[i].x > b.max.x ) b.max.x = m->in_vertex3[i].x;
-
-        if( m->in_vertex3[i].y < b.min.y ) b.min.y = m->in_vertex3[i].y;
-        if( m->in_vertex3[i].y > b.max.y ) b.max.y = m->in_vertex3[i].y;
-
-        if( m->in_vertex3[i].z < b.min.z ) b.min.z = m->in_vertex3[i].z;
-        if( m->in_vertex3[i].z > b.max.z ) b.max.z = m->in_vertex3[i].z;
-    }
-    return b;
-}
-
 vec2 world2screen(vec3 p) {
     vec4 clip_pos = transform444(camera_get_active()->proj, transform444(camera_get_active()->view, vec4(p.x,p.y,p.z,1.0)));
     vec4 ndc_pos = scale4(clip_pos, 1.0 / (clip_pos.w + !clip_pos.w)); // [-1..1]
