@@ -10,7 +10,7 @@ int main() {
 
     // load video
     int is_rgb = flag("--rgb") ? 1 : 0;
-    video_t *v = video( "bjork-all-is-full-of-love.mp4", is_rgb ? VIDEO_RGB : VIDEO_YCBCR );
+    video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", is_rgb ? VIDEO_RGB : VIDEO_YCBCR );
 
     while( window_swap() ) {
         // decode video frame and get associated textures (audio is automatically sent to audiomixer)

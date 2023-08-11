@@ -100,7 +100,7 @@ int main() {
         }
 
         // background - draw grid
-        ddraw_grid(0);
+        ddraw_ground(0);
 
         // foreground - draw all players
         for( int id = 0; id < MAX_CLIENTS; ++id ) {
@@ -108,18 +108,16 @@ int main() {
             if (p->seen_until < date_epoch()) continue; /* skip inactive players */
             ddraw_color( p->color );
             ddraw_capsule(vec3(p->x,0,p->z), vec3(p->x,2,p->z), 1);
-            ddraw_text(vec3(p->x,4,p->z), 0.01, stringf("player #%d", id));
+            ddraw_text(vec3(p->x,4,p->z), 0.01, va("player #%d", id));
         }
         for( int id = 0; id < MAX_NPCS; ++id ) {
             struct npc_t *p = &world.npc[id];
             ddraw_color( p->color );
             ddraw_capsule(vec3(p->x,0,p->z), vec3(p->x,2,p->z), 1);
-            ddraw_text(vec3(p->x,4,p->z), 0.01, stringf("npc #%d", id));
+            ddraw_text(vec3(p->x,4,p->z), 0.01, va("npc #%d", id));
         }
 
         // stats
-        char title[64];
-        sprintf(title, "player #%lld", self_id);
-        window_title(title);
+        window_title(va("player #%lld", self_id));
     }
 }

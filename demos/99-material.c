@@ -9,7 +9,7 @@ int main() {
     // create camera
     camera_t cam = camera();
     // load video, RGB texture, no audio
-    video_t *v = video( "bjork-all-is-full-of-love.mp4", VIDEO_RGB | VIDEO_NO_AUDIO ); video_seek(v, 30);
+    video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO ); video_seek(v, 30);
     // load texture
     texture_t t1 = texture("kgirl/g01_texture.png", TEXTURE_RGB);
     texture_t t2 = texture("matcaps/material3", 0);
