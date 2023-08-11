@@ -1214,6 +1214,10 @@ API void    swarm_update_acceleration_only(swarm_t *self); // acc
 API void    swarm_update_acceleration_and_velocity_only(swarm_t *self, float delta); // acc,vel
 
 API int     ui_swarm(swarm_t *self);
+
+// pathfinding -----------------------------------------------------------------
+
+API int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
 #line 0
 
 #line 1 "v4k_audio.h"
@@ -3008,6 +3012,7 @@ API float       optionf(const char *commalist, float defaults); // app_option?
 API void        tty_color(unsigned color);
 API void        tty_reset();
 API void        tty_attach();
+API void        tty_detach();
 
 API const char* app_exec(const char *command); // returns ("%15d %s", retcode, output_last_line)
 API int         app_cores();

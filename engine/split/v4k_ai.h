@@ -44,3 +44,7 @@ API void    swarm_update_acceleration_only(swarm_t *self); // acc
 API void    swarm_update_acceleration_and_velocity_only(swarm_t *self, float delta); // acc,vel
 
 API int     ui_swarm(swarm_t *self);
+
+// pathfinding -----------------------------------------------------------------
+
+API int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);

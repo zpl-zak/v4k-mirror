@@ -1469,7 +1469,7 @@ int audio_queue( const void *samples, int num_samples, int flags ) {
         if( audio_queue_voice < 0 ) return 0;
     }
 
-    audio_queue_t *aq = MALLOC(sizeof(audio_queue_t) + bytes << (channels == 1)); // dupe space if going to be converted from mono to stereo
+    audio_queue_t *aq = MALLOC(sizeof(audio_queue_t) + (bytes << (channels == 1))); // dupe space if going to be converted from mono to stereo
     aq->cursor = 0;
     aq->avail = bytes;
     aq->flags = flags;
@@ -13197,6 +13197,21 @@ mesh_t mesh() {
     return z;
 }
 
+aabb mesh_bounds(mesh_t *m) {
+    aabb b = {{1e9,1e9,1e9},{-1e9,-1e9,-1e9}};
+    for( int i = 0; i < array_count(m->in_vertex3); ++i ) {
+        if( m->in_vertex3[i].x < b.min.x ) b.min.x = m->in_vertex3[i].x;
+        if( m->in_vertex3[i].x > b.max.x ) b.max.x = m->in_vertex3[i].x;
+
+        if( m->in_vertex3[i].y < b.min.y ) b.min.y = m->in_vertex3[i].y;
+        if( m->in_vertex3[i].y > b.max.y ) b.max.y = m->in_vertex3[i].y;
+
+        if( m->in_vertex3[i].z < b.min.z ) b.min.z = m->in_vertex3[i].z;
+        if( m->in_vertex3[i].z > b.max.z ) b.max.z = m->in_vertex3[i].z;
+    }
+    return b;
+}
+
 void mesh_update(mesh_t *m, const char *format, int vertex_stride,int vertex_count,const void *vertex_data, int index_count,const void *index_data, int flags) {
     m->flags = flags;
 
@@ -17329,6 +17344,9 @@ int tty_cols() {
 #endif
     return 80;
 }
+void tty_detach() {
+    ifdef(win32, FreeConsole());
+}
 void tty_attach() {
 #if is(win32)
     // in order to have a Windows gui application with console:
@@ -19913,6 +19931,9 @@ void (profile_render)() {
 
     if( has_menu ? ui_window("Profiler", 0) : ui_panel("Profiler", 0) ) {
 
+        double fps = window_fps();
+        profile_setstat("Render.num_fps", fps);
+
         if(1) { // @todo: ui_plot()
             // draw fps-meter: 300 samples, [0..70] range each, 70px height plot.
             nk_layout_row_dynamic(ui_ctx, 70, 1);
@@ -19920,7 +19941,7 @@ void (profile_render)() {
             enum { COUNT = 300 };
 
             static float values[COUNT] = {0}; static int offset = 0;
-            values[offset=(offset+1)%COUNT] = window_fps();
+            values[offset=(offset+1)%COUNT] = fps;
 
             int index = -1;
             if( nk_chart_begin(ui_ctx, NK_CHART_LINES, COUNT, 0.f, 70.f) ) {
@@ -21876,7 +21897,6 @@ int ui_swarm(swarm_t *self) {
 
 // pathfinding -----------------------------------------------------------------
 
-static
 int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath) {
 #define ALLOW_DIAGONAL_MOVEMENT 1
 

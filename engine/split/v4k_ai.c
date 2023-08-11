@@ -257,7 +257,6 @@ int ui_swarm(swarm_t *self) {
 
 // pathfinding -----------------------------------------------------------------
 
-static
 int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath) {
 #define ALLOW_DIAGONAL_MOVEMENT 1
 
