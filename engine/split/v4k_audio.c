@@ -520,7 +520,7 @@ int audio_queue( const void *samples, int num_samples, int flags ) {
         if( audio_queue_voice < 0 ) return 0;
     }
 
-    audio_queue_t *aq = MALLOC(sizeof(audio_queue_t) + bytes << (channels == 1)); // dupe space if going to be converted from mono to stereo
+    audio_queue_t *aq = MALLOC(sizeof(audio_queue_t) + (bytes << (channels == 1))); // dupe space if going to be converted from mono to stereo
     aq->cursor = 0;
     aq->avail = bytes;
     aq->flags = flags;

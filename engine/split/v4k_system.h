@@ -19,6 +19,7 @@ API float       optionf(const char *commalist, float defaults); // app_option?
 API void        tty_color(unsigned color);
 API void        tty_reset();
 API void        tty_attach();
+API void        tty_detach();
 
 API const char* app_exec(const char *command); // returns ("%15d %s", retcode, output_last_line)
 API int         app_cores();

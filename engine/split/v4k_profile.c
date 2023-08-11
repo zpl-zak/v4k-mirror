@@ -19,6 +19,9 @@ void (profile_render)() {
 
     if( has_menu ? ui_window("Profiler", 0) : ui_panel("Profiler", 0) ) {
 
+        double fps = window_fps();
+        profile_setstat("Render.num_fps", fps);
+
         if(1) { // @todo: ui_plot()
             // draw fps-meter: 300 samples, [0..70] range each, 70px height plot.
             nk_layout_row_dynamic(ui_ctx, 70, 1);
@@ -26,7 +29,7 @@ void (profile_render)() {
             enum { COUNT = 300 };
 
             static float values[COUNT] = {0}; static int offset = 0;
-            values[offset=(offset+1)%COUNT] = window_fps();
+            values[offset=(offset+1)%COUNT] = fps;
 
             int index = -1;
             if( nk_chart_begin(ui_ctx, NK_CHART_LINES, COUNT, 0.f, 70.f) ) {

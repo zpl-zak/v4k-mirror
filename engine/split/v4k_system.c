@@ -862,6 +862,9 @@ int tty_cols() {
 #endif
     return 80;
 }
+void tty_detach() {
+    ifdef(win32, FreeConsole());
+}
 void tty_attach() {
 #if is(win32)
     // in order to have a Windows gui application with console:
