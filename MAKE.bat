@@ -472,7 +472,8 @@ if "%1"=="fwk" (
         set "filename=%%~nxf"
         if /i not "!filename:~0,4!"=="3rd_" (
             echo Processing: %%f
-            powershell -command "(Get-Content '%%f') -creplace 'v4k', 'fwk' -creplace 'V4K', 'FWK' | Set-Content '%%f'"
+            rem powershell -command "(Get-Content '%%f') -creplace 'v4k', 'fwk' -creplace 'V4K', 'FWK' | Set-Content '%%f'"
+            tools\fwkren.exe %%f from
         ) else (
             echo Skipping %%f
         )
@@ -495,7 +496,8 @@ if "%1"=="back" (
         set "filename=%%~nxf"
         if /i not "!filename:~0,4!"=="3rd_" (
             echo Processing: %%f
-            powershell -command "(Get-Content '%%f') -creplace 'fwk', 'v4k' -creplace 'FWK', 'V4K' | Set-Content '%%f'"
+            rem powershell -command "(Get-Content '%%f') -creplace 'fwk', 'v4k' -creplace 'FWK', 'V4K' | Set-Content '%%f'"
+            tools\fwkren.exe %%f to
         ) else (
             echo Skipping %%f
         )
