@@ -91,7 +91,7 @@ int main() {
                     array_pop_front(points);
                 }
                 else {
-                    if( dist < 10 && abs(angle) > 10 ) {
+                    if( dist < 10 && fabsf(angle) > 10 ) {
                         // spin only
                         p->brain[ angle < 0 ? 2 : 3 ] = 1;
                     }

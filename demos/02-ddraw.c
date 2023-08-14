@@ -1,4 +1,4 @@
-// ddraw demo: fps camera, renderdd, collide, math, ui, fx
+// ddraw demo: fps camera, renderdd, collide, math, ui, fx, boids
 // - rlyeh, public domain.
 //
 // Compile with:
@@ -8,8 +8,9 @@
 #include "v4k.h"
 
 int main() {
+    bool do_boids_demo = 1;
     bool do_colliders_demo = 1;
-    bool do_debugdraw_demo = 0;
+    bool do_debugdraw_demo = 1;
 
     // 75% size, MSAAx2
     window_create(75.0, WINDOW_MSAA2);
@@ -60,7 +61,7 @@ int main() {
 
             // boids
             static swarm_t sw;
-            profile("boids") {
+            if( do_boids_demo ) profile("boids") {
                 do_once sw = swarm();
                 do_once array_push(sw.steering_targets, vec3(0,0,0));
                 do_once for(int i = 0; i < 100; ++i)
@@ -91,6 +92,7 @@ int main() {
 
         // ui
         if( ui_panel("App", 0) ) {
+            ui_bool("Boids demo", &do_boids_demo);
             ui_bool("Collide demo", &do_colliders_demo);
             ui_bool("DebugDraw demo", &do_debugdraw_demo);
             ui_panel_end();
