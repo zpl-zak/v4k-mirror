@@ -82,5 +82,5 @@ int main() {
 }
 
 // this demo supersedes following old sources:
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-hello.c
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-video.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-hello.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-video.c

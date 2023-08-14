@@ -224,7 +224,7 @@ while(window_swap() && !input(KEY_ESC)) {
     // model_render(sponza, cam.proj, cam.view, sponza.pivot, 0);
 
 // this demo supersedes following old sources:
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-material.c
-// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-shadertoy.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-material.c
+// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-shadertoy.c
 
 #endif
