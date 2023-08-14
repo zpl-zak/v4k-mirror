@@ -17,11 +17,11 @@ int main(int argc, char **argv) {
 	char mode = !strcmp(argv[2], "from");
 
 	if (!mode) {
-		buf = strswap(buf, "v4k", "fwk");
-		buf = strswap(buf, "V4K", "FWK");
-	} else {
 		buf = strswap(buf, "fwk", "v4k");
 		buf = strswap(buf, "FWK", "V4K");
+	} else {
+		buf = strswap(buf, "v4k", "fwk");
+		buf = strswap(buf, "V4K", "FWK");
 	}
 
 	file_write(argv[1], buf, strlen(buf));
