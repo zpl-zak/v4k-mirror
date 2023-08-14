@@ -458,8 +458,8 @@ if "%1"=="web" (
 )
 
 if "%1"=="fwk" (
-    setlocal enabledelayedexpansion
     if not exist "_fwk" mkdir "_fwk"
+    setlocal enabledelayedexpansion
     xcopy /y "engine\split\3rd_*" "_fwk\"
     xcopy /y "demos\*.c" "_fwk\"
     for %%f in ("engine\split\v4k*") do (
@@ -472,7 +472,6 @@ if "%1"=="fwk" (
         set "filename=%%~nxf"
         if /i not "!filename:~0,4!"=="3rd_" (
             echo Processing: %%f
-            rem powershell -command "(Get-Content '%%f') -creplace 'v4k', 'fwk' -creplace 'V4K', 'FWK' | Set-Content '%%f'"
             tools\fwkren.exe %%f from
         ) else (
             echo Skipping %%f
@@ -485,6 +484,7 @@ if "%1"=="fwk" (
 )
 
 if "%1"=="back" (
+    if not exist "_fwk" exit /b
     setlocal enabledelayedexpansion
     for %%f in ("_fwk\fwk*") do (
         set "filename=%%~nf"
@@ -496,7 +496,6 @@ if "%1"=="back" (
         set "filename=%%~nxf"
         if /i not "!filename:~0,4!"=="3rd_" (
             echo Processing: %%f
-            rem powershell -command "(Get-Content '%%f') -creplace 'fwk', 'v4k' -creplace 'FWK', 'V4K' | Set-Content '%%f'"
             tools\fwkren.exe %%f to
         ) else (
             echo Skipping %%f
