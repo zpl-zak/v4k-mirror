@@ -459,16 +459,23 @@ if "%1"=="web" (
 
 if "%1"=="fwk" (
     if not exist "_fwk" mkdir "_fwk"
+    if not exist "_fwk\demos" mkdir "_fwk\demos"
+    if not exist "_fwk\tools" mkdir "_fwk\tools"
+    if not exist "_fwk\tools\editor" mkdir "_fwk\tools\editor"
+    if not exist "_fwk\engine" mkdir "_fwk\engine"
+    if not exist "_fwk\engine\split" mkdir "_fwk\engine\split"
     setlocal enabledelayedexpansion
-    xcopy /y "engine\split\3rd_*" "_fwk\"
-    xcopy /y "demos\*.c" "_fwk\"
+    xcopy /y "*" "_fwk"
+    xcopy /y "engine\split\3rd_*" "_fwk\engine\split"
+    xcopy /y "demos" "_fwk\demos"
+    xcopy /y/E "tools "_fwk\tools"
     for %%f in ("engine\split\v4k*") do (
         set "filename=%%~nf"
         set "newname=fwk!filename:v4k=!%%~xf"
-        echo Copying and renaming "%%f" to "_fwk\!newname!"
-        copy "%%f" "_fwk\!newname!"
+        echo Copying and renaming "%%f" to "_fwk\engine\split\!newname!"
+        copy "%%f" "_fwk\engine\split\!newname!"
     )
-    for %%f in (_fwk\*) do (
+    for %%f in (_fwk\engine\split\*) do (
         set "filename=%%~nxf"
         if /i not "!filename:~0,4!"=="3rd_" (
             echo Processing: %%f
@@ -476,6 +483,21 @@ if "%1"=="fwk" (
         ) else (
             echo Skipping %%f
         )
+    )
+    for %%f in (_fwk\demos\*) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f from
+    )
+    for %%f in (_fwk\tools\*) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f from
+    )
+    for %%f in (_fwk\tools\editor\*) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f from
     )
 
     echo All done.
@@ -486,7 +508,12 @@ if "%1"=="fwk" (
 if "%1"=="back" (
     if not exist "_fwk" exit /b
     setlocal enabledelayedexpansion
-    for %%f in ("_fwk\fwk*") do (
+
+    xcopy /y "_fwk" "."
+    xcopy /y "_fwk\engine\split\3rd_*" "engine\split"
+    xcopy /y "_fwk\demos" "demos"
+    xcopy /y/E "_fwk\tools "tools"
+    for %%f in ("_fwk\engine\split\fwk*") do (
         set "filename=%%~nf"
         set "newname=v4k!filename:fwk=!%%~xf"
         echo Copying and renaming "%%f" to "engine\split\!newname!"
@@ -500,6 +527,21 @@ if "%1"=="back" (
         ) else (
             echo Skipping %%f
         )
+    )
+    for %%f in (demos\*) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f to
+    )
+    for %%f in (tools\*) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f to
+    )
+    for %%f in (tools\editor\*) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f to
     )
 
     echo All done.
