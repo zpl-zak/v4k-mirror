@@ -3,7 +3,7 @@
 	[
 		{
 			"path": ".",
-			"file_exclude_patterns": ["*.zip"],
+			"file_exclude_patterns": ["*.zip", "*.ilk", "*.exp"],
 			"index_exclude_patterns": ["engine/joint/v4k.h", "engine/v4k.h", "engine/v4k.c"]
 		}
 	],

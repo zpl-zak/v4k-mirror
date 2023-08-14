@@ -615,14 +615,31 @@ void window_loop_exit() {
 
 vec2 window_canvas() {
 #if is(ems)
-    int width = EM_ASM_INT_V(return window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
-    int height = EM_ASM_INT_V(return window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight);
+    int width = EM_ASM_INT_V(return canvas.width || window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
+    int height = EM_ASM_INT_V(return canvas.height || window.innerHeight || document.documentElement.clientHeight|| document.body.clientHeight);
     return vec2(width, height);
 #else
     glfw_init();
     const GLFWvidmode* mode = glfwGetVideoMode( glfwGetPrimaryMonitor() );
     assert( mode );
     return vec2(mode->width, mode->height);
+#endif /* __EMSCRIPTEN__ */
+}
+
+static vec2 last_canvas_size;
+
+void window_resize() {
+#if is(ems)
+    vec2 size = window_canvas();
+    do_once last_canvas_size = size;
+    if (size.x != last_canvas_size.x || size.y != last_canvas_size.y) {
+        w = size.x;
+        h = size.y;
+        g->width  = w;
+        g->height = h;
+        glfwSetWindowSize(g->window, w, h);
+        // emscripten_set_canvas_size(w, h);
+    }
 #endif /* __EMSCRIPTEN__ */
 }
 

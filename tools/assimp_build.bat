@@ -19,7 +19,7 @@ exit
 @echo off
 cd "%~dp0"
 
-git clone https://github.com/assimp/assimp && md assimp\.build && pushd assimp\.build
+git clone https://github.com/assimp/assimp && pushd assimp && git checkout 05115b07 && popd && md assimp\.build && pushd assimp\.build
 rem fart -- ..\CMakeLists.txt assimp-${ASSIMP_MSVC_VERSION}-mt.dll assimp.dll
 rem fart -- ..\CMakeLists.txt assimp-${ASSIMP_MSVC_VERSION}-mt.lib assimp.lib
 rem cmake .. -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 14 2015" && msbuild assimp.sln -m -p:Configuration=Release -p:PlatformToolset=140
@@ -30,7 +30,7 @@ xcopy /y assimp\.build\bin\release\*.dll
 xcopy /y assimp\.build\lib\release\*.lib 
 
 copy /y assimp\include\assimp\config.h.in assimp\config.h && fart -- assimp\config.h "cmakedefine" "//#define"
-cl ass2iqe.c -I . -I assimp\include assimp-vc142-mt.lib /O2 /Oy /MT /DNDEBUG
+cl ass2iqe.c -I . -I assimp\include assimp-vc143-mt.lib /O2 /Oy /MT /DNDEBUG
 
 rem xcopy assimp\.build\bin\release\*.dll x64\ /s
 rem xcopy assimp\.build\lib\release\*.lib x64\ /s

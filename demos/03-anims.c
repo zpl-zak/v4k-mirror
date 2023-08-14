@@ -10,36 +10,6 @@
 
 #include "v4k.h"
 
-typedef struct anims_t {
-    int   inuse; // animation number in use
-    float speed; // x1.00
-    array(anim_t) anims; // [begin,end,flags] frames of every animation in set
-    array(mat44)  M;     // instanced transforms
-} anims_t;
-
-anims_t animations(const char *pathfile, int flags) {
-    anims_t a = {0};
-    char *anim_file = vfs_read(pathfile);
-    for each_substring(anim_file, "\r\n", anim) {
-        int from, to;
-        char anim_name[128] = {0};
-        if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
-        array_push(a.anims, !!strstri(anim_name, "loop") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
-        array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", "");
-    }
-    array_resize(a.M, 32*32);
-    for(int z = 0, i = 0; z < 32; ++z) {
-        for(int x = 0; x < 32; ++x, ++i) {
-            vec3 p = vec3(-x*3,0,-z*3);
-            vec3 r = vec3(0,0,0);
-            vec3 s = vec3(2,2,2);
-            compose44(a.M[i], p, eulerq(r), s);
-        }
-    }
-    a.speed = 1.0;
-    return a;
-}
-
 int main() {
     bool do_showaabb = 0;
     bool do_showbones = 0;
@@ -52,8 +22,10 @@ int main() {
 
     camera_t cam = camera();
     skybox_t sky = skybox("cubemaps/stardust", 0);
-    model_t  mdl = model("kgirls01.fbx", 0);
-    anims_t    a = animations("kgirl/animlist.txt", 0);
+    model_t  mdl = model("Stan.fbx", 0);
+    anims_t    a = animations("Stan.anim", 0);
+
+
 
     // load all postfx files in all subdirs
     fx_load("fx**.fs");
@@ -111,7 +83,7 @@ int main() {
                 }
 
                 if( do_showgizmo ) {
-                    static vec3 p = {0,0,0}, r = {0,0,0}, s = {2,2,2};
+                    static vec3 p = {0,0,0}, r = {0,-90,0}, s = {1,1,1};
                     gizmo(&p, &r, &s);
                     compose44(a.M[0], p, eulerq(r), s);
                 }

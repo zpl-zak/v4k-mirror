@@ -4218,3 +4218,26 @@ void model_destroy(model_t m) {
 #undef buf
 #undef bounds
 #undef colormaps
+
+anims_t animations(const char *pathfile, int flags) {
+    anims_t a = {0};
+    char *anim_file = vfs_read(pathfile);
+    for each_substring(anim_file, "\r\n", anim) {
+        int from, to;
+        char anim_name[128] = {0};
+        if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
+        array_push(a.anims, !!strstri(anim_name, "loop") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
+        array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", "");
+    }
+    array_resize(a.M, 32*32);
+    for(int z = 0, i = 0; z < 32; ++z) {
+        for(int x = 0; x < 32; ++x, ++i) {
+            vec3 p = vec3(-x*3,0,-z*3);
+            vec3 r = vec3(0,0,0);
+            vec3 s = vec3(2,2,2);
+            compose44(a.M[i], p, eulerq(r), s);
+        }
+    }
+    a.speed = 1.0;
+    return a;
+}

@@ -12,8 +12,9 @@ camera_t cam;
 
 void game_loop(void *userdata) {
     // key handler
-    if (input_down(KEY_F11) ) window_fullscreen( window_has_fullscreen()^1 );
-    if (input_down(KEY_ESC) ) window_loop_exit(); // @todo: break -> window_close()
+    // if (input_down(KEY_F11) ) window_fullscreen( window_has_fullscreen()^1 );
+    // if (input_down(KEY_ESC) ) window_loop_exit(); // @todo: break -> window_close()
+    window_resize();
 
     // animation
     static float dx = 0, dy = 0;

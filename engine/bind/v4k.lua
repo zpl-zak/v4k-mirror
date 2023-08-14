@@ -2458,6 +2458,13 @@ unsigned num_instances;
  bool     model_get_bone_pose(model_t m, unsigned joint, mat34 *out);
  void     model_destroy(model_t);
  vec3     pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
+typedef struct anims_t {
+int   inuse;
+float speed;
+anim_t* anims;
+mat44*  M;
+} anims_t;
+ anims_t animations(const char *pathfile, int flags);
 typedef struct skybox_t {
 handle program;
 mesh_t geometry;
@@ -2803,6 +2810,7 @@ WINDOW_VSYNC_DISABLED =8192,
  int      window_swap();
  void     window_loop(void (*function)(void* loopArg), void* loopArg );
  void     window_loop_exit();
+ void     window_resize();
  void     window_title(const char *title);
  void     window_icon(const char *file_icon);
  void     window_color(unsigned color);

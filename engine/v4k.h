@@ -2703,6 +2703,18 @@ API void     model_destroy(model_t);
 API vec3     pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
 
 // -----------------------------------------------------------------------------
+// model animations
+
+typedef struct anims_t {
+    int   inuse; // animation number in use
+    float speed; // x1.00
+    array(anim_t) anims; // [begin,end,flags] frames of every animation in set
+    array(mat44)  M;     // instanced transforms
+} anims_t;
+
+API anims_t animations(const char *pathfile, int flags);
+
+// -----------------------------------------------------------------------------
 // skyboxes
 
 typedef struct skybox_t {
@@ -3248,6 +3260,7 @@ API int      window_swap(); // single function that combines above functions (de
 
 API void     window_loop(void (*function)(void* loopArg), void* loopArg ); // run main loop function continuously (emscripten only)
 API void     window_loop_exit(); // exit from main loop function (emscripten only)
+API void     window_resize(); // resize if canvas size has changed (emscripten only)
 
 API void     window_title(const char *title);
 API void     window_icon(const char *file_icon);

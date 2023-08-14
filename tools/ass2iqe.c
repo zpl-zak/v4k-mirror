@@ -26,6 +26,7 @@ int doanim = 0; // export animations
 int dobone = 0; // export skeleton
 int doflip = 1; // export flipped (quake-style clockwise winding) triangles
 int doflipUV = 0; // export flipped UVs
+int doanimlist = 0; // generate list of animations with properties
 
 int doaxis = 0; // flip bone axis from X to Y to match blender
 int dounscale = 0; // remove scaling from bind pose
@@ -853,6 +854,23 @@ void export_animations(FILE *out, const struct aiScene *scene)
         export_static_animation(out, scene);
 }
 
+void export_animlist(FILE *out, const struct aiScene *scene)
+{
+    int i, offset=0, len;
+
+    for (i = 0; i < scene->mNumAnimations; i++) {
+        const struct aiAnimation *anim = scene->mAnimations[i];
+        len = animation_length(anim)-1;
+        fprintf(stderr, "frame: %d-%d %s\n", offset, offset+len, anim->mName.data);
+        fprintf(out, "frame: %d-%d %s\n", offset, offset+len, anim->mName.data);
+        offset += len+1;
+    }
+
+    if (scene->mNumAnimations == 0)
+        fprintf(out, "frame: %s\n", "0-0 Idle");
+}
+
+
 /*
  * For multi-mesh models, sometimes each mesh has its own inv_bind_matrix set
  * for each bone. To export to IQE we must have only one inv_bind_matrix per
@@ -1248,6 +1266,7 @@ void usage()
     fprintf(stderr, "\t-U -- flip UVs\n");
     fprintf(stderr, "\t-n mesh -- export only the named mesh\n");
     fprintf(stderr, "\t-a -- only export animations\n");
+    fprintf(stderr, "\t-L -- export only animation list\n");
     fprintf(stderr, "\t-m -- only export mesh\n");
     fprintf(stderr, "\t-b -- bake mesh to bind pose / initial frame\n");
     fprintf(stderr, "\t-f -- export counter-clockwise winding triangles\n");
@@ -1301,7 +1320,7 @@ int main(int argc, char **argv)
     int onlyanim = 0;
     int onlymesh = 0;
 
-    while ((c = getopt(argc, argv, "AHMPSUabflmn:o:rvxsu:")) != -1) {
+    while ((c = getopt(argc, argv, "AHLMPSUabflmn:o:rvxsu:")) != -1) {
         switch (c) {
         case 'A': save_all_bones++; break;
         case 'H': dohips = 1; break;
@@ -1317,6 +1336,7 @@ case 'U': doflipUV = 1; puts("using flipUV"); break;
         case 'f': doflip = 0; break;
         case 'r': dorigid = 1; break;
         case 'l': dolowprec = 1; break;
+        case 'L': doanimlist = 1; break;
         case 'v': verbose++; break;
         case 'x': doaxis = 1; break;
         case 's': dounscale = 1; break;
@@ -1435,6 +1455,17 @@ flags |= (doflipUV ? aiProcess_FlipUVs : 0);
     if (scene->mNumAnimations > 0) doanim = 1;
     if (onlymesh) { domesh = 1; doanim = 0; }
     if (onlyanim) { domesh = 0; doanim = 1; }
+
+    if (doanimlist) {
+        fprintf(stderr, "exporting animation list for %s ...\n", basename);
+        file = fopen(output, "w");
+        if (!file) {
+            fprintf(stderr, "cannot open output file: '%s'\n", output);
+            exit(1);
+        }
+        export_animlist(file, scene);
+        return 0;
+    }
 
     if (getenv("DOANIM")) doanim = 1;
 

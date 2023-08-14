@@ -15056,6 +15056,29 @@ void model_destroy(model_t m) {
 #undef buf
 #undef bounds
 #undef colormaps
+
+anims_t animations(const char *pathfile, int flags) {
+    anims_t a = {0};
+    char *anim_file = vfs_read(pathfile);
+    for each_substring(anim_file, "\r\n", anim) {
+        int from, to;
+        char anim_name[128] = {0};
+        if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
+        array_push(a.anims, !!strstri(anim_name, "loop") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
+        array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", "");
+    }
+    array_resize(a.M, 32*32);
+    for(int z = 0, i = 0; z < 32; ++z) {
+        for(int x = 0; x < 32; ++x, ++i) {
+            vec3 p = vec3(-x*3,0,-z*3);
+            vec3 r = vec3(0,0,0);
+            vec3 s = vec3(2,2,2);
+            compose44(a.M[i], p, eulerq(r), s);
+        }
+    }
+    a.speed = 1.0;
+    return a;
+}
 #line 0
 
 #line 1 "v4k_renderdd.c"
@@ -20832,14 +20855,31 @@ void window_loop_exit() {
 
 vec2 window_canvas() {
 #if is(ems)
-    int width = EM_ASM_INT_V(return window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
-    int height = EM_ASM_INT_V(return window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight);
+    int width = EM_ASM_INT_V(return canvas.width || window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
+    int height = EM_ASM_INT_V(return canvas.height || window.innerHeight || document.documentElement.clientHeight|| document.body.clientHeight);
     return vec2(width, height);
 #else
     glfw_init();
     const GLFWvidmode* mode = glfwGetVideoMode( glfwGetPrimaryMonitor() );
     assert( mode );
     return vec2(mode->width, mode->height);
+#endif /* __EMSCRIPTEN__ */
+}
+
+static vec2 last_canvas_size;
+
+void window_resize() {
+#if is(ems)
+    vec2 size = window_canvas();
+    do_once last_canvas_size = size;
+    if (size.x != last_canvas_size.x || size.y != last_canvas_size.y) {
+        w = size.x;
+        h = size.y;
+        g->width  = w;
+        g->height = h;
+        glfwSetWindowSize(g->window, w, h);
+        // emscripten_set_canvas_size(w, h);
+    }
 #endif /* __EMSCRIPTEN__ */
 }
 
