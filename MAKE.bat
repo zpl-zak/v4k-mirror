@@ -500,6 +500,8 @@ if "%1"=="fwk" (
         tools\fwkren.exe %%f from
     )
 
+    tools\fwkren.exe tools\cook.ini from
+
     echo All done.
     endlocal
     exit /b
@@ -528,12 +530,12 @@ if "%1"=="back" (
             echo Skipping %%f
         )
     )
-    for %%f in (demos\*) do (
+    for %%f in (demos\*.c) do (
         set "filename=%%~nxf"
         echo Processing: %%f
         tools\fwkren.exe %%f to
     )
-    for %%f in (tools\*) do (
+    for %%f in (tools\*.c) do (
         set "filename=%%~nxf"
         echo Processing: %%f
         tools\fwkren.exe %%f to
@@ -543,6 +545,8 @@ if "%1"=="back" (
         echo Processing: %%f
         tools\fwkren.exe %%f to
     )
+
+    tools\fwkren.exe tools\cook.ini to
 
     echo All done.
     endlocal
