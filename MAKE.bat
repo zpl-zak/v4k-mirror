@@ -484,7 +484,7 @@ if "%1"=="fwk" (
             echo Skipping %%f
         )
     )
-    for %%f in (_fwk\demos\*) do (
+    for %%f in (_fwk\demos\*.c) do (
         set "filename=%%~nxf"
         echo Processing: %%f
         tools\fwkren.exe %%f from
@@ -494,7 +494,7 @@ if "%1"=="fwk" (
     rem     echo Processing: %%f
     rem     tools\fwkren.exe %%f from
     rem )
-    for %%f in (_fwk\tools\editor\*) do (
+    for %%f in (_fwk\tools\editor\*.c) do (
         set "filename=%%~nxf"
         echo Processing: %%f
         tools\fwkren.exe %%f from
@@ -540,7 +540,7 @@ if "%1"=="back" (
     rem     echo Processing: %%f
     rem     tools\fwkren.exe %%f to
     rem )
-    for %%f in (tools\editor\*) do (
+    for %%f in (tools\editor\*.c) do (
         set "filename=%%~nxf"
         echo Processing: %%f
         tools\fwkren.exe %%f to
