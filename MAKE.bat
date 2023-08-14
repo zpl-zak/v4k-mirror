@@ -489,11 +489,11 @@ if "%1"=="fwk" (
         echo Processing: %%f
         tools\fwkren.exe %%f from
     )
-    for %%f in (_fwk\tools\*) do (
-        set "filename=%%~nxf"
-        echo Processing: %%f
-        tools\fwkren.exe %%f from
-    )
+    rem for %%f in (_fwk\tools\*) do (
+    rem     set "filename=%%~nxf"
+    rem     echo Processing: %%f
+    rem     tools\fwkren.exe %%f from
+    rem )
     for %%f in (_fwk\tools\editor\*) do (
         set "filename=%%~nxf"
         echo Processing: %%f
@@ -535,11 +535,11 @@ if "%1"=="back" (
         echo Processing: %%f
         tools\fwkren.exe %%f to
     )
-    for %%f in (tools\*.c) do (
-        set "filename=%%~nxf"
-        echo Processing: %%f
-        tools\fwkren.exe %%f to
-    )
+    rem for %%f in (tools\*.c) do (
+    rem     set "filename=%%~nxf"
+    rem     echo Processing: %%f
+    rem     tools\fwkren.exe %%f to
+    rem )
     for %%f in (tools\editor\*) do (
         set "filename=%%~nxf"
         echo Processing: %%f
