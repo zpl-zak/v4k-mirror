@@ -1,4 +1,4 @@
-static const char *const fs_0_0_shadowmap_lit = "//" FILELINE "\n"
+const char *const fs_0_0_shadowmap_lit = "//" FILELINE "\n"
 "//  uniform mat4 view = mat4(1.0);\n"
 "uniform vec3 lightPos = vec3(1.0);\n"
 "uniform float doTexture = 1.;\n"
@@ -110,7 +110,7 @@ static const char *const fs_0_0_shadowmap_lit = "//" FILELINE "\n"
             #endif
 "        }\n";
 
-static const char *const fs_0_0_shadowmap_unlit = "//" FILELINE "\n"
+const char *const fs_0_0_shadowmap_unlit = "//" FILELINE "\n"
 "//  uniform mat4 view = mat4(1.0);\n"
 "uniform vec3 lightPos = vec3(1.0);\n"
 "uniform float doTexture = 0.;\n"
@@ -120,7 +120,7 @@ static const char *const fs_0_0_shadowmap_unlit = "//" FILELINE "\n"
 "    return vec4(1.);\n"
 "    };\n";
 
-static const char *const fs_24_4_sprite = "//" FILELINE "\n"
+const char *const fs_24_4_sprite = "//" FILELINE "\n"
 "uniform sampler2D u_texture;\n"
 "\n"
 "in vec2 vTexCoord;\n"
@@ -174,7 +174,7 @@ static const char *const fs_24_4_sprite = "//" FILELINE "\n"
 "    fragColor = vColor * texColor;\n"
 "}\n";
 
-static const char *const fs_2_4_preamble = "//" FILELINE "\n"
+const char *const fs_2_4_preamble = "//" FILELINE "\n"
 "#define texture2D texture\n"
 "#define texture2DLod textureLod\n"
 "#define FRAGCOLOR fragColor\n"
@@ -192,7 +192,7 @@ static const char *const fs_2_4_preamble = "//" FILELINE "\n"
 "in vec2 texcoord;\n"
 "out vec4 fragColor;\n";
 
-static const char *const fs_2_4_texel_inv_gamma = "//" FILELINE "\n"
+const char *const fs_2_4_texel_inv_gamma = "//" FILELINE "\n"
 "uniform sampler2D texture0; /*unit0*/\n"
 "uniform float u_inv_gamma;\n"
 "\n"
@@ -205,7 +205,7 @@ static const char *const fs_2_4_texel_inv_gamma = "//" FILELINE "\n"
 "    fragcolor.rgb = pow( fragcolor.rgb, vec3( u_inv_gamma ) ); // defaults: 1.0/2.2 gamma\n"
 "}\n";
 
-static const char *const fs_2_4_texel_ycbr_gamma_saturation = "//" FILELINE "\n"
+const char *const fs_2_4_texel_ycbr_gamma_saturation = "//" FILELINE "\n"
 "uniform sampler2D u_texture_y;  /*unit0*/\n"
 "uniform sampler2D u_texture_cb; /*unit1*/\n"
 "uniform sampler2D u_texture_cr; /*unit2*/\n"
@@ -243,7 +243,7 @@ static const char *const fs_2_4_texel_ycbr_gamma_saturation = "//" FILELINE "\n"
 "fragcolor = vec4(texel.rgb, 1.0);\n"
 "}\n";
 
-static const char *const fs_32_4_model = "//" FILELINE "\n"
+const char *const fs_32_4_model = "//" FILELINE "\n"
 "uniform mat4 model, view;\n"
 "uniform sampler2D u_texture2d;\n"
 "uniform vec3 u_coefficients_sh[9];\n"
@@ -316,7 +316,7 @@ static const char *const fs_32_4_model = "//" FILELINE "\n"
 "        \n"
 "    }\n";
 
-static const char *const fs_32_4_model_basic = "//" FILELINE "\n"
+const char *const fs_32_4_model_basic = "//" FILELINE "\n"
 "uniform sampler2D fsDiffTex;\n"
 "uniform sampler2D fsNormalTex;\n"
 "uniform sampler2D fsPositionTex;\n"
@@ -332,7 +332,7 @@ static const char *const fs_32_4_model_basic = "//" FILELINE "\n"
 "    fragColor = diff;// * vec4(v_normal.xyz, 1);\n"
 "}\n";
 
-static const char *const fs_3_4_skybox = "//" FILELINE "\n"
+const char *const fs_3_4_skybox = "//" FILELINE "\n"
 "uniform samplerCube u_cubemap;\n"
 "\n"
 "in vec3 v_direction;\n"
@@ -342,7 +342,7 @@ static const char *const fs_3_4_skybox = "//" FILELINE "\n"
 "    fragcolor = vec4(texture(u_cubemap, v_direction).rgb, 1.0);\n"
 "}\n";
 
-static const char *const fs_3_4_skybox_rayleigh = "//" FILELINE "\n"
+const char *const fs_3_4_skybox_rayleigh = "//" FILELINE "\n"
 "uniform vec3 uSunPos = vec3( 0, 0.1, -1 ); // = [0, Math.cos(theta) * 0.3 + 0.2, -1];\n"
 "\n"
 "in vec3 v_direction;\n"
@@ -482,13 +482,13 @@ static const char *const fs_3_4_skybox_rayleigh = "//" FILELINE "\n"
 "    return iSun * (pRlh * kRlh * totalRlh + pMie * kMie * totalMie);\n"
 "}\n";
 
-static const char *const fs_main_shadertoy = "//" FILELINE "\n"
+const char *const fs_main_shadertoy = "//" FILELINE "\n"
 "void mainImage( out vec4 fragColor, in vec2 fragCoord );\n"
 "void main() {\n"
 "    mainImage(fragColor, texcoord.xy * iResolution);\n"
 "}\n";
 
-static const char *const vs_0_2_fullscreen_quad_A = "//" FILELINE "\n"
+const char *const vs_0_2_fullscreen_quad_A = "//" FILELINE "\n"
 "out vec2 texcoord;\n"
 "\n"
 "void main() {\n"
@@ -496,7 +496,7 @@ static const char *const vs_0_2_fullscreen_quad_A = "//" FILELINE "\n"
 "    gl_Position = vec4( texCoord * 2.0 - 1.0, 0.0, 1.0 );\n"
 "}\n";
 
-static const char *const vs_0_2_fullscreen_quad_B = "//" FILELINE "\n"
+const char *const vs_0_2_fullscreen_quad_B = "//" FILELINE "\n"
 "out vec2 uv;\n"
 "\n"
 "void main() {\n"
@@ -506,7 +506,7 @@ static const char *const vs_0_2_fullscreen_quad_B = "//" FILELINE "\n"
 "    uv = vec2(x, y); // normal(y),flipped(1.0-y)\n"
 "}\n";
 
-static const char *const vs_0_2_fullscreen_quad_B_flipped = "//" FILELINE "\n"
+const char *const vs_0_2_fullscreen_quad_B_flipped = "//" FILELINE "\n"
 "out vec2 uv;\n"
 "\n"
 "void main() {\n"
@@ -516,7 +516,7 @@ static const char *const vs_0_2_fullscreen_quad_B_flipped = "//" FILELINE "\n"
 "    uv = vec2(x, y); // normal(y),flipped(1.0-y)\n"
 "}\n";
 
-static const char *const vs_323444143_16_332_model = "//" FILELINE "\n"
+const char *const vs_323444143_16_332_model = "//" FILELINE "\n"
 #ifndef MAX_BONES
 "#define MAX_BONES 110\n"
 #endif
@@ -633,7 +633,7 @@ static const char *const vs_323444143_16_332_model = "//" FILELINE "\n"
 "}\n"
 "\n";
 
-static const char *const vs_324_24_sprite = "//" FILELINE "\n"
+const char *const vs_324_24_sprite = "//" FILELINE "\n"
 "uniform mat4 u_mvp;\n"
 "\n"
 "in vec3 att_Position;\n"
@@ -648,7 +648,7 @@ static const char *const vs_324_24_sprite = "//" FILELINE "\n"
 "    gl_Position = u_mvp * vec4(att_Position, 1.0);\n"
 "}\n";
 
-static const char *const vs_332_32 = "//" FILELINE "\n"
+const char *const vs_332_32 = "//" FILELINE "\n"
 "//uniform mat4 u_model, u_view, u_proj;\n"
 "uniform mat4 u_mvp;\n"
 "\n"
@@ -683,7 +683,7 @@ static const char *const vs_332_32 = "//" FILELINE "\n"
 "    do_shadow();\n"
 "}\n";
 
-static const char *const vs_3_3_skybox = "//" FILELINE "\n"
+const char *const vs_3_3_skybox = "//" FILELINE "\n"
 "uniform mat4 u_mvp;\n"
 "\n"
 "in vec3 att_position;\n"
@@ -694,3 +694,4 @@ static const char *const vs_3_3_skybox = "//" FILELINE "\n"
 "    gl_Position = position.xyww;\n"
 "    v_direction = att_position;\n"
 "}\n";
+

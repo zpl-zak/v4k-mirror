@@ -34,7 +34,7 @@ def c_to_glsl(input_filename: str):
 
     for line in lines:
         if not capturing:
-            match = re.search(r'static const char \*const ([a-zA-Z0-9_]+) =', line)
+            match = re.search(r'const char \*const ([a-zA-Z0-9_]+) =', line)
             if match:
                 output_filename = f"engine/shaders/{match.group(1)}.glsl"
                 capturing = True
