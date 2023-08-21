@@ -34,7 +34,7 @@ void bind_netbuffers(int64_t self_id) {
 
     for (int64_t i=0; i<MAX_CLIENTS; ++i) {
         world.player[i].color = colors[i%(sizeof colors / sizeof colors[0])];
-        network_buffer(&world.player[i], sizeof(struct player_t), i!=self_id ? NETWORK_RECV : NETWORK_SEND, i /* each client owns exactly 1 buffer */);
+        network_buffer(&world.player[i], sizeof(struct player_t), (i!=self_id ? NETWORK_RECV : NETWORK_SEND) | NETWORK_UNRELIABLE, i /* each client owns exactly 1 buffer */);
     };
 
     // register server->client rpc
@@ -55,6 +55,8 @@ int main() {
     camera_t cam = camera();
     window_create( 0.35f, WINDOW_MSAA8|WINDOW_SQUARE );
     struct player_t *self = &world.player[self_id];
+
+    network_put(NETWORK_SEND_MS, 33); // 0.033 s
 
     // game loop
     while( window_swap() && !input(KEY_ESC) ) {

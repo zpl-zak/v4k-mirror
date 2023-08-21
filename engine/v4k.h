@@ -2004,17 +2004,18 @@ enum { MAX_CLIENTS = 32 };
 API void   network_create(const char *ip, const char *port, unsigned flags); // both ip and port can be null
 
 //enum { NETWORK_LOSSY, NETWORK_COMPRESS }; // post-processes
-//enum { NETWORK_UNRELIABLE, NETWORK_UNORDERED, NETWORK_PRIORITY }; // how
 //enum { NETWORK_PREDICT, NETWORK_RECONCILE, NETWORK_INTERPOLATE, NETWORK_COMPENSATE }; // time authority, when
 //enum { NETWORK_LAGS, NETWORK_DROPS, NETWORK_THROTTLES, NETWORK_DUPES }; // quality sim, how much
 //enum { NETWORK_CONST = 1, NETWORK_64,NETWORK_32,NETWORK_16,NETWORK_8, NETWORK_FLT, NETWORK_STR, NETWORK_BLOB }; // type, what
 enum { NETWORK_SEND = 2, NETWORK_RECV = 4 };
-API void*   network_buffer(void *ptr, unsigned sz, unsigned flags, int64_t rank); // configures a shared/networked buffer
+enum { NETWORK_UNRELIABLE = 8, NETWORK_UNORDERED = 16/*, NETWORK_PRIORITY = 32*/ };
+API void*   network_buffer(void *ptr, unsigned sz, uint64_t flags, int64_t rank); // configures a shared/networked buffer
 API char**  network_sync(unsigned timeout_ms); // syncs all buffers & returns null-terminated list of network events
 
 enum { NETWORK_RANK = 0 }; // [0..N] where 0 is server
 enum { NETWORK_PING = 1 }; // NETWORK_BANDWIDTH, NETWORK_QUALITY };
 enum { NETWORK_PORT = 2, NETWORK_IP, NETWORK_LIVE };
+enum { NETWORK_SEND_MS = 4 };
 //enum {  NETWORK_USERID, NETWORK_SALT, NETWORK_COUNT/*N users*/ /*...*/,
 API int64_t network_get(uint64_t key);
 API int64_t network_put(uint64_t key, int64_t value);
@@ -2028,7 +2029,9 @@ API void network_rpc_send(unsigned id, const char *cmdline);
 
 API bool server_bind(int max_clients, int port);
 API void server_poll();
+API void server_broadcast_bin_flags(const void *ptr, int len, uint64_t flags);
 API void server_broadcast_bin(const void *ptr, int len);
+API void server_broadcast_flags(const char *msg, uint64_t flags);
 API void server_broadcast(const char *msg);
 API void server_terminate();
 API void server_send(int64_t handle, const char *msg);
@@ -2036,7 +2039,9 @@ API void server_send_bin(int64_t handle, const void *ptr, int len);
 API void server_drop(int64_t handle);
 
 API int64_t  client_join(const char *ip, int port);
+#define      client_send_flags(msg,flags) server_broadcast(msg, flags)
 #define      client_send(msg) server_broadcast(msg)
+#define      client_send_bin_flags(ptr,len,flags) server_broadcast_bin(ptr, len, flags)
 #define      client_send_bin(ptr,len) server_broadcast_bin(ptr, len)
 #define      client_terminate() server_terminate()
 

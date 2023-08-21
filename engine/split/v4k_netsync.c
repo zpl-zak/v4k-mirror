@@ -6,10 +6,12 @@ typedef struct rpc_call {
     uint64_t function_hash;
 } rpc_call;
 
-#define RPC_SIGNATURE_i_iii UINT64_C(0x78409099752fa48a) // printf("%llx\n, HASH_STR("int(int,int,int)"));
-#define RPC_SIGNATURE_i_ii  UINT64_C(0x258290edf43985a5) // printf("%llx\n, HASH_STR("int(int,int)"));
-#define RPC_SIGNATURE_s_s   UINT64_C(0x97deedd17d9afb12) // printf("%llx\n, HASH_STR("char*(char*)"));
-#define RPC_SIGNATURE_s_v   UINT64_C(0x09c16a1242049b80) // printf("%llx\n, HASH_STR("char*(void)"));
+#define RPC_SIGNATURE_i_iii    UINT64_C(0x78409099752fa48a)
+#define RPC_SIGNATURE_i_ii     UINT64_C(0x258290edf43985a5)
+#define RPC_SIGNATURE_i_s      UINT64_C(0xf7b73162829ed667)
+#define RPC_SIGNATURE_s_s      UINT64_C(0x97deedd17d9afb12)
+#define RPC_SIGNATURE_s_v      UINT64_C(0x09c16a1242049b80)
+#define RPC_SIGNATURE_v_s      UINT64_C(0xc1746990ab73ed24)
 
 static
 rpc_call rpc_new_call(const char *signature, rpc_function function) {
@@ -56,10 +58,12 @@ char *rpc_full(unsigned id, const char* method, unsigned num_args, char *args[])
     rpc_call *found = map_find(rpc_calls, (char*)method);
     if( found ) {
         switch(found->function_hash) {
-            case RPC_SIGNATURE_i_iii: return va("%d %d", id, (int)(uintptr_t)found->function(atoi(args[0]), atoi(args[1]), atoi(args[2])) );
-            case RPC_SIGNATURE_i_ii:  return va("%d %d", id, (int)(uintptr_t)found->function(atoi(args[0]), atoi(args[1])) );
+            case RPC_SIGNATURE_i_iii: return va("%d %d", id, (int)(intptr_t)found->function(atoi(args[0]), atoi(args[1]), atoi(args[2])) );
+            case RPC_SIGNATURE_i_ii:  return va("%d %d", id, (int)(intptr_t)found->function(atoi(args[0]), atoi(args[1])) );
+            case RPC_SIGNATURE_i_s:   return va("%d %d", id, (int)(intptr_t)found->function(args[0]) );
             case RPC_SIGNATURE_s_s:   return va("%d %s", id, (char*)found->function(args[0]) );
             case RPC_SIGNATURE_s_v:   return va("%d %s", id, (char*)found->function() );
+            case RPC_SIGNATURE_v_s:   return va("%d", id), found->function(args[0]);
             default: break;
         }
     }
@@ -277,10 +281,18 @@ void client_poll() {
     }
 }
 
+void server_broadcast_bin_flags(const void *msg, int len, uint64_t flags) {
+    ENetPacket *packet = enet_packet_create(msg, len, flags&NETWORK_UNRELIABLE ? ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT : ENET_PACKET_FLAG_RELIABLE | flags&(NETWORK_UNRELIABLE|NETWORK_UNORDERED) ? ENET_PACKET_FLAG_UNSEQUENCED : 0);
+    enet_host_broadcast(Server, 0, packet);
+}
+
 void server_broadcast_bin(const void *msg, int len) {
     ENetPacket *packet = enet_packet_create(msg, len, ENET_PACKET_FLAG_RELIABLE);
     enet_host_broadcast(Server, 0, packet);
     //enet_host_flush(Server); // flush if needed
+}
+void server_broadcast_flags(const char *msg, uint64_t flags) {
+    server_broadcast_bin_flags(msg, strlen(msg)+1, flags);
 }
 void server_broadcast(const char *msg) {
     server_broadcast_bin(msg, strlen(msg)+1);
@@ -379,12 +391,15 @@ typedef struct netbuffer_t {
     int64_t owner;
     void *ptr;
     unsigned sz;
-    unsigned flags;
+    uint64_t flags;
 } netbuffer_t;
 
 static array(char*) events; // @todo: make event 128 bytes max?
 static array(int64_t) values; // @todo: map<key,values> instead?
 static map( int64_t, array(netbuffer_t) ) buffers; // map<client,array<netbuffer>>
+static double msg_send_cooldown = 0.0;
+static double network_dt = 0.0;
+static double last_netsync = 0.0;
 
 void network_create(const char *ip, const char *port_, unsigned flags) {
     if (buffers) map_clear(buffers);
@@ -454,7 +469,7 @@ int64_t network_get(uint64_t key) {
     return found ? *found : 0;
 }
 
-void* network_buffer(void *ptr, unsigned sz, unsigned flags, int64_t rank) {
+void* network_buffer(void *ptr, unsigned sz, uint64_t flags, int64_t rank) {
     assert(flags);
     array(netbuffer_t) *found = map_find_or_add(buffers, rank, NULL);
 
@@ -475,26 +490,33 @@ char** network_sync(unsigned timeout_ms) {
     bool is_server = whoami == 0;
     bool is_client = !is_server;
     if(timeout_ms < 2) timeout_ms = 2;
-    // sleep_ms(timeout_ms); // @fixme. server only?
+
+    network_dt = time_ss() - last_netsync;
+    last_netsync = time_ss();
 
     // Split buffers into clients @todo
     // clients need to do this before network polling; servers should do this after polling.
-    map_foreach(buffers, int64_t, rank, array(netbuffer_t), list) {
-        for(int i = 0, end = array_count(list); i < end; ++i) {
-            netbuffer_t *nb = &list[i];
-            if (!is_server && !(nb->flags & NETWORK_SEND))
-                continue;
-            static array(char) encapsulate;
-            array_resize(encapsulate, nb->sz + 28);
-            uint32_t *mid = (uint32_t*)&encapsulate[0]; *mid = MSG_BUF;
-            uint64_t *st = (uint64_t*)&encapsulate[4]; *st = nb->flags;
-            uint32_t *idx = (uint32_t*)&encapsulate[12]; *idx = i;
-            uint32_t *len = (uint32_t*)&encapsulate[16]; *len = nb->sz;
-            uint64_t *who = (uint64_t*)&encapsulate[20]; *who = nb->owner;
-            // PRINTF("sending %llx %u %lld %u\n", *st, *idx, *who, *len);
-            memcpy(&encapsulate[28], nb->ptr, nb->sz);
-            server_broadcast_bin(&encapsulate[0], nb->sz + 28);
+    if (msg_send_cooldown <= 0.0) {
+        map_foreach(buffers, int64_t, rank, array(netbuffer_t), list) {
+            for(int i = 0, end = array_count(list); i < end; ++i) {
+                netbuffer_t *nb = &list[i];
+                if (!is_server && !(nb->flags & NETWORK_SEND))
+                    continue;
+                static array(char) encapsulate;
+                array_resize(encapsulate, nb->sz + 28);
+                uint32_t *mid = (uint32_t*)&encapsulate[0]; *mid = MSG_BUF;
+                uint64_t *st = (uint64_t*)&encapsulate[4]; *st = nb->flags;
+                uint32_t *idx = (uint32_t*)&encapsulate[12]; *idx = i;
+                uint32_t *len = (uint32_t*)&encapsulate[16]; *len = nb->sz;
+                uint64_t *who = (uint64_t*)&encapsulate[20]; *who = nb->owner;
+                // PRINTF("sending %llx %u %lld %u\n", *st, *idx, *who, *len);
+                memcpy(&encapsulate[28], nb->ptr, nb->sz);
+                server_broadcast_bin(&encapsulate[0], nb->sz + 28);
+            }
         }
+        msg_send_cooldown = (double)network_get(NETWORK_SEND_MS)/1000.0;
+    } else {
+        msg_send_cooldown -= network_dt;
     }
 
     // network poll
