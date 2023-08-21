@@ -125,10 +125,16 @@ static void enet_init() {
     }
 }
 
+struct peer_node_t {
+    int64_t id;
+    struct peer_node_t *next;
+};
+
 static ENetHost *Server;
 static map(ENetPeer *, int64_t) clients;
 static map(int64_t, ENetPeer *) peers;
 static int64_t next_client_id = 1; // assumes ID 0 is server
+static struct peer_node_t *next_free_id = NULL;
 enum { MSG_INIT, MSG_BUF, MSG_RPC, MSG_RPC_RESP };
 
 bool server_bind(int max_clients, int port) {
@@ -150,6 +156,14 @@ void server_drop_client(int64_t handle) {
 
 static
 void server_drop_client_peer(ENetPeer *peer) {
+    struct peer_node_t *node = C_CAST(struct peer_node_t *, CALLOC(sizeof(struct peer_node_t), 1));
+    node->id = *(int64_t *)map_find(clients, peer);
+    if (!next_free_id) {
+        next_free_id = node;
+    } else {
+        node->next = next_free_id;
+        next_free_id = node;
+    }
     map_erase(peers, *(int64_t *)map_find(clients, peer));
     map_erase(clients, peer);
 }
@@ -432,13 +446,22 @@ char** server_poll(unsigned timeout_ms) {
                 event.peer->data = STRDUP(ip); /* TEMP */
 
                 /* ensure we have free slot for client */
-                if (map_count(clients) >= network_get(NETWORK_CAPACITY)) {
+                if (map_count(clients) >= network_get(NETWORK_CAPACITY)-1) {
                     msg = stringf("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
                     enet_peer_disconnect_now(event.peer, 1);
                     break;
                 }
 
-                int64_t client_id = next_client_id++;
+                int64_t client_id = -1;
+
+                if (next_free_id) {
+                    struct peer_node_t *node = next_free_id;
+                    client_id = next_free_id->id;
+                    next_free_id = next_free_id->next;
+                    FREE(node);
+                }
+                else client_id = next_client_id++;
+
                 map_find_or_add(clients, event.peer, client_id);
                 map_find_or_add(peers, client_id, event.peer);
                 network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)+1);
