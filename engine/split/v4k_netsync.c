@@ -406,12 +406,10 @@ char** network_sync(unsigned timeout_ms) {
     }
 
     if (is_server) {
-        server_poll(timeout_ms);
+        return server_poll(timeout_ms);
     } else {
-        client_poll(timeout_ms);
+        return client_poll(timeout_ms);
     }
-
-    return events;
 }
 
 
