@@ -596,7 +596,7 @@ details > summary::-webkit-details-marker {
 |Version:       | 2023.7      |
 |:--------------|:------------|
 |Branch:        | main           |
-|Commit:        | 53               |
+|Commit:        | 54               |
 <!--| Documentation last modified | { {LAST_MODIFIED} } |-->
 
 # [V·4·K 2023.7     ](https://dev.v4.games/zaklaus/v4k)
@@ -6557,7 +6557,9 @@ enum {
     NETWORK_EVENT_CONNECT,
     NETWORK_EVENT_DISCONNECT,
     NETWORK_EVENT_RECEIVE,
-    NETWORK_EVENT_DISCONNECT_TIMEOUT
+    NETWORK_EVENT_DISCONNECT_TIMEOUT,
+    NETWORK_EVENT_RPC = 10,
+    NETWORK_EVENT_RPC_RESP
 };
 ~~~~~~
 

@@ -9962,7 +9962,7 @@ void* network_buffer(void *ptr, unsigned sz, uint64_t flags, int64_t rank) {
 }
 
 static
-int enet_event_to_netsync(ENetEventType ev) {
+int enet_event_to_netsync(int ev) {
     switch (ev) {
         case ENET_EVENT_TYPE_CONNECT: return NETWORK_EVENT_CONNECT;
         case ENET_EVENT_TYPE_DISCONNECT: return NETWORK_EVENT_DISCONNECT;
@@ -9970,7 +9970,8 @@ int enet_event_to_netsync(ENetEventType ev) {
         case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT: return NETWORK_EVENT_DISCONNECT_TIMEOUT;
     }
 
-    return -1;
+    /* passthrough for our own events */
+    return ev;
 }
 
 char** network_sync(unsigned timeout_ms) {
@@ -10100,19 +10101,21 @@ char** network_sync(unsigned timeout_ms) {
                     }
                 } break;
                 case MSG_RPC: {
+                    event.type = NETWORK_EVENT_RPC; 
                     unsigned id = *(uint32_t*)ptr; ptr += 4;
                     char *cmdline = ptr;
                     char *resp = rpc(id, cmdline);
-                    char *resp_msg = MALLOC(strlen(resp) + 5);
+                    char *resp_msg = MALLOC(strlen(resp) + 6);
                     *(uint32_t*)&resp_msg[0] = MSG_RPC_RESP;
                     memcpy(&resp_msg[4], resp, strlen(resp)+1);
-                    ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 4, ENET_PACKET_FLAG_RELIABLE);
+                    ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
+                    msg = stringf("%d %s", 0, va("req:%s res:%s", cmdline, resp));
                     FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
-                    // @todo: react on response?
-                    msg = ptr;
+                    event.type = NETWORK_EVENT_RPC_RESP; 
+                    msg = stringf("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
                     // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
@@ -10169,7 +10172,7 @@ void network_rpc(const char *signature, void *function) {
 
 void network_rpc_send_to(int64_t rank, unsigned id, const char *cmdline) {
     assert(network_get(NETWORK_RANK) == 0); /* must be a host */
-    unsigned sz = strlen(cmdline) + 8;
+    unsigned sz = strlen(cmdline) + 9;
     char *msg = MALLOC(sz);
     *(uint32_t*)&msg[0] = MSG_RPC;
     *(uint32_t*)&msg[4] = id;
@@ -10179,7 +10182,7 @@ void network_rpc_send_to(int64_t rank, unsigned id, const char *cmdline) {
 }
 
 void network_rpc_send(unsigned id, const char *cmdline) {
-    unsigned sz = strlen(cmdline) + 8;
+    unsigned sz = strlen(cmdline) + 9;
     char *msg = MALLOC(sz);
     *(uint32_t*)&msg[0] = MSG_RPC;
     *(uint32_t*)&msg[4] = id;

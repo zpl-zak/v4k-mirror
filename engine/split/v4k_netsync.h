@@ -31,6 +31,10 @@ enum {
     NETWORK_EVENT_DISCONNECT,
     NETWORK_EVENT_RECEIVE,
     NETWORK_EVENT_DISCONNECT_TIMEOUT,
+
+    /* offset from internal networking events */
+    NETWORK_EVENT_RPC = 10,
+    NETWORK_EVENT_RPC_RESP,
 };
 
 /* errcode and errstr are optional arguments, pass NULL to ignore them,
