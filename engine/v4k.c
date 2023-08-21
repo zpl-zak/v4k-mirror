@@ -9940,15 +9940,15 @@ char** server_poll(unsigned timeout_ms) {
                 }
                 else client_id = next_client_id++;
 
-                if (network_get(NETWORK_BUF_CLEAR_ON_JOIN)) {
-                    array(netbuffer_t) *list = map_find(buffers, client_id);
+                // if (network_get(NETWORK_BUF_CLEAR_ON_JOIN)) {
+                //     array(netbuffer_t) *list = map_find(buffers, client_id);
 
-                    if (list)
-                    for(int i = 0, end = array_count(list); i < end; ++i) {
-                        netbuffer_t *nb = &list[i];
-                        memset(nb->ptr, 0, nb->sz);
-                    }
-                }
+                //     if (list)
+                //     for(int i = 0, end = array_count(list); i < end; ++i) {
+                //         netbuffer_t *nb = &list[i];
+                //         memset(nb->ptr, 0, nb->sz);
+                //     }
+                // }
 
                 map_find_or_add(clients, event.peer, client_id);
                 map_find_or_add(peers, client_id, event.peer);
