@@ -13,9 +13,9 @@
 
 //enum { NETWORK_HANDSHAKE, NETWORK_ENCRYPT, NETWORK_VERSIONED, NETWORK_CHECKSUM }; // negotiation
 //enum { NETWORK_TCP, NETWORK_UDP, NETWORK_KCP, NETWORK_ENET, NETWORK_WEBSOCKET }; // transport, where
+
 enum { NETWORK_BIND = 2, NETWORK_CONNECT = 4, NETWORK_NOFAIL = 8 };
-enum { MAX_CLIENTS = 32 };
-API void   network_create(const char *ip, const char *port, unsigned flags); // both ip and port can be null
+API void   network_create(unsigned max_clients, const char *ip, const char *port, unsigned flags); // both ip and port can be null
 
 //enum { NETWORK_LOSSY, NETWORK_COMPRESS }; // post-processes
 //enum { NETWORK_PREDICT, NETWORK_RECONCILE, NETWORK_INTERPOLATE, NETWORK_COMPENSATE }; // time authority, when
@@ -45,7 +45,7 @@ enum { NETWORK_RANK = 0 }; // [0..N] where 0 is server
 enum { NETWORK_PING = 1 }; // NETWORK_BANDWIDTH, NETWORK_QUALITY };
 enum { NETWORK_PORT = 2, NETWORK_IP, NETWORK_LIVE };
 enum { NETWORK_SEND_MS = 4 };
-enum { NETWORK_USERID = 5, /*NETWORK_SALT,*/ NETWORK_COUNT/*N users*/ /*...*/ };
+enum { NETWORK_USERID = 5, /*NETWORK_SALT,*/ NETWORK_COUNT/*N users*/ /*...*/, NETWORK_CAPACITY };
 API int64_t network_get(uint64_t key);
 API int64_t network_put(uint64_t key, int64_t value);
 
@@ -57,7 +57,8 @@ API void network_rpc_send(unsigned id, const char *cmdline);
 // low-level api (sockets based)
 
 API bool server_bind(int max_clients, int port);
-API void server_poll();
+API void server_poll(unsigned timeout_ms);
+API void client_poll(unsigned timeout_ms);
 API void server_broadcast_bin_flags(const void *ptr, int len, uint64_t flags);
 API void server_broadcast_bin(const void *ptr, int len);
 API void server_broadcast_flags(const char *msg, uint64_t flags);

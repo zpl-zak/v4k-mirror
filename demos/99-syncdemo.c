@@ -1,6 +1,6 @@
 #include "v4k.h"
 
-enum { MAX_NPCS = 5 };
+enum { MAX_NPCS = 5, MAX_CLIENTS = 5 };
 struct player_t {
     uint64_t seen_until;
     float x,y,z,angle;
@@ -47,7 +47,7 @@ int main() {
     // ifdef(win32, FreeConsole()); // tty_detach()
 
     // network setup
-    network_create("127.0.0.1", 0, flag("--client") ? NETWORK_CONNECT : 0);
+    network_create(MAX_CLIENTS, "127.0.0.1", 0, flag("--client") ? NETWORK_CONNECT : 0);
     int64_t self_id = network_get(NETWORK_RANK);
     bind_netbuffers(self_id);
 
@@ -71,7 +71,7 @@ int main() {
 
         self_id = network_get(NETWORK_RANK);
         if (network_get(NETWORK_LIVE) == 0) {
-            network_create("127.0.0.1", 0, flag("--client") ? NETWORK_CONNECT|NETWORK_NOFAIL : 0);
+            network_create(MAX_CLIENTS, "127.0.0.1", 0, flag("--client") ? NETWORK_CONNECT|NETWORK_NOFAIL : 0);
             self_id = network_get(NETWORK_RANK);
             if (self_id != -1) {
                 bind_netbuffers(self_id);

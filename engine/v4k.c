@@ -9631,133 +9631,6 @@ void server_drop_client_peer(ENetPeer *peer) {
     map_erase(clients, peer);
 }
 
-void server_poll() {
-    ENetEvent event;
-    while( enet_host_service(Server, &event, 2 /*timeout,ms*/) > 0 ) {
-        switch (event.type) {
-            case ENET_EVENT_TYPE_CONNECT:;
-                char ip[128]; enet_peer_get_ip(event.peer, ip, 128);
-                PRINTF( "A new client connected from ::%s:%u.\n", ip, event.peer->address.port );
-                /* Store any relevant client information here. */
-                event.peer->data = "Client information";
-
-                int64_t client_id = next_client_id++;
-                map_find_or_add(clients, event.peer, client_id);
-                map_find_or_add(peers, client_id, event.peer);
-                break;
-            case ENET_EVENT_TYPE_RECEIVE:
-                PRINTF( "A packet of length %zu containing %s was received from %s on channel %u.\n",
-                        event.packet->dataLength,
-                        event.packet->data,
-                        (char *)event.peer->data,
-                        event.channelID );
-
-                char *dbg = (char *)event.peer->data;
-                char *ptr = event.packet->data;
-                unsigned sz = event.packet->dataLength;
-
-                uint32_t mid = *(uint32_t*)ptr;
-                ptr += 4;
-
-                // @todo: propagate event to user
-                switch (mid) {
-                case MSG_INIT: {
-                    uint64_t *cid = map_find(clients, event.peer);
-                    if (cid) {
-                        char init_msg[12];
-                        *(uint32_t*)&init_msg[0] = MSG_INIT;
-                        *(uint64_t*)&init_msg[4] = *cid;
-                        ENetPacket *packet = enet_packet_create(init_msg, 12, ENET_PACKET_FLAG_RELIABLE);
-                        enet_peer_send(event.peer, 0, packet);
-                    } else {
-                        PRINTF("ignoring unk MSG_INIT client packet.\n");
-                    }
-                } break;
-                case MSG_RPC:
-                case MSG_RPC_RESP:
-                    // @todo: process and send a response back
-                    break;
-                default:
-                    PRINTF("recving unk %d sz %d from peer %s\n", mid, sz, dbg);
-                }
-
-                /* Clean up the packet now that we're done using it. */
-                enet_packet_destroy( event.packet );
-                break;
-
-            case ENET_EVENT_TYPE_DISCONNECT:
-                PRINTF( "%s disconnected.\n", (char *)event.peer->data );
-                /* Reset the peer's client information. */
-                event.peer->data = NULL;
-                server_drop_client_peer(event.peer);
-                break;
-
-            case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                PRINTF( "%s timeout.\n", (char *)event.peer->data );
-                event.peer->data = NULL;
-                server_drop_client_peer(event.peer);
-                break;
-
-            case ENET_EVENT_TYPE_NONE: break;
-        }
-    }
-}
-
-void client_poll() {
-    ENetEvent event;
-    while( enet_host_service(Server, &event, 2 /*timeout,ms*/) > 0 ) {
-        switch (event.type) {
-            case ENET_EVENT_TYPE_CONNECT:;
-                break;
-            case ENET_EVENT_TYPE_RECEIVE:
-                PRINTF( "A packet of length %zu containing %s was received from %s on channel %u.\n",
-                        event.packet->dataLength,
-                        event.packet->data,
-                        (char *)event.peer->data,
-                        event.channelID );
-
-                char *dbg = (char *)event.peer->data;
-                char *ptr = event.packet->data;
-                unsigned sz = event.packet->dataLength;
-
-                uint32_t mid = *(uint32_t*)ptr;
-                ptr += 4;
-
-                // @todo: propagate event to user
-                switch (mid) {
-                case MSG_INIT:
-                    /* handled during client_join */
-                    break;
-                case MSG_RPC:
-                case MSG_RPC_RESP:
-                    // @todo: process and send a response back
-                    break;
-                default:
-                    PRINTF("recving unk %d sz %d from peer %s\n", mid, sz, dbg);
-                    }
-
-                /* Clean up the packet now that we're done using it. */
-                enet_packet_destroy( event.packet );
-                break;
-
-            case ENET_EVENT_TYPE_DISCONNECT:
-                PRINTF( "%s disconnected.\n", (char *)event.peer->data );
-                /* Reset the peer's client information. */
-                event.peer->data = NULL;
-                server_drop_client_peer(event.peer);
-                break;
-
-            case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                PRINTF( "%s timeout.\n", (char *)event.peer->data );
-                event.peer->data = NULL;
-                server_drop_client_peer(event.peer);
-                break;
-
-            case ENET_EVENT_TYPE_NONE: break;
-        }
-    }
-}
-
 void server_broadcast_bin_flags(const void *msg, int len, uint64_t flags) {
     ENetPacket *packet = enet_packet_create(msg, len, flags&NETWORK_UNRELIABLE ? ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT : ENET_PACKET_FLAG_RELIABLE | flags&(NETWORK_UNRELIABLE|NETWORK_UNORDERED) ? ENET_PACKET_FLAG_UNSEQUENCED : 0);
     enet_host_broadcast(Server, 0, packet);
@@ -9878,7 +9751,7 @@ static double msg_send_cooldown = 0.0;
 static double network_dt = 0.0;
 static double last_netsync = 0.0;
 
-void network_create(const char *ip, const char *port_, unsigned flags) {
+void network_create(unsigned max_clients, const char *ip, const char *port_, unsigned flags) {
     if (buffers) map_clear(buffers);
     do_once {
         array_resize(values, 128);
@@ -9894,12 +9767,13 @@ void network_create(const char *ip, const char *port_, unsigned flags) {
     network_put(NETWORK_PORT, port);
     network_put(NETWORK_LIVE, -1);
     network_put(NETWORK_COUNT, 0);
+    network_put(NETWORK_CAPACITY, max_clients);
 
     if( !(flags&NETWORK_CONNECT) || flags&NETWORK_BIND ) {
         // server, else client
         PRINTF("Trying to bind server, else we connect as a client...\n");
         network_put(NETWORK_RANK, 0);
-        if( server_bind(MAX_CLIENTS, port) ) {
+        if( server_bind(max_clients, port) ) {
             network_put(NETWORK_LIVE, 1);
             PRINTF("Server bound\n");
         } else {
@@ -10010,6 +9884,20 @@ char** network_sync(unsigned timeout_ms) {
         msg_send_cooldown -= network_dt;
     }
 
+    if (is_server) {
+        server_poll(timeout_ms);
+    } else {
+        client_poll(timeout_ms);
+    }
+
+    array_push(events, NULL);
+    return events;
+}
+
+
+void server_poll(unsigned timeout_ms) {
+    if(timeout_ms < 2) timeout_ms = 2;
+
     // network poll
     for( ENetEvent event; Server && enet_host_service(Server, &event, timeout_ms) > 0; ) {
         char *msg = 0;
@@ -10025,7 +9913,7 @@ char** network_sync(unsigned timeout_ms) {
                 event.peer->data = STRDUP(ip); /* TEMP */
 
                 /* ensure we have free slot for client */
-                if (map_count(clients) >= MAX_CLIENTS) {
+                if (map_count(clients) >= network_get(NETWORK_CAPACITY)) {
                     msg = stringf("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
                     enet_peer_disconnect_now(event.peer, 1);
                     break;
@@ -10060,18 +9948,16 @@ char** network_sync(unsigned timeout_ms) {
 
                 switch (mid) {
                 case MSG_INIT:
-                    if (is_server) {
-                        uint64_t *cid = map_find(clients, event.peer);
-                        if (cid) {
-                            char init_msg[12];
-                            *(uint32_t*)&init_msg[0] = MSG_INIT;
-                            *(int64_t*)&init_msg[4] = *cid;
-                            ENetPacket *packet = enet_packet_create(init_msg, 12, ENET_PACKET_FLAG_RELIABLE);
-                            enet_peer_send(event.peer, 0, packet);
-                            PRINTF("Client req id %lld for peer ::%s:%u\n", *cid, ip, event.peer->address.port);
-                        } else {
-                            PRINTF("!Ignoring unk MSG_INIT client packet.\n");
-                        }
+                    uint64_t *cid = map_find(clients, event.peer);
+                    if (cid) {
+                        char init_msg[12];
+                        *(uint32_t*)&init_msg[0] = MSG_INIT;
+                        *(int64_t*)&init_msg[4] = *cid;
+                        ENetPacket *packet = enet_packet_create(init_msg, 12, ENET_PACKET_FLAG_RELIABLE);
+                        enet_peer_send(event.peer, 0, packet);
+                        PRINTF("Client req id %lld for peer ::%s:%u\n", *cid, ip, event.peer->address.port);
+                    } else {
+                        PRINTF("!Ignoring unk MSG_INIT client packet.\n");
                     }
                     break;
                 case MSG_BUF: {
@@ -10083,15 +9969,11 @@ char** network_sync(unsigned timeout_ms) {
                     ptr += 24;
 
                     // validate if peer owns the buffer
-                    uint8_t client_valid = 0;
-
-                    if (is_server) {
-                        int64_t *cid = map_find(clients, event.peer);
-                        client_valid = cid ? *cid == *who : 0;
-                    }
+                    int64_t *cid = map_find(clients, event.peer);
+                    uint8_t client_valid = cid ? *cid == *who : 0;
 
                     // apply incoming packet.
-                    if( is_client ? *who != whoami : client_valid ) { // clients merge always foreign packets. servers merge foreign packets.
+                    if( client_valid ) {
                         array(netbuffer_t) *list = map_find(buffers, *who);
                         assert( list );
                         assert( *idx < array_count(*list) );
@@ -10130,30 +10012,127 @@ char** network_sync(unsigned timeout_ms) {
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
-                if (is_server) {
-                    server_drop_client_peer(event.peer);
-                    network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)-1);
-                }
-                else {network_put(NETWORK_RANK, -1); network_put(NETWORK_LIVE, 0);}
+                server_drop_client_peer(event.peer);
+                network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)-1);
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
                 msg = stringf( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
                 FREE(event.peer->data);
                 event.peer->data = NULL;
-                if (is_server) {
-                    server_drop_client_peer(event.peer);
-                    network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)-1);
-                }
-                else {network_put(NETWORK_RANK, -1); network_put(NETWORK_LIVE, 0);}
+                server_drop_client_peer(event.peer);
+                network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)-1);
                 break;
         }
 
         if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
     }
+}
 
-    array_push(events, NULL);
-    return events;
+void client_poll(unsigned timeout_ms) {
+    int64_t whoami = network_get(NETWORK_RANK);
+    if(timeout_ms < 2) timeout_ms = 2;
+
+    // network poll
+    for( ENetEvent event; Server && enet_host_service(Server, &event, timeout_ms) > 0; ) {
+        char *msg = 0;
+        char ip[128]; enet_peer_get_ip(event.peer, ip, 128);
+
+        switch (event.type) {
+            default: // case ENET_EVENT_TYPE_NONE:
+                break;
+
+            case ENET_EVENT_TYPE_CONNECT:
+                /* @TODO: move stuff from client_join here */
+                break;
+
+            case ENET_EVENT_TYPE_RECEIVE:
+                /*
+                msg = stringf( "A packet of length %u containing %s was received from %s on channel %u",
+                        (unsigned)event.packet->dataLength,
+                        event.packet->data,
+                        (char *)event.peer->data,
+                        event.channelID );
+                */
+                char *dbg = (char *)event.peer->data;
+                char *ptr = (char *)event.packet->data;
+                unsigned sz = (unsigned)event.packet->dataLength;
+                unsigned id = (unsigned)event.channelID;
+
+                // debug
+                // puts(dbg);
+                // hexdump(ptr, sz);
+
+                // decapsulate incoming packet.
+                uint32_t mid = *(uint32_t*)(ptr + 0);
+                ptr += 4;
+
+                switch (mid) {
+                case MSG_INIT:
+                    /* handled by client_join */
+                    break;
+                case MSG_BUF: {
+                    uint64_t *flags = (uint64_t*)(ptr + 0);
+                    uint32_t *idx = (uint32_t*)(ptr + 8);
+                    uint32_t *len = (uint32_t*)(ptr + 12);
+                    uint64_t *who = (uint64_t*)(ptr + 16);
+                    ptr += 24;
+
+                    // apply incoming packet.
+                    if( *who != whoami ) {
+                        array(netbuffer_t) *list = map_find(buffers, *who);
+                        assert( list );
+                        assert( *idx < array_count(*list) );
+                        netbuffer_t *nb = &(*list)[*idx];
+                        assert( *len == nb->sz );
+                        memcpy(nb->ptr, ptr, *len);
+                    }
+                } break;
+                case MSG_RPC: {
+                    event.type = NETWORK_EVENT_RPC; 
+                    unsigned id = *(uint32_t*)ptr; ptr += 4;
+                    char *cmdline = ptr;
+                    char *resp = rpc(id, cmdline);
+                    char *resp_msg = MALLOC(strlen(resp) + 6);
+                    *(uint32_t*)&resp_msg[0] = MSG_RPC_RESP;
+                    memcpy(&resp_msg[4], resp, strlen(resp)+1);
+                    ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
+                    enet_peer_send(event.peer, 0, packet);
+                    msg = stringf("%d %s", 0, va("req:%s res:%s", cmdline, resp));
+                    FREE(resp_msg);
+                } break;
+                case MSG_RPC_RESP: {
+                    event.type = NETWORK_EVENT_RPC_RESP; 
+                    msg = stringf("%d %s", 0, va("%s", ptr));
+                } break;
+                default:
+                    // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
+                    break;
+                }
+                /* Clean up the packet now that we're done using it. */
+                enet_packet_destroy( event.packet );
+                break;
+
+            case ENET_EVENT_TYPE_DISCONNECT:
+                msg = stringf( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
+                /* Reset the peer's client information. */
+                FREE(event.peer->data);
+                event.peer->data = NULL;
+                network_put(NETWORK_RANK, -1);
+                network_put(NETWORK_LIVE, 0);
+                break;
+
+            case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
+                msg = stringf( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
+                FREE(event.peer->data);
+                event.peer->data = NULL;
+                network_put(NETWORK_RANK, -1); 
+                network_put(NETWORK_LIVE, 0);
+                break;
+        }
+
+        if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
+    }
 }
 
 int network_event(const char *msg, int *errcode, char **errstr) {
