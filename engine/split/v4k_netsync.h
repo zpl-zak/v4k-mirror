@@ -45,7 +45,8 @@ enum { NETWORK_RANK = 0 }; // [0..N] where 0 is server
 enum { NETWORK_PING = 1 }; // NETWORK_BANDWIDTH, NETWORK_QUALITY };
 enum { NETWORK_PORT = 2, NETWORK_IP, NETWORK_LIVE };
 enum { NETWORK_SEND_MS = 4 };
-enum { NETWORK_USERID = 5, /*NETWORK_SALT,*/ NETWORK_COUNT/*N users*/ /*...*/, NETWORK_CAPACITY };
+enum { NETWORK_BUF_CLEAR_ON_JOIN = 5 };
+enum { NETWORK_USERID = 7, /*NETWORK_SALT,*/ NETWORK_COUNT/*N users*/ /*...*/, NETWORK_CAPACITY };
 API int64_t network_get(uint64_t key);
 API int64_t network_put(uint64_t key, int64_t value);
 

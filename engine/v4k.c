@@ -9782,6 +9782,7 @@ void network_create(unsigned max_clients, const char *ip, const char *port_, uns
     network_put(NETWORK_LIVE, -1);
     network_put(NETWORK_COUNT, 0);
     network_put(NETWORK_CAPACITY, max_clients);
+    network_put(NETWORK_BUF_CLEAR_ON_JOIN, 1);
 
     if( !(flags&NETWORK_CONNECT) || flags&NETWORK_BIND ) {
         // server, else client
@@ -9938,6 +9939,16 @@ char** server_poll(unsigned timeout_ms) {
                     FREE(node);
                 }
                 else client_id = next_client_id++;
+
+                if (network_get(NETWORK_BUF_CLEAR_ON_JOIN)) {
+                    array(netbuffer_t) *list = map_find(buffers, client_id);
+
+                    if (list)
+                    for(int i = 0, end = array_count(list); i < end; ++i) {
+                        netbuffer_t *nb = &list[i];
+                        memset(nb->ptr, 0, nb->sz);
+                    }
+                }
 
                 map_find_or_add(clients, event.peer, client_id);
                 map_find_or_add(peers, client_id, event.peer);
