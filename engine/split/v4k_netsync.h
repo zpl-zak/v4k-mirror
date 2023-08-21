@@ -56,17 +56,17 @@ API void network_rpc_send(unsigned id, const char *cmdline);
 // -----------------------------------------------------------------------------
 // low-level api (sockets based)
 
-API bool server_bind(int max_clients, int port);
-API void server_poll(unsigned timeout_ms);
-API void client_poll(unsigned timeout_ms);
-API void server_broadcast_bin_flags(const void *ptr, int len, uint64_t flags);
-API void server_broadcast_bin(const void *ptr, int len);
-API void server_broadcast_flags(const char *msg, uint64_t flags);
-API void server_broadcast(const char *msg);
-API void server_terminate();
-API void server_send(int64_t handle, const char *msg);
-API void server_send_bin(int64_t handle, const void *ptr, int len);
-API void server_drop(int64_t handle);
+API bool   server_bind(int max_clients, int port);
+API char** server_poll(unsigned timeout_ms);
+API char** client_poll(unsigned timeout_ms);
+API void   server_broadcast_bin_flags(const void *ptr, int len, uint64_t flags);
+API void   server_broadcast_bin(const void *ptr, int len);
+API void   server_broadcast_flags(const char *msg, uint64_t flags);
+API void   server_broadcast(const char *msg);
+API void   server_terminate();
+API void   server_send(int64_t handle, const char *msg);
+API void   server_send_bin(int64_t handle, const void *ptr, int len);
+API void   server_drop(int64_t handle);
 
 API int64_t  client_join(const char *ip, int port);
 #define      client_send_flags(msg,flags) server_broadcast(msg, flags)

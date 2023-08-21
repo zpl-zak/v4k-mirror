@@ -372,8 +372,6 @@ int enet_event_to_netsync(int ev) {
 }
 
 char** network_sync(unsigned timeout_ms) {
-    array_clear(events);
-
     int64_t whoami = network_get(NETWORK_RANK);
     bool is_server = whoami == 0;
     bool is_client = !is_server;
@@ -413,12 +411,12 @@ char** network_sync(unsigned timeout_ms) {
         client_poll(timeout_ms);
     }
 
-    array_push(events, NULL);
     return events;
 }
 
 
-void server_poll(unsigned timeout_ms) {
+char** server_poll(unsigned timeout_ms) {
+    array_clear(events);
     if(timeout_ms < 2) timeout_ms = 2;
 
     // network poll
@@ -550,9 +548,13 @@ void server_poll(unsigned timeout_ms) {
 
         if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
     }
+
+    array_push(events, NULL);
+    return events;
 }
 
-void client_poll(unsigned timeout_ms) {
+char** client_poll(unsigned timeout_ms) {
+    array_clear(events);
     int64_t whoami = network_get(NETWORK_RANK);
     if(timeout_ms < 2) timeout_ms = 2;
 
@@ -656,6 +658,9 @@ void client_poll(unsigned timeout_ms) {
 
         if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
     }
+
+    array_push(events, NULL);
+    return events;
 }
 
 int network_event(const char *msg, int *errcode, char **errstr) {
