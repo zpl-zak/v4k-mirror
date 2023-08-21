@@ -416,6 +416,7 @@ void network_create(const char *ip, const char *port_, unsigned flags) {
     // network_put(NETWORK_IP, 0x7F000001); // 127.0.0.1
     network_put(NETWORK_PORT, port);
     network_put(NETWORK_LIVE, -1);
+    network_put(NETWORK_COUNT, 0);
 
     if( !(flags&NETWORK_CONNECT) || flags&NETWORK_BIND ) {
         // server, else client
@@ -483,6 +484,18 @@ void* network_buffer(void *ptr, unsigned sz, uint64_t flags, int64_t rank) {
     return ptr;
 }
 
+static
+int enet_event_to_netsync(ENetEventType ev) {
+    switch (ev) {
+        case ENET_EVENT_TYPE_CONNECT: return NETWORK_EVENT_CONNECT;
+        case ENET_EVENT_TYPE_DISCONNECT: return NETWORK_EVENT_DISCONNECT;
+        case ENET_EVENT_TYPE_RECEIVE: return NETWORK_EVENT_RECEIVE;
+        case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT: return NETWORK_EVENT_DISCONNECT_TIMEOUT;
+    }
+
+    return -1;
+}
+
 char** network_sync(unsigned timeout_ms) {
     array_clear(events);
 
@@ -529,13 +542,13 @@ char** network_sync(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_CONNECT:;
-                msg = stringf( "A new client connected from ::%s:%u", ip, event.peer->address.port );
+                msg = stringf( "%d %s", 0, va("A new client connected from ::%s:%u", ip, event.peer->address.port ));
                 /* Store any relevant client information here. */
-                event.peer->data = "Client information";
+                event.peer->data = STRDUP(ip); /* TEMP */
 
                 /* ensure we have free slot for client */
                 if (map_count(clients) >= MAX_CLIENTS) {
-                    msg = stringf("%s\n", "Server is at maximum capacity, disconnecting the peer...");
+                    msg = stringf("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
                     enet_peer_disconnect_now(event.peer, 1);
                     break;
                 }
@@ -543,6 +556,7 @@ char** network_sync(unsigned timeout_ms) {
                 int64_t client_id = next_client_id++;
                 map_find_or_add(clients, event.peer, client_id);
                 map_find_or_add(peers, client_id, event.peer);
+                network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)+1);
                 break;
 
             case ENET_EVENT_TYPE_RECEIVE:;
@@ -632,27 +646,44 @@ char** network_sync(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = stringf( "%s disconnected", (char *)event.peer->data );
+                msg = stringf( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
                 /* Reset the peer's client information. */
+                FREE(event.peer->data);
                 event.peer->data = NULL;
-                if (is_server) server_drop_client_peer(event.peer);
+                if (is_server) {
+                    server_drop_client_peer(event.peer);
+                    network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)-1);
+                }
                 else {network_put(NETWORK_RANK, -1); network_put(NETWORK_LIVE, 0);}
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = stringf( "%s timeout", (char *)event.peer->data );
+                msg = stringf( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
+                FREE(event.peer->data);
                 event.peer->data = NULL;
-                if (is_server) server_drop_client_peer(event.peer);
+                if (is_server) {
+                    server_drop_client_peer(event.peer);
+                    network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)-1);
+                }
                 else {network_put(NETWORK_RANK, -1); network_put(NETWORK_LIVE, 0);}
                 break;
         }
 
-        if(msg) array_push(events, stringf("%d %s", event.type, msg));
-//            if(msg) server_broadcast(msg);
+        if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
     }
 
     array_push(events, NULL);
     return events;
+}
+
+int network_event(const char *msg, int *errcode, char **errstr) {
+    int evid = -1;
+    int err = 0;
+    char errbuf[128] = {0};
+    sscanf(msg, "%d %d %127[^\r\n]", &evid, &err, errbuf);
+    if (errcode) *errcode = err;
+    if (errstr) *errstr = va("%s", errbuf);
+    return evid;
 }
 
 void network_rpc(const char *signature, void *function) {

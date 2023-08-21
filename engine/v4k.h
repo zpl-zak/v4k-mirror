@@ -2012,11 +2012,22 @@ enum { NETWORK_UNRELIABLE = 8, NETWORK_UNORDERED = 16/*, NETWORK_PRIORITY = 32*/
 API void*   network_buffer(void *ptr, unsigned sz, uint64_t flags, int64_t rank); // configures a shared/networked buffer
 API char**  network_sync(unsigned timeout_ms); // syncs all buffers & returns null-terminated list of network events
 
+enum {
+    NETWORK_EVENT_CONNECT,
+    NETWORK_EVENT_DISCONNECT,
+    NETWORK_EVENT_RECEIVE,
+    NETWORK_EVENT_DISCONNECT_TIMEOUT,
+};
+
+/* errcode and errstr are optional arguments, pass NULL to ignore them,
+	errstr is filled by va() */
+API int network_event(const char *msg, int *errcode, char **errstr);
+
 enum { NETWORK_RANK = 0 }; // [0..N] where 0 is server
 enum { NETWORK_PING = 1 }; // NETWORK_BANDWIDTH, NETWORK_QUALITY };
 enum { NETWORK_PORT = 2, NETWORK_IP, NETWORK_LIVE };
 enum { NETWORK_SEND_MS = 4 };
-//enum {  NETWORK_USERID, NETWORK_SALT, NETWORK_COUNT/*N users*/ /*...*/,
+enum { NETWORK_USERID = 5, /*NETWORK_SALT,*/ NETWORK_COUNT/*N users*/ /*...*/ };
 API int64_t network_get(uint64_t key);
 API int64_t network_put(uint64_t key, int64_t value);
 

@@ -62,7 +62,12 @@ int main() {
     while( window_swap() && !input(KEY_ESC) ) {
         // network sync
         char **event = network_sync(0); // timeout_ms:0
-        while(*event) printf( "network event: %s\n", *event++ );
+        while(*event) {
+            int code;
+            char *msg;
+            int ev = network_event(*event++, &code, &msg);
+            printf( "network event id: %d err: %d msg: %s\n", ev, code, msg );
+        }
 
         self_id = network_get(NETWORK_RANK);
         if (network_get(NETWORK_LIVE) == 0) {

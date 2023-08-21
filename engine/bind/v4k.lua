@@ -2106,10 +2106,18 @@ enum { NETWORK_SEND = 2, NETWORK_RECV = 4 };
 enum { NETWORK_UNRELIABLE = 8, NETWORK_UNORDERED = 16 };
  void*   network_buffer(void *ptr, unsigned sz, uint64_t flags, int64_t rank);
  char**  network_sync(unsigned timeout_ms);
+enum {
+NETWORK_EVENT_CONNECT,
+NETWORK_EVENT_DISCONNECT,
+NETWORK_EVENT_RECEIVE,
+NETWORK_EVENT_DISCONNECT_TIMEOUT,
+};
+ int network_event(const char *msg, int *errcode, char **errstr);
 enum { NETWORK_RANK = 0 };
 enum { NETWORK_PING = 1 };
 enum { NETWORK_PORT = 2, NETWORK_IP, NETWORK_LIVE };
 enum { NETWORK_SEND_MS = 4 };
+enum { NETWORK_USERID = 5,  NETWORK_COUNT  };
  int64_t network_get(uint64_t key);
  int64_t network_put(uint64_t key, int64_t value);
  void network_rpc(const char *signature, void *function);
