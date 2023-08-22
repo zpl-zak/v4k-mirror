@@ -9683,7 +9683,6 @@ static int client_join_threaded(void *userdata) {
 int64_t client_join(const char *ip, int port) {
     assert(port > 1024 && port < 65500);
     ENetAddress address = {0};
-//  address.host = ENET_HOST_ANY;
     enet_address_set_host(&address, !strcmp(ip, "localhost") ? "127.0.0.1" : ip);
     address.port = port;
 
@@ -9693,22 +9692,9 @@ int64_t client_join(const char *ip, int port) {
     if(!peer) return -1;
     Server = host;
 
-#if 1
-#if 0
-    // sync wait (not working in localhost, unless threaded)
-    thread_ptr_t th = thread_init(client_join_threaded, host, "client_join_threaded()", 0 );
-    thread_join( th );
-    thread_destroy( th );
-#else
     ENetEvent event;
     bool client_join_connected = enet_host_service(host, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT;
-#endif
     if(!client_join_connected) { enet_peer_reset(peer); return -1; }
-#endif
-
-    // ask for server slot
-    char init_msg[4]; *(uint32_t*)init_msg = MSG_INIT;
-    server_broadcast_bin(init_msg, sizeof(init_msg));
 
     // wait for the response
     bool msg_received = enet_host_service(host, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_RECEIVE;
@@ -9727,6 +9713,7 @@ int64_t client_join(const char *ip, int port) {
         break;
     default:
         enet_peer_reset(peer);
+        enet_packet_destroy( event.packet );
         return -1;
     }
 
@@ -9919,10 +9906,6 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_CONNECT:;
-                msg = va( "%d %s", 0, va("A new client connected from ::%s:%u", ip, event.peer->address.port ));
-                /* Store any relevant client information here. */
-                event.peer->data = STRDUP(ip); /* TEMP */
-
                 /* ensure we have free slot for client */
                 if (map_count(clients) >= network_get(NETWORK_CAPACITY)-1) {
                     msg = va("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
@@ -9953,16 +9936,19 @@ char** server_poll(unsigned timeout_ms) {
                 map_find_or_add(clients, event.peer, client_id);
                 map_find_or_add(peers, client_id, event.peer);
                 network_put(NETWORK_COUNT, network_get(NETWORK_COUNT)+1);
+
+
+                // send server slot
+                char init_msg[12];
+                *(uint32_t*)&init_msg[0] = MSG_INIT;
+                *(int64_t*)&init_msg[4] = client_id;
+                server_send_bin(client_id, init_msg, 12);
+                PRINTF("Client rank %lld for peer ::%s:%u\n", client_id, ip, event.peer->address.port);
+                msg = va( "%d %s", 0, va("new client rank:%lld from ::%s:%u", client_id, ip, event.peer->address.port ));
+                event.peer->data = (void*)client_id;
                 break;
 
-            case ENET_EVENT_TYPE_RECEIVE:;
-                /*
-                msg = va( "A packet of length %u containing %s was received from %s on channel %u",
-                        (unsigned)event.packet->dataLength,
-                        event.packet->data,
-                        (char *)event.peer->data,
-                        event.channelID );
-                */
+            case ENET_EVENT_TYPE_RECEIVE:
                 char *dbg = (char *)event.peer->data;
                 char *ptr = (char *)event.packet->data;
                 unsigned sz = (unsigned)event.packet->dataLength;
@@ -9977,25 +9963,11 @@ char** server_poll(unsigned timeout_ms) {
                 ptr += 4;
 
                 switch (mid) {
-                case MSG_INIT:
-                    uint64_t *cid = map_find(clients, event.peer);
-                    if (cid) {
-                        char init_msg[12];
-                        *(uint32_t*)&init_msg[0] = MSG_INIT;
-                        *(int64_t*)&init_msg[4] = *cid;
-                        ENetPacket *packet = enet_packet_create(init_msg, 12, ENET_PACKET_FLAG_RELIABLE);
-                        enet_peer_send(event.peer, 0, packet);
-                        PRINTF("Client req id %lld for peer ::%s:%u\n", *cid, ip, event.peer->address.port);
-                    } else {
-                        PRINTF("!Ignoring unk MSG_INIT client packet.\n");
-                    }
-                    break;
                 case MSG_BUF: {
                     uint64_t *flags = (uint64_t*)(ptr + 0);
                     uint32_t *idx = (uint32_t*)(ptr + 8);
                     uint32_t *len = (uint32_t*)(ptr + 12);
                     uint64_t *who = (uint64_t*)(ptr + 16);
-                    // PRINTF("recving %d %llx %u %u %lld\n", mid, *flags, *idx, *len, *who);
                     ptr += 24;
 
                     // validate if peer owns the buffer
@@ -10030,7 +10002,7 @@ char** server_poll(unsigned timeout_ms) {
                     msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
-                    // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
+                    msg = va("%d %s", -1, va("unk msg len:%u from rank:%lld ::%s:%u", sz, (uint64_t)event.peer->data, ip, event.peer->address.port)); /* @TODO: hexdump? */
                     break;
                 }
                 /* Clean up the packet now that we're done using it. */
@@ -10038,7 +10010,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = va( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("disconnect rank:%lld", (uint64_t)event.peer->data));
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
@@ -10047,7 +10019,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = va( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("timeout rank:%lld", (uint64_t)event.peer->data));
                 FREE(event.peer->data);
                 event.peer->data = NULL;
                 server_drop_client_peer(event.peer);
@@ -10077,25 +10049,13 @@ char** client_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_CONNECT:
-                /* @TODO: move stuff from client_join here */
                 break;
 
             case ENET_EVENT_TYPE_RECEIVE:
-                /*
-                msg = va( "A packet of length %u containing %s was received from %s on channel %u",
-                        (unsigned)event.packet->dataLength,
-                        event.packet->data,
-                        (char *)event.peer->data,
-                        event.channelID );
-                */
                 char *dbg = (char *)event.peer->data;
                 char *ptr = (char *)event.packet->data;
                 unsigned sz = (unsigned)event.packet->dataLength;
                 unsigned id = (unsigned)event.channelID;
-
-                // debug
-                // puts(dbg);
-                // hexdump(ptr, sz);
 
                 // decapsulate incoming packet.
                 uint32_t mid = *(uint32_t*)(ptr + 0);
@@ -10140,7 +10100,7 @@ char** client_poll(unsigned timeout_ms) {
                     msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
-                    // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
+                    msg = va("%d %s", -1, va("unk msg len:%u from server", sz)); /* @TODO: hexdump? */
                     break;
                 }
                 /* Clean up the packet now that we're done using it. */
@@ -10148,7 +10108,7 @@ char** client_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = va( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
+                msg = va( "%d disconnect", 0 );
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
@@ -10157,7 +10117,7 @@ char** client_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = va( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
+                msg = va( "%d timeout", 0);
                 FREE(event.peer->data);
                 event.peer->data = NULL;
                 network_put(NETWORK_RANK, -1); 
