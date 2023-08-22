@@ -442,13 +442,13 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_CONNECT:;
-                msg = stringf( "%d %s", 0, va("A new client connected from ::%s:%u", ip, event.peer->address.port ));
+                msg = va( "%d %s", 0, va("A new client connected from ::%s:%u", ip, event.peer->address.port ));
                 /* Store any relevant client information here. */
                 event.peer->data = STRDUP(ip); /* TEMP */
 
                 /* ensure we have free slot for client */
                 if (map_count(clients) >= network_get(NETWORK_CAPACITY)-1) {
-                    msg = stringf("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
+                    msg = va("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
                     enet_peer_disconnect_now(event.peer, 1);
                     break;
                 }
@@ -480,7 +480,7 @@ char** server_poll(unsigned timeout_ms) {
 
             case ENET_EVENT_TYPE_RECEIVE:;
                 /*
-                msg = stringf( "A packet of length %u containing %s was received from %s on channel %u",
+                msg = va( "A packet of length %u containing %s was received from %s on channel %u",
                         (unsigned)event.packet->dataLength,
                         event.packet->data,
                         (char *)event.peer->data,
@@ -545,12 +545,12 @@ char** server_poll(unsigned timeout_ms) {
                     memcpy(&resp_msg[4], resp, strlen(resp)+1);
                     ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
-                    msg = stringf("%d %s", 0, va("req:%s res:%s", cmdline, resp));
+                    msg = va("%d %s", 0, va("req:%s res:%s", cmdline, resp));
                     FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
                     event.type = NETWORK_EVENT_RPC_RESP; 
-                    msg = stringf("%d %s", 0, va("%s", ptr));
+                    msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
                     // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
@@ -561,7 +561,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = stringf( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
@@ -570,7 +570,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = stringf( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
                 FREE(event.peer->data);
                 event.peer->data = NULL;
                 server_drop_client_peer(event.peer);
@@ -578,7 +578,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
         }
 
-        if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
+        if(msg) array_push(events, va("%d %s", enet_event_to_netsync(event.type), msg));
     }
 
     array_push(events, NULL);
@@ -605,7 +605,7 @@ char** client_poll(unsigned timeout_ms) {
 
             case ENET_EVENT_TYPE_RECEIVE:
                 /*
-                msg = stringf( "A packet of length %u containing %s was received from %s on channel %u",
+                msg = va( "A packet of length %u containing %s was received from %s on channel %u",
                         (unsigned)event.packet->dataLength,
                         event.packet->data,
                         (char *)event.peer->data,
@@ -655,12 +655,12 @@ char** client_poll(unsigned timeout_ms) {
                     memcpy(&resp_msg[4], resp, strlen(resp)+1);
                     ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
-                    msg = stringf("%d %s", 0, va("req:%s res:%s", cmdline, resp));
+                    msg = va("%d %s", 0, va("req:%s res:%s", cmdline, resp));
                     FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
                     event.type = NETWORK_EVENT_RPC_RESP; 
-                    msg = stringf("%d %s", 0, va("%s", ptr));
+                    msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
                     // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
@@ -671,7 +671,7 @@ char** client_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = stringf( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
@@ -680,7 +680,7 @@ char** client_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = stringf( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
                 FREE(event.peer->data);
                 event.peer->data = NULL;
                 network_put(NETWORK_RANK, -1); 
@@ -688,7 +688,7 @@ char** client_poll(unsigned timeout_ms) {
                 break;
         }
 
-        if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
+        if(msg) array_push(events, va("%d %s", enet_event_to_netsync(event.type), msg));
     }
 
     array_push(events, NULL);

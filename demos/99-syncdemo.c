@@ -15,10 +15,9 @@ struct world_t {
     struct npc_t npc[MAX_NPCS];
 } world = {0};
 
-char *show_notification(char *msg) {
+void show_notification(char *msg) {
     printf("notif %s\n", msg);
     ui_notify("server", msg);
-    return NULL;
 }
 
 void bind_netbuffers(int64_t self_id) {
@@ -39,7 +38,7 @@ void bind_netbuffers(int64_t self_id) {
 
     // register server->client rpc
     if (self_id > 0) {
-        network_rpc("char* show_notification(char*)", show_notification);
+        network_rpc("void show_notification(char*)", show_notification);
     }
 }
 

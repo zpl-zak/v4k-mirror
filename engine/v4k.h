@@ -2555,6 +2555,7 @@ API     void shader_uint(const char *uniform, unsigned i );
 API     void shader_float(const char *uniform, float f);
 API     void shader_vec2(const char *uniform, vec2 v);
 API     void shader_vec3(const char *uniform, vec3 v);
+API     void shader_vec3v(const char *uniform, int count, vec3 *v);
 API     void shader_vec4(const char *uniform, vec4 v);
 API     void shader_mat44(const char *uniform, mat44 m);
 API     void shader_texture(const char *sampler, texture_t texture);

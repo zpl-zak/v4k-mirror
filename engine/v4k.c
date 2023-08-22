@@ -9919,13 +9919,13 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_CONNECT:;
-                msg = stringf( "%d %s", 0, va("A new client connected from ::%s:%u", ip, event.peer->address.port ));
+                msg = va( "%d %s", 0, va("A new client connected from ::%s:%u", ip, event.peer->address.port ));
                 /* Store any relevant client information here. */
                 event.peer->data = STRDUP(ip); /* TEMP */
 
                 /* ensure we have free slot for client */
                 if (map_count(clients) >= network_get(NETWORK_CAPACITY)-1) {
-                    msg = stringf("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
+                    msg = va("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
                     enet_peer_disconnect_now(event.peer, 1);
                     break;
                 }
@@ -9957,7 +9957,7 @@ char** server_poll(unsigned timeout_ms) {
 
             case ENET_EVENT_TYPE_RECEIVE:;
                 /*
-                msg = stringf( "A packet of length %u containing %s was received from %s on channel %u",
+                msg = va( "A packet of length %u containing %s was received from %s on channel %u",
                         (unsigned)event.packet->dataLength,
                         event.packet->data,
                         (char *)event.peer->data,
@@ -10022,12 +10022,12 @@ char** server_poll(unsigned timeout_ms) {
                     memcpy(&resp_msg[4], resp, strlen(resp)+1);
                     ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
-                    msg = stringf("%d %s", 0, va("req:%s res:%s", cmdline, resp));
+                    msg = va("%d %s", 0, va("req:%s res:%s", cmdline, resp));
                     FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
                     event.type = NETWORK_EVENT_RPC_RESP; 
-                    msg = stringf("%d %s", 0, va("%s", ptr));
+                    msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
                     // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
@@ -10038,7 +10038,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = stringf( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
@@ -10047,7 +10047,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = stringf( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
                 FREE(event.peer->data);
                 event.peer->data = NULL;
                 server_drop_client_peer(event.peer);
@@ -10055,7 +10055,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
         }
 
-        if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
+        if(msg) array_push(events, va("%d %s", enet_event_to_netsync(event.type), msg));
     }
 
     array_push(events, NULL);
@@ -10082,7 +10082,7 @@ char** client_poll(unsigned timeout_ms) {
 
             case ENET_EVENT_TYPE_RECEIVE:
                 /*
-                msg = stringf( "A packet of length %u containing %s was received from %s on channel %u",
+                msg = va( "A packet of length %u containing %s was received from %s on channel %u",
                         (unsigned)event.packet->dataLength,
                         event.packet->data,
                         (char *)event.peer->data,
@@ -10132,12 +10132,12 @@ char** client_poll(unsigned timeout_ms) {
                     memcpy(&resp_msg[4], resp, strlen(resp)+1);
                     ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
-                    msg = stringf("%d %s", 0, va("req:%s res:%s", cmdline, resp));
+                    msg = va("%d %s", 0, va("req:%s res:%s", cmdline, resp));
                     FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
                     event.type = NETWORK_EVENT_RPC_RESP; 
-                    msg = stringf("%d %s", 0, va("%s", ptr));
+                    msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
                     // PRINTF("!Receiving unk %d sz %d from peer ::%s:%u\n", mid, sz, ip, event.peer->address.port);
@@ -10148,7 +10148,7 @@ char** client_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = stringf( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("%s disconnected", (char *)event.peer->data));
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
@@ -10157,7 +10157,7 @@ char** client_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = stringf( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
+                msg = va( "%d %s", 0, va("%s timeout", (char *)event.peer->data));
                 FREE(event.peer->data);
                 event.peer->data = NULL;
                 network_put(NETWORK_RANK, -1); 
@@ -10165,7 +10165,7 @@ char** client_poll(unsigned timeout_ms) {
                 break;
         }
 
-        if(msg) array_push(events, stringf("%d %s", enet_event_to_netsync(event.type), msg));
+        if(msg) array_push(events, va("%d %s", enet_event_to_netsync(event.type), msg));
     }
 
     array_push(events, NULL);
@@ -10476,56 +10476,55 @@ const char *const fs_32_4_model = "//" FILELINE "\n"
 "in vec4 vneye;\n"
 "in vec4 sc;\n"
 "vec4 shadowing() {\n"
-"return shadowmap(vpeye, vneye, v_texcoord, sc);\n"
+"    return shadowmap(vpeye, vneye, v_texcoord, sc);\n"
 "}\n"
 "\n"
 "void main() {\n"
-"vec3 n = /*normalize*/(v_normal);\n"
+"    vec3 n = /*normalize*/(v_normal);\n"
 "\n"
-"// SH lighting\n"
-"vec4 lit = vec4(1.0, 1.0, 1.0, 1.0);\n"
-"vec3 SHLightResult[9];\n"
-"SHLightResult[0] =  0.282095f * u_coefficients_sh[0];\n"
-"SHLightResult[1] = -0.488603f * u_coefficients_sh[1] * n.y;\n"
-"SHLightResult[2] =  0.488603f * u_coefficients_sh[2] * n.z;\n"
-"SHLightResult[3] = -0.488603f * u_coefficients_sh[3] * n.x;\n"
-"SHLightResult[4] =  1.092548f * u_coefficients_sh[4] * n.x * n.y;\n"
-"SHLightResult[5] = -1.092548f * u_coefficients_sh[5] * n.y * n.z;\n"
-"SHLightResult[6] =  0.315392f * u_coefficients_sh[6] * (3.0f * n.z * n.z - 1.0f);\n"
-"SHLightResult[7] = -1.092548f * u_coefficients_sh[7] * n.x * n.z;\n"
-"SHLightResult[8] =  0.546274f * u_coefficients_sh[8] * (n.x * n.x - n.y * n.y);\n"
-"vec3 result = vec3(0.0);\n"
-"for (int i = 0; i < 9; ++i)\n"
-"result += SHLightResult[i];\n"
-"if( (result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) lit = vec4(result, 1.0);\n"
+"    // SH lighting\n"
+"    vec4 lit = vec4(1.0, 1.0, 1.0, 1.0);\n"
+"    vec3 SHLightResult[9];\n"
+"    SHLightResult[0] =  0.282095f * u_coefficients_sh[0];\n"
+"    SHLightResult[1] = -0.488603f * u_coefficients_sh[1] * n.y;\n"
+"    SHLightResult[2] =  0.488603f * u_coefficients_sh[2] * n.z;\n"
+"    SHLightResult[3] = -0.488603f * u_coefficients_sh[3] * n.x;\n"
+"    SHLightResult[4] =  1.092548f * u_coefficients_sh[4] * n.x * n.y;\n"
+"    SHLightResult[5] = -1.092548f * u_coefficients_sh[5] * n.y * n.z;\n"
+"    SHLightResult[6] =  0.315392f * u_coefficients_sh[6] * (3.0f * n.z * n.z - 1.0f);\n"
+"    SHLightResult[7] = -1.092548f * u_coefficients_sh[7] * n.x * n.z;\n"
+"    SHLightResult[8] =  0.546274f * u_coefficients_sh[8] * (n.x * n.x - n.y * n.y);\n"
+"    vec3 result = vec3(0.0);\n"
+"    for (int i = 0; i < 9; ++i)\n"
+"        result += SHLightResult[i];\n"
+"    \n"
+"    if( (result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) lit = vec4(result, 1.0);\n"
 "\n"
-"\n"
-"\n"
-"// base\n"
-"vec4 diffuse;\n"
-"if(u_matcaps) {\n"
-"    vec2 muv = vec2(view * vec4(v_normal_ws, 0))*0.5+vec2(0.5,0.5); // normal (model space) to view space\n"
-"    diffuse = texture(u_texture2d, vec2(muv.x, 1.0-muv.y));\n"
+"    // base\n"
+"    vec4 diffuse;\n"
+"    if(u_matcaps) {\n"
+"        vec2 muv = vec2(view * vec4(v_normal_ws, 0))*0.5+vec2(0.5,0.5); // normal (model space) to view space\n"
+"        diffuse = texture(u_texture2d, vec2(muv.x, 1.0-muv.y));\n"
 "    } else if(u_textured) {\n"
 "        diffuse = texture(u_texture2d, v_texcoord);\n"
-"        } else {\n"
-"            diffuse = u_diffuse; // * v_color;\n"
-"        }\n"
+"    } else {\n"
+"        diffuse = u_diffuse; // * v_color;\n"
+"    }\n"
 "        \n"
-"        // lighting mix\n"
-"        fragcolor = diffuse * lit * shadowing();\n"
-"        \n"
-"        // rimlight\n"
-        #ifdef RIM
-"        {vec3 n = normalize(mat3(M) * v_normal);  // convert normal to view space\n"
-"        vec3 p = (M * vec4(v_position,1.0)).xyz; // convert position to view space\n"
-"        vec3 v = normalize(-p);                  // eye vector\n"
-"        float rim = 1.0 - max(dot(v, n), 0.0);   // rimlight\n"
-"        rim = smoothstep(1.0-0.01, 1.0, rim);    // intensity (0.01)\n"
-"        fragcolor += vec4(0.0, 0.0, rim, 1.0);}  // blue\n"
-        #endif
-"        \n"
-"    }\n";
+"    // lighting mix\n"
+"    fragcolor = diffuse * lit * shadowing();\n"
+"    \n"
+"    // rimlight\n"
+    #ifdef RIM
+"    {vec3 n = normalize(mat3(M) * v_normal);  // convert normal to view space\n"
+"    vec3 p = (M * vec4(v_position,1.0)).xyz; // convert position to view space\n"
+"    vec3 v = normalize(-p);                  // eye vector\n"
+"    float rim = 1.0 - max(dot(v, n), 0.0);   // rimlight\n"
+"    rim = smoothstep(1.0-0.01, 1.0, rim);    // intensity (0.01)\n"
+"    fragcolor += vec4(0.0, 0.0, rim, 1.0);}  // blue\n"
+    #endif
+"}\n"
+"\n";
 
 const char *const fs_32_4_model_basic = "//" FILELINE "\n"
 "uniform sampler2D fsDiffTex;\n"
@@ -11124,6 +11123,7 @@ void shader_int(const char *uniform, int i)     { glUniform1i(shader_uniform(uni
 void shader_float(const char *uniform, float f) { glUniform1f(shader_uniform(uniform), f); }
 void shader_vec2(const char *uniform, vec2 v)   { glUniform2fv(shader_uniform(uniform), 1, &v.x); }
 void shader_vec3(const char *uniform, vec3 v)   { glUniform3fv(shader_uniform(uniform), 1, &v.x); }
+void shader_vec3v(const char *uniform, int count, vec3 *v) { glUniform3fv(shader_uniform(uniform), count, &v[0].x); }
 void shader_vec4(const char *uniform, vec4 v)   { glUniform4fv(shader_uniform(uniform), 1, &v.x); }
 void shader_mat44(const char *uniform, mat44 m) { glUniformMatrix4fv(shader_uniform(uniform), 1, GL_FALSE/*GL_TRUE*/, m); }
 void shader_cubemap(const char *sampler, unsigned texture) { glUniform1i(shader_uniform(sampler), 0); glBindTexture(GL_TEXTURE_CUBE_MAP, texture); }

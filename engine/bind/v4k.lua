@@ -1174,6 +1174,9 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API     void shader_vec3(const char *uniform, vec3 v);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC     void shader_vec3(const char *uniform, vec3 v);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:     void shader_vec3(const char *uniform, vec3 v);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API     void shader_vec3v(const char *uniform, int count, vec3 *v);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC     void shader_vec3v(const char *uniform, int count, vec3 *v);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:     void shader_vec3v(const char *uniform, int count, vec3 *v);
 //lcpp INF [0000] vec4: macro name but used as C declaration in:API     void shader_vec4(const char *uniform, vec4 v);
 //lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC     void shader_vec4(const char *uniform, vec4 v);
 //lcpp INF [0000] vec4: macro name but used as C declaration in:     void shader_vec4(const char *uniform, vec4 v);
@@ -2347,6 +2350,7 @@ int texture_width;
      void shader_float(const char *uniform, float f);
      void shader_vec2(const char *uniform, vec2 v);
      void shader_vec3(const char *uniform, vec3 v);
+     void shader_vec3v(const char *uniform, int count, vec3 *v);
      void shader_vec4(const char *uniform, vec4 v);
      void shader_mat44(const char *uniform, mat44 m);
      void shader_texture(const char *sampler, texture_t texture);

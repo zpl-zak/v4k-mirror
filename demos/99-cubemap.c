@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
     bool must_reload = 0;
 
     while( window_swap()) {
+        if (input_down(KEY_ESC)) break;
         // reloading
         if( must_reload ) {
             must_reload = 0;
@@ -42,7 +43,7 @@ int main(int argc, char** argv) {
             initialized = 1;
             sky = skybox(SKY_DIRS[SKY_DIR], 0);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
-            rotation44(mdl.pivot, 0, 1,0,0); // @fixme: -90,1,0,0 -> should we rotate SHMs as well? compensate rotation in shader?
+            // rotation44(mdl.pivot, 0, 1,0,0); // @fixme: -90,1,0,0 -> should we rotate SHMs as well? compensate rotation in shader?
         }
 
         // fps camera
@@ -58,20 +59,14 @@ int main(int argc, char** argv) {
         // render
         mat44 mvp; multiply44x2(mvp, cam.proj, cam.view);
         {
-            glClear(GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LEQUAL);
-            //glDisable(GL_CULL_FACE);
-
-            // mesh
-            glDepthMask(GL_TRUE);
-            glUseProgram(mdl.program);
-            glUniform3fv(glGetUniformLocation(mdl.program, "u_coefficients_sh"), 9, &sky.cubemap.sh[0].x);
-            glUniform1i(glGetUniformLocation(mdl.program, "u_textured"), false);
+            skybox_render(&sky, cam.proj, cam.view);
+            
+            shader_bind(mdl.program);
+            shader_vec3v("u_coefficients_sh", 9, sky.cubemap.sh);
+            shader_int("u_textured", false);
+            
             model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
 
-            // sky
-            skybox_render(&sky, cam.proj, cam.view);
         }
 
         if( ui_panel("Scene", 0)) {
