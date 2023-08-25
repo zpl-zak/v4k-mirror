@@ -1501,8 +1501,8 @@ API const char *        xml_string(char *key);
 API unsigned            xml_count(char *key);
 API array(char)         xml_blob(char *key);
 #define                 xml_string(...) xml_string(va(__VA_ARGS__))       // syntax sugar: string
-#define                 xml_int(...)    atoi(xml_string(va(__VA_ARGS__))) // syntax sugar: int
-#define                 xml_float(...)  atof(xml_string(va(__VA_ARGS__))) // syntax sugar: float
+#define                 xml_int(...)    atoi(xml_string(__VA_ARGS__))     // syntax sugar: int
+#define                 xml_float(...)  atof(xml_string(__VA_ARGS__))     // syntax sugar: float
 #define                 xml_blob(...)   xml_blob(va(__VA_ARGS__))         // syntax sugar: base64 blob
 #define                 xml_count(...)  xml_count(va(__VA_ARGS__))        // syntax sugar: count nodes
 API void            xml_pop();

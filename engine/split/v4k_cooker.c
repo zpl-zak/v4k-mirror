@@ -17,288 +17,322 @@ const char *COOK_INI = "tools/cook.ini";
 static unsigned ART_SKIP_ROOT; // number of chars to skip the base root in ART folder
 static unsigned ART_LEN;       // dupe
 
-typedef struct cook_script_t {
-    char *infile;     // free after use
-    char *finalfile;  // free after use. can be either infile or a totally different file
+typedef struct cook_subscript_t {
+    char *infile;
+    char *outfile;    // can be either infile, or a totally different file
     char *script;
+    char *outname;
     int compress_level;
+} cook_subscript_t;
+
+typedef struct cook_script_t {
+    cook_subscript_t cs[8];
+
+    int num_passes;
 } cook_script_t;
 
 static
 cook_script_t cook_script(const char *rules, const char *infile, const char *outfile) {
-    // by default, assume:
-    // - no script is going to be generated (empty script)
-    // - if no script is going to be generated, output is in fact input file.
-    // - no compression is going to be required.
-    cook_script_t cs = { 0 };
+    cook_script_t mcs = { 0 };
 
-    // reuse script heap from last call if possible (optimization)
-    static __thread char *script = 0;
-    if(script) script[0] = 0;
+    // pass loop: some asset rules may require multiple cook passes
+    for( int pass = 0; pass < countof(mcs.cs); ++pass ) {
+        // by default, assume:
+        // - no script is going to be generated (empty script)
+        // - if no script is going to be generated, output is in fact input file.
+        // - no compression is going to be required.
+        cook_subscript_t cs = { 0 };
 
-    // reuse parsing maps if possible (optimization)
-    static __thread map(char*, char*) symbols = 0;
-    static __thread map(char*, char*) groups = 0;
+            // reuse script heap from last call if possible (optimization)
+            static __thread char *script = 0;
+            if(script) script[0] = 0;
 
-    if(!symbols) map_init(symbols, less_str, hash_str);
-    if(!groups)  map_init(groups, less_str, hash_str);
+            // reuse parsing maps if possible (optimization)
+            static __thread map(char*, char*) symbols = 0;   if(!symbols) map_init_str(symbols);
+            static __thread map(char*, char*) groups = 0;    if(!groups)  map_init_str(groups);
+            static __thread set(char*) passes = 0;           if(!passes)  set_init_str(passes);
+            map_clear(symbols);
+            map_clear(groups);
 
-    map_find_or_add(symbols, "INFILE", STRDUP(infile));
-    map_find_or_add(symbols, "INPUT", STRDUP(infile));
-    map_find_or_add(symbols, "PRETTY", STRDUP(infile + ART_SKIP_ROOT)); // pretty (truncated) input (C:/prj/V4K/art/file.wav -> file.wav)
-    map_find_or_add(symbols, "OUTPUT", STRDUP(outfile));
-    map_find_or_add(symbols, "TOOLS", STRDUP(TOOLS));
-    map_find_or_add(symbols, "EDITOR", STRDUP(EDITOR));
-    map_find_or_add(symbols, "PROGRESS", STRDUP(va("%03d", cook_progress())));
+            map_find_or_add(symbols, "INFILE", STRDUP(infile));
+            map_find_or_add(symbols, "INPUT", STRDUP(infile));
+            map_find_or_add(symbols, "PRETTY", STRDUP(infile + ART_SKIP_ROOT)); // pretty (truncated) input (C:/prj/V4K/art/file.wav -> file.wav)
+            map_find_or_add(symbols, "OUTPUT", STRDUP(outfile));
+            map_find_or_add(symbols, "TOOLS", STRDUP(TOOLS));
+            map_find_or_add(symbols, "EDITOR", STRDUP(EDITOR));
+            map_find_or_add(symbols, "PROGRESS", STRDUP(va("%03d", cook_progress())));
 
-    // start parsing. parsing is enabled by default
-    int enabled = 1;
-    array(char*)lines = strsplit(rules, "\r\n");
-    for( int i = 0, end = array_count(lines); i < end; ++i ) {
-        // skip blanks
-        int blanks = strspn(lines[i], " \t");
-        char *line = lines[i] + blanks;
+        // clear pass counter
+        set_clear(passes);
 
-        // discard full comments
-        if( line[0] == ';' ) continue;
-        // truncate inline comments
-        if( strstr(line, ";") ) *strstr(line, ";") = 0;
-        // trim ending spaces
-        char *eos = line + strlen(line); while(eos > line && eos[-1] == ' ' ) *--eos = 0;
-        // discard non-specific lines
-        if( line[0] == '@' ) {
-            int with_wine = flag("--cook-wine") && !!strstr(line, "@win");
-            int parse = 0
-                | ifdef(win32, (!!strstr(line, "@win")), 0)
-                | ifdef(linux, (!!strstr(line, "@lin") ? 1 : with_wine), 0)
-                | ifdef(osx,   (!!strstr(line, "@osx") ? 1 : with_wine), 0);
+        // start parsing. parsing is enabled by default
+        int enabled = 1;
+        array(char*)lines = strsplit(rules, "\r\n");
+        for( int i = 0, end = array_count(lines); i < end; ++i ) {
+            // skip blanks
+            int blanks = strspn(lines[i], " \t");
+            char *line = lines[i] + blanks;
 
-            if( !parse ) continue;
+            // discard full comments
+            if( line[0] == ';' ) continue;
+            // truncate inline comments
+            if( strstr(line, ";") ) *strstr(line, ";") = 0;
+            // trim ending spaces
+            char *eos = line + strlen(line); while(eos > line && eos[-1] == ' ' ) *--eos = 0;
+            // discard non-specific lines
+            if( line[0] == '@' ) {
+                int with_wine = flag("--cook-wine") && !!strstr(line, "@win");
+                int parse = 0
+                    | ifdef(win32, (!!strstr(line, "@win")), 0)
+                    | ifdef(linux, (!!strstr(line, "@lin") ? 1 : with_wine), 0)
+                    | ifdef(osx,   (!!strstr(line, "@osx") ? 1 : with_wine), 0);
 
-            line = strchr(line+1, ' ');
-            if(!line) continue;
-            line += strspn(line, " \t");
-        }
-        // execute `shell` commands
-        if( line[0] == '`' ) {
-            char *eos = strrchr(++line, '`');
-            if( eos ) *eos = 0;
+                if( !parse ) continue;
 
-                // replace all symbols
-                char* nl = STRDUP(line);
-                for each_map(symbols, char*, key, char*, val) {
-                    strrepl(&nl, key, val);
+                line = strchr(line+1, ' ');
+                if(!line) continue;
+                line += strspn(line, " \t");
+            }
+            // execute `shell` commands
+            if( line[0] == '`' ) {
+                char *eos = strrchr(++line, '`');
+                if( eos ) *eos = 0;
+
+                    // replace all symbols
+                    char* nl = STRDUP(line); // @leak
+                    for each_map(symbols, char*, key, char*, val) {
+                        strrepl(&nl, key, val);
+                    }
+                    lines[i] = line = nl;
+
+                static thread_mutex_t lock, *init = 0; if(!init) thread_mutex_init(init = &lock);
+                thread_mutex_lock( &lock );
+                    system(line); // strcatf(&script, "%s\n", line);
+                thread_mutex_unlock( &lock );
+
+                continue;
+            }
+            // process [sections]
+            if( line[0] == '[' ) {
+                enabled = 1;
+                int is_cook = !!strstr(line, "[cook]");
+                int is_compress = !!strstr(line, "[compress]");
+                if( !is_cook && !is_compress ) { // if not a special section...
+                    // remove hint cook tag if present. that's informative only.
+                    if(strbegi(line, "[cook ") ) memcpy(line+1, "    ", 4); // line += 6;
+
+                    // start parsing expressions like `[media && !avi && mp3]`
+                    array(char*) tags = strsplit(line, " []&");
+
+                    // let's check whether INPUT belongs to tags above
+                    char **INPUT = map_find(symbols, "INPUT");
+                    bool found_in_set = true;
+
+                    for( int i = 0, end = array_count(tags); i < end; ++i) {
+                        bool negate = false;
+                        char *tag = tags[i];
+                        while(*tag == '!') negate ^= 1, ++tag;
+
+                        // find tag in groups map
+                        // either a group or an extension
+                        char **is_group = map_find(groups, tag);
+                        if( is_group ) {
+                            char *list = *is_group;
+                            char *INPUT_EXT = file_ext(infile); INPUT_EXT = strrchr(INPUT_EXT, '.'); // .ext1.ext -> .ext
+                            char *ext = INPUT_EXT; ext += ext[0] == '.'; // dotless
+                            bool in_list = strbegi(list, ext) || strendi(list, va(",%s",ext)) || strstri(list, va(",%s,",ext));
+                            if( !in_list ^ negate ) { found_in_set = false; break; }
+                        } else {
+                            char *ext = va(".%s", tag);
+                            bool found = !!strendi(*INPUT, ext);
+                            if( !found ^ negate ) { found_in_set = false; break; }
+                        }
+                    }
+                    if( found_in_set ) {
+                        // inc pass
+                        set_find_or_add(passes, STRDUP(*tags)); // @leak
+                        // check whether we keep searching
+                        int num_passes = set_count(passes);
+                        found_in_set = ( pass == (num_passes-1) );
+                    }
+                    //
+                    enabled = found_in_set ? 1 : 0;
                 }
-                lines[i] = line = nl; // @fixme:leak
-
-            static thread_mutex_t lock, *init = 0; if(!init) thread_mutex_init(init = &lock);
-            thread_mutex_lock( &lock );
-                system(line); // strcatf(&script, "%s\n", line);
-            thread_mutex_unlock( &lock );
-
-            continue;
-        }
-        // process [sections]
-        if( line[0] == '[' ) {
-            enabled = 1;
-            int is_cook = !!strstr(line, "[cook]");
-            int is_compress = !!strstr(line, "[compress]");
-            if( !is_cook && !is_compress ) {
-                // remove hint cook tag if present. that's informative only.
-                if(strbegi(line, "[cook ") ) memcpy(line+1, "    ", 4);
-
-                // start parsing expressions like `[media && !avi && mp3]`
-                array(char*) tags = strsplit(line, " []&");
-
-                // let's check whether INPUT belongs to tags above
-                char **INPUT = map_find(symbols, "INPUT");
-                bool found_in_set = true;
-
-                for( int i = 0, end = array_count(tags); i < end; ++i) { char *tag = tags[i];
-                    bool negate = false;
-                    while(*tag == '!') negate ^= 1, ++tag;
-
-                    // find tag in groups map
-                    // either a group or an extension
-                    char **is_group = map_find(groups, tag);
-                    if( is_group ) {
-                        char *list = *is_group;
-                        char *INPUT_EXT = file_ext(infile); INPUT_EXT = strrchr(INPUT_EXT, '.'); // .ext1.ext -> .ext
-                        char *ext = INPUT_EXT; ext += ext[0] == '.'; // dotless
-                        bool in_list = strbegi(list, ext) || strstri(list, va(",%s,",ext)) || strendi(list, va(",%s",ext));
-                        if( !in_list ^ negate ) { found_in_set = false; break; }
-                    } else {
-                        char *ext = va(".%s", tag);
-                        bool found = !!strendi(*INPUT, ext);
-                        if( !found ^ negate ) { found_in_set = false; break; }
+            }
+            // either SYMBOL=, group=, or regular script line
+            if( enabled && line[0] != '[' ) {
+                enum { group, symbol, regular } type = regular;
+                int tokenlen = strspn(line, "-+_.|0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+                char *token = va("%.*s", tokenlen, line);
+                char *equal = strchr(line, '=');
+                if( equal ) {
+                    if( equal == &line[tokenlen] ) { // if key=value expression found
+                        // discriminate: symbols are uppercase and never begin with digits. groups are [0-9]+[|][a-z].
+                        type = strcmp(strupper(token), token) || isdigit(token[0]) ? group : symbol;
                     }
                 }
-                //
-                enabled = found_in_set ? 1 : 0;
-            }
-        }
-        // either SYMBOL=, group=, or regular script line
-        if( enabled && line[0] != '[' ) {
-            enum { group, symbol, regular } type = regular;
-            int tokenlen = strspn(line, "-+_.|0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-            char *token = va("%.*s", tokenlen, line);
-            char *equal = strchr(line, '=');
-            if( equal ) {
-                if( equal == &line[tokenlen] ) { // if key=value expression found
-                    // discriminate: symbols are uppercase and never begin with digits. groups are [0-9]+[|][a-z].
-                    type = strcmp(strupper(token), token) || isdigit(token[0]) ? group : symbol;
+                if( type == group  ) map_find_or_add(groups, token, STRDUP(equal+1));
+                if( type == symbol ) {
+                    // @todo: perform the replacement/union/intersection on set here
+                    bool is_add = strendi(token, "+");
+                    bool is_del = strendi(token, "-");
+
+                    // if present, remove last sign from token -> (FLAGS1+)=, (FLAGS1-)=
+                    if(is_add || is_del) token[strlen(token) - 1] = 0;
+
+                    map_find_or_add(symbols, token, STRDUP(equal+1));
                 }
-            }
-            if( type == group  ) map_find_or_add(groups, token, STRDUP(equal+1));
-            if( type == symbol ) {
-                // @todo: perform the replacement/union/intersection on set here
-                bool is_add = strendi(token, "+");
-                bool is_del = strendi(token, "-");
+                // for each_map(symbols, char*, key, char*, val) printf("%s=%s,", key, val); puts("");
+                // for each_map(groups, char*, key, char*, val) printf("%s=%s,", key, val); puts("");
+                // if( type != regular ) printf("%s found >> %s\n", type == group ? "group" : "symbol", line);
 
-                // if present, remove last sign from token -> (FLAGS1+)=, (FLAGS1-)=
-                if(is_add || is_del) token[strlen(token) - 1] = 0;
+                if( type == regular ) {
+                    char** INPUT = map_find(symbols, "INPUT");
+                    char** OUTPUT = map_find(symbols, "OUTPUT");
 
-                map_find_or_add(symbols, token, STRDUP(equal+1));
-            }
-            // for each_map(symbols, char*, key, char*, val) printf("%s=%s,", key, val); puts("");
-            // for each_map(groups, char*, key, char*, val) printf("%s=%s,", key, val); puts("");
-            // if( type != regular ) printf("%s found >> %s\n", type == group ? "group" : "symbol", line);
+                    // parse return code
+                    char *has_errorlevel = strstr(line, "=="); //==N form
+                    int errorlevel = has_errorlevel ? atoi(has_errorlevel + 2) : 0;
+                    if( has_errorlevel ) memcpy(has_errorlevel, "   ", 3);
 
-            if( type == regular ) {
-                char** INPUT = map_find(symbols, "INPUT");
-                char** OUTPUT = map_find(symbols, "OUTPUT");
+                    // detect if newer extension or filename is present, and thus update OUTPUT if needed
+                    char *newer_extension = strstr(line, "->"); if(newer_extension) {
+                        *newer_extension = 0;
+                        newer_extension += 2 + strspn(newer_extension + 2, " ");
 
-                // parse return code
-                char *has_errorlevel = strstr(line, "=="); //==N form
-                int errorlevel = has_errorlevel ? atoi(has_errorlevel + 2) : 0;
-                if( has_errorlevel ) memcpy(has_errorlevel, "   ", 3);
+                        if( strchr(newer_extension, '.') ) {
+                            // newer filename
+                            cs.outname = stringf("%s@%s", cs.outname ? cs.outname : infile, newer_extension); // @leak
+                            newer_extension = NULL;
+                        } else {
+                            strcatf(&*OUTPUT, ".%s", newer_extension);
+                        }
+                    }
 
-                // detect if newer extension is present, and thus update OUTPUT if needed
-                char *newer_extension = strstr(line, "->"); if(newer_extension) {
-                    *newer_extension = 0;
-                    newer_extension += 2 + strspn(newer_extension + 2, " ");
+                    // replace all symbols
+                    char* nl = STRDUP(line); // @leak
+                    for each_map(symbols, char*, key, char*, val) {
+                        strrepl(&nl, key, val);
+                    }
+                    lines[i] = line = nl;
 
-                    strcatf(&*OUTPUT, ".%s", newer_extension);
-                }
+                    // convert slashes
+                    ifdef(win32,
+                        strswap(line, "/", "\\")
+                    , // else
+                        strswap(line, "\\", "/")
+                    );
 
-                // replace all symbols
-                char* nl = STRDUP(line);
-                for each_map(symbols, char*, key, char*, val) {
-                    strrepl(&nl, key, val);
-                }
-                lines[i] = line = nl; // @fixme:leak
+                    // append line
+                    strcatf(&script, "%s\n", line);
 
-                // convert slashes
-                ifdef(win32,
-                    strswap(line, "/", "\\")
-                , // else
-                    strswap(line, "\\", "/")
-                );
+                    // handle return code here
+                    // if(has_errorlevel)
+                    // strcatf(&script, "IF NOT '%%ERRORLEVEL%%'=='%d' echo ERROR!\n", errorlevel);
 
-                // append line
-                strcatf(&script, "%s\n", line);
-
-                // handle return code here
-                // if(has_errorlevel)
-                // strcatf(&script, "IF NOT '%%ERRORLEVEL%%'=='%d' echo ERROR!\n", errorlevel);
-
-                // rename output->input for further chaining, in case it is needed
-                if( newer_extension ) {
-                    *INPUT[0] = 0;
-                    strcatf(&*INPUT, "%s", *OUTPUT);
+                    // rename output->input for further chaining, in case it is needed
+                    if( newer_extension ) {
+                        *INPUT[0] = 0;
+                        strcatf(&*INPUT, "%s", *OUTPUT);
+                    }
                 }
             }
         }
-    }
 
-    // compression
-    char* ext = file_ext(infile); ext = strrchr(ext, '.'); ext += ext[0] == '.'; // dotless INPUT_EXT
+        char** OUTPUT = map_find(symbols, "OUTPUT");
+        int ext_num_groups = 0;
 
-    char** OUTPUT = map_find(symbols, "OUTPUT");
-    char* belongs_to = 0;
-    for each_map(groups, char*, key, char*, val) {
-        if( !isdigit(key[0]) ) {
-            char *comma = va(",%s,", ext);
-            if( strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
-                belongs_to = key;
-                //goto break1; // each_map() macro is made of multiple for(;;)s. goto needed; you cant escape with single break.
+        // compression
+        if( 1 ) {
+            char* ext = file_ext(infile); ext = strrchr(ext, '.'); ext += ext[0] == '.'; // dotless INPUT_EXT
+            char* belongs_to = 0;
+            for each_map(groups, char*, key, char*, val) {
+                if( !isdigit(key[0]) ) {
+                    char *comma = va(",%s,", ext);
+                    if( !strcmpi(val,ext) || strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
+                        belongs_to = key;
+                        ext_num_groups++;
+                    }
+                }
+            }
+            char *compression = 0;
+            for each_map(groups, char*, key, char*, val) {
+                if( isdigit(key[0]) ) {
+                    char *comma = va(",%s,", ext);
+                    if( !strcmpi(val,ext) || strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
+                        compression = key;
+                    }
+                    comma = va(",%s,", belongs_to);
+                    if( !strcmpi(val,ext) || strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
+                        compression = key;
+                    }
+                }
+            }
+
+            cs.compress_level = 0;
+            if( compression ) {
+                // last chance to optionally override the compressor at command-line level
+                static const char *compressor_override;
+                do_once compressor_override = option("--cook-compressor", "");
+                if( compressor_override[0] ) compression = (char*)compressor_override;
+
+                /**/ if(strstri(compression, "PPP"))  cs.compress_level = atoi(compression) | PPP;
+                else if(strstri(compression, "ULZ"))  cs.compress_level = atoi(compression) | ULZ;
+                else if(strstri(compression, "LZ4"))  cs.compress_level = atoi(compression) | LZ4X;
+                else if(strstri(compression, "CRSH")) cs.compress_level = atoi(compression) | CRSH;
+                else if(strstri(compression, "DEFL")) cs.compress_level = isdigit(compression[0]) ? atoi(compression) : 6 /*| DEFL*/;
+                //else if(strstri(compression, "LZP"))  cs.compress_level = atoi(compression) | LZP1; // not supported
+                else if(strstri(compression, "LZMA")) cs.compress_level = atoi(compression) | LZMA;
+                else if(strstri(compression, "BALZ")) cs.compress_level = atoi(compression) | BALZ;
+                else if(strstri(compression, "LZW"))  cs.compress_level = atoi(compression) | LZW3;
+                else if(strstri(compression, "LZSS")) cs.compress_level = atoi(compression) | LZSS;
+                else if(strstri(compression, "BCM"))  cs.compress_level = atoi(compression) | BCM;
+                else                                  cs.compress_level = isdigit(compression[0]) ? atoi(compression) : 6 /*| DEFL*/;
             }
         }
-    }
-    break1:;
-    char *compression = 0;
-    for each_map(groups, char*, key, char*, val) {
-        if( isdigit(key[0]) ) {
-            char *comma = va(",%s,", ext);
-            if( strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
-                compression = key;
-                //goto break2; // each_map() macro is made of multiple for(;;)s. goto needed; you cant escape with single break.
-            }
-            comma = va(",%s,", belongs_to);
-            if( strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
-                compression = key;
-                //goto break2; // each_map() macro is made of multiple for(;;)s. goto needed; you cant escape with single break.
-            }
+
+        // if script was generated...
+        if( script && script[0]) {
+            // update outfile
+            cs.outfile = *OUTPUT;
+
+            // amalgamate script
+            array(char*) lines = strsplit(script, "\r\n");
+
+            #if is(win32)
+                char *joint = strjoin(lines, " && ");
+                cs.script = joint;
+            #else
+                if( flag("--cook-wine") ) {
+                    // dear linux/osx/bsd users:
+                    // tools going wrong for any reason? cant compile them maybe?
+                    // small hack to use win32 pipeline tools instead
+                    char *joint = strjoin(lines, " && wine " );
+                    cs.script = va("wine %s", /*TOOLS,*/ joint);
+                } else {
+                    char *joint = strjoin(lines, " && " );
+                    cs.script = va("export LD_LIBRARY_PATH=%s && %s", TOOLS, joint);
+                }
+            #endif
+        } else {
+            // ... else bypass infile->outfile
+            char** INFILE = map_find(symbols, "INFILE");
+            cs.outfile = *INFILE;
+
+            // and return an empty script
+            cs.script = "";
         }
-    }
-    break2:;
 
-    cs.compress_level = 0;
-    if( compression ) {
-        // last chance to optionally override the compressor at command-line level
-        static const char *compressor_override, **init = 0;
-        if( !init ) *(init = &compressor_override) = option("--cook-compressor", "");
-        if( compressor_override[0] ) compression = (char*)compressor_override;
+        cs.outname = cs.outname ? cs.outname : (char*)infile;
 
-        /**/ if(strstri(compression, "PPP"))  cs.compress_level = atoi(compression) | PPP;
-        else if(strstri(compression, "ULZ"))  cs.compress_level = atoi(compression) | ULZ;
-        else if(strstri(compression, "LZ4"))  cs.compress_level = atoi(compression) | LZ4X;
-        else if(strstri(compression, "CRSH")) cs.compress_level = atoi(compression) | CRSH;
-        else if(strstri(compression, "DEFL")) cs.compress_level = isdigit(compression[0]) ? atoi(compression) : 6 /*| DEFL*/;
-        //else if(strstri(compression, "LZP"))  cs.compress_level = atoi(compression) | LZP1; // not supported
-        else if(strstri(compression, "LZMA")) cs.compress_level = atoi(compression) | LZMA;
-        else if(strstri(compression, "BALZ")) cs.compress_level = atoi(compression) | BALZ;
-        else if(strstri(compression, "LZW"))  cs.compress_level = atoi(compression) | LZW3;
-        else if(strstri(compression, "LZSS")) cs.compress_level = atoi(compression) | LZSS;
-        else if(strstri(compression, "BCM"))  cs.compress_level = atoi(compression) | BCM;
-        else                                  cs.compress_level = isdigit(compression[0]) ? atoi(compression) : 6 /*| DEFL*/;
+        ASSERT(mcs.num_passes < countof(mcs.cs));
+        mcs.cs[mcs.num_passes++] = cs;
+
+        bool next_pass_required = mcs.num_passes < ext_num_groups;
+        if( !next_pass_required ) break;
     }
 
-    // if script was generated...
-    if( script && script[0]) {
-        // update outfile
-        cs.finalfile = *OUTPUT;
-
-        // amalgamate script
-        array(char*) lines = strsplit(script, "\r\n");
-
-        #if is(win32)
-            char *joint = strjoin(lines, " && ");
-            cs.script = joint;
-        #else
-            if( flag("--cook-wine") ) {
-                // dear linux/osx/bsd users:
-                // tools going wrong for any reason? cant compile them maybe?
-                // small hack to use win32 pipeline tools instead
-                char *joint = strjoin(lines, " && wine " );
-                cs.script = va("wine %s", /*TOOLS,*/ joint);
-            } else {
-                char *joint = strjoin(lines, " && " );
-                cs.script = va("export LD_LIBRARY_PATH=%s && %s", TOOLS, joint);
-            }
-        #endif
-    } else {
-        // ... else bypass infile->outfile
-        char** INFILE = map_find(symbols, "INFILE");
-        cs.finalfile = *INFILE;
-
-        // and return an empty script
-        cs.script = "";
-    }
-
-    map_clear(symbols);
-    map_clear(groups);
-    return cs;
+    return mcs;
 }
 
 // ----------------------------------------------------------------------------
@@ -460,55 +494,52 @@ int cook(void *userdata) {
         *progress = ((i+1) == end ? 90 : (i * 90) / end); // (i+i>0) * 100.f / end;
 
         // start cook
-        const char *fname = uncooked[i]; //job->files[j];
-        int inlen = file_size(fname);
+        const char *infile = uncooked[i]; //job->files[j];
+        int inlen = file_size(infile);
 
         // generate a cooking script for this asset
-        cook_script_t cs = cook_script(job->rules, fname, COOK_TMPFILE);
+        cook_script_t mcs = cook_script(job->rules, infile, COOK_TMPFILE);
         // puts(cs.script);
 
-        // log to batch file for forensic purposes, if explicitly requested
-        static __thread bool logging = 0, *init = 0; if(!init) *(init = &logging) = !!flag("--cook-debug") || cook_debug;
-        if( logging ) {
-            FILE *logfile = fopen(va("cook%d.cmd",job->threadid), "a+t");
-            if( logfile ) { fprintf(logfile, "@rem %s\n%s\n", fname, cs.script); fclose(logfile); }
-            // maybe log fprintf(logfile, "@rem %*.s\n", 4096, app_exec_output()); ?
-        }
+        for(int pass = 0; pass < mcs.num_passes; ++pass) {
+            cook_subscript_t cs = mcs.cs[pass];
 
-        // invoke cooking script and recap status
-        const char *rcout = app_exec(cs.script);
-        int rc = atoi(rcout);
-        int outlen = file_size(cs.finalfile);
-        int failed = cs.script[0] ? rc || !outlen : 0;
+            // log to batch file for forensic purposes, if explicitly requested
+            static __thread bool logging = 0; do_once logging = !!flag("--cook-debug") || cook_debug;
+            if( logging ) {
+                FILE *logfile = fopen(va("cook%d.cmd",job->threadid), "a+t");
+                if( logfile ) { fprintf(logfile, "@rem %s\n%s\n", cs.outname, cs.script); fclose(logfile); }
+                fprintf(stderr, "%s\n", cs.script);
+            }
 
-        // print errors, or...
-        if( failed ) {
-            PRINTF("Import failed: %s while executing:\n%s\nReturned:\n%s\n", fname, cs.script, rcout);
-        }
-        // ...process only if included. may include optional compression.
-        else if( cs.compress_level >= 0 ) {
-            FILE *in = fopen(cs.finalfile, "rb");
+            // invoke cooking script and recap status
+            const char *rc_output = app_exec(cs.script);
+            int rc = atoi(rc_output);
+            int outlen = file_size(cs.outfile);
+            int failed = cs.script[0] ? rc || !outlen : 0;
 
-#if 0
-                struct stat st; stat(fname, &st);
-                struct tm *timeinfo = localtime(&st.st_mtime);
-                ASSERT(timeinfo);
+            // print errors, or...
+            if( failed ) {
+                PRINTF("Import failed: %s while executing:\n%s\nReturned:\n%s\n", cs.outname, cs.script, rc_output);
+            }
+            // ...process only if included. may include optional compression.
+            else if( cs.compress_level >= 0 ) {
+                FILE *in = fopen(cs.outfile, "rb");
 
-                // pretty (truncated) input (C:/prj/V4K/art/file.wav -> file.wav)
-                static __thread int artlen = 0; if(!artlen) artlen = strlen(ART);
-                const char *pretty = fname;
-                if( !strncmp(pretty, ART, artlen) ) pretty += artlen;
-                while(pretty[0] == '/') ++pretty;
-                fname = pretty;
-                //puts(fname);
-#endif
+    #if 0
+                    struct stat st; stat(infile, &st);
+                    struct tm *timeinfo = localtime(&st.st_mtime);
+                    ASSERT(timeinfo);
+    #endif
 
-                char *comment = va("%d", inlen);
-                if( !zip_append_file/*_timeinfo*/(z, fname, comment, in, cs.compress_level/*, timeinfo*/) ) {
-                    PANIC("failed to add processed file into %s: %s", zipfile, fname);
-                }
+                    char *comment = va("%d", inlen);
+                    if( !zip_append_file/*_timeinfo*/(z, cs.outname, comment, in, cs.compress_level/*, timeinfo*/) ) {
+                        PANIC("failed to add processed file into %s: %s(%s)", zipfile, cs.outname, infile);
+                    }
 
-            fclose(in);
+                fclose(in);
+            }
+
         }
     }
 
