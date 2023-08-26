@@ -79,11 +79,6 @@ bool file_append(const char *name, const void *ptr, int len) {
     }
     return ok;
 }
-uint64_t file_stamp(const char *fname) {
-    time_t mtime = (time_t)file_stamp_epoch(fname);
-    struct tm *ti = localtime(&mtime);
-    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
-}
 static bool file_stat(const char *fname, struct stat *st) {
     // remove ending slashes. win32+tcc does not like them.
     int l = strlen(fname), m = l;
@@ -91,9 +86,14 @@ static bool file_stat(const char *fname, struct stat *st) {
     fname = l == m ? fname : va("%.*s", l, fname);
     return stat(fname, st) >= 0;
 }
-uint64_t file_stamp_epoch(const char *fname) {
+uint64_t file_stamp(const char *fname) {
     struct stat st;
     return !file_stat(fname, &st) ? 0ULL : st.st_mtime;
+}
+uint64_t file_stamp10(const char *fname) {
+    time_t mtime = (time_t)file_stamp(fname);
+    struct tm *ti = localtime(&mtime);
+    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
 }
 uint64_t file_size(const char *fname) {
     struct stat st;

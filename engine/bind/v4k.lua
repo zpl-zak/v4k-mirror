@@ -1947,7 +1947,7 @@ COMPRESS_ZLIB    = (12<<4),
  char *       file_normalize(const char *pathfile);
  char *       file_counter(const char *pathfile);
  uint64_t     file_stamp(const char *pathfile);
- uint64_t     file_stamp_epoch(const char *pathfile);
+ uint64_t     file_stamp10(const char *pathfile);
  bool         file_exist(const char *pathfile);
  bool         file_delete(const char *pathfile);
  bool         file_copy(const char *src, const char *dst);

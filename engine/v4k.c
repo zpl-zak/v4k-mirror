@@ -3127,7 +3127,7 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
 
                         if( strchr(newer_extension, '.') ) {
                             // newer filename
-                            cs.outname = stringf("%s@%s", cs.outname ? cs.outname : infile, newer_extension); // @leak
+                            cs.outname = stringf("%s@%s", cs.outname ? cs.outname : infile, newer_extension); // @leak // special char (multi-pass cooks)
                             newer_extension = NULL;
                         } else {
                             strcatf(&*OUTPUT, ".%s", newer_extension);
@@ -3284,6 +3284,7 @@ array(struct fs) zipscan_filter(int threadid, int numthreads) {
         // long time ago but that is less resilient to file relocations across the repository. 
         // excluding the file extension from the hash also helps from external file conversions.
         char *fname = file_name(fs_now[i].fname);
+        char *sign = strrchr(fname, '@'); if(sign) *sign = '\0'; // special char (multi-pass cooks)
         char *dot = strrchr(fname, '.'); if(dot) *dot = '\0';
 
         // skip if list item does not belong to this thread bucket
@@ -3319,9 +3320,10 @@ int zipscan_diff( zip* old, array(struct fs) now ) {
             array_push(uncooked, STRDUP(now[i].fname));
         } else {
             uint64_t oldsize = atoi64(zip_comment(old,found)); // zip_size(old, found); returns sizeof processed asset. return original size of unprocessed asset, which we store in comment section
-            uint64_t oldstamp = atoi64(zip_modt(old, found)+20);
-            if( oldsize != now[i].bytes || oldstamp > (now[i].stamp + 1) ) { // @fixme: should use hash instead. hashof(tool) ^ hashof(args used) ^ hashof(rawsize) ^ hashof(rawdate)
-                printf("%s:\t%u vs %u, %u vs %u\n", now[i].fname, (unsigned)oldsize,(unsigned)now[i].bytes, (unsigned)oldstamp,(unsigned)now[i].stamp);
+            uint64_t oldstamp = atoi64(zip_modt(old,found)+20); // format is "YYYY/MM/DD hh:mm:ss", then +20 chars later a hidden epoch timestamp in base10 can be found
+            int64_t diffstamp = oldstamp < now[i].stamp ? now[i].stamp - oldstamp : oldstamp - now[i].stamp;
+            if( oldsize != now[i].bytes || diffstamp > 1 ) { // @fixme: should use hash instead. hashof(tool) ^ hashof(args used) ^ hashof(rawsize) ^ hashof(rawdate)
+                printf("%s:\t%u vs %u, %llu vs %llu\n", now[i].fname, (unsigned)oldsize,(unsigned)now[i].bytes, oldstamp,now[i].stamp);
                 array_push(changed, STRDUP(now[i].fname));
                 array_push(uncooked, STRDUP(now[i].fname));
             }
@@ -3330,6 +3332,8 @@ int zipscan_diff( zip* old, array(struct fs) now ) {
     // compare for deleted files
     for( int i = 0; i < zip_count(old); ++i ) {
         char *oldname = zip_name(old, i);
+        //if( strchr(oldname, '@') ) oldname = va("%*.s", (int)(strchr(oldname, '@') - oldname), oldname ); // special char (multi-pass cooks)
+
         int idx = zip_find(old, oldname); // find latest versioned file in zip
         unsigned oldsize = zip_size(old, idx);
         if (!oldsize) continue;
@@ -3443,28 +3447,37 @@ int cook(void *userdata) {
             int outlen = file_size(cs.outfile);
             int failed = cs.script[0] ? rc || !outlen : 0;
 
-            // print errors, or...
+            // print errors
             if( failed ) {
                 PRINTF("Import failed: %s while executing:\n%s\nReturned:\n%s\n", cs.outname, cs.script, rc_output);
+                continue;
             }
-            // ...process only if included. may include optional compression.
-            else if( cs.compress_level >= 0 ) {
+
+            // special char (multi-pass cook). newly generated file: refresh values
+            // ensure newly created files by cook are also present on repo/disc for further cook passes
+            if( pass > 0 ) { // && strchr(cs.outname, '@') ) { // pass>0 is a small optimization // special char (multi-pass cooks)
+                file_delete(cs.outname);
+                file_move(cs.outfile, cs.outname);
+                inlen = file_size(infile = cs.outfile = cs.outname);
+            }
+
+            // process only if included. may include optional compression.
+            if( cs.compress_level >= 0 ) {
                 FILE *in = fopen(cs.outfile, "rb");
 
-    #if 0
+#if 0
                     struct stat st; stat(infile, &st);
                     struct tm *timeinfo = localtime(&st.st_mtime);
                     ASSERT(timeinfo);
-    #endif
+#endif
 
                     char *comment = va("%d", inlen);
-                    if( !zip_append_file/*_timeinfo*/(z, cs.outname, comment, in, cs.compress_level/*, timeinfo*/) ) {
+                    if( !zip_append_file/*_timeinfo*/(z, infile, comment, in, cs.compress_level/*, timeinfo*/) ) {
                         PANIC("failed to add processed file into %s: %s(%s)", zipfile, cs.outname, infile);
                     }
 
                 fclose(in);
             }
-
         }
     }
 
@@ -3650,7 +3663,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
         struct fs fi = {0};
         fi.fname = fname; // STRDUP(fname);
         fi.bytes = file_size(fname);
-        fi.stamp = file_stamp(fname); // human-readable base10 timestamp
+        fi.stamp = file_stamp10(fname); // timestamp in base10(yyyymmddhhmmss)
 
         array_push(fs_now, fi);
     }        
@@ -4187,11 +4200,6 @@ bool file_append(const char *name, const void *ptr, int len) {
     }
     return ok;
 }
-uint64_t file_stamp(const char *fname) {
-    time_t mtime = (time_t)file_stamp_epoch(fname);
-    struct tm *ti = localtime(&mtime);
-    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
-}
 static bool file_stat(const char *fname, struct stat *st) {
     // remove ending slashes. win32+tcc does not like them.
     int l = strlen(fname), m = l;
@@ -4199,9 +4207,14 @@ static bool file_stat(const char *fname, struct stat *st) {
     fname = l == m ? fname : va("%.*s", l, fname);
     return stat(fname, st) >= 0;
 }
-uint64_t file_stamp_epoch(const char *fname) {
+uint64_t file_stamp(const char *fname) {
     struct stat st;
     return !file_stat(fname, &st) ? 0ULL : st.st_mtime;
+}
+uint64_t file_stamp10(const char *fname) {
+    time_t mtime = (time_t)file_stamp(fname);
+    struct tm *ti = localtime(&mtime);
+    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
 }
 uint64_t file_size(const char *fname) {
     struct stat st;
@@ -15123,7 +15136,7 @@ void model_destroy(model_t m) {
 
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
-    char *anim_file = vfs_read(pathfile);
+    char *anim_file = vfs_read(va("%s@animlist.txt", pathfile));
     for each_substring(anim_file, "\r\n", anim) {
         int from, to;
         char anim_name[128] = {0};

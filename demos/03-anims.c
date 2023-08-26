@@ -23,9 +23,7 @@ int main() {
     camera_t cam = camera();
     skybox_t sky = skybox("cubemaps/stardust", 0);
     model_t  mdl = model("Stan.fbx", 0);
-    anims_t    a = animations("Stan.anim", 0);
-
-
+    anims_t    a = animations("Stan.fbx", 0);
 
     // load all postfx files in all subdirs
     fx_load("fx**.fs");

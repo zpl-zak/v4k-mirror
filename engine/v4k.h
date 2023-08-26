@@ -1619,8 +1619,8 @@ API char *       file_normalize(const char *pathfile); // c:/prj/dir/file.ext ->
 //API char *     file_normalize_with_folder(const char *pathfile); // c:/prj/dir/file.ext -> dir/file_ext
 API char *       file_counter(const char *pathfile); // in: v4k.ini -> out: v4k(001).ini -> out: v4k(002).ini [-> etc...]
 
-API uint64_t     file_stamp(const char *pathfile); // 20210319113316 (datetime in base10)
-API uint64_t     file_stamp_epoch(const char *pathfile); // 1616153596 (seconds since unix epoch)
+API uint64_t     file_stamp(const char *pathfile); // 1616153596 (seconds since unix epoch)
+API uint64_t     file_stamp10(const char *pathfile); // 20210319113316 (absolute datetime in base10)
 
 API bool         file_exist(const char *pathfile);
 API bool         file_delete(const char *pathfile);

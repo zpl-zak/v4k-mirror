@@ -4222,7 +4222,7 @@ void model_destroy(model_t m) {
 
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
-    char *anim_file = vfs_read(pathfile);
+    char *anim_file = vfs_read(va("%s@animlist.txt", pathfile));
     for each_substring(anim_file, "\r\n", anim) {
         int from, to;
         char anim_name[128] = {0};
