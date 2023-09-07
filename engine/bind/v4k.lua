@@ -2481,7 +2481,6 @@ typedef struct anims_t {
 int   inuse;
 float speed;
 anim_t* anims;
-mat44*  M;
 } anims_t;
  anims_t animations(const char *pathfile, int flags);
 typedef struct skybox_t {

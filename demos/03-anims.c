@@ -69,21 +69,20 @@ int main() {
             ddraw_flush();
 
             // characters
-            static int NUM_INSTANCES = 1;
             profile("Skeletal render") {
-                if( do_showmodel ) model_render_instanced(mdl, cam.proj, cam.view, a.M, 0, NUM_INSTANCES);
+                if( do_showmodel ) model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
 
-                if( do_showbones ) model_render_skeleton(mdl, a.M[0]);
+                if( do_showbones ) model_render_skeleton(mdl, mdl.pivot);
 
                 if( do_showaabb ) {
-                    aabb box = model_aabb(mdl, a.M[0]);
+                    aabb box = model_aabb(mdl, mdl.pivot);
                     ddraw_aabb(box.min, box.max);
                 }
 
                 if( do_showgizmo ) {
                     static vec3 p = {0,0,0}, r = {0,-90,0}, s = {1,1,1};
                     gizmo(&p, &r, &s);
-                    compose44(a.M[0], p, eulerq(r), s);
+                    compose44(mdl.pivot, p, eulerq(r), s);
                 }
             }
 
@@ -94,9 +93,6 @@ int main() {
             if( ui_bool("Show bones", &do_showbones) );
             if( ui_bool("Show models", &do_showmodel) );
             if( ui_bool("Show gizmo", &do_showgizmo) );
-            ui_separator();
-
-            if( ui_int("Instances", &NUM_INSTANCES)) NUM_INSTANCES = clampi(NUM_INSTANCES, 1, array_count(a.M));
             ui_separator();
 
             ui_label(va("Anim %s [%d.. %.2f ..%d]", a.anims[ a.inuse ].name, anim.min, mdl.curframe, anim.max ));

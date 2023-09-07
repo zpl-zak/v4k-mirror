@@ -2732,7 +2732,6 @@ typedef struct anims_t {
     int   inuse; // animation number in use
     float speed; // x1.00
     array(anim_t) anims; // [begin,end,flags] frames of every animation in set
-    array(mat44)  M;     // instanced transforms
 } anims_t;
 
 API anims_t animations(const char *pathfile, int flags);
