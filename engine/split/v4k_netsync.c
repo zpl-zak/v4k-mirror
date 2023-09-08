@@ -63,7 +63,7 @@ char *rpc_full(unsigned id, const char* method, unsigned num_args, char *args[])
             case RPC_SIGNATURE_i_s:   return va("%d %d", id, (int)(intptr_t)found->function(args[0]) );
             case RPC_SIGNATURE_s_s:   return va("%d %s", id, (char*)found->function(args[0]) );
             case RPC_SIGNATURE_s_v:   return va("%d %s", id, (char*)found->function() );
-            case RPC_SIGNATURE_v_s:   return va("%d", id), found->function(args[0]);
+            case RPC_SIGNATURE_v_s:   return found->function(args[0]), va("%d", id);
             default: break;
         }
     }
