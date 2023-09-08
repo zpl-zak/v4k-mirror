@@ -7,10 +7,10 @@
 # [V·4·K {{VERSION}}](https://v4k.dev)
 ## a b o u t
 
-- V4K is a multimedia workbench for prototyping and planning ideas.
-- Internal use only.
-- you can try out the [live demo](https://v4k.dev/demo/)
-- Original repo at [FWK](https://github.com/r-lyeh/FWK). Huge thanks for the amazing base provided!
+- v4k is a multimedia workbench for prototyping and planning ideas.
+- internal use only.
+- you can try out the [live demo](https://v4k.dev/demo/).
+- reach us at [v4.games](https://v4.games/).
 
 <br/>
 <details><summary>Code style</summary>

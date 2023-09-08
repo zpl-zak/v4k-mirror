@@ -102,7 +102,7 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 <!-- - Note: Windows: Assimp.dll may need [this package installed](https://www.microsoft.com/en-us/download/confirmation.aspx?id=30679).-->
 
 ## Credits
-**Original** Big big thanks to [r-lyeh](https://github.com/r-lyeh/fwk) for the amazing FWK base!<br/>
+**Original** Big big thanks to [r-lyeh](https://github.com/r-lyeh/fwk) for the amazing [FWK](https://github.com/r-lyeh/FWK) base!<br/><br/>
 **Artwork**
 [Dean Evans, Raijin](https://youtu.be/RRvYkrrpMKo?t=147 "for the Map song (c)"),
 [FMS_Cat](https://gist.github.com/FMS-Cat/a1ccea3ce866c34706084e3526204f4f "for nicest VHS/VCR shader around (MIT)"),
