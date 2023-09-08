@@ -240,7 +240,11 @@ void dispatch(unsigned wx, unsigned wy, unsigned wz){
     glDispatchCompute(wx, wy, wz);
 }
 
-void imageWriteBarrier(){
+void write_barrier(){
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+}
+
+void image_write_barrier(){
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
@@ -276,8 +280,8 @@ void shader_texture_unit(const char *sampler, unsigned id, unsigned unit) {
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_2D, id);
 }
-void shader_image(texture_t *t, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned access){
-    shader_image_unit(t->id, unit, level, layer, t->texel_type, access);
+void shader_image(texture_t t, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned access){
+    shader_image_unit(t.id, unit, level, layer, t.texel_type, access);
 }
 void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access){
     GLenum gl_access[] = {GL_READ_ONLY, GL_WRITE_ONLY, GL_READ_WRITE};

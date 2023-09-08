@@ -2574,9 +2574,10 @@ enum ACCESS_MODE {
 
 API unsigned compute(const char *cs);
 API void dispatch(unsigned wx, unsigned wy, unsigned wz);
-API void shader_image(texture_t *t, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned access);
+API void shader_image(texture_t t, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned access);
 API void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned texel_type, unsigned access);
-API void imageWriteBarrier();
+API void image_write_barrier();
+API void write_barrier();
 
 // -----------------------------------------------------------------------------
 // meshes (@fixme: deprecate?)

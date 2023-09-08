@@ -9,11 +9,14 @@ int main() {
     texture_t tex = texture_create(512, 512, 4, 0, TEXTURE_LINEAR|TEXTURE_FLOAT);
 
     while ( window_swap() && !input_down(KEY_ESC) ){
+        if (input(KEY_F5)) window_reload();
         shader_bind(comp);
         shader_float("t", (float)window_time());
-        shader_image(&tex, 0, 0, -1, READ);
+        shader_image(tex, 0, 0, -1, READ);
         dispatch(512, 512, 1);
-        imageWriteBarrier();
+        image_write_barrier();
         fullscreen_quad_rgb(tex, 2.2);
     }
+
+    return 0;
 }

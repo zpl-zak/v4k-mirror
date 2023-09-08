@@ -2366,9 +2366,10 @@ READ_WRITE
 };
  unsigned compute(const char *cs);
  void dispatch(unsigned wx, unsigned wy, unsigned wz);
- void shader_image(texture_t *t, unsigned unit, unsigned level, int layer , unsigned access);
+ void shader_image(texture_t t, unsigned unit, unsigned level, int layer , unsigned access);
  void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer , unsigned texel_type, unsigned access);
- void imageWriteBarrier();
+ void image_write_barrier();
+ void write_barrier();
 enum MESH_FLAGS {
 MESH_STATIC = 0,
 MESH_STREAM = 1,
