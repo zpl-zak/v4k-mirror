@@ -2579,6 +2579,29 @@ API void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int 
 API void image_write_barrier();
 API void write_barrier();
 
+// ssbo
+enum USAGE_MODE {
+    STATIC_DRAW,
+    STATIC_READ,
+    STATIC_COPY,
+
+    DYNAMIC_DRAW,
+    DYNAMIC_READ,
+    DYNAMIC_COPY,
+
+    STREAM_DRAW,
+    STREAM_READ,
+    STREAM_COPY
+};
+
+API unsigned ssbo_create(const void *data, int len, unsigned usage);
+API void ssbo_destroy(unsigned ssbo);
+API void ssbo_update(int offset, int len, const void *data);
+API void ssbo_bind(unsigned ssbo, unsigned unit);
+API void *ssbo_map(unsigned access);
+API void ssbo_unmap();
+API void ssbo_unbind();
+
 // -----------------------------------------------------------------------------
 // meshes (@fixme: deprecate?)
 

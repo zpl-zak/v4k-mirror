@@ -2370,6 +2370,24 @@ READ_WRITE
  void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer , unsigned texel_type, unsigned access);
  void image_write_barrier();
  void write_barrier();
+enum USAGE_MODE {
+STATIC_DRAW,
+STATIC_READ,
+STATIC_COPY,
+DYNAMIC_DRAW,
+DYNAMIC_READ,
+DYNAMIC_COPY,
+STREAM_DRAW,
+STREAM_READ,
+STREAM_COPY
+};
+ unsigned ssbo_create(const void *data, int len, unsigned usage);
+ void ssbo_destroy(unsigned ssbo);
+ void ssbo_update(int offset, int len, const void *data);
+ void ssbo_bind(unsigned ssbo, unsigned unit);
+ void *ssbo_map(unsigned access);
+ void ssbo_unmap();
+ void ssbo_unbind();
 enum MESH_FLAGS {
 MESH_STATIC = 0,
 MESH_STREAM = 1,

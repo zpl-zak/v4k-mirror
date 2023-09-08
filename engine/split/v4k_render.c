@@ -200,7 +200,7 @@ unsigned compute(const char *cs){
     #else
     PRINTF(/*"!"*/"Compiling compute shader\n");
 
-    cs = cs[0] == '#' && cs[1] == 'c' ? cs : va("#version 430 core\n%s", cs ? cs : "");
+    cs = cs[0] == '#' && cs[1] == 'c' ? cs : va("#version 450 core\n%s", cs ? cs : "");
 
     GLuint comp = shader_compile(GL_COMPUTE_SHADER, cs);
     GLuint program = 0;
@@ -254,6 +254,40 @@ void shader_destroy(unsigned program){
 // if(s->name) FREE(s->name), s->name = NULL;
 }
 
+unsigned ssbo_create(const void *data, int len, unsigned usage){
+    static GLuint gl_usage[] = { GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_DYNAMIC_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY };
+    GLuint ssbo;
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, len, data, gl_usage[usage]);
+    return ssbo;
+}
+
+void ssbo_destroy(unsigned ssbo){
+    glDeleteBuffers(1, &ssbo);
+}
+
+void ssbo_update(int offset, int len, const void *data){
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, len, data);
+}
+
+void *ssbo_map(unsigned access){
+    static GLenum gl_access[] = {GL_READ_ONLY, GL_WRITE_ONLY, GL_READ_WRITE};
+    return glMapBuffer(GL_SHADER_STORAGE_BUFFER, gl_access[access]);
+}
+void ssbo_unmap(){
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+}
+
+void ssbo_bind(unsigned ssbo, unsigned unit){
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, unit, ssbo);
+}
+
+void ssbo_unbind(){
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
 static __thread unsigned last_shader = -1;
 static
 int shader_uniform(const char *name) {
@@ -284,7 +318,7 @@ void shader_image(texture_t t, unsigned unit, unsigned level, int layer /* -1 to
     shader_image_unit(t.id, unit, level, layer, t.texel_type, access);
 }
 void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access){
-    GLenum gl_access[] = {GL_READ_ONLY, GL_WRITE_ONLY, GL_READ_WRITE};
+    static GLenum gl_access[] = {GL_READ_ONLY, GL_WRITE_ONLY, GL_READ_WRITE};
     glBindImageTexture(unit, texture, level, layer!=-1, layer!=-1?layer:0, gl_access[access], texel_type);
 }
 

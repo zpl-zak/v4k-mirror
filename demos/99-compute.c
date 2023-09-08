@@ -5,16 +5,30 @@ int main() {
     window_create(50, WINDOW_SQUARE);
     window_title(__FILE__);
 
+    unsigned TEX_WIDTH = 1000;
+
     unsigned comp = compute(vfs_read("shaders/compute-test.glsl"));
-    texture_t tex = texture_create(512, 512, 4, 0, TEXTURE_LINEAR|TEXTURE_FLOAT);
+    texture_t tex = texture_create(TEX_WIDTH, TEX_WIDTH, 4, 0, TEXTURE_LINEAR|TEXTURE_FLOAT);
+    shader_bind(comp);
+    shader_image(tex, 0, 0, 0, READ);
+
+    struct {
+        float f;
+    } data;
+
+    unsigned buf = ssbo_create(&data, sizeof(data), STREAM_DRAW);
 
     while ( window_swap() && !input_down(KEY_ESC) ){
         if (input(KEY_F5)) window_reload();
+        
         shader_bind(comp);
-        shader_float("t", (float)window_time());
-        shader_image(tex, 0, 0, -1, READ);
-        dispatch(512, 512, 1);
+        data.f = (float)window_time();
+        ssbo_bind(buf, 1);
+        ssbo_update(0, sizeof(data), &data);
+        
+        dispatch(TEX_WIDTH/10, TEX_WIDTH/10, 1);
         image_write_barrier();
+        
         fullscreen_quad_rgb(tex, 2.2);
     }
 
