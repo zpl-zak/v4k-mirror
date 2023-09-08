@@ -8,7 +8,6 @@
 ## a b o u t
 
 - v4k is a multimedia workbench for prototyping and planning ideas.
-- internal use only.
 - you can try out the [live demo](https://v4k.dev/demo/).
 - reach us at [v4.games](https://v4.games/).
 

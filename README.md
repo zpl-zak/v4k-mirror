@@ -182,5 +182,5 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 - [Rxi](https://github.com/rxi/autobatch "for lovely sprites & cats demo (MIT)")
 -->
 
-## License
-All Rights Reserved. Access provided with written permission. Internal use only.
+## Unlicense
+This software is released into the [public domain](https://unlicense.org/). Also dual-licensed as [0-BSD](https://opensource.org/licenses/0BSD) or [MIT (No Attribution)](https://github.com/aws/mit-0) for those countries where public domain is a concern (sigh). Any contribution to this repository is implicitly subjected to the same release conditions aforementioned.
