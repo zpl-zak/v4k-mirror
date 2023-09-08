@@ -1,7 +1,11 @@
 <h1 align="center">V·4·K</h1>
 <p align="center">
-3D game engine/framework in C, with Luajit and Python bindings.<br/>
+3D multimedia workbench in C, with Luajit and Python bindings.<br/>
 </p>
+
+## Download
+- [v4k.h](https://v4k.dev/v4k.h)
+- ~~workbench.exe~~
 
 ## Goals
 - [x] ~~Full featured~~, ~~Fast~~, ~~Modern C++~~. Small, Naive, Simple C.
@@ -233,6 +237,7 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 <!-- - Note: Windows: Assimp.dll may need [this package installed](https://www.microsoft.com/en-us/download/confirmation.aspx?id=30679).-->
 
 ## Credits
+**Original** Big big thanks to [r-lyeh](https://github.com/r-lyeh/fwk) for the amazing FWK base!
 **Artwork**
 [Dean Evans, Raijin](https://youtu.be/RRvYkrrpMKo?t=147 "for the Map song (c)"),
 [FMS_Cat](https://gist.github.com/FMS-Cat/a1ccea3ce866c34706084e3526204f4f "for nicest VHS/VCR shader around (MIT)"),
