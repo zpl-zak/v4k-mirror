@@ -8,3 +8,4 @@ demos/html5/*.html
 demos/ports/*/*.exe
 demos/ports/doom/.doomrc 
 *.sublime-workspace
+engine/v4k.html
