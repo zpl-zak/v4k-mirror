@@ -340,11 +340,13 @@ if "%1"=="docs" (
     set /p GIT_BRANCH=<info.obj
     date /t > info.obj
     set /p LAST_MODIFIED=<info.obj
+    git --no-pager log --pretty="format:%%h: %%s (**%%cN**)" > changelog.txt
 
     rem ...and generate docs
     cl   tools\docs\docs.c engine\v4k.c -Iengine %2
     docs engine\v4k.h --excluded=3rd_glad.h,v4k.h,v4k_compat.h, > v4k.html
     move /y v4k.html engine\
+    del changelog.txt
 
     exit /b
 )
@@ -461,7 +463,6 @@ if "%1"=="web" (
 )
 
 if "%1"=="vps" (
-    call make.bat git
     tools\pscp -4 -batch -agent -P 22 -l app engine\v4k.html 128.140.14.212:/home/app/microblog/app/static/v4k/index.html
     rem tools\pscp -4 -batch -agent -P 22 -l app engine\joint\v4k.h 128.140.14.212:/home/app/microblog/app/static/v4k/v4k.h
     exit /b

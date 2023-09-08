@@ -2573,14 +2573,51 @@ enum ACCESS_MODE {
     READ_WRITE
 };
 
+/// Loads the compute shader and compiles a GL program.
+/// return: GL program, 0 if failed.
+/// cs: shader source code
 API unsigned compute(const char *cs);
-API void dispatch(unsigned wx, unsigned wy, unsigned wz);
-API void shader_image(texture_t t, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned access);
-API void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned texel_type, unsigned access);
+
+/// Runs the compute program with provided global workgroup size on x y z grid.
+/// wx: global workgroup size x
+/// wy: global workgroup size y
+/// wz: global workgroup size z
+API void compute_dispatch(unsigned wx, unsigned wy, unsigned wz);
+
+/// Binds a texture to the program
+/// !!! Set `layer` to -1 to disable layered access.
+/// t: texture to bind
+/// unit: texture unit bind index
+/// level: texture level access (MIP0, MIP1, ...)
+/// layer: bind layer
+/// access: texture access policy
+/// see: ACCESS_MODE
+API void shader_image(texture_t t, unsigned unit, unsigned level, int layer, unsigned access);
+
+/// Binds a texture to the program
+/// !!! Set `layer` to -1 to disable layered access.
+/// texture: GL texture handle
+/// unit: texture unit bind index
+/// level: texture level access (MIP0, MIP1, ...)
+/// layer: bind layer
+/// texel_type: image texel format (RGBA8, RGBA32F, ...)
+/// access: texture access policy
+/// see: ACCESS_MODE
+API void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access);
+
+// gpu memory barriers
+
+/// Blocks main thread until all image operations are done by the GPU.
 API void image_write_barrier();
+
+/// Blocks main thread until all memory operations are done by the GPU.
 API void write_barrier();
 
 // ssbo
+/// `STATIC`, `DYNAMIC` AND `STREAM` specify the frequency at which we intend to access the data.
+/// `DRAW` favors CPU->GPU operations.
+/// `READ` favors GPU->CPU operations.
+/// `COPY` favors CPU->GPU->CPU operations.
 enum USAGE_MODE {
     STATIC_DRAW,
     STATIC_READ,
@@ -2595,12 +2632,41 @@ enum USAGE_MODE {
     STREAM_COPY
 };
 
+/// Create Shader Storage Buffer Object
+/// !!! `data` can be NULL
+/// data: optional pointer to data to upload
+/// len: buffer size, must not be 0
+/// usage: buffer usage policy
+/// see: USAGE_MODE
 API unsigned ssbo_create(const void *data, int len, unsigned usage);
+
+/// Destroys an SSBO resource
 API void ssbo_destroy(unsigned ssbo);
+
+/// Updates an existing SSBO
+/// !!! `len` can not exceed the original buffer size specified in `ssbo_create` !
+/// offset: offset to buffer memory
+/// len: amount of data to write
+/// data: pointer to data we aim to write, can not be NULL
 API void ssbo_update(int offset, int len, const void *data);
+
+/// Bind an SSBO resource to the provided bind unit index
+/// ssbo: resource object
+/// unit: bind unit index
 API void ssbo_bind(unsigned ssbo, unsigned unit);
+
+/// Map an SSBO resource to the system memory
+/// !!! Make sure to `ssbo_unmap` the buffer once done working with it.
+/// access: buffer access policy
+/// return: pointer to physical memory of the buffer
+/// see: ACCESS_MODE
 API void *ssbo_map(unsigned access);
+
+/// Unmaps an SSBO resource
+/// !!! Pointer provided by `ssbo_map` becomes invalid.
 API void ssbo_unmap();
+
+/// Unbinds an SSBO resource
 API void ssbo_unbind();
 
 // -----------------------------------------------------------------------------

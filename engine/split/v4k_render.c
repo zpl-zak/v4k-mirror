@@ -225,7 +225,7 @@ unsigned compute(const char *cs){
     #endif
 }
 
-void dispatch(unsigned wx, unsigned wy, unsigned wz){
+void compute_dispatch(unsigned wx, unsigned wy, unsigned wz){
     glDispatchCompute(wx, wy, wz);
 }
 

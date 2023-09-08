@@ -26,7 +26,7 @@ int main() {
         ssbo_bind(buf, 1);
         ssbo_update(0, sizeof(data), &data);
         
-        dispatch(TEX_WIDTH/10, TEX_WIDTH/10, 1);
+        compute_dispatch(TEX_WIDTH/10, TEX_WIDTH/10, 1);
         image_write_barrier();
         
         fullscreen_quad_rgb(tex, 2.2);

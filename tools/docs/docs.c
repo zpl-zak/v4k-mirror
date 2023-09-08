@@ -73,6 +73,7 @@
 int DO_CSS = 1;
 int DO_DEBUG = 0;
 int DO_README = 1;
+int DO_CHANGELOG = 1;
 
 // C preprocessor:
 // 1. remove all /* C comments */
@@ -891,6 +892,16 @@ int main(int argc, char **argv) {
     array_sort(macros, sort_strcmp);
     array_unique(macros, sort_strcmp);
     { char *sep = ""; for(int i = 0, end = array_count(macros); i < end; ++i)     printf("%s[%s](#%s)", sep, macros[i], macros[i]), sep = ", "; }
+
+    if ( DO_CHANGELOG ) {
+        printf("\n## c h a n g e l o g\n\n");
+        char *chg = file_read("changelog.txt");
+        strrepl(&chg, "\r\n", "\n");
+        for each_substring(chg, "\n", it) {
+            // printf("<details><summary>%s</summary></details>\n", it);
+            printf("* %s\n", it);
+        }
+    }
 
     puts("\n<script>");
     puts("\nmarkdeepOptions = {");
