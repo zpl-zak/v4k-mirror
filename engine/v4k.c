@@ -4350,7 +4350,7 @@ const char** file_list(const char *cwd, const char *masks) {
                 if( line[0] == '\0' ) continue;
                 // do not insert system folders/files
                 for(int i = 0; i < len; ++i ) if(line[i] == '\\') line[i] = '/';
-                if( line[0] == '.' ) continue;
+                if( line[0] == '.' ) if( !strcmp(line,".git") || !strcmp(line,".vs") || !strcmp(line,".") || !strcmp(line,"..") ) continue;
                 if( strstr(line, "/.") ) continue;
                 // insert copy
                 #if is(win32)
@@ -4613,7 +4613,11 @@ typedef struct archive_dir {
 } archive_dir;
 
 static archive_dir *dir_mount;
-static archive_dir *dir_cache; enum { MAX_CACHED_FILES = 16 }; // @todo: should we cache the cooked contents instead? ie, stbi() result instead of file.png?
+static archive_dir *dir_cache; 
+
+#ifndef MAX_CACHED_FILES    // @todo: should this be MAX_CACHED_SIZE (in MiB) instead?
+#define MAX_CACHED_FILES 32 // @todo: should we cache the cooked contents instead? ie, stbi() result instead of file.png?
+#endif
 
 struct vfs_entry {
     const char *name;
@@ -4631,17 +4635,18 @@ void vfs_reload() {
     array_resize(vfs_hints, 0); // @leak
     array_resize(vfs_entries, 0); // @leak
 
-    // mount virtual filesystems later (mounting order: low -> to -> high priority)
-    bool any_mounted = 0;
+    // mount virtual filesystems later (mounting order matters: low -> to -> high priority)
+#if 0
     for( int i = 0; i < JOBS_MAX; ++i) {
-        bool mounted = false; 
-        mounted |= !!vfs_mount(va(".art[%02x].zip", i));
-        mounted |= !!vfs_mount(va("%s[%02x].zip", app, i));
-        mounted |= !!vfs_mount(va("%s%02x.zip", app, i));
-        mounted |= !!vfs_mount(va("%s.%02x", app, i));
-        any_mounted |= mounted;
-//      if(!mounted) break;
+        if( vfs_mount(va(".art[%02x].zip", i)) ) continue;
+        if( vfs_mount(va("%s[%02x].zip", app, i)) ) continue;
+        if( vfs_mount(va("%s%02x.zip", app, i)) ) continue;
+        //if( vfs_mount(va("%s.%02x", app, i)) ) continue;
     }
+#else
+    // faster way
+    for( const char **file = file_list("./","*.zip"); *file; ++file) vfs_mount(*file);
+#endif
 
     // vfs_resolve() will use these art_folder locations as hints when cook-on-demand is in progress.
     // cook-on-demand will not be able to resolve a virtual pathfile if there are no cooked assets on disk,
