@@ -264,6 +264,7 @@ if "%1"=="help" (
     echo %0 [web]                   ; run Python webserver in html5 dir
     echo %0 [pull]                  ; pull changes from 'latest' upstream
     echo %0 [git]                   ; prepare for commit
+    echo %0 [vps]                   ; upload the release to VPS
     echo %0 [push]                  ; prepare for commit, stage changes and commit them
     echo %0 [tidy]                  ; clean up temp files
     echo %0 [bind]                  ; generate lua bindings
@@ -430,6 +431,7 @@ if "%1"=="glsl_split" (
     call tools\glsl_split
     exit /b
 )
+
 if "%1"=="glsl_join" (
     call tools\glsl_join
     exit /b
@@ -455,6 +457,13 @@ if "%1"=="html5" (
 
 if "%1"=="web" (
     python -m http.server --directory demos\html5 --bind 127.0.0.1 8000
+    exit /b
+)
+
+if "%1"=="vps" (
+    call make.bat git
+    tools\pscp -4 -batch -agent -P 22 -l app engine\v4k.html 128.140.14.212:/home/app/microblog/app/static/v4k/index.html
+    tools\pscp -4 -batch -agent -P 22 -l app engine\joint\v4k.h 128.140.14.212:/home/app/microblog/app/static/v4k/v4k.h
     exit /b
 )
 
