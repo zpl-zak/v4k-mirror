@@ -11108,6 +11108,56 @@ unsigned shader(const char *vs, const char *fs, const char *attribs, const char 
     return program;
 }
 
+unsigned compute(const char *cs){
+    #if is(ems)
+    return 0;
+    #else
+    PRINTF(/*"!"*/"Compiling compute shader\n");
+
+    cs = cs[0] == '#' && cs[1] == 'c' ? cs : va("#version 430 core\n%s", cs ? cs : "");
+
+    GLuint comp = shader_compile(GL_COMPUTE_SHADER, cs);
+    GLuint program = 0;
+
+    if( comp ) {
+        program = glCreateProgram();
+
+        glAttachShader(program, comp);
+
+        glLinkProgram(program);
+
+        GLint status = GL_FALSE, length;
+        glGetProgramiv(program, GL_LINK_STATUS, &status);
+#ifdef DEBUG_SHADER
+        if (status != GL_FALSE && program == DEBUG_SHADER) {
+#else
+        if (status == GL_FALSE) {
+#endif
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+            char *buf = stack(length+1);
+            glGetProgramInfoLog(program, length, NULL, buf);
+            puts("--- cs:");
+            shader_print(cs);
+        }
+        if (status == GL_FALSE) {
+            PANIC("ERROR: shader(): Shader/program link: %s\n", buf);
+            return 0;
+        }
+
+        glDeleteShader(comp);
+    }
+    return program;
+    #endif
+}
+
+void dispatch(unsigned wx, unsigned wy, unsigned wz){
+    glDispatchCompute(wx, wy, wz);
+}
+
+void imageWriteBarrier(){
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
 void shader_destroy(unsigned program){
     if( program == ~0u ) return;
     glDeleteProgram(program);
@@ -11139,6 +11189,13 @@ void shader_texture_unit(const char *sampler, unsigned id, unsigned unit) {
     glUniform1i(shader_uniform(sampler), unit);
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_2D, id);
+}
+void shader_image(texture_t *t, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned access){
+    shader_image_unit(t->id, unit, level, layer, t->texel_type, access);
+}
+void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access){
+    GLenum gl_access[] = {GL_READ_ONLY, GL_WRITE_ONLY, GL_READ_WRITE};
+    glBindImageTexture(unit, texture, level, layer!=-1, layer!=-1?layer:0, gl_access[access], texel_type);
 }
 
 void shader_colormap(const char *name, colormap_t c ) {
@@ -11265,7 +11322,7 @@ unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const 
     GLuint pixel_types[] = { GL_RED, GL_RED, GL_RG, GL_RGB, GL_RGBA, GL_R32F, GL_R32F, GL_RG32F, GL_RGB32F, GL_RGBA32F };
     GLenum pixel_storage = flags & TEXTURE_FLOAT ? GL_FLOAT : GL_UNSIGNED_BYTE;
     GLuint pixel_type = pixel_types[ n ];
-    GLuint texel_type = pixel_types[ n + 5 * !!(flags & TEXTURE_FLOAT) ];
+    GLuint texel_type = t->texel_type = pixel_types[ n + 5 * !!(flags & TEXTURE_FLOAT) ];
     GLenum wrap = GL_CLAMP_TO_EDGE;
     GLenum min_filter = GL_NEAREST, mag_filter = GL_NEAREST;
 //    GLfloat color = (flags&7)/7.f, border_color[4] = { color, color, color, 1.f };
@@ -20477,9 +20534,14 @@ void window_hints(unsigned flags) {
     //glfwWindowHint( GLFW_COCOA_MENUBAR, GLFW_FALSE );
     #endif
 
+    #ifdef __APPLE__
     /* We need to explicitly ask for a 3.2 context on OS X */
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // osx
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2); // osx, 2:#version150,3:330
+    #else
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    #endif
     #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); //osx
     #endif

@@ -2230,6 +2230,7 @@ union { unsigned y, h; };
 union { unsigned z, d; };
 union { unsigned n, bpp; };
 handle id, unit;
+unsigned texel_type;
 unsigned flags;
 char* filename;
 bool transparent;
@@ -2358,6 +2359,16 @@ int texture_width;
      void shader_colormap(const char *name, colormap_t cm);
  unsigned shader_get_active();
  void     shader_destroy(unsigned shader);
+enum ACCESS_MODE {
+READ,
+WRITE,
+READ_WRITE
+};
+ unsigned compute(const char *cs);
+ void dispatch(unsigned wx, unsigned wy, unsigned wz);
+ void shader_image(texture_t *t, unsigned unit, unsigned level, int layer , unsigned access);
+ void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer , unsigned texel_type, unsigned access);
+ void imageWriteBarrier();
 enum MESH_FLAGS {
 MESH_STATIC = 0,
 MESH_STREAM = 1,

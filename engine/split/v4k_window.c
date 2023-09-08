@@ -169,9 +169,14 @@ void window_hints(unsigned flags) {
     //glfwWindowHint( GLFW_COCOA_MENUBAR, GLFW_FALSE );
     #endif
 
+    #ifdef __APPLE__
     /* We need to explicitly ask for a 3.2 context on OS X */
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // osx
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2); // osx, 2:#version150,3:330
+    #else
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    #endif
     #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); //osx
     #endif

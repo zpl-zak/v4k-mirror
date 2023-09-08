@@ -125,6 +125,7 @@ typedef struct texture_t {
     union { unsigned z, d; };
     union { unsigned n, bpp; };
     handle id, unit;
+    unsigned texel_type;
     unsigned flags;
     char* filename;
     bool transparent;
@@ -325,6 +326,19 @@ API     void shader_texture_unit(const char *sampler, unsigned texture, unsigned
 API     void shader_colormap(const char *name, colormap_t cm);
 API unsigned shader_get_active();
 API void     shader_destroy(unsigned shader);
+
+// compute shaders
+enum ACCESS_MODE {
+    READ,
+    WRITE,
+    READ_WRITE
+};
+
+API unsigned compute(const char *cs);
+API void dispatch(unsigned wx, unsigned wy, unsigned wz);
+API void shader_image(texture_t *t, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned access);
+API void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer /* -1 to disable layered access */, unsigned texel_type, unsigned access);
+API void imageWriteBarrier();
 
 // -----------------------------------------------------------------------------
 // meshes (@fixme: deprecate?)
