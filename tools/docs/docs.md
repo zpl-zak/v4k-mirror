@@ -9,6 +9,7 @@
 
 - V4K is a multimedia workbench for prototyping and planning ideas.
 - Internal use only.
+- you can try out the [live demo](https://v4k.dev/demo/)
 - Original repo at [FWK](https://github.com/r-lyeh/FWK). Huge thanks for the amazing base provided!
 
 <br/>

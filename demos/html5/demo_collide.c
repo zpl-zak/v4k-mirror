@@ -578,16 +578,16 @@ void game_loop(void *userdata) {
     //ddraw_flush();
     //fx_end();
 
-    if( ui_panel("Audio", 0) ) {
-        if( ui_button("test audio") ) {
-            // audio (both clips & streams)
-            static audio_t voice; voice = audio_clip("coin.wav"); // "pew.sfxr"
-            static audio_t stream; stream = audio_stream("wrath_of_the_djinn.xm"); // "larry.mid"
-            audio_play(voice, 0);
-            audio_play(stream, 0);
-        }
-        ui_panel_end();
-    }
+    // if( ui_panel("Audio", 0) ) {
+    //     if( ui_button("test audio") ) {
+    //         // audio (both clips & streams)
+    //         static audio_t voice; voice = audio_clip("coin.wav"); // "pew.sfxr"
+    //         static audio_t stream; stream = audio_stream("wrath_of_the_djinn.xm"); // "larry.mid"
+    //         audio_play(voice, 0);
+    //         audio_play(stream, 0);
+    //     }
+    //     ui_panel_end();
+    // }
 
     if( ui_panel("FX", 0) ) {
         for( int i = 0; i < 64; ++i ) {
@@ -605,9 +605,7 @@ int main(void) {
     window_create(0.75f, WINDOW_MSAA4);
     window_title( "V4K - SPACE pauses simulation" );
 
-    // for(const char **list = file_list("fx**.fs"); *list; list++) {
-    //     //fx_load(*list);
-    // }
+    // fx_load("fx**.fs");
 
     // camera that points to origin
     cam = camera();
