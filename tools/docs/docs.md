@@ -7,9 +7,7 @@
 # [V·4·K {{VERSION}}](https://dev.v4.games/zaklaus/v4k)
 ## a b o u t
 
-- https://dev.v4.games/zaklaus/v4k is a 3D game framework in C, with Luajit bindings.
-
-![Image from demo.c](https://i.imgur.com/sInbRoA.gif)
+- https://dev.v4.games/zaklaus/v4k is a multimedia workbench for prototyping and planning ideas.
 
 <details><summary>Code style</summary>
 ```C linenumbers

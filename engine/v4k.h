@@ -2549,6 +2549,7 @@ API void shadowmatrix_ortho(mat44 shm_proj, float left, float right, float botto
 // shaders
 
 API unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor);
+API unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor);
 API unsigned shader_bind(unsigned program);
 API     void shader_bool(const char *uniform, bool i );
 API     void shader_int(const char *uniform, int i);
@@ -2641,6 +2642,7 @@ typedef struct mesh_t {
 API mesh_t mesh();
 API   void mesh_update(mesh_t *m, const char *format, int vertex_stride,int vertex_count,const void *interleaved_vertex_data, int index_count,const void *index_data, int flags);
 API   void mesh_render(mesh_t *m);
+API   void mesh_render_prim(mesh_t *sm, unsigned prim);
 API   void mesh_destroy(mesh_t *m);
 API   aabb mesh_bounds(mesh_t *m);
 

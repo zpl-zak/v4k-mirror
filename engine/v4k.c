@@ -10999,43 +10999,32 @@ GLuint shader_compile( GLenum type, const char *source ) {
     return shader;
 }
 
+unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor){
+    return shader_geom(NULL, vs, fs, attribs, fragcolor);
+}
 
-
-unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor) {
+unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor) {
     PRINTF(/*"!"*/"Compiling shader\n");
-
-    //char *vs = vfs_read(file_vs); if(!vs) vs = (char*)file_vs;
-    //char *fs = vfs_read(file_fs); if(!fs) fs = (char*)file_fs;
 
     const char *glsl_version = ifdef(ems, "300 es", "150");
 
     vs = vs[0] == '#' && vs[1] == 'v' ? vs : va("#version %s\n%s", glsl_version, vs ? vs : "");
     fs = fs[0] == '#' && fs[1] == 'v' ? fs : va("#version %s\n%s", glsl_version, fs ? fs : "");
+    if (gs) gs = gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s", glsl_version, gs ? gs : "");
 
 #if is(ems)
     {
         char *vs_ = REALLOC( 0, strlen(vs) + 512 ); strcpy(vs_, vs);
         char *fs_ = REALLOC( 0, strlen(fs) + 512 ); strcpy(fs_, fs);
-        //strrepl(&vs_, "\nin ", "\nattribute ");
-        //strrepl(&vs_, "\nout ", "\nvarying ");
+        char *gs_ = 0; if (gs) REALLOC( 0, strlen(gs) + 512 ); strcpy(gs_, gs);
         strrepl(&fs_, "#version 300 es\n", "#version 300 es\nprecision mediump float;\n");
-        //strrepl(&fs_, "\nin ", "\nattribute ");
-        //strrepl(&fs_, "\nout ", "\nvarying ");
-        //strrepl(&fs_, "FRAGCOLOR", "gl_FragColor");
-        //strrepl(&fs_, "fragcolor", "gl_FragColor" );
-        //strrepl(&fs_, "fragColor", "gl_FragColor" );
-        #if 0
-        //strrepl(&fs_, "outcolor", "gl_FragColor" );
-        //strrepl(&fs_, "outColor", "gl_FragColor" );
-        #endif
-        //strrepl(&fs_, "out vec4 gl_FragColor", "//out vec4 outcolor");
-        vs = vs_; fs = fs_;
+        vs = vs_; fs = fs_; gs = gs_;
     }
 #endif
 
     GLuint vert = shader_compile(GL_VERTEX_SHADER, vs);
     GLuint frag = shader_compile(GL_FRAGMENT_SHADER, fs);
-  //GLuint geom = shader_compile(GL_GEOMETRY_SHADER, gs);
+    GLuint geom = 0; if (gs) geom = shader_compile(GL_GEOMETRY_SHADER, gs);
     GLuint program = 0;
 
     if( vert && frag ) {
@@ -11043,7 +11032,7 @@ unsigned shader(const char *vs, const char *fs, const char *attribs, const char 
 
         glAttachShader(program, vert);
         glAttachShader(program, frag);
-        // glAttachShader(program, geom);
+        if (geom) glAttachShader(program, geom);
 
         for( int i = 0; attribs && attribs[0]; ++i ) {
             char attrib[128] = {0};
@@ -11077,19 +11066,19 @@ unsigned shader(const char *vs, const char *fs, const char *attribs, const char 
             shader_print(vs);
             puts("--- fs:");
             shader_print(fs);
+            if (geom) {
+                puts("--- gs:");
+                shader_print(gs);
+            }
         }
         if (status == GL_FALSE) {
             PANIC("ERROR: shader(): Shader/program link: %s\n", buf);
             return 0;
         }
 
-        // glDetachShader(program, vert);
-        // glDetachShader(program, frag);
-        // glDetachShader(program, geom);
-
         glDeleteShader(vert);
         glDeleteShader(frag);
-        // glDeleteShader(geom);
+        if (geom) glDeleteShader(geom);
 
 //#ifdef DEBUG_ANY_SHADER
 //        PRINTF("Shader #%d:\n", program);
@@ -13471,6 +13460,22 @@ void mesh_render(mesh_t *sm) {
             profile_incstat("Render.num_triangles", sm->index_count/3);
         } else { // with vertices only
             glDrawArrays(sm->flags & MESH_TRIANGLE_STRIP ? GL_TRIANGLE_STRIP : GL_TRIANGLES, 0, sm->vertex_count /* / 3 */);
+            profile_incstat("Render.num_drawcalls", +1);
+            profile_incstat("Render.num_triangles", sm->vertex_count/3);
+        }
+    }
+}
+
+void mesh_render_prim(mesh_t *sm, unsigned prim) {
+    if( sm->vao ) {
+        glBindVertexArray(sm->vao);
+        if( sm->ibo ) { // with indices
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sm->ibo); // <-- why intel?
+            glDrawElements(prim, sm->index_count, GL_UNSIGNED_INT, (char*)0);
+            profile_incstat("Render.num_drawcalls", +1);
+            profile_incstat("Render.num_triangles", sm->index_count/3);
+        } else { // with vertices only
+            glDrawArrays(prim, 0, sm->vertex_count /* / 3 */);
             profile_incstat("Render.num_drawcalls", +1);
             profile_incstat("Render.num_triangles", sm->vertex_count/3);
         }

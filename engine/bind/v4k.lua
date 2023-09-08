@@ -2344,6 +2344,7 @@ int texture_width;
  void shadowmatrix_proj(mat44 shm_proj, float aLightFov, float znear, float zfar);
  void shadowmatrix_ortho(mat44 shm_proj, float left, float right, float bottom, float top, float znear, float zfar);
  unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor);
+ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor);
  unsigned shader_bind(unsigned program);
      void shader_bool(const char *uniform, bool i );
      void shader_int(const char *uniform, int i);
@@ -2419,6 +2420,7 @@ vec3* out_vertex3;
  mesh_t mesh();
    void mesh_update(mesh_t *m, const char *format, int vertex_stride,int vertex_count,const void *interleaved_vertex_data, int index_count,const void *index_data, int flags);
    void mesh_render(mesh_t *m);
+   void mesh_render_prim(mesh_t *sm, unsigned prim);
    void mesh_destroy(mesh_t *m);
    aabb mesh_bounds(mesh_t *m);
 enum MATERIAL_ENUMS {

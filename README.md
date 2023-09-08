@@ -37,6 +37,7 @@
 - [x] Render: 3D Debugdraw, batching and vectorial font.
 - [x] Render: 2D Sprites, spritesheets, AA zooming and batching.
 - [x] Render: 2D Tilemaps and tilesets: TMX, TSX.
+- [x] Render: Compute shaders and SSBO support.
 - [x] Compression: DEFLATE, LZMA, LZ4, ULZ, BALZ, BCM, CRUSH, LZW3, LZSS and PPP.
 - [x] Virtual filesystem: ZIP, PAK, TAR and DIR.
 - [x] Level data: JSON, JSON5, SJSON, XML, INI.
