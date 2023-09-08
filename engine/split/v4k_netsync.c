@@ -471,7 +471,7 @@ char** server_poll(unsigned timeout_ms) {
                 event.peer->data = (void*)client_id;
                 break;
 
-            case ENET_EVENT_TYPE_RECEIVE:
+            case ENET_EVENT_TYPE_RECEIVE: {
                 char *dbg = (char *)event.peer->data;
                 char *ptr = (char *)event.packet->data;
                 unsigned sz = (unsigned)event.packet->dataLength;
@@ -530,7 +530,7 @@ char** server_poll(unsigned timeout_ms) {
                 }
                 /* Clean up the packet now that we're done using it. */
                 enet_packet_destroy( event.packet );
-                break;
+            } break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
                 msg = va( "%d %s", 0, va("disconnect rank:%lld", (uint64_t)event.peer->data));
@@ -574,7 +574,7 @@ char** client_poll(unsigned timeout_ms) {
             case ENET_EVENT_TYPE_CONNECT:
                 break;
 
-            case ENET_EVENT_TYPE_RECEIVE:
+            case ENET_EVENT_TYPE_RECEIVE: {
                 char *dbg = (char *)event.peer->data;
                 char *ptr = (char *)event.packet->data;
                 unsigned sz = (unsigned)event.packet->dataLength;
@@ -628,7 +628,7 @@ char** client_poll(unsigned timeout_ms) {
                 }
                 /* Clean up the packet now that we're done using it. */
                 enet_packet_destroy( event.packet );
-                break;
+            } break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
                 msg = va( "%d disconnect", 0 );
