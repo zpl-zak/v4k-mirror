@@ -10038,13 +10038,11 @@ char** server_poll(unsigned timeout_ms) {
                     unsigned id = *(uint32_t*)ptr; ptr += 4;
                     char *cmdline = ptr;
                     char *resp = rpc(id, cmdline);
-                    char *resp_msg = MALLOC(strlen(resp) + 6);
+                    char *resp_msg = va("%*.s%s", 4, "", resp);
                     *(uint32_t*)&resp_msg[0] = MSG_RPC_RESP;
-                    memcpy(&resp_msg[4], resp, strlen(resp)+1);
                     ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
                     msg = va("%d req:%s res:%s", 0, cmdline, resp);
-                    FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
                     event.type = NETWORK_EVENT_RPC_RESP; 
@@ -10136,13 +10134,11 @@ char** client_poll(unsigned timeout_ms) {
                     unsigned id = *(uint32_t*)ptr; ptr += 4;
                     char *cmdline = ptr;
                     char *resp = rpc(id, cmdline);
-                    char *resp_msg = MALLOC(strlen(resp) + 6);
+                    char *resp_msg = va("%*.s%s", 4, "", resp);
                     *(uint32_t*)&resp_msg[0] = MSG_RPC_RESP;
-                    memcpy(&resp_msg[4], resp, strlen(resp)+1);
                     ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
                     msg = va("%d req:%s res:%s", 0, cmdline, resp);
-                    FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
                     event.type = NETWORK_EVENT_RPC_RESP; 
@@ -10197,23 +10193,19 @@ void network_rpc(const char *signature, void *function) {
 
 void network_rpc_send_to(int64_t rank, unsigned id, const char *cmdline) {
     assert(network_get(NETWORK_RANK) == 0); /* must be a host */
+    char *msg = va("%*.s%s", 8, "", cmdline);
     unsigned sz = strlen(cmdline) + 9;
-    char *msg = MALLOC(sz);
     *(uint32_t*)&msg[0] = MSG_RPC;
     *(uint32_t*)&msg[4] = id;
-    memcpy(&msg[8], cmdline, sz-8);
     server_send_bin(rank, msg, sz);
-    FREE(msg);
 }
 
 void network_rpc_send(unsigned id, const char *cmdline) {
+    char *msg = va("%*.s%s", 8, "", cmdline);
     unsigned sz = strlen(cmdline) + 9;
-    char *msg = MALLOC(sz);
     *(uint32_t*)&msg[0] = MSG_RPC;
     *(uint32_t*)&msg[4] = id;
-    memcpy(&msg[8], cmdline, sz-8);
     server_broadcast_bin(msg, sz);
-    FREE(msg);
 }
 #line 0
 
