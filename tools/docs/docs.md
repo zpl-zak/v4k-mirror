@@ -4,11 +4,14 @@
 |Commit:        | {{GIT_REVISION}} |
 <!--| Documentation last modified | { {LAST_MODIFIED} } |-->
 
-# [V·4·K {{VERSION}}](https://dev.v4.games/zaklaus/v4k)
+# [V·4·K {{VERSION}}](https://v4k.dev)
 ## a b o u t
 
-- https://dev.v4.games/zaklaus/v4k is a multimedia workbench for prototyping and planning ideas.
+- V4K is a multimedia workbench for prototyping and planning ideas.
+- Internal use only.
+- Original repo at [FWK](https://github.com/r-lyeh/FWK). Huge thanks for the amazing base provided!
 
+<br/>
 <details><summary>Code style</summary>
 ```C linenumbers
 /// ## Markdown comments when documenting (3 slashes)

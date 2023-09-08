@@ -596,14 +596,17 @@ details > summary::-webkit-details-marker {
 |Version:       | 2023.9      |
 |:--------------|:------------|
 |Branch:        | main           |
-|Commit:        | 72               |
+|Commit:        | 73               |
 <!--| Documentation last modified | { {LAST_MODIFIED} } |-->
 
-# [V·4·K 2023.9     ](https://dev.v4.games/zaklaus/v4k)
+# [V·4·K 2023.9     ](https://v4k.dev)
 ## a b o u t
 
-- https://dev.v4.games/zaklaus/v4k is a multimedia workbench for prototyping and planning ideas.
+- V4K is a multimedia workbench for prototyping and planning ideas.
+- Internal use only.
+- Original repo at [FWK](https://github.com/r-lyeh/FWK). Huge thanks for the amazing base provided!
 
+<br/>
 <details><summary>Code style</summary>
 ```C linenumbers
 /// ## Markdown comments when documenting (3 slashes)
@@ -639,27 +642,11 @@ void assert_positive( int my_int ) { // lowercase snake_case everywhere
 
 </details>
 
-<details><summary>Download</summary>
-
-
-- [v4k.h](https://v4k.dev/v4k.h)
-- ~~workbench.exe~~
-
-</details>
-
-<details><summary>Goals</summary>
-
-
-- [x] ~~Full featured~~, ~~Fast~~, ~~Modern C++~~. Small, Naive, Simple C.
-- [x] ~~Rich build system~~, ~~Royaltie fee~~. Single file, Freely unlicensed.
-
-</details>
-
-<details><summary>Features ᕦ(ᐛ)ᕤ</summary>
+<details><summary>Features</summary>
 
 
 - [x] Pipeline: configurable and integrated [asset pipeline](tools/cook.ini).
-- [x] Embedded: [single-file header](engine/joint/fwk.h), all dependencies included.
+- [x] Embedded: single-file header, all dependencies included.
 - [x] Compiler: MSVC, MINGW64, TCC, GCC, clang, clang-cl and emscripten.
 - [x] Linkage: Both static linkage and dynamic .dll/.so/.dylib support. 
 - [x] Platform: Windows, Linux and OSX. Partial HTML5/Web support.
@@ -670,6 +657,7 @@ void assert_positive( int my_int ) { // lowercase snake_case everywhere
 - [x] Input: keyboard, mouse and gamepads.
 - [x] Script: Lua scripting, Luajit bindings.
 - [x] Network: downloads (HTTPS) and sockets (TCP/UDP). <!-- [*] Object, GameObject, W/ECS -->
+- [x] Network: Game sync module
 - [x] AI: Swarm/Boids.
 - [x] UI: button, list, slider, toggle, checkbox, editbox, dialog, color, image, menu, window, notify...
 - [x] Font: TTF, OTF and TTC. Basic syntax highlighter. Glyph ranges. Atlasing.
@@ -688,6 +676,7 @@ void assert_positive( int my_int ) { // lowercase snake_case everywhere
 - [x] Render: 2D Sprites, spritesheets, AA zooming and batching.
 - [x] Render: 2D Tilemaps and tilesets: TMX, TSX.
 - [x] Render: Compute shaders and SSBO support.
+- [x] Render: Geometry shaders.
 - [x] Compression: DEFLATE, LZMA, LZ4, ULZ, BALZ, BCM, CRUSH, LZW3, LZSS and PPP.
 - [x] Virtual filesystem: ZIP, PAK, TAR and DIR.
 - [x] Level data: JSON, JSON5, SJSON, XML, INI.
@@ -696,139 +685,6 @@ void assert_positive( int my_int ) { // lowercase snake_case everywhere
 - [x] Profiler, stats and leaks finder.
 - [x] [Editor (wip)](https://user-images.githubusercontent.com/35402248/174457347-f787a6a2-aac8-404c-a5da-f44310c3d432.mp4).
 - [x] [Documentation (wip)](https://bit.ly/v4k2023).
-
-</details>
-
-<details><summary>Roadmap ᕕ(ᐛ)ᕗ (in order of arrival; ✱: partial support)</summary>
-
-
-- [ ] AI pass: actors, waypoints, pathfinding, behavior trees (h/fsm,goap), and navmesh generation.
-- [ ] Network/VM pass: Entity/component/systems and worlds. <!-- W/ECS, gameobj, serialization:load/save/merge, diff/patch ;; dead reckoning, interpolation, extrapolation, bandwidth budgets -->
-  - [ ] Core pass: struct serialization.
-  - [ ] Message pipeline and replication. <!-- manual/replication channels, node sharding/clustering. -->
-  - [ ] Digital signals, message buffering and event polling.
-  - [ ] World streaming and level loading.
-  - [ ] Scenegraphs and spatial partioning. BVH, PVS, occluders, frustum culling.
-  - [ ] Server/client architecture. Hybrid P2P.
-  - [ ] NAT traversal. Socketless API, message API and pub/sub wrappers (enet/websocket).
-- [ ] Editor pass = netbased + offline rendering + virtual input.
-  - [ ] Basic: Gizmos✱, scene tree, property editor✱, load/save✱, undo/redo✱, copy/paste, on/off (vis,tick,ddraw,log), vcs.
-  - [ ] Scenenode: node singleton display, node console, node labels, node outlines✱.<!-- node == gameobj ? -->
-  - [ ] Debug: toggles on/off (billboards✱, materials, un/lit, cast shadows, wireframe, skybox✱/mie✱, fog/atmosphere, collide✱, physics).
-  - [ ] Level: volumes, triggers, platforms, level streaming.
-  - [ ] Sub-editor: timeline and data tracks, node graphs. <!-- worthy: will be reused into materials, animgraphs and blueprints -->
-  - [ ] Sub-editor: Procedural content, brushes, noise and CSG.
-  - [ ] Sub-editor: blendshapes, additive anims, head/foot/hand IKs.
-  - [ ] Script pass: DLL✱ (module->plugin/sys), Lua✱, Luajit✱, Teal✱ and TypeScript.
-- [ ] Render pass: reverse-Z, automatic LODs, impostors, decals.
-  - [ ] Materials: (colors✱, textures✱, matcaps✱, videos✱, shadertoys✱). Shadertoys as post-fx✱. <!--materials as postfx, as they have an update() method -->
-  - [ ] Lighting: Hard/soft shadow mapping (VSM,CCSM). Baked lightmaps. Refl probes. Integrated PBR.
-- [ ] Tools pass
-  - [ ] Extend shaders + bindings. Per-platform✱, per-type✱, per-asset options. GIF, PKM.
-  - [ ] Extend atlas (sprite/lightmaps). Fit packing (sprites).
-  - [ ] Extend bindings and messaging: parse C headers during cooking stage. <!-- msgs,docs,refl,meta,lua -- (*.c, *.h) as .proto/.pbc maybe, free reflection+automatic bindings -->
-- [ ] API pass
-  - [ ] Extend math: quat2, bezier, catmull.
-  - [ ] Discuss API and freeze it.
-  - [ ] Document everything.
-
-<!--
-Nice to have/extend (engine dependant):
-- Animation pass: playlists, additive, blend/shapes, ik/bones, animgraph/controllers.
-// 6) anims, I (playlist: ~~forward/backwards/loop/rewind)~~, II (~~blend~~/shapes), III (ik/bone), IV (graph/controller)
-//    ~~blend anims~~, animtracks+animevents, additive anims,
-//    v4k_data: quantization: ~~half, quant, microfloat~~.
-//    anim; ~~keyframes[] { frame+delay,frame+delay,... }, anim duration, anim flip,~~
-//    anim tracks / anim events
-- Audio pass: 3D audio, HRTF, FFT, filtering and sound occlusion.
-- Design pass: Dialogue, quests and inventory.
-- Design pass: Input gestures and combos.
-- Design pass: Integrated cinematics QTE.
-- Design pass: Scripting, bindings and game modules.
-- Design pass: Scripting: DLL (module->plugin/sys), Lua, Luajit, Teal and TypeScript.
-- FX pass: Particles, billboards, emitters, trails and paths.
-- Tools pass: Asset journaling.
-// expose uniforms as ui options, also model_uniform();
-// Pipeline: Extend asset pipeline (shaders, bindings, xml). Asset options.
-//     cook: slang: hlsl2glsl (XShaderCompiler), hlsl2spirv (dxc), spirv2many (spirv-cross), glsl2many (sokol-shdc)
-//     cook: tlfx22json
-- Render pass: Frustum culling.
-- Render pass: FX: particles and emitters (TLFX2), kawaii physics, clothes, breakables.
-- Render pass: Lighting: hard/soft shadow mapping, spotlights (VSM), omnilights (VSMCube), CSM and baked lightmaps.
-// lightmaps: https://blackpawn.com/texts/lightmaps/default.html 
-// https://github.com/jpcy/xatlas
-- Render pass: Material: colors, textures, matcaps, videos, shadertoys. Shadertoys as post-fx.
-- Render pass: Render: LODs, object instancing, billboards, impostors, decals, reflection probes.
-// lod: https://github.com/songrun/SeamAwareDecimater
-- Render pass: Skydomes.
-- Render pass: Voxels
-- Render pass: VR.
-- Script pass: Refl/Meta binding tool (during cook stage).
-- System pass: Buffer encryption.
-- System pass: Mobile iOS/Android, HTML5✱, Web/WASM, RaspberryPi.
-- Social pass: Achievements, Scores, Rankings, Friends, Invites, Steam/Itchio 1st-party store integrations, etc.
-- UI pass: HUD, UI Widgets, touch input, touch gestures.
-- UI pass: Font text layout and shaping, underlining, soft/hard shadows, outlines.
-// font: M/SDF https://github.com/WilliamBundy/wiggle https://github.com/Chlumsky/msdf-atlas-gen
-- UI pass: Game flow and game UI.
-- UI pass: Localization, subtitles and unicode.
-
-Engine types:
-- 2DY   Pong (70)
-- 2DXY  Platformer (80) (dizzy, rick dangerous) screens
-- 2DXY+  Platformer (80) (megaman) scroll
-- 2DXY  Arcade (80) (snowbros, bomberman) screens
-- 2DXZ  Racing (outrun)
-- 2DXYZ Isometric adventure (knight lore, diablo)
-- AGI (maniac)
-- First person shooter (80-90) (wolf3d > doom > hl1)
-- First person adventure (bloodwych)
-- Text adventure (z)
-
-Nice to have:
-- [ ] fix leaks and todos
-- [ ] v4k_app: cpu usage, orientation
-- [ ] v4k_input: mouse clip, mouse wrap,
-- [ ] zip0 seek-vfs optimization. zip_append_file is suboptimal, and requires tons of contiguous memory for giant files.
-
-Almost done:
-- [x] shadertoy textures
-- [*] billboards (follow sprite API? state instead? ie, billboard(true); before rendering?)
-
-- Docs pass: API, functions, samples, examples, pipeline.
-
-// plan:
-//[ ] cam: friction, projections (dimetric, isometric, ...)
-//[ ] Render: Materials (textures, matcaps, videos, shadertoys).
-//    material: fixed color, texture or script that returns color
-//    animated textures (shadertoys, videos)
-// 8) vm/ecs core + engines: custom frontends & backends
-//    vm: ram, workqueues, threading, priorities, load/save
-//    service protocols: websocket bqqbarbhg/bq_websocket, https, handshake
-//    databases, services, quotas, black/whitelists, etc
-// 7) network replication & messaging
-//    network: replication, dead reckoning, interpolation, extrapolation, bandwidth
-//    network: messaging: un/reliable, fragmentation, priority, etc
-//    network: topologies: bus, star, p2p, pubsub, etc
-//    network: filesystem
-//    int send_game_state(void *ptr, int len, int flags); PROTOCOL_V1|QUANTIZE|COMPRESS|RLE
-//    int recv_game_state(); compensate, extrapolate, intrapolate(); lerp();
-// 9) render+
-//    2d: billboards
-//    IBL/materials (from Foxotron+sgorsten) + shading models
-//    lightmapping/xatlas (demos), reflection probes
-//    renderbuckets
-//    tessellation
-//    2d: particles (tlfx2)
-//    reverse-z {
-//    fbo attach format D16_UNORM -> D32_SFLOAT
-//    pipeline depth compare LEQUAL -> GEQUAL
-//    pipeline depth clear 1.0 -> 0.0
-//    proj matrix: float a = zfar / (zfar - znear); -> float a = -znear / (zfar - znear);
-//    proj matrix: float b = (-znear * zfar) / (zfar - znear); -> float b = (znear * zfar) / (zfar - znear);
-//    }
-
--->
 
 </details>
 
@@ -907,7 +763,7 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 <details><summary>Credits</summary>
 
 
-**Original** Big big thanks to [r-lyeh](https://github.com/r-lyeh/fwk) for the amazing FWK base!
+**Original** Big big thanks to [r-lyeh](https://github.com/r-lyeh/fwk) for the amazing FWK base!<br/>
 **Artwork**
 [Dean Evans, Raijin](https://youtu.be/RRvYkrrpMKo?t=147 "for the Map song (c)"),
 [FMS_Cat](https://gist.github.com/FMS-Cat/a1ccea3ce866c34706084e3526204f4f "for nicest VHS/VCR shader around (MIT)"),
@@ -989,10 +845,10 @@ echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -fr
 
 </details>
 
-<details><summary>Unlicense</summary>
+<details><summary>License</summary>
 
 
-This software is released into the [public domain](https://unlicense.org/). Also dual-licensed as [0-BSD](https://opensource.org/licenses/0BSD) or [MIT (No Attribution)](https://github.com/aws/mit-0) for those countries where public domain is a concern (sigh). Any contribution to this repository is implicitly subjected to the same release conditions aforementioned.
+All Rights Reserved. Access provided with written permission. Internal use only.
 </details>
 
 ## config
@@ -8848,7 +8704,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 ## shaders
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_0_0_shadowmap_lit;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8857,7 +8713,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_0_0_shadowmap_unlit;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8866,7 +8722,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_24_4_sprite;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8875,7 +8731,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_2_4_preamble;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8884,7 +8740,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_2_4_texel_inv_gamma;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8893,7 +8749,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_2_4_texel_ycbr_gamma_saturation;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8902,7 +8758,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_32_4_model;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8911,7 +8767,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_32_4_model_basic;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8920,7 +8776,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_3_4_skybox;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8929,7 +8785,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_3_4_skybox_rayleigh;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8938,7 +8794,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const fs_main_shadertoy;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8947,7 +8803,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const vs_0_2_fullscreen_quad_A;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8956,7 +8812,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const vs_0_2_fullscreen_quad_B;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8965,7 +8821,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const vs_0_2_fullscreen_quad_B_flipped;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8974,7 +8830,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const vs_323444143_16_332_model;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8983,7 +8839,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const vs_324_24_sprite;</code></summary>
 
 Under construction. Yet to be documented.
@@ -8992,7 +8848,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const vs_332_32;</code></summary>
 
 Under construction. Yet to be documented.
@@ -9001,7 +8857,7 @@ Other documentation examples: [dll](#dll), [strsplit](#strsplit), [strjoin](#str
 
 </details>
 
-<a name=""></a>
+<a name=",TEXTURE_BGR"></a>
 <details><summary><code lang=C> extern const char* const vs_3_3_skybox;</code></summary>
 
 Under construction. Yet to be documented.
