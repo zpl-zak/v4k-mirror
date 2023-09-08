@@ -21,6 +21,7 @@ int main() {
         if (input(KEY_F5)) window_reload();
 
         shader_bind(program);
+        shader_float("t", (float)window_time());
         mesh_render_prim(&m, GL_POINTS);
     }
 
