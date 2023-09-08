@@ -431,7 +431,7 @@ char** server_poll(unsigned timeout_ms) {
             case ENET_EVENT_TYPE_CONNECT:;
                 /* ensure we have free slot for client */
                 if (map_count(clients) >= network_get(NETWORK_CAPACITY)-1) {
-                    msg = va("%d %s", 1, va("%s", "Server is at maximum capacity, disconnecting the peer (::%s:%u)...", ip, event.peer->address.port));
+                    msg = va("%d Server is at maximum capacity, disconnecting the peer (::%s:%u)...", 1, ip, event.peer->address.port);
                     enet_peer_disconnect_now(event.peer, 1);
                     break;
                 }
@@ -467,7 +467,7 @@ char** server_poll(unsigned timeout_ms) {
                 *(int64_t*)&init_msg[4] = client_id;
                 server_send_bin(client_id, init_msg, 12);
                 PRINTF("Client rank %lld for peer ::%s:%u\n", client_id, ip, event.peer->address.port);
-                msg = va( "%d %s", 0, va("new client rank:%lld from ::%s:%u", client_id, ip, event.peer->address.port ));
+                msg = va( "%d new client rank:%lld from ::%s:%u", 0, client_id, ip, event.peer->address.port );
                 event.peer->data = (void*)client_id;
                 break;
 
@@ -517,7 +517,7 @@ char** server_poll(unsigned timeout_ms) {
                     memcpy(&resp_msg[4], resp, strlen(resp)+1);
                     ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
-                    msg = va("%d %s", 0, va("req:%s res:%s", cmdline, resp));
+                    msg = va("%d req:%s res:%s", 0, cmdline, resp);
                     FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
@@ -525,7 +525,7 @@ char** server_poll(unsigned timeout_ms) {
                     msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
-                    msg = va("%d %s", -1, va("unk msg len:%u from rank:%lld ::%s:%u", sz, (uint64_t)event.peer->data, ip, event.peer->address.port)); /* @TODO: hexdump? */
+                    msg = va("%d unk msg len:%u from rank:%lld ::%s:%u", -1, sz, (uint64_t)event.peer->data, ip, event.peer->address.port); /* @TODO: hexdump? */
                     break;
                 }
                 /* Clean up the packet now that we're done using it. */
@@ -533,7 +533,7 @@ char** server_poll(unsigned timeout_ms) {
             } break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = va( "%d %s", 0, va("disconnect rank:%lld", (uint64_t)event.peer->data));
+                msg = va( "%d disconnect rank:%lld", 0, (uint64_t)event.peer->data);
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
@@ -542,7 +542,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = va( "%d %s", 0, va("timeout rank:%lld", (uint64_t)event.peer->data));
+                msg = va( "%d timeout rank:%lld", 0, (uint64_t)event.peer->data);
                 FREE(event.peer->data);
                 event.peer->data = NULL;
                 server_drop_client_peer(event.peer);
@@ -615,15 +615,15 @@ char** client_poll(unsigned timeout_ms) {
                     memcpy(&resp_msg[4], resp, strlen(resp)+1);
                     ENetPacket *packet = enet_packet_create(resp_msg, strlen(resp) + 5, ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(event.peer, 0, packet);
-                    msg = va("%d %s", 0, va("req:%s res:%s", cmdline, resp));
+                    msg = va("%d req:%s res:%s", 0, cmdline, resp);
                     FREE(resp_msg);
                 } break;
                 case MSG_RPC_RESP: {
                     event.type = NETWORK_EVENT_RPC_RESP; 
-                    msg = va("%d %s", 0, va("%s", ptr));
+                    msg = va("%d %s", 0, ptr);
                 } break;
                 default:
-                    msg = va("%d %s", -1, va("unk msg len:%u from server", sz)); /* @TODO: hexdump? */
+                    msg = va("%d unk msg len:%u from server", -1, sz); /* @TODO: hexdump? */
                     break;
                 }
                 /* Clean up the packet now that we're done using it. */
