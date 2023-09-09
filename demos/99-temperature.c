@@ -1,13 +1,9 @@
 #define COOK_ON_DEMAND 1
 #include "v4k.h"
 
-#define TEMP_GPU
+int TEMP_GPU = 1;
 
-#ifdef TEMP_GPU
-#define TEX_WIDTH 256
-// #define TEX_WIDTH 64
-#else
-#define TEX_WIDTH 64
+#define TEX_WIDTH 1024
 
 void temp_calc(vec4 *pixels){
     // flood it
@@ -28,13 +24,10 @@ void temp_calc(vec4 *pixels){
     }
 }
 
-#endif
-
 int main() {
-    // 75% sized, MSAAx2
-    window_create(50, WINDOW_SQUARE);
+    window_create(50, WINDOW_SQUARE|WINDOW_VSYNC_DISABLED);
     window_title(__FILE__);
-    // window_fps_lock(1);
+    window_fps_lock(0);
 
     texture_t tex;
 
@@ -42,54 +35,56 @@ int main() {
     for (int i=0; i <TEX_WIDTH*TEX_WIDTH; i++){
         img[i] = vec4(0.3,0.3,0.3,1);
     }
-#ifdef TEMP_GPU
+
     tex = texture_create(TEX_WIDTH, TEX_WIDTH, 4, img, TEXTURE_LINEAR|TEXTURE_FLOAT);
     unsigned comp = compute(vfs_read("shaders/temperature.glsl"));
     shader_bind(comp);
     shader_image(tex, 0, 0, 0, READ_WRITE);
-#else
-    tex = texture_create(TEX_WIDTH, TEX_WIDTH, 4, img, TEXTURE_LINEAR|TEXTURE_FLOAT);
-#endif
 
     while ( window_swap() && !input_down(KEY_ESC) ){
-        if (input(KEY_F5)) window_reload();
+        if (input_down(KEY_F5)) window_reload();
+        if (input_down(KEY_F8)) TEMP_GPU ^= 1;
 
-#ifdef TEMP_GPU
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex.id);
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, img);
-#endif
-        for (int i=0; i <TEX_WIDTH*4; i++){
+        if (TEMP_GPU) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, tex.id);
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, img);
+        }
+
+        for (int i=0; i <TEX_WIDTH*64; i++){
             img[i] = vec4(0,0,1,1);
-            img[(TEX_WIDTH - 4) * TEX_WIDTH+i] = vec4(1,0,0,1);
+            img[(TEX_WIDTH - 64) * TEX_WIDTH+i] = vec4(1,0,0,1);
         }
 
         int enabled = !ui_active() && !ui_hover();
         vec4 mouse = enabled ? vec4(input(MOUSE_X),input(MOUSE_Y),input(MOUSE_L),input(MOUSE_R)) : vec4(0,0,0,0); // x,y,l,r
-        int strong = input(KEY_LSHIFT)?15:1;
-        int x = (int)clampf(floorf(TEX_WIDTH/(float)window_width() * mouse.x), 0, TEX_WIDTH-1);
-        int y = (int)clampf(floorf(TEX_WIDTH/(float)window_height() * mouse.y), 0, TEX_WIDTH-1);
+        int strong = input(KEY_LSHIFT)?5:1;
+        int x = (int)clampf(floorf(TEX_WIDTH/(float)window_width() * mouse.x), 1, TEX_WIDTH-2);
+        int y = (int)clampf(floorf(TEX_WIDTH/(float)window_height() * mouse.y), 1, TEX_WIDTH-2);
 
-        if (mouse.z){
-            img[(y*TEX_WIDTH)+x] = vec4(strong*1,0,0,1);
+        if (mouse.z || mouse.w){
+            for (int cy = -5*strong; cy <= 5*strong; ++cy) {
+                for (int cx = -5*strong; cx <= 5*strong; ++cx) {
+                    int px = (int)clampf(cx+x, 1, TEX_WIDTH-2);
+                    int py = (int)clampf(cy+y, 1, TEX_WIDTH-2);
+                    img[(py*TEX_WIDTH)+px] = vec4(mouse.z,0,mouse.w,1);
+                }
+            }
         }
 
-        if (mouse.w){
-            img[(y*TEX_WIDTH)+x] = vec4(0,0,strong*1,1);
+        if (TEMP_GPU) {
+            glBindTexture(GL_TEXTURE_2D, tex.id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEX_WIDTH, TEX_WIDTH, 0, GL_RGBA, GL_FLOAT, img);
+            shader_bind(comp);
+            compute_dispatch(TEX_WIDTH/16, TEX_WIDTH/16, 1);
+            image_write_barrier();
+        } else {
+            temp_calc(img);
+            texture_update(&tex, TEX_WIDTH, TEX_WIDTH, 4, img, TEXTURE_LINEAR|TEXTURE_FLOAT);
         }
-
-#ifdef TEMP_GPU        
-        glBindTexture(GL_TEXTURE_2D, tex.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEX_WIDTH, TEX_WIDTH, 0, GL_RGBA, GL_FLOAT, img);
-        shader_bind(comp);
-        compute_dispatch(TEX_WIDTH/16, TEX_WIDTH/16, 1);
-        image_write_barrier();
-#else
-        temp_calc(img);
-        texture_update(&tex, TEX_WIDTH, TEX_WIDTH, 4, img, TEXTURE_LINEAR|TEXTURE_FLOAT);
-#endif
-
         fullscreen_quad_rgb(tex, 2.2);
+        ddraw_text2d(vec2(0,0), va("mode: %s\nimage res: %d\ninputs: %.01f %.01f %.01f %.01f %s", TEMP_GPU?"GPU compute":"CPU", TEX_WIDTH, mouse.x, mouse.y, mouse.z, mouse.w, strong>1?"lshift":""));
+        ddraw_text2d(vec2(0,window_height() - 20), va("delta: %.2f ms", window_delta()*1000));
     }
 
     return 0;
