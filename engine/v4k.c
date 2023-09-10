@@ -13311,7 +13311,7 @@ skybox_t skybox(const char *asset, int flags) {
 
 void skybox_mie_calc_sh(skybox_t *sky) {
     unsigned WIDTH = 512, HEIGHT = 512;
-    unsigned last_fb;
+    int last_fb;
     int vp[4];
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
     glGetIntegerv(GL_VIEWPORT, vp);

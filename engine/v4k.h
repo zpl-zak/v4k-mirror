@@ -2852,8 +2852,8 @@ typedef struct skybox_t {
     int flags;
 
     // mie
-    unsigned framebuffers[6];
-    unsigned textures[6];
+    int framebuffers[6];
+    int textures[6];
     unsigned char *pixels;
 } skybox_t;
 
