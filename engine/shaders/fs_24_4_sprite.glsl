@@ -1,8 +1,10 @@
 uniform sampler2D u_texture;
 
+
 in vec2 vTexCoord;
 in vec4 vColor;
 out vec4 fragColor;
+
 
 // [src] https://www.shadertoy.com/view/MllBWf CC1.0
 vec4 texture_AA(sampler2D tx, vec2 uv) {
@@ -18,6 +20,7 @@ vec4 texture_AA(sampler2D tx, vec2 uv) {
     return texture(tx, uv);
 }
 
+
 // [src] https://www.shadertoy.com/view/MllBWf CC1.0
 vec4 texture_AA2( sampler2D tex, vec2 uv) {
     vec2 res = vec2(textureSize(tex,0));
@@ -26,6 +29,7 @@ vec4 texture_AA2( sampler2D tex, vec2 uv) {
     uv = seam + clamp( (uv-seam)/fwidth(uv), -0.5, 0.5);
     return texture(tex, uv/res);
 }
+
 
 // [src] https://www.shadertoy.com/view/ltBfRD
 vec4 texture_AA3(sampler2D tex, vec2 uv) {
@@ -44,6 +48,7 @@ vec4 texture_AA3(sampler2D tex, vec2 uv) {
     uv = (uv_floor + uv_fract - 0.5) / res;
     return texture(tex, uv);
 }
+
 
 void main() {
     vec4 texColor = texture_AA2(u_texture, vTexCoord);

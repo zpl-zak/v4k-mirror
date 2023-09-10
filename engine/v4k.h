@@ -2521,6 +2521,13 @@ API void     fbo_destroy(unsigned id);
 // -----------------------------------------------------------------------------
 // shadowmaps
 
+// #ifndef VSMCUBE
+// #define VSMCUBE 0
+// #endif
+// #ifndef VSMBLUR
+// #define VSMBLUR 1
+// #endif
+
 typedef struct shadowmap_t {
     mat44  shadowmatrix;
     mat44  mvp;
@@ -2902,6 +2909,8 @@ extern const char *const fs_32_4_model_basic;
 extern const char *const fs_3_4_skybox;
 extern const char *const fs_3_4_skybox_rayleigh;
 extern const char *const fs_main_shadertoy;
+extern const char *const fs_shadow_blur;
+extern const char *const fs_shadow_vsm;
 extern const char *const vs_0_2_fullscreen_quad_A;
 extern const char *const vs_0_2_fullscreen_quad_B;
 extern const char *const vs_0_2_fullscreen_quad_B_flipped;
@@ -2909,6 +2918,8 @@ extern const char *const vs_323444143_16_332_model;
 extern const char *const vs_324_24_sprite;
 extern const char *const vs_332_32;
 extern const char *const vs_3_3_skybox;
+extern const char *const vs_shadow_blur;
+extern const char *const vs_shadow_vsm;
 #line 0
 
 #line 1 "v4k_renderdd.h"

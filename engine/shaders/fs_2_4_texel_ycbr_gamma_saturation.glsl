@@ -3,8 +3,10 @@ uniform sampler2D u_texture_cb; /*unit1*/
 uniform sampler2D u_texture_cr; /*unit2*/
 uniform float u_gamma;
 
+
 in vec2 uv;
 out vec4 fragcolor;
+
 
 void main() {
     float y = texture(u_texture_y, uv).r;
@@ -31,6 +33,7 @@ void main() {
     if(false) { float saturation = 2.0; const vec3 W = vec3(0.2125, 0.7154, 0.0721);
     vec3 intensity = vec3(dot(texel.rgb, W));
 texel.rgb = mix(intensity, texel.rgb, saturation); }
+
 
 fragcolor = vec4(texel.rgb, 1.0);
 }

@@ -6,6 +6,7 @@ uniform bool SKINNED = false;
 // uniform mat4 M; // RIM
 uniform mat4 VP;
 
+
 #if 0
 // Fetch blend channels from all attached blend deformers.
 for (size_t di = 0; di < mesh->blend_deformers.count; di++) {
@@ -25,13 +26,16 @@ if (num_blend_shapes > 0) {
     vmesh->num_blend_shapes = num_blend_shapes;
 }
 
+
 ubo.f_num_blend_shapes = (float)mesh->num_blend_shapes;
 for (size_t i = 0; i < mesh->num_blend_shapes; i++) {
     ubo.blend_weights[i] = view->scene.blend_channels[mesh->blend_channel_indices[i]].weight;
 }
 
+
 sg_image blend_shapes = mesh->num_blend_shapes > 0 ? mesh->blend_shape_image : view->empty_blend_shape_image;
 #endif
+
 
 // for blendshapes
 #ifndef MAX_BLENDSHAPES
@@ -40,6 +44,7 @@ sg_image blend_shapes = mesh->num_blend_shapes > 0 ? mesh->blend_shape_image : v
 uniform vec4 blend_weights[MAX_BLENDSHAPES]; // @todo: implement me
 uniform float f_num_blend_shapes; // @todo: implement me
 uniform sampler2DArray blend_shapes; // @todo: implement me
+
 
 in vec3 att_position; // @todo: reorder ass2iqe to emit p3 n3 u2 t3 b3 c4B i4 w4 instead
 in vec2 att_texcoord;
@@ -57,6 +62,8 @@ out vec3 v_normal, v_normal_ws;
 out vec2 v_texcoord;
 
 
+
+
 // shadow
 uniform mat4 model, view;
 uniform mat4 cameraToShadowProjector;
@@ -68,6 +75,7 @@ void do_shadow() {
     vpeye = view * model * vec4(att_position, 1.0);
     sc = cameraToShadowProjector * model * vec4(att_position, 1.0f);
 }
+
 
 // blendshapes
 vec3 evaluate_blend_shape(int vertex_index) {
@@ -82,33 +90,34 @@ vec3 evaluate_blend_shape(int vertex_index) {
     return offset;
 }
 
+
 void main() {
     vec3 objPos;
     if(!SKINNED) {
         objPos = att_position;
         v_normal = att_normal;
-    } else {
-        mat3x4 m = vsBoneMatrix[int(att_indexes.x)] * att_weights.x;
-        m += vsBoneMatrix[int(att_indexes.y)] * att_weights.y;
-        m += vsBoneMatrix[int(att_indexes.z)] * att_weights.z;
-        m += vsBoneMatrix[int(att_indexes.w)] * att_weights.w;
-        objPos = vec4(att_position, 1.0) * m;
+        } else {
+            mat3x4 m = vsBoneMatrix[int(att_indexes.x)] * att_weights.x;
+            m += vsBoneMatrix[int(att_indexes.y)] * att_weights.y;
+            m += vsBoneMatrix[int(att_indexes.z)] * att_weights.z;
+            m += vsBoneMatrix[int(att_indexes.w)] * att_weights.w;
+            objPos = vec4(att_position, 1.0) * m;
+            
+            // blendshapes
+            // objPos += evaluate_blend_shape(int(att_vertexindex));
+            
+            v_normal = vec4(att_normal, 0.0) * m;
+            //@todo: tangents
+        }
         
-        // blendshapes
-        // objPos += evaluate_blend_shape(int(att_vertexindex));
+        //   vec3 tangent = att_tangent.xyz;
+        //   vec3 bitangent = cross(att_normal, att_tangent.xyz) * att_tangent.w;
         
-        v_normal = vec4(att_normal, 0.0) * m;
-        //@todo: tangents
+        v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
+        v_normal = normalize(v_normal);
+        v_position = att_position;
+        v_texcoord = att_texcoord;
+        v_color = att_color;
+        gl_Position = VP * att_instanced_matrix * vec4( objPos, 1.0 );
+        do_shadow();
     }
-    
-    //   vec3 tangent = att_tangent.xyz;
-    //   vec3 bitangent = cross(att_normal, att_tangent.xyz) * att_tangent.w;
-    
-    v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
-    v_normal = normalize(v_normal);
-    v_position = att_position;
-    v_texcoord = att_texcoord;
-    v_color = att_color;
-    gl_Position = VP * att_instanced_matrix * vec4( objPos, 1.0 );
-    do_shadow();
-}

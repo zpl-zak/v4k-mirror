@@ -1,8 +1,10 @@
 uniform sampler2D texture0; /*unit0*/
 uniform float u_inv_gamma;
 
+
 in vec2 uv;
 out vec4 fragcolor;
+
 
 void main() {
     vec4 texel = texture( texture0, uv );

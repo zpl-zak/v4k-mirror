@@ -283,6 +283,13 @@ API void     fbo_destroy(unsigned id);
 // -----------------------------------------------------------------------------
 // shadowmaps
 
+// #ifndef VSMCUBE
+// #define VSMCUBE 0
+// #endif
+// #ifndef VSMBLUR
+// #define VSMBLUR 1
+// #endif
+
 typedef struct shadowmap_t {
     mat44  shadowmatrix;
     mat44  mvp;

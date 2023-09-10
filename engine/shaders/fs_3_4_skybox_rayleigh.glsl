@@ -1,9 +1,12 @@
 uniform vec3 uSunPos = vec3( 0, 0.1, -1 ); // = [0, Math.cos(theta) * 0.3 + 0.2, -1];
 
+
 in vec3 v_direction;
 out vec4 fragcolor;
 
+
 vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, float shRlh, float shMie, float g);
+
 
 void main() {
     vec3 color = atmosphere(
@@ -26,12 +29,15 @@ void main() {
     fragcolor = vec4(color, 1);
 }
 
+
 // [src] https://github.com/wwwtyro/glsl-atmosphere by wwwtyro (Unlicensed)
 // For more information, please refer to <http://unlicense.org>
+
 
 #define PI 3.141592
 #define iSteps 16
 #define jSteps 8
+
 
 vec2 rsi(vec3 r0, vec3 rd, float sr) {
     // ray-sphere intersection that assumes
@@ -47,6 +53,7 @@ vec2 rsi(vec3 r0, vec3 rd, float sr) {
     (-b + sqrt(d))/(2.0*a)
     );
 }
+
 
 vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, float shRlh, float shMie, float g) {
     // Normalize the sun and view directions.

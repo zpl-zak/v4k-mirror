@@ -1,5 +1,6 @@
 uniform mat4 u_mvp;
 
+
 in vec3 att_position;
 in vec3 att_normal;
 in vec2 att_texcoord;
@@ -8,6 +9,7 @@ out vec4 v_color;
 out vec3 v_normal;
 out vec3 v_normal_ws;
 out vec2 v_texcoord;
+
 
 // shadow
 uniform mat4 model, view, proj;
@@ -20,6 +22,7 @@ void do_shadow() {
     vpeye = view * model * vec4(att_position, 1.0);
     sc = cameraToShadowProjector * model * vec4(att_position, 1.0f);
 }
+
 
 void main() {
     gl_Position = u_mvp * vec4(att_position, 1.0);
