@@ -10,7 +10,7 @@ int main() {
     unsigned comp = compute(vfs_read("shaders/compute-test.glsl"));
     texture_t tex = texture_create(TEX_WIDTH, TEX_WIDTH, 4, 0, TEXTURE_LINEAR|TEXTURE_FLOAT);
     shader_bind(comp);
-    shader_image(tex, 0, 0, 0, READ);
+    shader_image(tex, 0, 0, 0, BUFFER_READ);
 
     struct {
         float f;

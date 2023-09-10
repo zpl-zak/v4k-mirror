@@ -2360,10 +2360,10 @@ int texture_width;
      void shader_colormap(const char *name, colormap_t cm);
  unsigned shader_get_active();
  void     shader_destroy(unsigned shader);
-enum ACCESS_MODE {
-READ,
-WRITE,
-READ_WRITE
+enum BUFFER_ACCESS_MODE {
+BUFFER_READ,
+BUFFER_WRITE,
+BUFFER_READ_WRITE
 };
  unsigned compute(const char *cs);
  void compute_dispatch(unsigned wx, unsigned wy, unsigned wz);
@@ -2371,7 +2371,7 @@ READ_WRITE
  void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access);
  void image_write_barrier();
  void write_barrier();
-enum USAGE_MODE {
+enum SSBO_USAGE_MODE {
 STATIC_DRAW,
 STATIC_READ,
 STATIC_COPY,
@@ -2381,6 +2381,11 @@ DYNAMIC_COPY,
 STREAM_DRAW,
 STREAM_READ,
 STREAM_COPY
+};
+enum SSBO_ACCESS {
+SSBO_READ = BUFFER_READ,
+SSBO_WRITE = BUFFER_WRITE,
+SSBO_READ_WRITE = BUFFER_READ_WRITE
 };
  unsigned ssbo_create(const void *data, int len, unsigned usage);
  void ssbo_destroy(unsigned ssbo);

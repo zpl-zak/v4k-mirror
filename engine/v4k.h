@@ -2573,12 +2573,13 @@ API     void shader_colormap(const char *name, colormap_t cm);
 API unsigned shader_get_active();
 API void     shader_destroy(unsigned shader);
 
-// compute shaders
-enum ACCESS_MODE {
-    READ,
-    WRITE,
-    READ_WRITE
+enum BUFFER_ACCESS_MODE {
+    BUFFER_READ,
+    BUFFER_WRITE,
+    BUFFER_READ_WRITE
 };
+
+// compute shaders
 
 /// Loads the compute shader and compiles a GL program.
 /// return: GL program, 0 if failed.
@@ -2625,7 +2626,7 @@ API void write_barrier();
 /// `DRAW` favors CPU->GPU operations.
 /// `READ` favors GPU->CPU operations.
 /// `COPY` favors CPU->GPU->CPU operations.
-enum USAGE_MODE {
+enum SSBO_USAGE_MODE {
     STATIC_DRAW,
     STATIC_READ,
     STATIC_COPY,
@@ -2637,6 +2638,12 @@ enum USAGE_MODE {
     STREAM_DRAW,
     STREAM_READ,
     STREAM_COPY
+};
+
+enum SSBO_ACCESS {
+    SSBO_READ = BUFFER_READ,
+    SSBO_WRITE = BUFFER_WRITE,
+    SSBO_READ_WRITE = BUFFER_READ_WRITE
 };
 
 /// Create Shader Storage Buffer Object

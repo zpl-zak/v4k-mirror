@@ -43,6 +43,7 @@ if "%1"=="help" (
     echo    nov4k    \ do not compile framework
     echo    demos    ^| do compile demos
     echo    editor   / do compile editor
+    echo    run      ^| run compiled .exe
     echo    vis      ^> visualize invokation cmdline.
     echo    args     ^> after `--` separator is found, pass all remaining arguments to compiler as-is
     echo.
@@ -359,6 +360,7 @@ set editor=no
 set vis=no
 set proj=no
 set rc=0
+set run=no
 
 :parse_args
     if "%1"=="--"       shift && goto parse_compiler_args
@@ -386,6 +388,7 @@ set rc=0
     if "%1"=="noeditor" set "editor=no" && goto loop
     if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "hello=no"&& goto loop
+    if "%1"=="run"      set "run=yes" && goto loop
     if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "extras=yes" && set "editor=yes" && set "hello=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
@@ -622,6 +625,10 @@ if not "!other!"=="" (
 if "!vis!"=="yes" echo !cc! !other! !import! !args!
      !echo! !other! && !cc! !other! !import! !args! || set rc=1
 )
+
+rem if "!run!"=="yes" (
+rem     !
+rem )
 
 rem PAUSE only if double-clicked from Windows explorer
 rem (((echo.%cmdcmdline%)|%WINDIR%\system32\find.exe /I "%~0")>nul)&&pause
