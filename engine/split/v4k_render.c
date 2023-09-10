@@ -1032,8 +1032,8 @@ void shadowmatrix_ortho(mat44 shm_proj, float left, float right, float bottom, f
 void fullscreen_quad_rgb( texture_t texture, float gamma ) {
     static int program = -1, vao = -1, u_inv_gamma = -1;
     if( program < 0 ) {
-        const char* vs = vs_0_2_fullscreen_quad_B_flipped;
-        const char* fs = fs_2_4_texel_inv_gamma;
+        const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
+        const char* fs = vfs_read("shaders/fs_2_4_texel_inv_gamma.glsl");
 
         program = shader(vs, fs, "", "fragcolor" );
         u_inv_gamma = glGetUniformLocation(program, "u_inv_gamma");
@@ -1063,8 +1063,8 @@ void fullscreen_quad_rgb( texture_t texture, float gamma ) {
 void fullscreen_quad_ycbcr( texture_t textureYCbCr[3], float gamma ) {
     static int program = -1, vao = -1, u_gamma = -1, uy = -1, ucb = -1, ucr = -1;
     if( program < 0 ) {
-        const char* vs = vs_0_2_fullscreen_quad_B_flipped;
-        const char* fs = fs_2_4_texel_ycbr_gamma_saturation;
+        const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
+        const char* fs = vfs_read("shaders/fs_2_4_texel_ycbr_gamma_saturation.glsl");
 
         program = shader(vs, fs, "", "fragcolor" );
         u_gamma = glGetUniformLocation(program, "u_gamma");
@@ -1355,7 +1355,7 @@ static void sprite_render_meshes() {
         return;
 
     if( sprite_program < 0 ) {
-        sprite_program = shader( vs_324_24_sprite, fs_24_4_sprite,
+        sprite_program = shader( vfs_read("shaders/vs_324_24_sprite.glsl"), vfs_read("shaders/fs_24_4_sprite.glsl"),
             "att_Position,att_TexCoord,att_Color",
             "fragColor"
         );
@@ -2372,8 +2372,8 @@ skybox_t skybox(const char *asset, int flags) {
 
     // sky program
     sky.flags = flags ? flags : !!asset; // either cubemap or rayleigh
-    sky.program = shader(vs_3_3_skybox,
-        sky.flags ? fs_3_4_skybox : fs_3_4_skybox_rayleigh,
+    sky.program = shader(vfs_read("shaders/vs_3_3_skybox.glsl"),
+        sky.flags ? vfs_read("fs_3_4_skybox.glsl") : vfs_read("shaders/fs_3_4_skybox_rayleigh.glsl"),
         "att_position", "fragcolor");
 
     // sky cubemap & SH
@@ -2913,14 +2913,14 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     passfx *p = &fx->pass[ slot & 63 ];
     p->name = STRDUP(name);
 
-    const char *vs = vs_0_2_fullscreen_quad_B;
+    const char *vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
 
     // patch fragment
     char *fs2 = (char*)CALLOC(1, 128*1024);
-    strcat(fs2, fs_2_4_preamble);
+    strcat(fs2, vfs_read("shaders/fs_2_4_preamble.glsl"));
 
     if( strstr(fs, "mainImage") ) {
-        strcat(fs2, fs_main_shadertoy );
+        strcat(fs2, vfs_read("shaders/fs_main_shadertoy.glsl") );
     }
 
     strcat(fs2, fs);
@@ -3282,52 +3282,8 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
 
     glGenVertexArrays(1, &s.vao);
 
-    // Uses gl_VertexID to draw a fullscreen quad without vbo
-    const char *vs = "#version 130\n"
-        "uniform vec2 iResolution;           // viewport resolution (in pixels)\n"
-        "out vec2 texCoord;\n"
-        "void main() {\n"
-            "   texCoord = vec2( (gl_VertexID << 1) & 2, gl_VertexID & 2 );\n"
-            "   gl_Position = vec4( texCoord * 2.0 - 1.0, 0.0, 1.0 );\n"
-            "   texCoord = texCoord * iResolution;\n"
-        "}\n";
-    const char *vs_flip = "#version 130\n"
-        "uniform vec2 iResolution;           // viewport resolution (in pixels)\n"
-        "out vec2 texCoord;\n"
-        "void main() {\n"
-            "   texCoord = vec2( (gl_VertexID << 1) & 2, gl_VertexID & 2 );\n"
-            "   gl_Position = vec4( texCoord * 2.0 - 1.0, 0.0, 1.0 );\n"
-            "   texCoord = texCoord * iResolution;\n"
-            "   texCoord.y = iResolution.y - texCoord.y; // flip Y\n"
-        "}\n";
-
-    const char *header = "#version 130\n"
-        "#define texture2D texture\n"
-        "uniform float      iGlobalTime;           // shader playback time (in seconds)\n"
-        "uniform float      iGlobalDelta;          // ??\n"
-        "uniform float      iGlobalFrame;          // ??\n"
-        "uniform float      iSampleRate;           // ??\n"
-        "uniform float      iTime;                 // ??\n"
-        "uniform int        iFrame;                // ??\n"
-        "uniform float      iChannelTime[4];       // channel playback time (in seconds)\n"
-        "uniform vec2       iResolution;           // viewport resolution (in pixels)\n"
-        "uniform vec3       iChannelResolution[4]; // channel resolution (in pixels)\n"
-        "uniform vec3       iOffset;               // ?? (0,0,0)\n"
-        "uniform vec4       iMouse;                // mouse pixel coords. xy: hover, zw: LMB click)\n"
-        "uniform vec4       iDate;                 // (year, month, day, time in seconds)\n"
-        "uniform sampler2D  iChannel0;             // input channel 0\n" /*sampler%s*/
-        "uniform sampler2D  iChannel1;             // input channel 1\n"
-        "uniform sampler2D  iChannel2;             // input channel 2\n"
-        "uniform sampler2D  iChannel3;             // input channel 3\n"
-        "in  vec2 texCoord;\n"
-        "out vec4 fragColor;\n"
-        "void mainImage( out vec4 fragColor, in vec2 fragCoord );\n"
-        "void main() {\n"
-        "   mainImage(fragColor, texCoord.xy);\n"
-        "}\n";
-
-    char *fs = stringf("%s%s", header, file);
-    s.program = shader(flags ? vs_flip : vs, fs, "", "fragColor");
+    char *fs = stringf("%s%s", vfs_read("header_shadertoy.glsl"), file);
+    s.program = shader(flags ? vfs_read("shaders/vs_shadertoy_flip.glsl") : vfs_read("shaders/vs_shadertoy.glsl"), fs, "", "fragColor");
     FREE(fs);
 
     if( strstr(file, "noise3.jpg"))
@@ -4036,8 +3992,8 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     const char *ptr = (const char *)mem;
     static int shaderprog = -1;
     if( shaderprog < 0 ) {
-        const char *symbols[] = { "{{include-shadowmap}}", fs_0_0_shadowmap_lit }; // #define RIM
-        shaderprog = shader(strlerp(1,symbols,vs_323444143_16_332_model), strlerp(1,symbols,fs_32_4_model), //fs,
+        const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
+        shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_332_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor");
     }
 

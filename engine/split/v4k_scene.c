@@ -256,8 +256,8 @@ scene_t* scene_get_active() {
 
 scene_t* scene_push() {
     scene_t *s = REALLOC(0, sizeof(scene_t)), clear = {0}; *s = clear;
-    const char *symbols[] = { "{{include-shadowmap}}", fs_0_0_shadowmap_lit };
-    s->program = shader(strlerp(1, symbols, vs_332_32), strlerp(1, symbols, fs_32_4_model), "att_position,att_normal,att_texcoord,att_color", "fragcolor");
+    const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") };
+    s->program = shader(strlerp(1, symbols, vfs_read("shaders/vs_332_32.glsl")), strlerp(1, symbols, vfs_read("shaders/fs_32_4_model.glsl")), "att_position,att_normal,att_texcoord,att_color", "fragcolor");
     s->skybox = skybox(NULL, 0);
     array_push(scenes, s);
     last_scene = s;

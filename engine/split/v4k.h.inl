@@ -133,8 +133,6 @@ extern "C" {
 
 {{FILE:v4k_render.h}}
 
-{{FILE:v4k_shaders.h}}
-
 {{FILE:v4k_renderdd.h}}
 
 {{FILE:v4k_scene.h}}

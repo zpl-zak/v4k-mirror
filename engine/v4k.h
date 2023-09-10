@@ -2897,31 +2897,6 @@ API void*    screenshot(int components); // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 API void*    screenshot_async(int components); // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 #line 0
 
-#line 1 "v4k_shaders.h"
-extern const char *const fs_0_0_shadowmap_lit;
-extern const char *const fs_0_0_shadowmap_unlit;
-extern const char *const fs_24_4_sprite;
-extern const char *const fs_2_4_preamble;
-extern const char *const fs_2_4_texel_inv_gamma;
-extern const char *const fs_2_4_texel_ycbr_gamma_saturation;
-extern const char *const fs_32_4_model;
-extern const char *const fs_32_4_model_basic;
-extern const char *const fs_3_4_skybox;
-extern const char *const fs_3_4_skybox_rayleigh;
-extern const char *const fs_main_shadertoy;
-extern const char *const fs_shadow_blur;
-extern const char *const fs_shadow_vsm;
-extern const char *const vs_0_2_fullscreen_quad_A;
-extern const char *const vs_0_2_fullscreen_quad_B;
-extern const char *const vs_0_2_fullscreen_quad_B_flipped;
-extern const char *const vs_323444143_16_332_model;
-extern const char *const vs_324_24_sprite;
-extern const char *const vs_332_32;
-extern const char *const vs_3_3_skybox;
-extern const char *const vs_shadow_blur;
-extern const char *const vs_shadow_vsm;
-#line 0
-
 #line 1 "v4k_renderdd.h"
 // -----------------------------------------------------------------------------
 // debugdraw framework

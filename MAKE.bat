@@ -24,7 +24,6 @@ if "%1"=="help" (
     echo %0 [bind]                  ; generate lua bindings
     echo %0 [checkmem]              ; check untracked allocators in V4K
     echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
-    echo %0 [glsl_split^|glsl_join]  ; join/split GLSL shaders
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
     echo %0 [prep]                  ; combine split files into a single-header file, ready for use
@@ -132,7 +131,6 @@ if "%1"=="git" (
     call make.bat docs
     call make.bat bind
 
-    call make.bat glsl_join
     call make.bat amalgamation
     call make.bat split
 
@@ -167,7 +165,6 @@ if "%1"=="push" (
 )
 
 if "%1"=="prep" (
-    call make.bat glsl_join
     call make.bat join
     call make.bat amalgamation
     exit /b
@@ -180,16 +177,6 @@ if "%1"=="split" (
 )
 if "%1"=="join" (
     call tools\join
-    exit /b
-)
-
-if "%1"=="glsl_split" (
-    call tools\glsl_split
-    exit /b
-)
-
-if "%1"=="glsl_join" (
-    call tools\glsl_join
     exit /b
 )
 
