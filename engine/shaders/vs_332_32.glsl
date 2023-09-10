@@ -1,4 +1,3 @@
-//uniform mat4 u_model, u_view, u_proj;
 uniform mat4 u_mvp;
 
 in vec3 att_position;
@@ -23,7 +22,6 @@ void do_shadow() {
 }
 
 void main() {
-    //    gl_Position = proj * view * model * vec4(att_position, 1.0);
     gl_Position = u_mvp * vec4(att_position, 1.0);
     v_normal = normalize(att_normal);
     v_normal_ws = normalize(vec3(model * vec4(att_normal, 0.))); // normal world/model space

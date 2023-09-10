@@ -5,4 +5,4 @@ uniform sampler2D shadowMap;
 
 vec4 shadowmap(in vec4 vpeye, in vec4 vneye, in vec2 Texcoord, in vec4 sc) {
     return vec4(1.);
-    };
+};

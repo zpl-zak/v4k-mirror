@@ -27,7 +27,7 @@ void temp_calc(vec4 *pixels){
 int main() {
     window_create(50, WINDOW_SQUARE|WINDOW_VSYNC_DISABLED);
     window_title(__FILE__);
-    window_fps_lock(0);
+    window_fps_unlock();
 
     texture_t tex;
 

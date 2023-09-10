@@ -5,6 +5,7 @@
 int main() {
     window_create(80, WINDOW_MSAA8);
     window_title(__FILE__);
+    window_fps_unlock();
 
     // load all fx files
     fx_load("fx**.fs");
@@ -23,6 +24,8 @@ int main() {
     camera_t cam = camera();
     cam.speed = 0.2f;
 
+    double sky_update_until = 0.0;
+
     // demo loop
     while (window_swap())
     {
@@ -32,6 +35,14 @@ int main() {
         if( input_down(KEY_F11) ) window_fullscreen( window_has_fullscreen() ^ 1 );
         if( input_down(KEY_X) ) window_screenshot(__FILE__ ".png");
         if( input_down(KEY_Z) ) window_record(__FILE__ ".mp4");
+
+        // initialize SH coefficients from rayleigh skybox
+        if (flag("--mie") && sky_update_until <= window_time()) {
+            shader_bind(sky.program);
+            shader_vec3("uSunPos", cam.position);
+            skybox_mie_calc_sh(&sky);
+            sky_update_until = window_time() + 0.02;
+        }
 
         // fps camera
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
@@ -52,6 +63,10 @@ int main() {
 
         float scale = 1.00;
         mat44 M; copy44(M, sponza.pivot); translate44(M, 0,0,0); scale44(M, scale,scale,scale);
+
+        shader_bind(sponza.program);
+        shader_vec3v("u_coefficients_sh", 9, sky.cubemap.sh);
+
         model_render(sponza, cam.proj, cam.view, M, 0);
 
         // post-fxs end here

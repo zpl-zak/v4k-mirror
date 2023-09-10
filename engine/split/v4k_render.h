@@ -612,11 +612,17 @@ typedef struct skybox_t {
     mesh_t geometry;
     cubemap_t cubemap;
     int flags;
+
+    // mie
+    unsigned framebuffers;
+    unsigned textures;
+    unsigned char *pixels;
 } skybox_t;
 
 API skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);
 API int      skybox_render(skybox_t *sky, mat44 proj, mat44 view);
 API void     skybox_destroy(skybox_t *sky);
+API void     skybox_mie_calc_sh(skybox_t *sky);
 
 API int      skybox_push_state(skybox_t *sky, mat44 proj, mat44 view); // @to deprecate
 API int      skybox_pop_state(); // @to deprecate

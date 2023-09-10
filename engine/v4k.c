@@ -10225,102 +10225,102 @@ const char *const fs_0_0_shadowmap_lit = "//" FILELINE "\n"
 "    vec4 diffuse;\n"
 "    vec4 specular;\n"
 "    float constantAttenuation, linearAttenuation, quadraticAttenuation;\n"
-"    };\n"
-"    light light0 = light(\n"
+"};\n"
+"  \n"
+"light light0 = light(\n"
 "    lightPos,\n"
 "    vec4(1,1,1,1), // diffuse\n"
 "    vec4(1,1,1,1), // specular\n"
 "    1.0, 0.0, 0.0  // attenuation (const, linear, quad)\n"
-"    );\n"
+");\n"
 "    \n"
-"    // From http://fabiensanglard.net/shadowmappingVSM/index.php\n"
-    #if VSMCUBE
-"    float chebyshevUpperBound(float distance, vec3 dir) {\n"
-"        distance = distance/20 ;\n"
-"        vec2 moments = texture(shadowMap, dir).rg;\n"
-        #else
-"        float chebyshevUpperBound(float distance, vec4 scPostW) {\n"
-"            vec2 moments = texture(shadowMap,scPostW.xy).rg;\n"
-            #endif
-"            // Surface is fully lit. as the current fragment is before the light occluder\n"
-"            if (distance <= moments.x)\n"
-"            return 1.0;\n"
-"            \n"
-"            // The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check\n"
-"            // How likely this pixel is to be lit (p_max)\n"
-"            float variance = moments.y - (moments.x*moments.x);\n"
-"            //variance = max(variance, 0.000002);\n"
-"            variance = max(variance, 0.00002);\n"
-"            \n"
-"            float d = distance - moments.x;\n"
-"            float p_max = variance / (variance + d*d);\n"
-"            \n"
-"            return p_max;\n"
-"        }\n"
-"        \n"
-"        vec4 shadowmap(in vec4 vpeye, in vec4 vneye, in vec2 uv, in vec4 sc) {\n"
-            #ifndef VSMCUBE
-"            return vec4(1.);\n"
-            #else
-"            \n"
-"            vec3 fragment = vec3(vpeye);\n"
-"            vec3 normal   = vec3(normalize(vneye));\n"
-"            vec3 viewDir  = normalize(-fragment);\n"
-"            \n"
-"            // Lighting\n"
-"            // Convert to eye-space\n"
-"            vec3 light = vec3(view * vec4(light0.position, 1.0));\n"
-"            \n"
-            #if VSMCUBE
-"            // Vectors\n"
-"            vec3 fragmentToLight     = light - fragment;\n"
-"            vec3 fragmentToLightDir  = normalize(fragmentToLight);\n"
-"            \n"
-"            // Shadows\n"
-"            vec4 fragmentToLight_world = inverse(view) * vec4(fragmentToLightDir, 0.0);\n"
-"            float shadowFactor = chebyshevUpperBound(length(fragmentToLight), -fragmentToLight_world.xyz);\n"
-            #else
-"            // Shadows\n"
-"            vec4 scPostW = sc / sc.w;\n"
-"            scPostW = scPostW * 0.5 + 0.5;\n"
-"            \n"
-"            float shadowFactor = 1.0; // Not in shadow\n"
-"            \n"
-"            bool outsideShadowMap = sc.w <= 0.0f || (scPostW.x < 0 || scPostW.y < 0) || (scPostW.x >= 1 || scPostW.y >= 1);\n"
-"            if (!outsideShadowMap) {\n"
-"                shadowFactor = chebyshevUpperBound(scPostW.z, scPostW);\n"
-"            }\n"
-            #endif
-"            \n"
-"            vec4 diffColor = vec4(1,1,1,1);\n"
-            #if VSMCUBE
-"            if(doTexture != 0) diffColor = vec4(vec3(texture(shadowMap, -fragmentToLight_world.xyz).r), 1.0);\n"
-            #else
-"            if(doTexture != 0) diffColor = vec4(vec3(texture(shadowMap, vec2(uv.x, 1.0 - uv.y)).r), 1.0);\n"
-            #endif
-"            \n"
-            #if 1
-"            vec3 positionToLight = light - fragment;\n"
-"            vec3 lightDir  = normalize(positionToLight);\n"
-"            \n"
-"            // Angle between fragment-normal and incoming light\n"
-"            float cosAngIncidence = dot(lightDir, normal);\n"
-"            cosAngIncidence = clamp(cosAngIncidence, 0, 1);\n"
-"            \n"
-"            float attenuation = 1.0f;\n"
-"            attenuation = 1.0 / (light0.constantAttenuation + light0.linearAttenuation * length(positionToLight) + light0.quadraticAttenuation * pow(length(positionToLight),2));\n"
-"            \n"
-"            vec4 diffuse  = diffColor * light0.diffuse  * cosAngIncidence * attenuation;\n"
-"            \n"
-"            vec4 total_lighting;\n"
-"            total_lighting += vec4(0.1, 0.1, 0.1, 1.0) * diffColor; // Ambient\n"
-"            total_lighting += diffuse * shadowFactor; // Diffuse\n"
-            #else
-"            vec4 total_lighting = diffColor;\n"
-            #endif
-"            return vec4(clamp(vec3(total_lighting), 0., 1.), 1.0);\n"
-            #endif
-"        }\n";
+"// From http://fabiensanglard.net/shadowmappingVSM/index.php\n"
+#if VSMCUBE
+"float chebyshevUpperBound(float distance, vec3 dir) {\n"
+"    distance = distance/20 ;\n"
+"    vec2 moments = texture(shadowMap, dir).rg;\n"
+#else
+"float chebyshevUpperBound(float distance, vec4 scPostW) {\n"
+"    vec2 moments = texture(shadowMap,scPostW.xy).rg;\n"
+#endif
+"    // Surface is fully lit. as the current fragment is before the light occluder\n"
+"    if (distance <= moments.x)\n"
+"    return 1.0;\n"
+"    \n"
+"    // The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check\n"
+"    // How likely this pixel is to be lit (p_max)\n"
+"    float variance = moments.y - (moments.x*moments.x);\n"
+"    //variance = max(variance, 0.000002);\n"
+"    variance = max(variance, 0.00002);\n"
+"    \n"
+"    float d = distance - moments.x;\n"
+"    float p_max = variance / (variance + d*d);\n"
+"    \n"
+"    return p_max;\n"
+"}\n"
+"\n"
+"vec4 shadowmap(in vec4 vpeye, in vec4 vneye, in vec2 uv, in vec4 sc) {\n"
+#ifndef VSMCUBE
+"    return vec4(1.);\n"
+#else
+"    vec3 fragment = vec3(vpeye);\n"
+"    vec3 normal   = vec3(normalize(vneye));\n"
+"    vec3 viewDir  = normalize(-fragment);\n"
+"    \n"
+"    // Lighting\n"
+"    // Convert to eye-space\n"
+"    vec3 light = vec3(view * vec4(light0.position, 1.0));\n"
+"    \n"
+#if VSMCUBE
+"    // Vectors\n"
+"    vec3 fragmentToLight     = light - fragment;\n"
+"    vec3 fragmentToLightDir  = normalize(fragmentToLight);\n"
+"    \n"
+"    // Shadows\n"
+"    vec4 fragmentToLight_world = inverse(view) * vec4(fragmentToLightDir, 0.0);\n"
+"    float shadowFactor = chebyshevUpperBound(length(fragmentToLight), -fragmentToLight_world.xyz);\n"
+#else
+"    // Shadows\n"
+"    vec4 scPostW = sc / sc.w;\n"
+"    scPostW = scPostW * 0.5 + 0.5;\n"
+"    \n"
+"    float shadowFactor = 1.0; // Not in shadow\n"
+"    \n"
+"    bool outsideShadowMap = sc.w <= 0.0f || (scPostW.x < 0 || scPostW.y < 0) || (scPostW.x >= 1 || scPostW.y >= 1);\n"
+"    if (!outsideShadowMap) {\n"
+"        shadowFactor = chebyshevUpperBound(scPostW.z, scPostW);\n"
+"    }\n"
+#endif
+"    \n"
+"    vec4 diffColor = vec4(1,1,1,1);\n"
+#if VSMCUBE
+"    if(doTexture != 0) diffColor = vec4(vec3(texture(shadowMap, -fragmentToLight_world.xyz).r), 1.0);\n"
+#else
+"    if(doTexture != 0) diffColor = vec4(vec3(texture(shadowMap, vec2(uv.x, 1.0 - uv.y)).r), 1.0);\n"
+#endif
+"    \n"
+#if 1
+"    vec3 positionToLight = light - fragment;\n"
+"    vec3 lightDir  = normalize(positionToLight);\n"
+"    \n"
+"    // Angle between fragment-normal and incoming light\n"
+"    float cosAngIncidence = dot(lightDir, normal);\n"
+"    cosAngIncidence = clamp(cosAngIncidence, 0, 1);\n"
+"    \n"
+"    float attenuation = 1.0f;\n"
+"    attenuation = 1.0 / (light0.constantAttenuation + light0.linearAttenuation * length(positionToLight) + light0.quadraticAttenuation * pow(length(positionToLight),2));\n"
+"    \n"
+"    vec4 diffuse  = diffColor * light0.diffuse  * cosAngIncidence * attenuation;\n"
+"    \n"
+"    vec4 total_lighting;\n"
+"    total_lighting += vec4(0.1, 0.1, 0.1, 1.0) * diffColor; // Ambient\n"
+"    total_lighting += diffuse * shadowFactor; // Diffuse\n"
+#else
+"    vec4 total_lighting = diffColor;\n"
+#endif
+"    return vec4(clamp(vec3(total_lighting), 0., 1.), 1.0);\n"
+#endif
+"}\n";
 
 const char *const fs_0_0_shadowmap_unlit = "//" FILELINE "\n"
 "//  uniform mat4 view = mat4(1.0);\n"
@@ -10330,7 +10330,7 @@ const char *const fs_0_0_shadowmap_unlit = "//" FILELINE "\n"
 "\n"
 "vec4 shadowmap(in vec4 vpeye, in vec4 vneye, in vec2 Texcoord, in vec4 sc) {\n"
 "    return vec4(1.);\n"
-"    };\n";
+"};\n";
 
 const char *const fs_24_4_sprite = "//" FILELINE "\n"
 "uniform sampler2D u_texture;\n"
@@ -10860,7 +10860,6 @@ const char *const vs_324_24_sprite = "//" FILELINE "\n"
 "}\n";
 
 const char *const vs_332_32 = "//" FILELINE "\n"
-"//uniform mat4 u_model, u_view, u_proj;\n"
 "uniform mat4 u_mvp;\n"
 "\n"
 "in vec3 att_position;\n"
@@ -10885,7 +10884,6 @@ const char *const vs_332_32 = "//" FILELINE "\n"
 "}\n"
 "\n"
 "void main() {\n"
-"    //    gl_Position = proj * view * model * vec4(att_position, 1.0);\n"
 "    gl_Position = u_mvp * vec4(att_position, 1.0);\n"
 "    v_normal = normalize(att_normal);\n"
 "    v_normal_ws = normalize(vec3(model * vec4(att_normal, 0.))); // normal world/model space\n"
@@ -13310,14 +13308,104 @@ skybox_t skybox(const char *asset, int flags) {
 
     return sky;
 }
+
+void skybox_mie_calc_sh(skybox_t *sky) {
+    unsigned WIDTH = 512, HEIGHT = 512;
+    unsigned last_fb;
+    int vp[4];
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
+    glGetIntegerv(GL_VIEWPORT, vp);
+
+    if (!sky->pixels)
+        sky->pixels = MALLOC(WIDTH*HEIGHT*3);
+
+    if (!sky->framebuffers[0]) {
+        for(int i = 0; i < 6; ++i) {
+            glGenFramebuffers(1, &sky->framebuffers[i]);
+            glBindFramebuffer(GL_FRAMEBUFFER, sky->framebuffers[i]);
+            
+            glGenTextures(1, &sky->textures[i]);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, sky->textures[i]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sky->textures[i], 0);
+        }
+    }
+
+    static vec3 directions[6] = {
+        {1.0f,  0.0f,  0.0f},
+        {-1.0f, 0.0f,  0.0f},
+        {0.0f,  1.0f,  0.0f},
+        {0.0f, -1.0f,  0.0f},
+        {0.0f,  0.0f,  1.0f},
+        {0.0f,  0.0f, -1.0f}
+    };
+
+    int samples = 0;
+    for(int i = 0; i < 6; ++i) {
+        glBindFramebuffer(GL_FRAMEBUFFER, sky->framebuffers[i]);
+        glViewport(0, 0, WIDTH, HEIGHT);
+        glUseProgram(sky->program);
+
+        mat44 proj; perspective44(proj, 90.0f, WIDTH / (float)HEIGHT, 0.01f, 1000.f);
+        mat44 view; lookat44(view, vec3(0,0,0), directions[i], vec3(0,1,0));
+
+        skybox_render(sky, proj, view);
+
+        glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, sky->pixels);
+
+        // calculate SH coefficients (@ands)
+        // copied from cubemap6 method
+        const vec3 skyDir[] = {{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1}};
+        const vec3 skyX[]   = {{ 0, 0,-1},{ 0, 0, 1},{ 1, 0, 0},{ 1, 0, 0},{ 1, 0, 0},{-1, 0, 0}};
+        const vec3 skyY[]   = {{ 0, 1, 0},{ 0, 1, 0},{ 0, 0,-1},{ 0, 0, 1},{ 0, 1, 0},{ 0, 1, 0}};
+        int step = 16;
+        for (int y = 0; y < HEIGHT; y += step) {
+            unsigned char *p = (unsigned char*)sky->pixels + y * WIDTH * 3;
+            for (int x = 0; x < WIDTH; x += step) {
+                vec3 n = add3(
+                    add3(
+                        scale3(skyX[i],  2.0f * (x / (WIDTH - 1.0f)) - 1.0f),
+                        scale3(skyY[i], -2.0f * (y / (HEIGHT - 1.0f)) + 1.0f)),
+                    skyDir[i]); // texelDirection;
+                float l = len3(n);
+                vec3 light = scale3(vec3(p[0], p[1], p[2]), 1 / (255.0f * l * l * l)); // texelSolidAngle * texel_radiance;
+                n = norm3(n);
+                sky->cubemap.sh[0] = add3(sky->cubemap.sh[0], scale3(light,  0.282095f));
+                sky->cubemap.sh[1] = add3(sky->cubemap.sh[1], scale3(light, -0.488603f * n.y * 2.0 / 3.0));
+                sky->cubemap.sh[2] = add3(sky->cubemap.sh[2], scale3(light,  0.488603f * n.z * 2.0 / 3.0));
+                sky->cubemap.sh[3] = add3(sky->cubemap.sh[3], scale3(light, -0.488603f * n.x * 2.0 / 3.0));
+                sky->cubemap.sh[4] = add3(sky->cubemap.sh[4], scale3(light,  1.092548f * n.x * n.y / 4.0));
+                sky->cubemap.sh[5] = add3(sky->cubemap.sh[5], scale3(light, -1.092548f * n.y * n.z / 4.0));
+                sky->cubemap.sh[6] = add3(sky->cubemap.sh[6], scale3(light,  0.315392f * (3.0f * n.z * n.z - 1.0f) / 4.0));
+                sky->cubemap.sh[7] = add3(sky->cubemap.sh[7], scale3(light, -1.092548f * n.x * n.z / 4.0));
+                sky->cubemap.sh[8] = add3(sky->cubemap.sh[8], scale3(light,  0.546274f * (n.x * n.x - n.y * n.y) / 4.0));
+                p += 3 * step;
+                samples++;
+            }
+        }
+    }
+
+    for (int s = 0; s < 9; s++) {
+        sky->cubemap.sh[s] = scale3(sky->cubemap.sh[s], 32.f / samples);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
+    glViewport(vp[0], vp[1], vp[2], vp[3]);
+}
+
 int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     last_cubemap = &sky->cubemap;
 
-//glClear(GL_DEPTH_BUFFER_BIT);
-//glEnable(GL_DEPTH_TEST);
-glDepthFunc(GL_LEQUAL);
-//glDisable(GL_CULL_FACE);
-glDisable(GL_DEPTH_TEST);
+    //glClear(GL_DEPTH_BUFFER_BIT);
+    //glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    //glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
 
     mat44 mvp; multiply44x2(mvp, proj, view);
 
@@ -13325,7 +13413,7 @@ glDisable(GL_DEPTH_TEST);
     shader_bind(sky->program);
     shader_mat44("u_mvp", mvp);
     if( sky->flags ) {
-    shader_cubemap("u_cubemap", sky->cubemap.id);
+        shader_cubemap("u_cubemap", sky->cubemap.id);
     }
     return 0; // @fixme: return sortable hash here?
 }
@@ -13345,6 +13433,12 @@ void skybox_destroy(skybox_t *sky) {
     glDeleteProgram(sky->program);
     cubemap_destroy(&sky->cubemap);
     mesh_destroy(&sky->geometry);
+
+    if (sky->pixels) {
+        FREE(sky->pixels);
+        glDeleteFramebuffers(6, sky->framebuffers);
+        glDeleteTextures(6, sky->textures);
+    }
 }
 
 // -----------------------------------------------------------------------------

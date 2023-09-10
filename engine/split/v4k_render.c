@@ -2399,14 +2399,104 @@ skybox_t skybox(const char *asset, int flags) {
 
     return sky;
 }
+
+void skybox_mie_calc_sh(skybox_t *sky) {
+    unsigned WIDTH = 512, HEIGHT = 512;
+    unsigned last_fb;
+    int vp[4];
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
+    glGetIntegerv(GL_VIEWPORT, vp);
+
+    if (!sky->pixels)
+        sky->pixels = MALLOC(WIDTH*HEIGHT*3);
+
+    if (!sky->framebuffers[0]) {
+        for(int i = 0; i < 6; ++i) {
+            glGenFramebuffers(1, &sky->framebuffers[i]);
+            glBindFramebuffer(GL_FRAMEBUFFER, sky->framebuffers[i]);
+            
+            glGenTextures(1, &sky->textures[i]);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, sky->textures[i]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sky->textures[i], 0);
+        }
+    }
+
+    static vec3 directions[6] = {
+        {1.0f,  0.0f,  0.0f},
+        {-1.0f, 0.0f,  0.0f},
+        {0.0f,  1.0f,  0.0f},
+        {0.0f, -1.0f,  0.0f},
+        {0.0f,  0.0f,  1.0f},
+        {0.0f,  0.0f, -1.0f}
+    };
+
+    int samples = 0;
+    for(int i = 0; i < 6; ++i) {
+        glBindFramebuffer(GL_FRAMEBUFFER, sky->framebuffers[i]);
+        glViewport(0, 0, WIDTH, HEIGHT);
+        glUseProgram(sky->program);
+
+        mat44 proj; perspective44(proj, 90.0f, WIDTH / (float)HEIGHT, 0.01f, 1000.f);
+        mat44 view; lookat44(view, vec3(0,0,0), directions[i], vec3(0,1,0));
+
+        skybox_render(sky, proj, view);
+
+        glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, sky->pixels);
+
+        // calculate SH coefficients (@ands)
+        // copied from cubemap6 method
+        const vec3 skyDir[] = {{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1}};
+        const vec3 skyX[]   = {{ 0, 0,-1},{ 0, 0, 1},{ 1, 0, 0},{ 1, 0, 0},{ 1, 0, 0},{-1, 0, 0}};
+        const vec3 skyY[]   = {{ 0, 1, 0},{ 0, 1, 0},{ 0, 0,-1},{ 0, 0, 1},{ 0, 1, 0},{ 0, 1, 0}};
+        int step = 16;
+        for (int y = 0; y < HEIGHT; y += step) {
+            unsigned char *p = (unsigned char*)sky->pixels + y * WIDTH * 3;
+            for (int x = 0; x < WIDTH; x += step) {
+                vec3 n = add3(
+                    add3(
+                        scale3(skyX[i],  2.0f * (x / (WIDTH - 1.0f)) - 1.0f),
+                        scale3(skyY[i], -2.0f * (y / (HEIGHT - 1.0f)) + 1.0f)),
+                    skyDir[i]); // texelDirection;
+                float l = len3(n);
+                vec3 light = scale3(vec3(p[0], p[1], p[2]), 1 / (255.0f * l * l * l)); // texelSolidAngle * texel_radiance;
+                n = norm3(n);
+                sky->cubemap.sh[0] = add3(sky->cubemap.sh[0], scale3(light,  0.282095f));
+                sky->cubemap.sh[1] = add3(sky->cubemap.sh[1], scale3(light, -0.488603f * n.y * 2.0 / 3.0));
+                sky->cubemap.sh[2] = add3(sky->cubemap.sh[2], scale3(light,  0.488603f * n.z * 2.0 / 3.0));
+                sky->cubemap.sh[3] = add3(sky->cubemap.sh[3], scale3(light, -0.488603f * n.x * 2.0 / 3.0));
+                sky->cubemap.sh[4] = add3(sky->cubemap.sh[4], scale3(light,  1.092548f * n.x * n.y / 4.0));
+                sky->cubemap.sh[5] = add3(sky->cubemap.sh[5], scale3(light, -1.092548f * n.y * n.z / 4.0));
+                sky->cubemap.sh[6] = add3(sky->cubemap.sh[6], scale3(light,  0.315392f * (3.0f * n.z * n.z - 1.0f) / 4.0));
+                sky->cubemap.sh[7] = add3(sky->cubemap.sh[7], scale3(light, -1.092548f * n.x * n.z / 4.0));
+                sky->cubemap.sh[8] = add3(sky->cubemap.sh[8], scale3(light,  0.546274f * (n.x * n.x - n.y * n.y) / 4.0));
+                p += 3 * step;
+                samples++;
+            }
+        }
+    }
+
+    for (int s = 0; s < 9; s++) {
+        sky->cubemap.sh[s] = scale3(sky->cubemap.sh[s], 32.f / samples);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
+    glViewport(vp[0], vp[1], vp[2], vp[3]);
+}
+
 int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     last_cubemap = &sky->cubemap;
 
-//glClear(GL_DEPTH_BUFFER_BIT);
-//glEnable(GL_DEPTH_TEST);
-glDepthFunc(GL_LEQUAL);
-//glDisable(GL_CULL_FACE);
-glDisable(GL_DEPTH_TEST);
+    //glClear(GL_DEPTH_BUFFER_BIT);
+    //glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    //glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
 
     mat44 mvp; multiply44x2(mvp, proj, view);
 
@@ -2414,7 +2504,7 @@ glDisable(GL_DEPTH_TEST);
     shader_bind(sky->program);
     shader_mat44("u_mvp", mvp);
     if( sky->flags ) {
-    shader_cubemap("u_cubemap", sky->cubemap.id);
+        shader_cubemap("u_cubemap", sky->cubemap.id);
     }
     return 0; // @fixme: return sortable hash here?
 }
@@ -2434,6 +2524,12 @@ void skybox_destroy(skybox_t *sky) {
     glDeleteProgram(sky->program);
     cubemap_destroy(&sky->cubemap);
     mesh_destroy(&sky->geometry);
+
+    if (sky->pixels) {
+        FREE(sky->pixels);
+        glDeleteFramebuffers(6, sky->framebuffers);
+        glDeleteTextures(6, sky->textures);
+    }
 }
 
 // -----------------------------------------------------------------------------
