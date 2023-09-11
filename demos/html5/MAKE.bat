@@ -32,7 +32,7 @@ exit
 
 :windows
 
-if "%1"=="" MAKE.bat demo_ui.c
+if "%1"=="" MAKE.bat demo_collide.c
 
 del index.html 2>NUL >NUL
 del index.worker.js 2>NUL >NUL

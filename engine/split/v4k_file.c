@@ -515,7 +515,7 @@ void vfs_reload() {
     array_resize(vfs_entries, 0); // @leak
 
     // mount virtual filesystems later (mounting order matters: low -> to -> high priority)
-#if 0
+#if defined(EMSCRIPTEN)
     for( int i = 0; i < JOBS_MAX; ++i) {
         if( vfs_mount(va(".art[%02x].zip", i)) ) continue;
         if( vfs_mount(va("%s[%02x].zip", app, i)) ) continue;

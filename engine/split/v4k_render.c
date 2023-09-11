@@ -2395,6 +2395,10 @@ skybox_t skybox(const char *asset, int flags) {
             sky.cubemap = cubemap6( images, 0 );
             for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
         }
+    } else {
+        // set up mie defaults
+        shader_bind(sky.program);
+        shader_vec3("uSunPos", vec3( 0, 0.1, -1 ));
     }
 
     return sky;
