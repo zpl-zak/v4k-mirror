@@ -12614,7 +12614,7 @@ skybox_t skybox(const char *asset, int flags) {
 }
 
 void skybox_mie_calc_sh(skybox_t *sky) {
-    unsigned WIDTH = 512, HEIGHT = 512;
+    unsigned WIDTH = 1024, HEIGHT = 1024;
     int last_fb;
     int vp[4];
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
@@ -12640,14 +12640,7 @@ void skybox_mie_calc_sh(skybox_t *sky) {
         }
     }
 
-    static vec3 directions[6] = {
-        {1.0f,  0.0f,  0.0f},
-        {-1.0f, 0.0f,  0.0f},
-        {0.0f,  1.0f,  0.0f},
-        {0.0f, -1.0f,  0.0f},
-        {0.0f,  0.0f,  1.0f},
-        {0.0f,  0.0f, -1.0f}
-    };
+    static vec3 directions[6] = {{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1}};
 
     int samples = 0;
     for(int i = 0; i < 6; ++i) {
@@ -12655,8 +12648,8 @@ void skybox_mie_calc_sh(skybox_t *sky) {
         glViewport(0, 0, WIDTH, HEIGHT);
         glUseProgram(sky->program);
 
-        mat44 proj; perspective44(proj, 90.0f, WIDTH / (float)HEIGHT, 0.01f, 1000.f);
-        mat44 view; lookat44(view, vec3(0,0,0), directions[i], vec3(0,1,0));
+        mat44 proj; perspective44(proj, 90.0f, WIDTH / (float)HEIGHT, 0.1f, 500.f);
+        mat44 view; lookat44(view, vec3(0,0,0), directions[i], vec3(0,-1,0));
 
         skybox_render(sky, proj, view);
 

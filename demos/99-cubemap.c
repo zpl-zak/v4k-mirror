@@ -41,9 +41,13 @@ int main(int argc, char** argv) {
         }
         if( !initialized ) {
             initialized = 1;
-            sky = skybox(SKY_DIRS[SKY_DIR], 0);
+            sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
             // rotation44(mdl.pivot, 0, 1,0,0); // @fixme: -90,1,0,0 -> should we rotate SHMs as well? compensate rotation in shader?
+
+            if (flag("--mie")) {
+                skybox_mie_calc_sh(&sky);
+            }
         }
 
         // fps camera
