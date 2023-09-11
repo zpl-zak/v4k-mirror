@@ -2413,15 +2413,19 @@ skybox_t skybox(const char *asset, int flags) {
     return sky;
 }
 
-void skybox_mie_calc_sh(skybox_t *sky) {
+void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
     unsigned WIDTH = 1024, HEIGHT = 1024;
     int last_fb;
     int vp[4];
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
     glGetIntegerv(GL_VIEWPORT, vp);
 
+    if (!sky_intensity) {
+        sky_intensity = 1.0f;
+    }
+
     if (!sky->pixels)
-        sky->pixels = MALLOC(WIDTH*HEIGHT*3);
+        sky->pixels = MALLOC(WIDTH*HEIGHT*12);
 
     if (!sky->framebuffers[0]) {
         for(int i = 0; i < 6; ++i) {
@@ -2431,7 +2435,7 @@ void skybox_mie_calc_sh(skybox_t *sky) {
             glGenTextures(1, &sky->textures[i]);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, sky->textures[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -2453,7 +2457,7 @@ void skybox_mie_calc_sh(skybox_t *sky) {
 
         skybox_render(sky, proj, view);
 
-        glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, sky->pixels);
+        glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGB, GL_FLOAT, sky->pixels);
 
         // calculate SH coefficients (@ands)
         // copied from cubemap6 method
@@ -2462,7 +2466,7 @@ void skybox_mie_calc_sh(skybox_t *sky) {
         const vec3 skyY[]   = {{ 0, 1, 0},{ 0, 1, 0},{ 0, 0,-1},{ 0, 0, 1},{ 0, 1, 0},{ 0, 1, 0}};
         int step = 16;
         for (int y = 0; y < HEIGHT; y += step) {
-            unsigned char *p = (unsigned char*)sky->pixels + y * WIDTH * 3;
+            unsigned float *p = (unsigned float*)sky->pixels + y * WIDTH * 3;
             for (int x = 0; x < WIDTH; x += step) {
                 vec3 n = add3(
                     add3(
@@ -2470,7 +2474,7 @@ void skybox_mie_calc_sh(skybox_t *sky) {
                         scale3(skyY[i], -2.0f * (y / (HEIGHT - 1.0f)) + 1.0f)),
                     skyDir[i]); // texelDirection;
                 float l = len3(n);
-                vec3 light = scale3(vec3(p[0], p[1], p[2]), 1 / (255.0f * l * l * l)); // texelSolidAngle * texel_radiance;
+                vec3 light = scale3(vec3(p[0], p[1], p[2]), (1 / (l * l * l)) * sky_intensity); // texelSolidAngle * texel_radiance;
                 n = norm3(n);
                 sky->cubemap.sh[0] = add3(sky->cubemap.sh[0], scale3(light,  0.282095f));
                 sky->cubemap.sh[1] = add3(sky->cubemap.sh[1], scale3(light, -0.488603f * n.y * 2.0 / 3.0));
@@ -2494,6 +2498,27 @@ void skybox_mie_calc_sh(skybox_t *sky) {
     glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
     glViewport(vp[0], vp[1], vp[2], vp[3]);
 }
+
+void skybox_sh_reset(skybox_t *sky) {
+    for (int s = 0; s < 9; s++) {
+        sky->cubemap.sh[s] = vec3(0,0,0);
+    }    
+}
+
+void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength) {
+    // Normalize the direction
+    vec3 norm_dir = norm3(dir);
+
+    // Scale the light color and intensity
+    vec3 scaled_light = scale3(light, strength);
+
+    // Add light to the SH coefficients
+    sky->cubemap.sh[0] = add3(sky->cubemap.sh[0], scale3(scaled_light,  0.282095f));
+    sky->cubemap.sh[1] = add3(sky->cubemap.sh[1], scale3(scaled_light, -0.488603f * norm_dir.y));
+    sky->cubemap.sh[2] = add3(sky->cubemap.sh[2], scale3(scaled_light,  0.488603f * norm_dir.z));
+    sky->cubemap.sh[3] = add3(sky->cubemap.sh[3], scale3(scaled_light, -0.488603f * norm_dir.x));
+}
+
 
 int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     last_cubemap = &sky->cubemap;

@@ -44,10 +44,6 @@ int main(int argc, char** argv) {
             sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
             // rotation44(mdl.pivot, 0, 1,0,0); // @fixme: -90,1,0,0 -> should we rotate SHMs as well? compensate rotation in shader?
-
-            if (flag("--mie")) {
-                skybox_mie_calc_sh(&sky);
-            }
         }
 
         // fps camera
@@ -63,6 +59,14 @@ int main(int argc, char** argv) {
         // render
         mat44 mvp; multiply44x2(mvp, cam.proj, cam.view);
         {
+            if (flag("--mie")) {
+                // skybox_sh_reset(&sky);
+                skybox_mie_calc_sh(&sky, 4.0f);
+                // float x = cosf((float)window_time())*4;  
+                // skybox_sh_add_light(&sky, vec3(0.3,0.3,0.3), vec3(0,1,0), 16*absf(cosf((float)window_time()*2))+2);
+                // skybox_sh_add_light(&sky, vec3(0.6,0,0), vec3(x,1,0), 2);
+            }
+
             skybox_render(&sky, cam.proj, cam.view);
             
             shader_bind(mdl.program);

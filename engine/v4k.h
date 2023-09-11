@@ -2874,7 +2874,9 @@ typedef struct skybox_t {
 API skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);
 API int      skybox_render(skybox_t *sky, mat44 proj, mat44 view);
 API void     skybox_destroy(skybox_t *sky);
-API void     skybox_mie_calc_sh(skybox_t *sky);
+API void     skybox_mie_calc_sh(skybox_t *sky, float sky_intensity);
+API void     skybox_sh_reset(skybox_t *sky);
+API void     skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength);
 
 API int      skybox_push_state(skybox_t *sky, mat44 proj, mat44 view); // @to deprecate
 API int      skybox_pop_state(); // @to deprecate

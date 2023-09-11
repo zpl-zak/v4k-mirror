@@ -40,7 +40,7 @@ int main() {
         if (flag("--mie") && sky_update_until <= window_time()) {
             shader_bind(sky.program);
             shader_vec3("uSunPos", vec3(0, (cosf((float)window_time()*0.25)*0.3)+0.2, -1));
-            skybox_mie_calc_sh(&sky);
+            skybox_mie_calc_sh(&sky, 2.0f);
             sky_update_until = window_time() + 0.02;
         }
 
