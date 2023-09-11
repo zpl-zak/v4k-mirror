@@ -217,10 +217,13 @@ if "%1"=="fwk" (
     if not exist "_fwk\tools" mkdir "_fwk\tools"
     if not exist "_fwk\tools\editor" mkdir "_fwk\tools\editor"
     if not exist "_fwk\engine" mkdir "_fwk\engine"
+    if not exist "_fwk\engine\art" mkdir "_fwk\engine\art"
+    if not exist "_fwk\engine\art\shaders" mkdir "_fwk\engine\art\shaders"
     if not exist "_fwk\engine\split" mkdir "_fwk\engine\split"
     setlocal enabledelayedexpansion
     xcopy /y "*" "_fwk"
     xcopy /y "engine\split\3rd_*" "_fwk\engine\split"
+    xcopy /y "engine\art\shaders\*" "_fwk\engine\art\shaders"
     xcopy /y "demos" "_fwk\demos"
     xcopy /y/E "tools "_fwk\tools"
     for %%f in ("engine\split\v4k*") do (
@@ -267,6 +270,7 @@ if "%1"=="back" (
 
     xcopy /y "_fwk" "."
     xcopy /y "_fwk\engine\split\3rd_*" "engine\split"
+    xcopy /y "_fwk\engine\art\shaders\*" "engine\art\shaders"
     xcopy /y "_fwk\demos" "demos"
     xcopy /y/E "_fwk\tools "tools"
     for %%f in ("_fwk\engine\split\fwk*") do (
