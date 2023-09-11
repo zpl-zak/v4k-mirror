@@ -9,6 +9,7 @@
 
 int paused;
 camera_t cam;
+skybox_t sky;
 
 void game_loop(void *userdata) {
     // key handler
@@ -609,6 +610,8 @@ int main(void) {
 
     // camera that points to origin
     cam = camera();
+
+    sky = skybox(0, 0);
 
     // main loop
     window_loop(game_loop, NULL);

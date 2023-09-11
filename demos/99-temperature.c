@@ -39,7 +39,7 @@ int main() {
     tex = texture_create(TEX_WIDTH, TEX_WIDTH, 4, img, TEXTURE_LINEAR|TEXTURE_FLOAT);
     unsigned comp = compute(vfs_read("shaders/temperature.glsl"));
     shader_bind(comp);
-    shader_image(tex, 0, 0, 0, READ_WRITE);
+    shader_image(tex, 0, 0, 0, BUFFER_READ_WRITE);
 
     while ( window_swap() && !input_down(KEY_ESC) ){
         if (input_down(KEY_F5)) window_reload();

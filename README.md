@@ -65,11 +65,11 @@ end
 ```
 
 ## Quickstart
-- Double-click `MAKE.bat` (Win) or `sh MAKE.bat` (Linux/OSX) to quick start.
-- `MAKE.bat all` (Win) or `sh MAKE.bat all` (Linux/OSX) to build everything.
-- `MAKE.bat proj` (Win) or `sh MAKE.bat proj` (Linux/OSX) to generate solutions/makefiles.
-- `MAKE.bat help` (Win) or `sh MAKE.bat help` (Linux/OSX) for a bunch of options.
-- `MAKE.bat hello.c` (Win) or `sh MAKE.bat hello.c` (Linux/OSX) to build a single executable.
+- Double-click `MAKE.bat` to quick start.
+- `MAKE.bat all` to build everything.
+- `MAKE.bat proj` to generate solutions/makefiles.
+- `MAKE.bat help` for a bunch of options.
+- `MAKE.bat hello.c` to build a single executable.
 - Alternatively,
 ```bat
 echo win/vc            && cl hello.c

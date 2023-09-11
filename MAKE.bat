@@ -631,6 +631,6 @@ rem     !
 rem )
 
 rem PAUSE only if double-clicked from Windows explorer
-rem (((echo.%cmdcmdline%)|%WINDIR%\system32\find.exe /I "%~0")>nul)&&pause
+(((echo.%cmdcmdline%)|%WINDIR%\system32\find.exe /I "%~0")>nul)&&pause
 
 cmd /c exit !rc!
