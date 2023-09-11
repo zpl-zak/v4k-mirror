@@ -335,13 +335,12 @@ API     void shader_colormap(const char *name, colormap_t cm);
 API unsigned shader_get_active();
 API void     shader_destroy(unsigned shader);
 
-enum BUFFER_ACCESS_MODE {
+// compute shaders
+enum BUFFER_MODE {
     BUFFER_READ,
     BUFFER_WRITE,
     BUFFER_READ_WRITE
 };
-
-// compute shaders
 
 /// Loads the compute shader and compiles a GL program.
 /// return: GL program, 0 if failed.
@@ -361,7 +360,7 @@ API void compute_dispatch(unsigned wx, unsigned wy, unsigned wz);
 /// level: texture level access (MIP0, MIP1, ...)
 /// layer: bind layer
 /// access: texture access policy
-/// see: ACCESS_MODE
+/// see: BUFFER_MODE
 API void shader_image(texture_t t, unsigned unit, unsigned level, int layer, unsigned access);
 
 /// Binds a texture to the program
@@ -372,7 +371,7 @@ API void shader_image(texture_t t, unsigned unit, unsigned level, int layer, uns
 /// layer: bind layer
 /// texel_type: image texel format (RGBA8, RGBA32F, ...)
 /// access: texture access policy
-/// see: ACCESS_MODE
+/// see: BUFFER_MODE
 API void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access);
 
 // gpu memory barriers
@@ -388,7 +387,7 @@ API void write_barrier();
 /// `DRAW` favors CPU->GPU operations.
 /// `READ` favors GPU->CPU operations.
 /// `COPY` favors CPU->GPU->CPU operations.
-enum SSBO_USAGE_MODE {
+enum SSBO_USAGE {
     STATIC_DRAW,
     STATIC_READ,
     STATIC_COPY,
@@ -413,7 +412,7 @@ enum SSBO_ACCESS {
 /// data: optional pointer to data to upload
 /// len: buffer size, must not be 0
 /// usage: buffer usage policy
-/// see: USAGE_MODE
+/// see: SSBO_USAGE
 API unsigned ssbo_create(const void *data, int len, unsigned usage);
 
 /// Destroys an SSBO resource
@@ -435,7 +434,7 @@ API void ssbo_bind(unsigned ssbo, unsigned unit);
 /// !!! Make sure to `ssbo_unmap` the buffer once done working with it.
 /// access: buffer access policy
 /// return: pointer to physical memory of the buffer
-/// see: ACCESS_MODE
+/// see: SSBO_ACCESS
 API void *ssbo_map(unsigned access);
 
 /// Unmaps an SSBO resource

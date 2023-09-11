@@ -20,12 +20,12 @@
 // status: CUBE(1)+BLUR(1): ok
 // status: CUBE(1)+BLUR(0): ok
 // status: CUBE(?)+BLUR(?): no {
-// 003.470s|!cannot find uniform 'shadowMap' in shader program 21                         |shader_uniform|fwk_render.c:772
-// 001: 00007FF7AF6A3FDA callstack (C:\prj\thread\FWK\fwk_system.c:250)
-// 002: 00007FF7AF8E7CBC shader_uniform (C:\prj\thread\FWK\fwk_render.c:772)
-// 003: 00007FF7AF691C27 shader_int (C:\prj\thread\FWK\fwk_render.c:777)
-// 004: 00007FF7AF8F54EF color_begin (C:\prj\thread\FWK\spot.c:525)
-// 005: 00007FF7AF8F5BF7 main (C:\prj\thread\FWK\spot.c:607)
+// 003.470s|!cannot find uniform 'shadowMap' in shader program 21                         |shader_uniform|v4k_render.c:772
+// 001: 00007FF7AF6A3FDA callstack (C:\prj\thread\V4K\v4k_system.c:250)
+// 002: 00007FF7AF8E7CBC shader_uniform (C:\prj\thread\V4K\v4k_render.c:772)
+// 003: 00007FF7AF691C27 shader_int (C:\prj\thread\V4K\v4k_render.c:777)
+// 004: 00007FF7AF8F54EF color_begin (C:\prj\thread\V4K\spot.c:525)
+// 005: 00007FF7AF8F5BF7 main (C:\prj\thread\V4K\spot.c:607)
 // }
 
 #ifndef VSMCUBE

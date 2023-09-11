@@ -516,13 +516,15 @@ void vfs_reload() {
 
     // mount virtual filesystems later (mounting order matters: low -> to -> high priority)
 #if defined(EMSCRIPTEN)
+    vfs_mount("index.zip");
+#else
+    /* // old way
     for( int i = 0; i < JOBS_MAX; ++i) {
         if( vfs_mount(va(".art[%02x].zip", i)) ) continue;
         if( vfs_mount(va("%s[%02x].zip", app, i)) ) continue;
         if( vfs_mount(va("%s%02x.zip", app, i)) ) continue;
-        //if( vfs_mount(va("%s.%02x", app, i)) ) continue;
-    }
-#else
+        // if( vfs_mount(va("%s.%02x", app, i)) ) continue;
+    } */
     // faster way
     for( const char **file = file_list("./","*.zip"); *file; ++file) vfs_mount(*file);
 #endif
@@ -801,6 +803,15 @@ if( found && *found == 0 ) {
         snprintf(last_item, 256, "%s", lookup_id);
         last_ptr = ptr;
         last_size = size;
+    }
+
+    // yet another last resort: redirect vfs_load() calls to file_load()
+    // (for environments without tools or cooked assets)
+    if(!ptr) {
+        static bool have_tools; do_once have_tools = file_exist(COOK_INI);
+        if( !have_tools ) {
+            ptr = file_load(pathfile, size_out);
+        }
     }
 
     if(!ptr) {
