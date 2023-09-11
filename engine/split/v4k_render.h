@@ -629,7 +629,7 @@ typedef struct skybox_t {
     // mie
     int framebuffers[6];
     int textures[6];
-    unsigned char *pixels;
+    float *pixels;
 } skybox_t;
 
 API skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);

@@ -2466,7 +2466,7 @@ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
         const vec3 skyY[]   = {{ 0, 1, 0},{ 0, 1, 0},{ 0, 0,-1},{ 0, 0, 1},{ 0, 1, 0},{ 0, 1, 0}};
         int step = 16;
         for (int y = 0; y < HEIGHT; y += step) {
-            unsigned float *p = (unsigned float*)sky->pixels + y * WIDTH * 3;
+            float *p = (float*)(sky->pixels + y * WIDTH * 3);
             for (int x = 0; x < WIDTH; x += step) {
                 vec3 n = add3(
                     add3(

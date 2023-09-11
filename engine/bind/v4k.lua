@@ -2533,7 +2533,7 @@ cubemap_t cubemap;
 int flags;
 int framebuffers[6];
 int textures[6];
-unsigned char *pixels;
+float *pixels;
 } skybox_t;
  skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);
  int      skybox_render(skybox_t *sky, mat44 proj, mat44 view);
