@@ -2869,7 +2869,6 @@ WINDOW_VSYNC_DISABLED =8192,
  int      window_swap();
  void     window_loop(void (*function)(void* loopArg), void* loopArg );
  void     window_loop_exit();
- void     window_resize();
  void     window_title(const char *title);
  void     window_icon(const char *file_icon);
  void     window_color(unsigned color);

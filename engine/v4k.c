@@ -19870,6 +19870,7 @@ static int locked_aspect_ratio = 0;
 struct app {
     GLFWwindow *window;
     int width, height, keep_running;
+    unsigned flags;
 
     struct nk_context *ctx;
     struct nk_glfw *nk_glfw;
@@ -19963,6 +19964,8 @@ void window_hints(unsigned flags) {
     if(flags & WINDOW_MSAA2) glfwWindowHint(GLFW_SAMPLES, 2); // x2 AA
     if(flags & WINDOW_MSAA4) glfwWindowHint(GLFW_SAMPLES, 4); // x4 AA
     if(flags & WINDOW_MSAA8) glfwWindowHint(GLFW_SAMPLES, 8); // x8 AA
+
+    g->flags = flags;
 }
 
 struct nk_glfw *window_handle_nkglfw() {
@@ -20344,9 +20347,31 @@ int window_swap() {
 static
 void (*window_render_callback)(void* loopArg);
 
+static vec2 last_canvas_size;
+
+static
+void window_resize() {
+#if is(ems)
+    EM_ASM(canvas.canResize = 0);
+    if (g->flags&WINDOW_FIXED) return;
+    EM_ASM(canvas.canResize = 1);
+    vec2 size = window_canvas();
+    do_once last_canvas_size = size;
+    if (size.x != last_canvas_size.x || size.y != last_canvas_size.y) {
+        w = size.x;
+        h = size.y;
+        g->width  = w;
+        g->height = h;
+        glfwSetWindowSize(g->window, w, h);
+        // emscripten_set_canvas_size(w, h);
+    }
+#endif /* __EMSCRIPTEN__ */
+}
+
 static
 void window_loop_wrapper( void *loopArg ) {
     if( window_frame_begin() ) {
+        window_resize();
         window_render_callback(loopArg);
         window_frame_end();
         window_frame_swap();
@@ -20384,23 +20409,6 @@ vec2 window_canvas() {
     const GLFWvidmode* mode = glfwGetVideoMode( glfwGetPrimaryMonitor() );
     assert( mode );
     return vec2(mode->width, mode->height);
-#endif /* __EMSCRIPTEN__ */
-}
-
-static vec2 last_canvas_size;
-
-void window_resize() {
-#if is(ems)
-    vec2 size = window_canvas();
-    do_once last_canvas_size = size;
-    if (size.x != last_canvas_size.x || size.y != last_canvas_size.y) {
-        w = size.x;
-        h = size.y;
-        g->width  = w;
-        g->height = h;
-        glfwSetWindowSize(g->window, w, h);
-        // emscripten_set_canvas_size(w, h);
-    }
 #endif /* __EMSCRIPTEN__ */
 }
 

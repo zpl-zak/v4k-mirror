@@ -104,8 +104,10 @@
                 canvas.height = window.innerHeight;
 
                 window.addEventListener('resize', () => {
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
+                    if (canvas.canResize) {
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                    }
                 })
                 return canvas;
             })(),

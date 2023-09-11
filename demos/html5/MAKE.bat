@@ -49,7 +49,7 @@ if not exist "emsdk" (
 if "%EMSDK%"=="" call emsdk\emsdk_env.bat --system
 
 rem cook art
-..\..\tools\cook.exe --cook-jobs=1 --cook-ini=..\..\tools\cook_web.ini
+..\..\tools\cook.exe --cook-jobs=1 --cook-ini=..\..\tools\cook.ini
 
 rem host webserver, compile and launch
 rem start python -m http.server --bind 127.0.0.1 8000

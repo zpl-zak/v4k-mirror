@@ -14,7 +14,6 @@ void game_loop(void *userdata) {
     // key handler
     // if (input_down(KEY_F11) ) window_fullscreen( window_has_fullscreen()^1 );
     // if (input_down(KEY_ESC) ) window_loop_exit(); // @todo: break -> window_close()
-    window_resize();
 
     // animation
     static float dx = 0, dy = 0;
@@ -602,7 +601,7 @@ void game_loop(void *userdata) {
 
 int main(void) {
     // 75% sized, msaa x4 enabled
-    window_create(0.75f, WINDOW_MSAA4);
+    window_create(0.75f, WINDOW_MSAA4/*|WINDOW_FIXED*/);
     window_title( "V4K - SPACE pauses simulation" );
 
     // fx_load("fx**.fs");
