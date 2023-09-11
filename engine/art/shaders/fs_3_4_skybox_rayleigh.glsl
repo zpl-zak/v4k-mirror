@@ -1,4 +1,13 @@
-uniform vec3 uSunPos;// = vec3( 0, 0.1, -1 ); // = [0, Math.cos(theta) * 0.3 + 0.2, -1];
+uniform vec3 uSunPos;
+uniform vec3 uRayOrigin;
+uniform float uSunIntensity;
+uniform float uPlanetRadius;
+uniform float uAtmosphereRadius;
+uniform vec3 uRayleighScattering;
+uniform float uMieScattering;
+uniform float uRayleighScaleHeight;
+uniform float uMieScaleHeight;
+uniform float uMiePreferredDirection;
 
 
 in vec3 v_direction;
@@ -10,17 +19,17 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
 
 void main() {
     vec3 color = atmosphere(
-    normalize(v_direction),         // normalized ray direction
-    vec3(0,6372e3,0),               // ray origin
-    uSunPos,                        // position of the sun
-    22.0,                           // intensity of the sun
-    6371e3,                         // radius of the planet in meters
-    6471e3,                         // radius of the atmosphere in meters
-    vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
-    21e-6,                          // Mie scattering coefficient
-    8e3,                            // Rayleigh scale height
-    1.2e3,                          // Mie scale height
-    0.758                           // Mie preferred scattering direction
+        normalize(v_direction),      // normalized ray direction
+        uRayOrigin,                  // ray origin
+        uSunPos,                     // position of the sun
+        uSunIntensity,               // intensity of the sun
+        uPlanetRadius,               // radius of the planet in meters
+        uAtmosphereRadius,           // radius of the atmosphere in meters
+        uRayleighScattering,         // Rayleigh scattering coefficient
+        uMieScattering,              // Mie scattering coefficient
+        uRayleighScaleHeight,        // Rayleigh scale height
+        uMieScaleHeight,             // Mie scale height
+        uMiePreferredDirection       // Mie preferred scattering direction
     );
     
     // Apply exposure.

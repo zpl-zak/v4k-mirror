@@ -12623,6 +12623,15 @@ skybox_t skybox(const char *asset, int flags) {
         // set up mie defaults
         shader_bind(sky.program);
         shader_vec3("uSunPos", vec3( 0, 0.1, -1 ));
+        shader_vec3("uRayOrigin", vec3(0.0, 6372000.0, 0.0));
+        shader_float("uSunIntensity", 22.0);
+        shader_float("uPlanetRadius", 6371000.0);
+        shader_float("uAtmosphereRadius", 6471000.0);
+        shader_vec3("uRayleighScattering", vec3(5.5e-6, 13.0e-6, 22.4e-6));
+        shader_float("uMieScattering", 21e-6);
+        shader_float("uRayleighScaleHeight", 8000.0);
+        shader_float("uMieScaleHeight", 1200.0);
+        shader_float("uMiePreferredDirection", 0.758);
     }
 
     return sky;
