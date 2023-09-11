@@ -129,8 +129,8 @@ rem generate prior files to a git release
 if "%1"=="git" (
     rem call make.bat dll
     call make.bat prep
-    call make.bat docs
     call make.bat bind
+    rem call make.bat docs
 
     call make.bat amalgamation
     call make.bat split
@@ -161,6 +161,7 @@ if "%1"=="push" (
     if "%2"=="out" (
         git push
     )
+    call make.bat vps
 
     exit /b
 )
