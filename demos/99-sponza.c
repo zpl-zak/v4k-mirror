@@ -39,7 +39,7 @@ int main() {
         // initialize SH coefficients from rayleigh skybox
         if (flag("--mie") && sky_update_until <= window_time()) {
             shader_bind(sky.program);
-            shader_vec3("uSunPos", cam.position);
+            shader_vec3("uSunPos", vec3(0, (cosf((float)window_time())*0.3)+0.2, -1));
             skybox_mie_calc_sh(&sky);
             sky_update_until = window_time() + 0.02;
         }
