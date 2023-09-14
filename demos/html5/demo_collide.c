@@ -9,6 +9,7 @@
 
 int paused;
 camera_t cam;
+skybox_t sky;
 
 void game_loop(void *userdata) {
     // key handler
@@ -72,6 +73,8 @@ void game_loop(void *userdata) {
     {
         // 3D
         glEnable(GL_DEPTH_TEST);
+
+        skybox_render(&sky, cam.proj, cam.view);
 
         // grid
         ddraw_grid(0);
@@ -588,14 +591,14 @@ void game_loop(void *userdata) {
     //     ui_panel_end();
     // }
 
-    if( ui_panel("FX", 0) ) {
-        for( int i = 0; i < 64; ++i ) {
-            char *name = fx_name(i); if( !name ) break;
-            bool b = fx_enabled(i);
-            if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
-        }
-        ui_panel_end();
-    }
+    // if( ui_panel("FX", 0) ) {
+    //     for( int i = 0; i < 64; ++i ) {
+    //         char *name = fx_name(i); if( !name ) break;
+    //         bool b = fx_enabled(i);
+    //         if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
+    //     }
+    //     ui_panel_end();
+    // }
 }
 
 
@@ -608,6 +611,9 @@ int main(void) {
 
     // camera that points to origin
     cam = camera();
+
+    // load up skybox
+    sky = skybox(0, 0);
 
     // main loop
     window_loop(game_loop, NULL);

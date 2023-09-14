@@ -1,6 +1,6 @@
 <h1 align="center">V·4·K</h1>
 <p align="center">
-3D multimedia workbench in C, with Luajit and Python bindings.<br/>
+Envision, Prototype, Perfect<br/>
 </p>
 
 ## Features
@@ -42,8 +42,7 @@
 - [x] Disk cache.
 - [x] Scene handling.
 - [x] Profiler, stats and leaks finder.
-- [x] [Editor (wip)](https://user-images.githubusercontent.com/35402248/174457347-f787a6a2-aac8-404c-a5da-f44310c3d432.mp4).
-- [x] [Documentation (wip)](https://bit.ly/v4k2023).
+- [x] [Documentation (wip)](https://v4k.dev).
 
 ## Hello V4K
 ```C

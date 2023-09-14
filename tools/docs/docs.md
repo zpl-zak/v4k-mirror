@@ -7,7 +7,7 @@
 # [V·4·K {{VERSION}}](https://v4k.dev)
 ## a b o u t
 
-- v4k is a multimedia workbench for prototyping and planning ideas.
+- Envision, Prototype, Perfect.
 - visit the code repo at [dev.v4.games](https://dev.v4.games/v4games/v4k) now!
 - you can try out the [live demo](https://v4k.dev/demo), too!
 - and for anything else, reach us at [v4.games](https://v4.games/).
