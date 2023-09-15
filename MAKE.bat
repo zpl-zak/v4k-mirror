@@ -28,7 +28,6 @@ if "%1"=="help" (
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
     echo %0 [prep]                  ; combine split files into a single-header file, ready for use
     echo %0 [sln]                   ; generate a xcode/gmake/ninja/visual studio solution
-    echo %0 [run]                   ; run compiled executable after build
     echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nov4k^|nodemos^|editor] [vis] [-- args]
     echo    cl       \
     echo    tcc      ^|
@@ -47,6 +46,7 @@ if "%1"=="help" (
     echo    run      ^| run compiled .exe
     echo    vis      ^> visualize invokation cmdline.
     echo    args     ^> after `--` separator is found, pass all remaining arguments to compiler as-is
+    echo    run_args ^> after `//` separator is found, pass all remaining arguments to runtime exe as-is
     echo.
     exit /b
 )
