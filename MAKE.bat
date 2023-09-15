@@ -357,6 +357,7 @@ set cc=%cc%
 set dll=dll
 set build=dev
 set args=-Iengine
+set run_args=
 set other=
 set v4k=yes
 set hello=no
@@ -370,6 +371,7 @@ set run=no
 
 :parse_args
     if "%1"=="--"       shift && goto parse_compiler_args
+    if "%1"=="//"       shift && goto parse_runtime_args
 
     if "%1"=="dll"      set "dll=%1" && goto loop
     if "%1"=="static"   set "dll=%1" && goto loop
@@ -414,6 +416,9 @@ set run=no
 
 :parse_compiler_args
     if not "%1"==""     set "args=!args! %1" && shift && goto parse_compiler_args
+
+:parse_runtime_args
+    if not "%1"==""     set "run_args=!run_args! %1" && shift && goto parse_runtime_args
 
 set vs=00
 rem detect setup
@@ -628,13 +633,14 @@ if "!hello!"=="yes" (
 
 rem user-defined apps
 if not "!other!"=="" (
-if "!vis!"=="yes" echo !cc! !other! !import! !args!
-     !echo! !other! && !cc! !other! !import! !args! || set rc=1
+    if "!vis!"=="yes" echo !cc! !other! !import! !args!
+    !echo! !other! && !cc! !other! !import! !args! || set rc=1
 )
 
 if "!run!"=="yes" (
     for /f "tokens=*" %%a in ("!other!") do set exename=%%~na.exe
-    !exename! || set rc=1
+    echo run !exename! !run_args!
+    !exename! !run_args! || set rc=1
 )
 
 rem PAUSE only if double-clicked from Windows explorer
