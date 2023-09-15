@@ -28,6 +28,7 @@ if "%1"=="help" (
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
     echo %0 [prep]                  ; combine split files into a single-header file, ready for use
     echo %0 [sln]                   ; generate a xcode/gmake/ninja/visual studio solution
+    echo %0 [run]                   ; run compiled executable after build
     echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel] [static^|dll] [nov4k^|nodemos^|editor] [vis] [-- args]
     echo    cl       \
     echo    tcc      ^|
@@ -631,9 +632,10 @@ if "!vis!"=="yes" echo !cc! !other! !import! !args!
      !echo! !other! && !cc! !other! !import! !args! || set rc=1
 )
 
-rem if "!run!"=="yes" (
-rem     !
-rem )
+if "!run!"=="yes" (
+    for /f "tokens=*" %%a in ("!other!") do set exename=%%~na.exe
+    !exename! || set rc=1
+)
 
 rem PAUSE only if double-clicked from Windows explorer
 (((echo.%cmdcmdline%)|%WINDIR%\system32\find.exe /I "%~0")>nul)&&pause
