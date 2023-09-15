@@ -102,6 +102,7 @@ if "%1"=="docs" (
     docs engine\v4k.h --excluded=3rd_glad.h,v4k.h,v4k_compat.h, > v4k.html
     move /y v4k.html engine\
     del changelog.txt
+    del info.obj
 
     exit /b
 )
