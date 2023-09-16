@@ -153,6 +153,8 @@
 
 {{FILE:v4k_ai.c}}
 
+{{FILE:v4k_bt.c}}
+
 {{FILE:v4k_editor.c}}
 
 // editor is last in place, so it can use all internals from above headers

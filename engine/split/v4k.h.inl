@@ -104,6 +104,8 @@ extern "C" {
 
 {{FILE:v4k_ai.h}}
 
+{{FILE:v4k_bt.h}}
+
 {{FILE:v4k_audio.h}}
 
 {{FILE:v4k_collide.h}}

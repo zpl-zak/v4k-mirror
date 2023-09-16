@@ -9,7 +9,7 @@
 
 - Envision, Prototype, Perfect.
 - visit the code repo at [dev.v4.games](https://dev.v4.games/v4games/v4k) now!
-- you can try out the [live demo](https://v4k.dev/demo), too!
+- you can try out the [live demo](https://demo.v4k.dev), too!
 - and for anything else, reach us at [v4.games](https://v4.games/).
 
 <br/>

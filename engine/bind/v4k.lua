@@ -1738,6 +1738,22 @@ float blindspot_angledeg_compare_value_;
  void    swarm_update_acceleration_and_velocity_only(swarm_t *self, float delta);
  int     ui_swarm(swarm_t *self);
  int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
+typedef int (*bt_func)();
+typedef struct bt_t {
+uint64_t type;
+int (*action)();
+union {
+int argi;
+float argf;
+};
+struct bt_t* children;
+} bt_t;
+ bt_t    bt(const char *ini_file, unsigned flags);
+ int     bt_run(bt_t *b);
+ void    bt_addfun(const char *name, int(*func)());
+ bt_func bt_findfun(const char *name);
+ char   *bt_funcname(bt_func fn);
+ void ui_bt(bt_t *b);
  void    midi_send(unsigned midi_msg);
 typedef struct audio_handle* audio_t;
  audio_t audio_clip( const char *pathfile );

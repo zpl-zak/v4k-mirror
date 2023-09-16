@@ -203,7 +203,7 @@ if "%1"=="html5" (
 )
 
 if "%1"=="web" (
-    python -m http.server --directory demos\html5 --bind 127.0.0.1 8000
+    python demos\html5\host.py --directory demos\html5 --bind 127.0.0.1 8000
     exit /b
 )
 
