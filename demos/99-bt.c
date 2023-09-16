@@ -2,6 +2,8 @@
 #include "v4k.h"
 #include "3rd_bt.h"
 
+#define min(a,b) (a>b?b:a)
+
 bool topdown_cam = 1;
 
 int yes() {
@@ -19,6 +21,7 @@ void move_players();
 int main() {
     window_create(75, 0); // WINDOW_MSAA4);
     window_title(__FILE__);
+    window_fps_lock(60);
 
     bt_addfun("yes", yes);
     bt_addfun("no", no);
@@ -62,10 +65,10 @@ struct player_t {
 // every chunk is a 2D grid [200x200 units], center at (W/2,H/2), bit:1 means traversable
 array(unsigned) chunk = 0;    // chunk partition in world
 array(aabb)     blockers = 0; // static blockers in world
-vec3 from, to; bool recast;
+vec3 from, to; bool recast; bool vis_recast;
+enum { W = 200, Z = 200 };
 
 void draw_scene() {
-    enum { W = 200, Z = 200 };
     do_once array_resize(chunk, W*Z);
 
     enum { NUM_BLOCKS = 200 };
@@ -105,8 +108,8 @@ void draw_scene() {
     static vec2i path[W*Z] = {0};
     static int path_count = 0;
     static uint64_t taken = 0;
-    if( recast || input_down(KEY_SPACE) ) {
-        recast = 0;
+    if( vis_recast || input_down(KEY_SPACE) ) {
+        vis_recast = 0;
         taken =- time_ns();
         path_count = pathfind_astar(W, Z, chunk, vec2i(clampf(from.x+W/2,0,W-1),clampf(from.z+Z/2,0,Z-1)), vec2i(clampf(to.x+W/2,0,W-1),clampf(to.z+Z/2,0,Z-1)), path, countof(path));
         taken += time_ns();
@@ -162,7 +165,10 @@ void move_players() {
         if( input_down(MOUSE_L) && !ui_hover() ) {
             vec3 pt = editor_pick(input(MOUSE_X), input(MOUSE_Y));
             hit *h = ray_hit_plane(ray(cam.position, pt), plane(vec3(0,0,0),vec3(0,1,0)));
-            if(h) array_push(points, h->p), from = player[0].pos, to = *array_back(points), recast = 1;
+            if(h) {
+                if (array_count(points) == 0) recast = 1, vis_recast = 1;
+                array_push(points, h->p), from = player[0].pos, to = *array_back(points); 
+            }
         }
         // ddraw waypoints
         ddraw_color(YELLOW);
@@ -173,8 +179,23 @@ void move_players() {
         ddraw_color(WHITE);
         // move thru waypoints (PLAYER-1 only)
         if( i == 0 && array_count(points) ) {
+            static vec2i path[W*Z] = {0};
+            static int path_count = 0;
+            static int path_index = 0;
             struct player_t *p = &player[i];
-            vec3 dst = points[0];
+            vec3 pt = points[0];
+            if( recast ) {
+                recast = 0;
+                path_count = pathfind_astar(W, Z, chunk, vec2i(clampf(p->pos.x+W/2,0,W-1),clampf(p->pos.z+Z/2,0,Z-1)), vec2i(clampf(pt.x+W/2,0,W-1),clampf(pt.z+Z/2,0,Z-1)), path, countof(path));
+                path_index = path_count-1;
+            }
+            if (path_count == 0) {
+                array_pop_front(points);
+                continue;
+            }
+
+            vec2i ph = path[path_index];
+            vec3 dst = vec3(ph.x-W/2,0,ph.y-Z/2);
             vec3 vector1 = norm3(vec3(p->dir.x,0,p->dir.z));
             vec3 vector2 = norm3(sub3(dst,p->pos));
 
@@ -188,8 +209,12 @@ void move_players() {
 
             float dist = len3(sub3(p->pos, dst));
             if(dist < 1) {
-                // goal
-                array_pop_front(points);
+                path_index--;
+                if (path_index <= 0) {
+                    // goal
+                    array_pop_front(points);
+                    recast = 1, vis_recast = 1;
+                }
             }
             else {
                 if( dist < 10 && abs(angle) > 10 ) {
