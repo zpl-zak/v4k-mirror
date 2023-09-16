@@ -33,6 +33,6 @@ int main() {
     // 75% window, msaa x2
     window_create(0.75f, 0);
     window_aspect_lock(910, 540);
-    video_t *v = video( "bjork-all-is-full-of-love.mp4", VIDEO_RGB );
+    video_t *v = video( "videos/pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB );
     window_loop(render, v);
 }
