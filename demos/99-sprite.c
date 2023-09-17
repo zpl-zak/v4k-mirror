@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
             }
 
         // post-fxs end here
-        fx_end();
+        fx_end(0);
 
         // draw pixel-art hud, 16x16 ui element, scaled and positioned in resolution-independant way
         {

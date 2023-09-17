@@ -183,8 +183,10 @@ API void pbr_material_destroy(pbr_material_t *m);
 // -----------------------------------------------------------------------------
 // fullscreen quads
 
-API void  fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
-API void  fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
+API void fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
+API void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
+API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
+API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma );
 
 // -----------------------------------------------------------------------------
 // sprites
@@ -510,6 +512,12 @@ typedef struct material_t {
 // -----------------------------------------------------------------------------
 // shadertoys
 
+enum {
+    SHADERTOY_FLIP_Y = 2,
+    SHADERTOY_IGNORE_FBO = 4,
+    SHADERTOY_IGNORE_MOUSE = 8,
+};
+
 typedef struct shadertoy_t {
     handle vao, program;
     int uniforms[32];
@@ -518,7 +526,8 @@ typedef struct shadertoy_t {
     float clickx, clicky;
     uint64_t t;
     texture_t tx;
-    unsigned dims;
+    vec2i dims;
+    int flags;
 } shadertoy_t;
 
 API shadertoy_t  shadertoy( const char *shaderfile, unsigned flags );
@@ -653,7 +662,8 @@ API void     viewport_clip(vec2 from, vec2 to);
 API int      fx_load(const char *file);
 API int      fx_load_from_mem(const char *nameid, const char *content);
 API void     fx_begin();
-API void     fx_end();
+API void     fx_begin_res(int w, int h);
+API void     fx_end(handle fb);
 API void     fx_enable(int pass, int enabled);
 API int      fx_enabled(int pass);
 API void     fx_enable_all(int enabled);

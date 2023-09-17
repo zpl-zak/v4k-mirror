@@ -434,6 +434,12 @@ int ui_show(const char *panel_or_window_title, int enabled) {
     }
     return !!enabled;
 }
+int ui_dims(const char *panel_or_window_title, float width, float height) {
+    nk_window_set_size(ui_ctx, panel_or_window_title, (struct nk_vec2){width, height});
+}
+vec2 ui_get_dims() {
+    return (vec2){nk_window_get_width(ui_ctx), nk_window_get_height(ui_ctx)};
+}
 static char *ui_build_window_list() {
     char *build_windows_menu = 0;
     strcatf(&build_windows_menu, "%s;", ICON_MD_VIEW_QUILT); // "Windows");
@@ -1910,6 +1916,13 @@ int ui_buffer(const char *label, char *buffer, int buflen) {
 
     int active = nk_edit_string_zero_terminated(ui_ctx, NK_EDIT_AUTO_SELECT|NK_EDIT_CLIPBOARD|NK_EDIT_FIELD/*NK_EDIT_BOX*/|NK_EDIT_SIG_ENTER, buffer, buflen, nk_filter_default);
     return !!(active & NK_EDIT_COMMITED) ? nk_edit_unfocus(ui_ctx), 1 : 0;
+}
+
+int ui_text_wrap(const char *label, char *text) {
+    nk_layout_row_dynamic(ui_ctx, 0, 2  - (label ? !label[0] : 1));
+    ui_label_(label, NK_TEXT_LEFT);
+    nk_text_wrap(ui_ctx, text, strlen(text));
+    return 0; 
 }
 
 int ui_string(const char *label, char **str) {

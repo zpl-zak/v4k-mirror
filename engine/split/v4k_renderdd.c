@@ -95,7 +95,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
                 vec3 rgbf = {((rgb>>16)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>0)&255)/255.f};
                 glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
                 // config vertex data
-                glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STATIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STREAM_DRAW);
                 glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
                 // feed vertex data
                 glDrawArrays(mode, 0, count);
@@ -127,7 +127,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
                     vec3 rgbf = {((rgb>>16)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>0)&255)/255.f};
                     glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
                     // config vertex data
-                    glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STATIC_DRAW);
+                    glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STREAM_DRAW);
                     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
                     // feed vertex data
                     glDrawArrays(mode, 0, count);

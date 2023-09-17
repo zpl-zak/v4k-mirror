@@ -169,7 +169,7 @@ int main() {
             skybox_render(&sky, cam.proj, cam.view);
 
             draw_world();
-        fx_end();
+        fx_end(0);
     }
 
     return 0;

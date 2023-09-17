@@ -1772,7 +1772,7 @@ int main() {
 
                 editor_obj_call0(obj, fn_draw);
             }
-            fx_end();
+            fx_end(0);
 
             // draw gizmos, aabbs, markers, etc
             for each_set_ptr(editor_selection, void*, o) {

@@ -80,7 +80,7 @@ int main() {
             model_render(girl, cam.proj, cam.view, girl.pivot, 0);
 
         // post-fxs end here
-        fx_end();
+        fx_end(0);
 
         gizmo(&pos, &rot, &sca);
         model_render_skeleton(girl, girl.pivot);

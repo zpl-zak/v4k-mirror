@@ -2619,8 +2619,10 @@ API void pbr_material_destroy(pbr_material_t *m);
 // -----------------------------------------------------------------------------
 // fullscreen quads
 
-API void  fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
-API void  fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
+API void fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
+API void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
+API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
+API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma );
 
 // -----------------------------------------------------------------------------
 // sprites
@@ -2946,6 +2948,12 @@ typedef struct material_t {
 // -----------------------------------------------------------------------------
 // shadertoys
 
+enum {
+    SHADERTOY_FLIP_Y = 2,
+    SHADERTOY_IGNORE_FBO = 4,
+    SHADERTOY_IGNORE_MOUSE = 8,
+};
+
 typedef struct shadertoy_t {
     handle vao, program;
     int uniforms[32];
@@ -2954,7 +2962,8 @@ typedef struct shadertoy_t {
     float clickx, clicky;
     uint64_t t;
     texture_t tx;
-    unsigned dims;
+    vec2i dims;
+    int flags;
 } shadertoy_t;
 
 API shadertoy_t  shadertoy( const char *shaderfile, unsigned flags );
@@ -3089,7 +3098,8 @@ API void     viewport_clip(vec2 from, vec2 to);
 API int      fx_load(const char *file);
 API int      fx_load_from_mem(const char *nameid, const char *content);
 API void     fx_begin();
-API void     fx_end();
+API void     fx_begin_res(int w, int h);
+API void     fx_end(handle fb);
 API void     fx_enable(int pass, int enabled);
 API int      fx_enabled(int pass);
 API void     fx_enable_all(int enabled);
@@ -3474,6 +3484,7 @@ API int    ui_float4(const char *label, float value[4]);
 API int    ui_double(const char *label, double *value);
 API int    ui_buffer(const char *label, char *buffer, int buflen);
 API int    ui_string(const char *label, char **string);
+API int    ui_text_wrap(const char *label, char *text);
 API int    ui_color3(const char *label, float *color3); //[0..255]
 API int    ui_color3f(const char *label, float *color3); //[0..1]
 API int    ui_color4(const char *label, float *color4); //[0..255]
@@ -3513,10 +3524,12 @@ API int   ui_collapse_end();
 API int  ui_panel_end();
 API int ui_window_end();
 
-API int ui_show(const char *panel_or_window_title, int enabled);
-API int ui_visible(const char *panel_or_window_title); // @todo: include ui_collapse() items that are open as well?
-API int ui_enable();
-API int ui_disable();
+API int  ui_show(const char *panel_or_window_title, int enabled);
+API int  ui_dims(const char *panel_or_window_title, float width, float height);
+API int  ui_visible(const char *panel_or_window_title); // @todo: include ui_collapse() items that are open as well?
+API int  ui_enable();
+API int  ui_disable();
+API vec2 ui_get_dims();
 
 API int ui_has_menubar();
 API int ui_menu(const char *items); // semicolon-separated or comma-separated items

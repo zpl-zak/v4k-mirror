@@ -1185,6 +1185,7 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3* in_vertex3;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3* out_vertex3;
 //lcpp INF [0000] vec4: macro name but used as C declaration in:vec4   color;
+//lcpp INF [0000] vec2i: macro name but used as C declaration in:vec2i dims;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3       pose;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3     pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3     pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
@@ -1391,6 +1392,9 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API void object_scale(object_t *obj, vec3 sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void object_scale(object_t *obj, vec3 sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void object_scale(object_t *obj, vec3 sca);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 ui_get_dims();
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 ui_get_dims();
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2     window_canvas();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2     window_canvas();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2     window_canvas();
@@ -2289,8 +2293,10 @@ float specular_shininess;
 } pbr_material_t;
  bool pbr_material(pbr_material_t *pbr, const char *material);
  void pbr_material_destroy(pbr_material_t *m);
- void  fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
- void  fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
+ void fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
+ void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
+ void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
+ void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma );
  void sprite( texture_t texture, float position[3], float rotation , uint32_t color );
  void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
  void sprite_sheet( texture_t texture, float sheet[3], float position[3], float rotation, float offset[2], float scale[2], int is_additive, uint32_t rgba, int resolution_independant);
@@ -2463,6 +2469,11 @@ float  value;
 vec4   color;
 } layer[MAX_CHANNELS_PER_MATERIAL];
 } material_t;
+enum {
+SHADERTOY_FLIP_Y = 2,
+SHADERTOY_IGNORE_FBO = 4,
+SHADERTOY_IGNORE_MOUSE = 8,
+};
 typedef struct shadertoy_t {
 handle vao, program;
 int uniforms[32];
@@ -2471,7 +2482,8 @@ int frame;
 float clickx, clicky;
 uint64_t t;
 texture_t tx;
-unsigned dims;
+vec2i dims;
+int flags;
 } shadertoy_t;
  shadertoy_t  shadertoy( const char *shaderfile, unsigned flags );
  shadertoy_t* shadertoy_render( shadertoy_t *s, float delta );
@@ -2566,7 +2578,8 @@ float *pixels;
  int      fx_load(const char *file);
  int      fx_load_from_mem(const char *nameid, const char *content);
  void     fx_begin();
- void     fx_end();
+ void     fx_begin_res(int w, int h);
+ void     fx_end(handle fb);
  void     fx_enable(int pass, int enabled);
  int      fx_enabled(int pass);
  void     fx_enable_all(int enabled);
@@ -2800,6 +2813,7 @@ PANEL_OPEN = 1,
  int    ui_double(const char *label, double *value);
  int    ui_buffer(const char *label, char *buffer, int buflen);
  int    ui_string(const char *label, char **string);
+ int    ui_text_wrap(const char *label, char *text);
  int    ui_color3(const char *label, float *color3);
  int    ui_color3f(const char *label, float *color3);
  int    ui_color4(const char *label, float *color4);
@@ -2838,10 +2852,12 @@ PANEL_OPEN = 1,
  int   ui_collapse_end();
  int  ui_panel_end();
  int ui_window_end();
- int ui_show(const char *panel_or_window_title, int enabled);
- int ui_visible(const char *panel_or_window_title);
- int ui_enable();
- int ui_disable();
+ int  ui_show(const char *panel_or_window_title, int enabled);
+ int  ui_dims(const char *panel_or_window_title, float width, float height);
+ int  ui_visible(const char *panel_or_window_title);
+ int  ui_enable();
+ int  ui_disable();
+ vec2 ui_get_dims();
  int ui_has_menubar();
  int ui_menu(const char *items);
  int ui_menu_editbox(char *buf, int bufcap);

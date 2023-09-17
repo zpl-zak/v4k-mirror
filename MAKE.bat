@@ -396,7 +396,7 @@ set run=no
     if "%1"=="extras"   set "extras=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
     if "%1"=="hello"    set "hello=yes" && goto loop
-    if "%1"=="editor"   set "editor=yes" && set "hello=no"&& goto loop
+    if "%1"=="editor"   set "editor=yes" && set "v4k=no" && set "hello=no"&& goto loop
     if "%1"=="run"      set "run=yes" && goto loop
     if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "extras=yes" && set "editor=yes" && set "hello=yes" && goto loop
 
@@ -600,9 +600,17 @@ if "!vis!"=="yes" echo !cc! engine\v4k.c !export! !args! ^&^& if "!dll!"=="dll" 
 rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL
-if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
-!echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
-!echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
+rem if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
+rem !echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
+rem !echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
+
+set "plugins="
+for %%f in ("workbench\plugins\*.c") do (
+    echo plugin: %%~nf.c    
+    set "plugins=!plugins! workbench\plugins\%%~nf.c"
+)
+
+!echo! workbench && !cc! !o! workbench.exe workbench\workbench.c !plugins! -Iworkbench  !edit!          !args! || set rc=1
 )
 
 rem demos
