@@ -175,6 +175,9 @@ void window_hints(unsigned flags) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // osx
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2); // osx, 2:#version150,3:330
     #else
+    // Compute shaders need 4.5 otherwise. But...
+    // According to the GLFW docs, the context version hint acts as a minimum version.
+    // i.e, the context you actually get may be a higher or highest version (which is usually the case)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     #endif

@@ -18,6 +18,9 @@ void game_loop(void *userdata) {
 
     // animation
     static float dx = 0, dy = 0;
+    static bool draw_skybox = 1;
+    static bool draw_cols = 1;
+
     if (input_down(KEY_SPACE)) paused ^= 1;
     float delta = (0.25f / 60.f) * !paused;
     dx = dx + delta * 2.0f;
@@ -69,15 +72,18 @@ void game_loop(void *userdata) {
     viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
 #endif
 
-    // debug draw collisions
-    {
         // 3D
         glEnable(GL_DEPTH_TEST);
 
-        skybox_render(&sky, cam.proj, cam.view);
+        if (draw_skybox)
+            skybox_render(&sky, cam.proj, cam.view);
 
         // grid
         ddraw_grid(0);
+
+        if (draw_cols)
+    // debug draw collisions
+    {
 
         {
             // Triangle-Ray Intersection*/
@@ -334,7 +340,7 @@ void game_loop(void *userdata) {
             } else ddraw_color(WHITE);
 
             ddraw_box(vec3(x,y,z), vec3(1,1,1));
-            ddraw_sphere(s.c, 1);
+        ddraw_sphere(s.c, 1);
         }
         {
             // Capsule-Sphere intersection*/
@@ -580,16 +586,11 @@ void game_loop(void *userdata) {
     //ddraw_flush();
     //fx_end();
 
-    // if( ui_panel("Audio", 0) ) {
-    //     if( ui_button("test audio") ) {
-    //         // audio (both clips & streams)
-    //         static audio_t voice; voice = audio_clip("coin.wav"); // "pew.sfxr"
-    //         static audio_t stream; stream = audio_stream("wrath_of_the_djinn.xm"); // "larry.mid"
-    //         audio_play(voice, 0);
-    //         audio_play(stream, 0);
-    //     }
-    //     ui_panel_end();
-    // }
+    if( ui_panel("Vis", 0) ) {
+        ui_bool("Skybox render", &draw_skybox);
+        ui_bool("Collisions render", &draw_cols);
+        ui_panel_end();
+    }
 
     // if( ui_panel("FX", 0) ) {
     //     for( int i = 0; i < 64; ++i ) {
@@ -604,7 +605,7 @@ void game_loop(void *userdata) {
 
 int main(void) {
     // 75% sized, msaa x4 enabled
-    window_create(0.75f, WINDOW_MSAA4/*|WINDOW_FIXED*/);
+    window_create(1, 0);
     window_title( "V4K - SPACE pauses simulation" );
 
     // fx_load("fx**.fs");

@@ -1,5 +1,3 @@
-// @todo: object_print(obj, "");
-
 #include "v4k.h"
 
 int main() {
@@ -9,7 +7,7 @@ int main() {
     // create camera
     camera_t cam = camera();
     // load video, RGB texture, no audio
-    video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO ); video_seek(v, 30);
+    video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO | VIDEO_LOOP ); video_seek(v, 30);
     // load texture
     texture_t t1 = texture("kgirl/g01_texture.png", TEXTURE_RGB);
     texture_t t2 = texture("matcaps/material3", 0);
@@ -45,13 +43,12 @@ int main() {
         // draw environment
         viewport_color( RGB3(22,22,32) );
         ddraw_grid(0);
-        ddraw_flush();
 
         // update video
         video_decode( v );
 
         // draw scene
-        scene_render(SCENE_FOREGROUND);
+        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND);
 
         // fps camera
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);

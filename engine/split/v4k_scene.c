@@ -13,6 +13,9 @@ camera_t camera() {
     cam.up = vec3(0,1,0);
     cam.fov = 45;
 
+    // update proj & view
+    camera_lookat(&cam,vec3(-5,0,-5));
+
     // @todo: remove this hack
     static int smoothing = -1; if( smoothing < 0 ) smoothing = flag("--camera-smooth");
     if( smoothing ) {
@@ -21,9 +24,6 @@ camera_t camera() {
             camera_fps(&cam,0,0);
         }
     }
-
-    // update proj & view
-    camera_lookat(&cam,vec3(-5,0,-5));
 
     last_camera = old;
     *camera_get_active() = cam;

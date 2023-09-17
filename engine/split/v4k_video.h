@@ -7,10 +7,12 @@
 
 enum VIDEO_FLAGS {
     VIDEO_YCBCR = 0,
-    VIDEO_RGB = 1,
+    VIDEO_RGB = 2,
 
     VIDEO_AUDIO = 0,
-    VIDEO_NO_AUDIO = 2,
+    VIDEO_NO_AUDIO = 4,
+
+    VIDEO_LOOP = 8,
 };
 
 typedef struct video_t video_t;

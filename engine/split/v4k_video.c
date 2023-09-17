@@ -82,7 +82,7 @@ video_t* video( const char *filename, int flags ) {
 
     v->has_audio = flags & VIDEO_NO_AUDIO ? 0 : 1;
 
-    plm_set_loop(plm, false);
+    plm_set_loop(plm, flags & VIDEO_LOOP);
     plm_set_video_decode_callback(plm, mpeg_video_callback, v);
     if( v->has_audio ) {
         plm_set_audio_enabled(plm, true);

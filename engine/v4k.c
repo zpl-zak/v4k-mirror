@@ -15482,6 +15482,9 @@ camera_t camera() {
     cam.up = vec3(0,1,0);
     cam.fov = 45;
 
+    // update proj & view
+    camera_lookat(&cam,vec3(-5,0,-5));
+
     // @todo: remove this hack
     static int smoothing = -1; if( smoothing < 0 ) smoothing = flag("--camera-smooth");
     if( smoothing ) {
@@ -15490,9 +15493,6 @@ camera_t camera() {
             camera_fps(&cam,0,0);
         }
     }
-
-    // update proj & view
-    camera_lookat(&cam,vec3(-5,0,-5));
 
     last_camera = old;
     *camera_get_active() = cam;
@@ -17138,6 +17138,13 @@ void thread_destroy( void *thd ) {
 //#define UI_ICONS_SMALL 1
 #endif
 
+#define UI_FONT_ENUM(carlito,b612) b612 // carlito
+
+#define UI_FONT_ICONS    "MaterialIconsSharp-Regular.otf" // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf" //
+#define UI_FONT_REGULAR  UI_FONT_ENUM("Carlito",     "B612")     "-Regular.ttf"
+#define UI_FONT_HEADING  UI_FONT_ENUM("Carlito",     "B612")     "-BoldItalic.ttf"
+#define UI_FONT_TERMINAL UI_FONT_ENUM("Inconsolata", "B612Mono") "-Regular.ttf"
+
 #if UI_LESSER_SPACING
     enum { UI_SEPARATOR_HEIGHT = 5, UI_MENUBAR_ICON_HEIGHT = 20, UI_ROW_HEIGHT = 22, UI_MENUROW_HEIGHT = 32 };
 #else
@@ -17145,24 +17152,27 @@ void thread_destroy( void *thd ) {
 #endif
 
 #if UI_FONT_LARGE
-    #define UI_FONT_REGULAR_SIZE    18
-    #define UI_FONT_BOLD_SIZE       20
+    #define UI_FONT_REGULAR_SIZE    UI_FONT_ENUM(18,17)
+    #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(20,19)
+    #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #elif UI_FONT_SMALL
-    #define UI_FONT_REGULAR_SIZE    13
-    #define UI_FONT_BOLD_SIZE       14.5f
+    #define UI_FONT_REGULAR_SIZE    UI_FONT_ENUM(13,14)
+    #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(14.5,15)
+    #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #else
-    #define UI_FONT_REGULAR_SIZE    14.5f
-    #define UI_FONT_BOLD_SIZE       16.0f
+    #define UI_FONT_REGULAR_SIZE    UI_FONT_ENUM(14.5,15.5)
+    #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(16,17)
+    #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #endif
 
 #if UI_ICONS_SMALL
-    #define UI_ICON_FONTSIZE        16.5f
-    #define UI_ICON_SPACING_X       -2
-    #define UI_ICON_SPACING_Y       4.5f
+    #define UI_ICON_FONTSIZE        UI_FONT_ENUM(16.5f,16.5f)
+    #define UI_ICON_SPACING_X       UI_FONT_ENUM(-2,-2)
+    #define UI_ICON_SPACING_Y       UI_FONT_ENUM(4.5f,3.5f)
 #else
-    #define UI_ICON_FONTSIZE        20
-    #define UI_ICON_SPACING_X       0
-    #define UI_ICON_SPACING_Y       6.5f
+    #define UI_ICON_FONTSIZE        UI_FONT_ENUM(20,20)
+    #define UI_ICON_SPACING_X       UI_FONT_ENUM(0,0)
+    #define UI_ICON_SPACING_Y       UI_FONT_ENUM(6.5f,4.5f)
 #endif
 
 #define MAX_VERTEX_MEMORY 512 * 1024
@@ -17180,8 +17190,6 @@ static void nk_config_custom_fonts() {
     #define UI_ICON_MED ICON_MAX_16_MD
     #define UI_ICON_MAX ICON_MAX_MD
 
-    #define UI_ICON_FONTNAME "MaterialIconsSharp-Regular.otf" // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf" //
-
     #define ICON_BARS        ICON_MD_MENU
     #define ICON_FILE        ICON_MD_INSERT_DRIVE_FILE
     #define ICON_TRASH       ICON_MD_DELETE
@@ -17192,19 +17200,19 @@ static void nk_config_custom_fonts() {
 
         // Default font(#1)...
 
-        for( char *data = vfs_read("Carlito-Regular.ttf"); data; data = 0 ) {
+        for( char *data = vfs_read(UI_FONT_REGULAR); data; data = 0 ) {
             float font_size = UI_FONT_REGULAR_SIZE;
                 struct nk_font_config cfg = nk_font_config(font_size);
                 cfg.oversample_v = 2;
                 cfg.pixel_snap = 0;
             // win32: struct nk_font *arial = nk_font_atlas_add_from_file(atlas, va("%s/fonts/arial.ttf",getenv("windir")), font_size, &cfg); font = arial ? arial : font;
             // struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "nuklear/extra_font/DroidSans.ttf", font_size, &cfg); font = droid ? droid : font;
-            struct nk_font *regular = nk_font_atlas_add_from_memory(atlas, data, vfs_size("Carlito-Regular.ttf"), font_size, &cfg); font = regular ? regular : font;
+            struct nk_font *regular = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_REGULAR), font_size, &cfg); font = regular ? regular : font;
         }
 
         // ...with icons embedded on it.
 
-        for( char *data = vfs_read(UI_ICON_FONTNAME); data; data = 0 ) {
+        for( char *data = vfs_read(UI_FONT_ICONS); data; data = 0 ) {
             static const nk_rune icon_range[] = {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0};
 
             struct nk_font_config cfg = nk_font_config(UI_ICON_FONTSIZE);
@@ -17220,30 +17228,30 @@ static void nk_config_custom_fonts() {
             cfg.oversample_v = 1;
             cfg.pixel_snap = 1;
 
-            struct nk_font *icons = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_ICON_FONTNAME), UI_ICON_FONTSIZE, &cfg);
+            struct nk_font *icons = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_ICONS), UI_ICON_FONTSIZE, &cfg);
         }
 
         // Monospaced font. Used in terminals or consoles.
 
-        for( char *data = vfs_read("Inconsolata-Regular.ttf"); data; data = 0 ) {
-            const float fontsize = 14.f; // 18.f;
+        for( char *data = vfs_read(UI_FONT_TERMINAL); data; data = 0 ) {
+            const float font_size = UI_FONT_REGULAR_SIZE; 
             static const nk_rune icon_range[] = {32, 127, 0};
 
-            struct nk_font_config cfg = nk_font_config(fontsize);
+            struct nk_font_config cfg = nk_font_config(font_size);
             cfg.range = icon_range;
 
             cfg.oversample_h = 1;
             cfg.oversample_v = 1;
             cfg.pixel_snap = 1;
 
-            // struct nk_font *proggy = nk_font_atlas_add_default(atlas, fontsize, &cfg);
-            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, vfs_size("Inconsolata-Regular.ttf"), fontsize, &cfg);
+            // struct nk_font *proggy = nk_font_atlas_add_default(atlas, font_size, &cfg);
+            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_TERMINAL), font_size, &cfg);
         }
 
         // Extra optional fonts from here...
 
-        for( char *data = vfs_read("Carlito-BoldItalic.ttf"); data; data = 0 ) {
-            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, vfs_size("Carlito-BoldItalic.ttf"), UI_FONT_BOLD_SIZE, 0); // font = bold ? bold : font;
+        for( char *data = vfs_read(UI_FONT_HEADING); data; data = 0 ) {
+            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_HEADING), UI_FONT_HEADING_SIZE, 0); // font = bold ? bold : font;
         }
 
     nk_glfw3_font_stash_end(&nk_glfw); // nk_sdl_font_stash_end();
@@ -19651,7 +19659,7 @@ video_t* video( const char *filename, int flags ) {
 
     v->has_audio = flags & VIDEO_NO_AUDIO ? 0 : 1;
 
-    plm_set_loop(plm, false);
+    plm_set_loop(plm, flags & VIDEO_LOOP);
     plm_set_video_decode_callback(plm, mpeg_video_callback, v);
     if( v->has_audio ) {
         plm_set_audio_enabled(plm, true);
@@ -19976,6 +19984,9 @@ void window_hints(unsigned flags) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // osx
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2); // osx, 2:#version150,3:330
     #else
+    // Compute shaders need 4.5 otherwise. But...
+    // According to the GLFW docs, the context version hint acts as a minimum version.
+    // i.e, the context you actually get may be a higher or highest version (which is usually the case)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     #endif
