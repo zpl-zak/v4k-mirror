@@ -1,7 +1,6 @@
-#define COOK_ON_DEMAND 1
-#define MAX_CACHED_FILES 0
-#define VFS_ALWAYS_PACK 1
-#include "v4k.c"
+// #define COOK_ON_DEMAND 1
+// #define MAX_CACHED_FILES 0
+// #define VFS_ALWAYS_PACK 1
 #include "pluginapi.h"
 
 array(editor_t) editors = 0;
@@ -14,16 +13,32 @@ array(asset_t) assets = 0;
     PLUGINS
 #undef X
 
-void load_editor(char *pname, editor_vtable_t f) {
+editor_vtable_t load_editor_vtable(char *pname) {
+    char *name = va("%s.dll", pname);
+    editor_vtable_t f;
+    f.init = dll(name, "plug_init");
+    f.tick = dll(name, "plug_tick");
+    f.quit = dll(name, "plug_quit");
+    f.ext = dll(name, "plug_ext");
+    if (!f.init || !f.tick || !f.quit || !f.ext)
+        return (editor_vtable_t){0};
+    return f;
+}
+
+void load_editor(char *pname) {
     editor_t ed = {0};
-    ed.f = f;
     ed.name = file_base(STRDUP(pname)); // @leak
+    ed.f = load_editor_vtable(pname);
+    if (!ed.f.init) {
+        // PRINTF("unsupported plugin: '%s'\n", ed.name);
+        return;
+    }
     PRINTF("loaded plugin: '%s'\n", ed.name);
     array_push(editors, ed);
 }
 
 void load_editors() {
-    #define X(name) load_editor(#name, name##__procs);
+    #define X(name) load_editor(#name);
         PLUGINS
     #undef X
 }

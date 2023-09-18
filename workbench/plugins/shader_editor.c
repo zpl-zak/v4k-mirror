@@ -1,4 +1,3 @@
-#include "v4k.h"
 #include "pluginapi.h"
 
 enum { WIDTH = 1024, HEIGHT = 1024 };
@@ -30,7 +29,7 @@ typedef struct {
 
 array(shader_asset_t) shaders = 0;
 
-char *shader_editor_ext() {
+__declspec(dllexport) char *plug_ext() {
 	return "fx,glsl,vs,fs";
 }
 
@@ -48,7 +47,7 @@ void reload_shader(asset_t *f, shader_asset_t *s) {
 	s->reload = 0;
 }
 
-int shader_editor_init(asset_t *f) {
+__declspec(dllexport) int plug_init(asset_t *f) {
 	shader_asset_t a = {0};
 	a.reload = 1;
 
@@ -79,7 +78,7 @@ int shader_editor_init(asset_t *f) {
 	return 0;
 }
 
-int shader_editor_tick(asset_t *f) {
+__declspec(dllexport) int plug_tick(asset_t *f) {
 	shader_asset_t *s = (shaders+f->slot);
 
 	if (s->reload) {
@@ -162,12 +161,10 @@ int shader_editor_tick(asset_t *f) {
 	return 0;
 }
 
-int shader_editor_quit(asset_t *f) {
+__declspec(dllexport) int plug_quit(asset_t *f) {
 	shader_asset_t *s = (shaders+f->slot);
 	
 	fbo_destroy(s->fb);
 	fbo_destroy(s->flipFB);
 	return 0;
 }
-
-PLUG_DECLARE(shader_editor);
