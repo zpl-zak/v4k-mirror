@@ -1,4 +1,6 @@
 #define COOK_ON_DEMAND 1
+#define MAX_CACHED_FILES 0
+#define VFS_ALWAYS_PACK 1
 #include "v4k.c"
 #include "pluginapi.h"
 
@@ -13,11 +15,9 @@ array(asset_t) assets = 0;
 #undef X
 
 void load_editor(char *pname, editor_vtable_t f) {
-    char *name = STRDUP(pname); // @leak
-
     editor_t ed = {0};
     ed.f = f;
-    ed.name = file_base(STRDUP(name)); // @leak
+    ed.name = file_base(STRDUP(pname)); // @leak
     PRINTF("loaded plugin: '%s'\n", ed.name);
     array_push(editors, ed);
 }
@@ -62,6 +62,8 @@ void load_asset(const char *fname) {
     asset_t asset = {0};
     asset.name = STRDUP(fname);
     asset.ed = *ed;
+    asset.opened = 1;
+    asset.last_modified = file_stamp(fname);
     array_push(assets, asset);
     if (asset.ed->f.init((struct asset_t*)array_back(assets))) {
         FREE(asset.name);
@@ -100,19 +102,23 @@ int main() {
 
         for (int i=0; i<array_count(assets); i++) {
             asset_t *f = (assets+i);
-            int open = 1;
-            if (ui_window(f->name, &open)) {
+            if (ui_window(f->name, &f->opened)) {
                 f->ed->f.tick(f);
 
+                // was the asset modified?
+                bool modified = f->last_modified != file_stamp(f->name);
+
                 ui_separator();
-                if (ui_button("reload asset") || !open) {
+
+                if (ui_button("reload asset") || modified) {
+                    f->last_modified = file_stamp(f->name);
                     f->ed->f.quit(f);
                     f->ed->f.init(f);
                 }
-                if (ui_button("edit asset") || !open) {
+                if (ui_button("edit asset")) {
                     edit_asset(assets[i].name);
                 }
-                if (ui_button("close asset") || !open) {
+                if (ui_button("close asset") || !f->opened) {
                     f->ed->f.quit(f);
                     FREE(assets[i].name);
                     array_erase(assets, i);

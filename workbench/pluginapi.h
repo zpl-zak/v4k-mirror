@@ -21,6 +21,8 @@ typedef struct {
     editor_t *ed;
 
     int slot; //<< internal, used by plugin
+    bool opened;
+    uint64_t last_modified;
 } asset_t;
 
 #define PLUG_DECLARE(name) editor_vtable_t name##__procs = { name##_init, name##_tick, name##_quit, name##_ext };

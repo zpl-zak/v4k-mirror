@@ -15,16 +15,16 @@
 
 #define occlusion_enabled
 #define occlusion_quality 4
-//#define occlusion_preview
+// #define occlusion_preview
 
 #define noise_use_smoothstep
 
-#define light_color vec3(0.1,0.4,0.6)
+#define light_color vec3(0.3,0.4,0.6)
 #define light_direction normalize(vec3(.2,1.0,-0.2))
 #define light_speed_modifier 1.0
 
-#define object_color vec3(0.9,0.1,0.1)
-#define object_count 9
+#define object_color vec3(0.93,0.2,0.1)
+#define object_count 19
 #define object_speed_modifier 1.0
 
 #define render_steps 33

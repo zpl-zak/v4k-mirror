@@ -4803,6 +4803,10 @@ const char *vfs_resolve(const char *pathfile) {
     return pathfile;
 }
 
+#ifndef VFS_ALWAYS_PACK
+#define VFS_ALWAYS_PACK flag("--vfs-always-pack")
+#endif
+
 char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_unpack()
     // @fixme: handle \\?\ absolute path (win)
     if (!pathfile[0]) return file_load(pathfile, size_out);
@@ -4874,8 +4878,7 @@ if( found && *found == 0 ) {
         ptr = vfs_unpack(pathfile, &size);
 
         // asset not found? maybe it has not been cooked yet at this point (see --cook-on-demand)
-        if( !ptr && COOK_ON_DEMAND ) {
-
+        if( (!ptr && COOK_ON_DEMAND) || VFS_ALWAYS_PACK ) {
             static thread_mutex_t mutex, *init = 0; if(!init) thread_mutex_init(init = &mutex);
             thread_mutex_lock(&mutex);
 
