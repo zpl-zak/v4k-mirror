@@ -2736,6 +2736,7 @@ int u_coefficients_sh;
  void        tty_attach();
  void        tty_detach();
  const char* app_exec(const char *command);
+ void 		app_spawn(const char *command);
  int         app_cores();
  int         app_battery();
  const char* app_name();

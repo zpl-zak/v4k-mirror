@@ -22,6 +22,7 @@ API void        tty_attach();
 API void        tty_detach();
 
 API const char* app_exec(const char *command); // returns ("%15d %s", retcode, output_last_line)
+API void 		app_spawn(const char *command);
 API int         app_cores();
 API int         app_battery(); /// return battery level [1..100]. also positive if charging (+), negative if discharging (-), and 0 if no battery is present.
 

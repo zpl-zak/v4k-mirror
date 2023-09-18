@@ -436,6 +436,7 @@ int ui_show(const char *panel_or_window_title, int enabled) {
 }
 int ui_dims(const char *panel_or_window_title, float width, float height) {
     nk_window_set_size(ui_ctx, panel_or_window_title, (struct nk_vec2){width, height});
+    return 0;
 }
 vec2 ui_get_dims() {
     return (vec2){nk_window_get_width(ui_ctx), nk_window_get_height(ui_ctx)};

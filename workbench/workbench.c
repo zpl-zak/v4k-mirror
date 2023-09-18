@@ -44,7 +44,7 @@ void register_extensions() {
 }
 
 void edit_asset(char *fname) {
-    app_exec(va("%s %s", ifdef(win32, "start", ifdef(osx, "open", "xdg-open")), fname));
+    app_spawn(va("%s \"\" \"%s\"", ifdef(win32, "start", ifdef(osx, "open", "xdg-open")), fname));
 }
 
 void load_asset(const char *fname) {
@@ -81,22 +81,21 @@ int main() {
     load_editors();
     register_extensions();
 
-    #if 1
+    #if 0
     load_asset("demos/art/shadertoys/!default.fs");
     load_asset("demos/art/fx/fxDithering.fs");
 
     #endif
 
     while( window_swap() && !input(KEY_ESC) ) {
-        static int wb_enabled = 1;
-        if (ui_window("Workbench", &wb_enabled)) {
+        if (ui_panel("Workbench", PANEL_OPEN)) {
             static const char *file;
             static bool show_browser = 1;
             if( ui_browse(&file, &show_browser) ) {
                 load_asset(file);
                 show_browser = 1;
             }
-            ui_window_end();
+            ui_panel_end();
         }
 
         for (int i=0; i<array_count(assets); i++) {

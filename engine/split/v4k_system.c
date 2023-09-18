@@ -106,6 +106,13 @@ const char * app_exec( const char *cmd ) {
     return snprintf(output, 16, "%-15d", rc), buf[-1] = ' ', output;
 }
 
+void app_spawn( const char *cmd ) {
+    if( !cmd[0] ) return "0               ";
+    cmd = file_normalize(cmd);
+
+    system(cmd);
+}
+
 #if is(osx)
 #include <execinfo.h> // backtrace, backtrace_symbols
 #include <dlfcn.h>    // dladdr, Dl_info
