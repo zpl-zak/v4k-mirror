@@ -62,7 +62,7 @@
 #if defined __TINYC__ && defined _WIN32
 #define MAPVK_VSC_TO_VK 1
 #define MAPVK_VK_TO_VSC 0
-#define IPV6_V6ONLY 0
+#define IPV6_V6ONLY 27
 #define _WIN32_WINNT_VISTA 0
 #define _WIN32_WINNT_WINXP 0
 #define _WIN32_WINNT_WIN7 0

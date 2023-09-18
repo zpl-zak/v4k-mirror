@@ -107,7 +107,7 @@ const char * app_exec( const char *cmd ) {
 }
 
 void app_spawn( const char *cmd ) {
-    if( !cmd[0] ) return "0               ";
+    if( !cmd[0] ) return;
     cmd = file_normalize(cmd);
 
     system(cmd);
