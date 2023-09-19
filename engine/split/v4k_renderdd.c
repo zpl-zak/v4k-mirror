@@ -757,7 +757,7 @@ void ddraw_init() {
     do_once {
     for( int i = 0; i < 2; ++i )
     for( int j = 0; j < 3; ++j ) map_init(dd_lists[i][j], less_int, hash_int);
-    dd_program = shader(dd_vs,dd_fs,"att_position","fragcolor");
+    dd_program = shader(dd_vs,dd_fs,"att_position","fragcolor", "");
     dd_u_color = glGetUniformLocation(dd_program, "u_color");
     ddraw_flush(); // alloc vao & vbo, also resets color
     }

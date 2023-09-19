@@ -319,8 +319,8 @@ API void shadowmatrix_ortho(mat44 shm_proj, float left, float right, float botto
 // -----------------------------------------------------------------------------
 // shaders
 
-API unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor);
-API unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor);
+API unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines);
+API unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines);
 API unsigned shader_bind(unsigned program);
 API     void shader_bool(const char *uniform, bool i );
 API     void shader_int(const char *uniform, int i);
@@ -569,6 +569,7 @@ enum MODEL_FLAGS {
     MODEL_NO_MESHES = 2,
     MODEL_NO_TEXTURES = 4,
     MODEL_MATCAPS = 8,
+    MODEL_RIMLIGHT = 16
 };
 
 typedef struct model_t {

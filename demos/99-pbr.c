@@ -363,7 +363,7 @@ unsigned gShader = ~0u;
 unsigned gShaderConfig = ~0u;
 
 bool LoadShaderConfig( int slot ) { // name,vs,fs
-    unsigned newShader = shader( vfs_read(shaders[slot][0]), vfs_read(shaders[slot][1]), NULL, NULL );
+    unsigned newShader = shader( vfs_read(shaders[slot][0]), vfs_read(shaders[slot][1]), NULL, NULL , "");
     if( newShader == ~0u ) return false;
 
     shader_destroy( gShader );
@@ -418,7 +418,7 @@ int main( int argc, const char *argv[] ) {
     lightYaw = g_skybox.sunYaw;
     lightPitch = g_skybox.sunPitch;
 
-    unsigned skysphereShader = shader( vfs_read("Skyboxes/skysphere.vs"), vfs_read("Skyboxes/skysphere.fs"), NULL, NULL );
+    unsigned skysphereShader = shader( vfs_read("Skyboxes/skysphere.vs"), vfs_read("Skyboxes/skysphere.fs"), NULL, NULL , "");
     Model skysphere = { 0 }; ModelLoad(&skysphere, "Skyboxes/skysphere.fbx"); ModelRebind(&skysphere, skysphereShader);
 
     if( ModelLoad( &gModel, argc > 1 && argv[1][0] != '-' ? argv[ 1 ] : "damagedhelmet.gltf" ) ) {

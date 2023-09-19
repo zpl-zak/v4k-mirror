@@ -6,9 +6,11 @@ uniform bool u_lit = false;
 uniform bool u_matcaps = false;
 uniform vec4 u_diffuse = vec4(1.0,1.0,1.0,1.0);
 
-
 #ifdef RIM
 in vec3 v_position;
+uniform mat4 M; // RIM
+uniform vec3 u_rimcolor = vec3(0.2,0.2,0.2);
+uniform vec3 u_rimrange = vec3(0.11,0.98,0.5);
 #endif
 in vec3 v_normal, v_normal_ws;
 in vec2 v_texcoord;
@@ -66,9 +68,9 @@ if(u_matcaps) {
         #ifdef RIM
         {vec3 n = normalize(mat3(M) * v_normal);  // convert normal to view space
         vec3 p = (M * vec4(v_position,1.0)).xyz; // convert position to view space
-        vec3 v = normalize(-p);                  // eye vector
-        float rim = 1.0 - max(dot(v, n), 0.0);   // rimlight
-        rim = smoothstep(1.0-0.01, 1.0, rim);    // intensity (0.01)
-        fragcolor += vec4(0.0, 0.0, rim, 1.0);}  // blue
+        vec3 v = normalize(vpeye.xyz-p);                  // eye vector
+        float rim = 1.0 - max(dot(v,n), 0.0);
+        vec3 col = u_rimcolor*(pow(smoothstep(1.0-u_rimrange.x,u_rimrange.y,rim), u_rimrange.z));
+        fragcolor += vec4(col, 1.0);}
         #endif
     }

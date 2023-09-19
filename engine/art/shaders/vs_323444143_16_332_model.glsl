@@ -3,7 +3,7 @@
 #endif
 uniform mat3x4 vsBoneMatrix[MAX_BONES];
 uniform bool SKINNED = false;
-// uniform mat4 M; // RIM
+uniform mat4 M; // RIM
 uniform mat4 VP;
 
 

@@ -202,8 +202,8 @@ void shadow_create(int RESOLUTION) {
     lightAimPos = vec3(0.0, 0, -5.0);
 
     // Create programs
-    shadowProgram = shader(vs_shadow_vsm, fs_shadow_vsm, "position", "outColor");
-    blurProgram = shader(vs_shadow_blur, fs_shadow_blur, "position,,texcoord", "outColor");
+    shadowProgram = shader(vs_shadow_vsm, fs_shadow_vsm, "position", "outColor", "");
+    blurProgram = shader(vs_shadow_blur, fs_shadow_blur, "position,,texcoord", "outColor", "");
 
     // ShadowMap-textures and FBO // @todo: GL_RG32F+GL_RG also GL_CLAMP to remove artifacts
     shadowMapTex = texture_create(SHADOWMAP_WIDTH, SHADOWMAP_WIDTH, 2, NULL, TEXTURE_FLOAT).id;
@@ -483,7 +483,7 @@ int main(int argc, char **argv)
     const char *tpl[] = {
         "{{include-shadowmap}}", fs_0_0_shadowmap_lit,
     };
-    vsm_program = shader(strlerp(1,tpl,vs_323444143_16_332_model), strlerp(1,tpl,fs_32_4_model), "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent", "fragColor");
+    vsm_program = shader(strlerp(1,tpl,vs_323444143_16_332_model), strlerp(1,tpl,fs_32_4_model), "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent", "fragColor", "");
     #endif
 
     while (window_swap())

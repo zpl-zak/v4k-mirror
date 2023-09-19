@@ -85,18 +85,25 @@ GLuint shader_compile( GLenum type, const char *source ) {
     return shader;
 }
 
-unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor){
-    return shader_geom(NULL, vs, fs, attribs, fragcolor);
+unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines){
+    return shader_geom(NULL, vs, fs, attribs, fragcolor, defines);
 }
 
-unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor) {
+unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines) {
     PRINTF(/*"!"*/"Compiling shader\n");
+
+    char *glsl_defines = "";
+    if (defines) {
+        for each_substring(defines, ",", def) {
+            glsl_defines = va("%s#define %s\n", glsl_defines, def);
+        }
+    }
 
     const char *glsl_version = ifdef(ems, "300 es", "150");
 
-    vs = vs[0] == '#' && vs[1] == 'v' ? vs : va("#version %s\n%s", glsl_version, vs ? vs : "");
-    fs = fs[0] == '#' && fs[1] == 'v' ? fs : va("#version %s\n%s", glsl_version, fs ? fs : "");
-    if (gs) gs = gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s", glsl_version, gs ? gs : "");
+    vs = vs[0] == '#' && vs[1] == 'v' ? vs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, vs ? vs : "");
+    fs = fs[0] == '#' && fs[1] == 'v' ? fs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, fs ? fs : "");
+    if (gs) gs = gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, gs ? gs : "");
 
 #if is(ems)
     {
@@ -1035,7 +1042,7 @@ void fullscreen_quad_rgb( texture_t texture, float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_inv_gamma.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" );
+        program = shader(vs, fs, "", "fragcolor" , "");
         u_inv_gamma = glGetUniformLocation(program, "u_inv_gamma");
         glGenVertexArrays( 1, (GLuint*)&vao );
     }
@@ -1066,7 +1073,7 @@ void fullscreen_quad_rgb_flipped( texture_t texture, float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_inv_gamma.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" );
+        program = shader(vs, fs, "", "fragcolor" , "");
         u_inv_gamma = glGetUniformLocation(program, "u_inv_gamma");
         glGenVertexArrays( 1, (GLuint*)&vao );
     }
@@ -1097,7 +1104,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3], float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_ycbr_gamma_saturation.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" );
+        program = shader(vs, fs, "", "fragcolor" , "");
         u_gamma = glGetUniformLocation(program, "u_gamma");
 
         uy = glGetUniformLocation(program, "u_texture_y");
@@ -1141,7 +1148,7 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3], float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_ycbr_gamma_saturation.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" );
+        program = shader(vs, fs, "", "fragcolor" , "");
         u_gamma = glGetUniformLocation(program, "u_gamma");
 
         uy = glGetUniformLocation(program, "u_texture_y");
@@ -1432,7 +1439,7 @@ static void sprite_render_meshes() {
     if( sprite_program < 0 ) {
         sprite_program = shader( vfs_read("shaders/vs_324_24_sprite.glsl"), vfs_read("shaders/fs_24_4_sprite.glsl"),
             "att_Position,att_TexCoord,att_Color",
-            "fragColor"
+            "fragColor", ""
         );
     }
 
@@ -2449,7 +2456,7 @@ skybox_t skybox(const char *asset, int flags) {
     sky.flags = flags ? flags : !!asset; // either cubemap or rayleigh
     sky.program = shader(vfs_read("shaders/vs_3_3_skybox.glsl"),
         sky.flags ? vfs_read("fs_3_4_skybox.glsl") : vfs_read("shaders/fs_3_4_skybox_rayleigh.glsl"),
-        "att_position", "fragcolor");
+        "att_position", "fragcolor", "");
 
     // sky cubemap & SH
     if( asset ) {
@@ -3031,7 +3038,7 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
 
     strcat(fs2, fs);
 
-    p->program = shader(vs, fs2, "vtexcoord", "fragColor" );
+    p->program = shader(vs, fs2, "vtexcoord", "fragColor" , "");
 
     FREE(fs2);
 
@@ -3398,7 +3405,7 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
     glGenVertexArrays(1, &s.vao);
 
     char *fs = stringf("%s%s", vfs_read("header_shadertoy.glsl"), file);
-    s.program = shader((flags&SHADERTOY_FLIP_Y) ? vfs_read("shaders/vs_shadertoy_flip.glsl") : vfs_read("shaders/vs_shadertoy.glsl"), fs, "", "fragColor");
+    s.program = shader((flags&SHADERTOY_FLIP_Y) ? vfs_read("shaders/vs_shadertoy_flip.glsl") : vfs_read("shaders/vs_shadertoy.glsl"), fs, "", "fragColor", "");
     FREE(fs);
 
     if( strstr(file, "noise3.jpg"))
@@ -4109,7 +4116,8 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     if( shaderprog < 0 ) {
         const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
         shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_332_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
-            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor");
+            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
+            (flags&MODEL_RIMLIGHT)?"RIM":NULL);
     }
 
     iqm_t *q = CALLOC(1, sizeof(iqm_t));

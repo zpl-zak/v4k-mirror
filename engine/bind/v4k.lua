@@ -2371,8 +2371,8 @@ int texture_width;
  void shadowmap_end(shadowmap_t *s);
  void shadowmatrix_proj(mat44 shm_proj, float aLightFov, float znear, float zfar);
  void shadowmatrix_ortho(mat44 shm_proj, float left, float right, float bottom, float top, float znear, float zfar);
- unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor);
- unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor);
+ unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines);
+ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines);
  unsigned shader_bind(unsigned program);
      void shader_bool(const char *uniform, bool i );
      void shader_int(const char *uniform, int i);
@@ -2511,6 +2511,7 @@ MODEL_NO_ANIMATIONS = 1,
 MODEL_NO_MESHES = 2,
 MODEL_NO_TEXTURES = 4,
 MODEL_MATCAPS = 8,
+MODEL_RIMLIGHT = 16
 };
 typedef struct model_t {
 struct iqm_t *iqm;
