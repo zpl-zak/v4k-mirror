@@ -11,6 +11,8 @@ in vec3 v_position;
 uniform mat4 M; // RIM
 uniform vec3 u_rimcolor = vec3(0.2,0.2,0.2);
 uniform vec3 u_rimrange = vec3(0.11,0.98,0.5);
+uniform vec3 u_rimpivot = vec3(0,0,0);
+uniform bool u_rimambient = true;
 #endif
 in vec3 v_normal, v_normal_ws;
 in vec2 v_texcoord;
@@ -68,7 +70,10 @@ if(u_matcaps) {
         #ifdef RIM
         {vec3 n = normalize(mat3(M) * v_normal);  // convert normal to view space
         vec3 p = (M * vec4(v_position,1.0)).xyz; // convert position to view space
-        vec3 v = normalize(vpeye.xyz-p);                  // eye vector
+        vec3 v = vec3(0,-1,0);
+        if (!u_rimambient) {
+            v = normalize(u_rimpivot-p);
+        }
         float rim = 1.0 - max(dot(v,n), 0.0);
         vec3 col = u_rimcolor*(pow(smoothstep(1.0-u_rimrange.x,u_rimrange.y,rim), u_rimrange.z));
         fragcolor += vec4(col, 1.0);}

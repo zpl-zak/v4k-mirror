@@ -25,6 +25,10 @@ int main() {
     model_t  mdl = model("Stan.fbx", MODEL_RIMLIGHT);
     anims_t    a = animations("Stan.fbx", 0);
 
+    // shader_bind(mdl.program);
+    // shader_vec3("u_rimcolor", vec3(0.12,0.23,0.34));
+    // shader_vec3("u_rimrange", vec3(0.06,0.74,0.5));
+
     // load all postfx files in all subdirs
     fx_load("fx**.fs");
 
@@ -131,6 +135,19 @@ int main() {
                     a.inuse = i;
                 }
             }
+            ui_panel_end();
+        }
+        if ( ui_panel("Rim lighting", 0) ) {
+            static vec3 rimcolor = {0.2,0.2,0.2};
+            static vec3 rimrange = {0.11,0.98,0.5};
+            ui_color3f("Color", &rimcolor.x);
+            ui_clampf("Low", &rimrange.x, 0, 1);
+            ui_clampf("High", &rimrange.y, 0, 1);
+            ui_clampf("Mix", &rimrange.z, 0, 1);
+            // ui_vec
+            shader_bind(mdl.program);
+            shader_vec3("u_rimcolor", rimcolor);
+            shader_vec3("u_rimrange", rimrange);
             ui_panel_end();
         }
         if( ui_panel("FX", 0) ) {
