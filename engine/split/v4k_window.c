@@ -107,6 +107,7 @@ static double t, dt, fps, hz = 0.00;
 static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
+static vec4 wincolor = {0,0,0,1};
 
 // -----------------------------------------------------------------------------
 // glfw
@@ -220,6 +221,10 @@ struct nk_glfw *window_handle_nkglfw() {
 }
 
 void glNewFrame() {
+    // @transparent
+    // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1); // debug
+    // if( input_down(KEY_F2) ) window_maximize(window_has_maximize()^1); // debug
+    // @transparent
 
 #if 0 // is(ems)
     int canvasWidth, canvasHeight;
@@ -256,6 +261,8 @@ void glNewFrame() {
 
     glViewport(0, 0, window_width(), window_height());
 
+    // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
+    glClearColor(wincolor.r, wincolor.g, wincolor.b, window_has_transparent() ? 0 : wincolor.a); // @transparent
     //glClearColor(0.15,0.15,0.15,1);
     //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -270,10 +277,14 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     scale = 100.f;
     #endif
 
+    if( flag("--fullscreen") ) scale = 100;
     scale = (scale < 1 ? scale * 100 : scale);
+
     bool FLAGS_FULLSCREEN = scale > 100;
     bool FLAGS_FULLSCREEN_DESKTOP = scale == 100;
     bool FLAGS_WINDOWED = scale < 100;
+    bool FLAGS_TRANSPARENT = flag("--transparent") || (flags & WINDOW_TRANSPARENT);
+    if( FLAGS_TRANSPARENT ) FLAGS_FULLSCREEN = 0, FLAGS_FULLSCREEN_DESKTOP = 0, FLAGS_WINDOWED = 1;
     scale = (scale > 100 ? 100 : scale) / 100.f;
     int winWidth = window_canvas().w * scale;
     int winHeight = window_canvas().h * scale;
@@ -295,6 +306,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
         winHeight = mode->height;
     }
     if( FLAGS_WINDOWED ) {
+        ifndef(ems, glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, FLAGS_TRANSPARENT ? GLFW_TRUE : GLFW_FALSE)); // @transparent
         // windowed
         float ratio = (float)winWidth / (winHeight + !winHeight);
         if( flags & WINDOW_SQUARE )    winWidth = winHeight = winWidth > winHeight ? winHeight : winWidth;
@@ -359,6 +371,13 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     PRINTF("GPU device: %s\n", glGetString(GL_RENDERER));
     PRINTF("GPU driver: %s\n", glGetString(GL_VERSION));
 
+    #if !is(ems)
+    if( FLAGS_TRANSPARENT ) { // @transparent
+        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+        if( scale >= 1 ) glfwMaximizeWindow(window);
+    }
+    #endif
+
     g->ctx = ui_ctx;
     g->nk_glfw = &nk_glfw;
     g->window = window;
@@ -399,6 +418,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
                    if(JOB_ID==JOB_MAX-1)ddraw_line(vec3(-1,y+pixel*2,0), vec3(1,   y+pixel*2,0)); /* full line */ \
                 } while(0)
 
+                if( FLAGS_TRANSPARENT ) {} else // @transparent
                 for(int i = 0; i < cook_jobs(); ++i) ddraw_progress_bar(i, cook_jobs(), jobs[i].progress);
                 // ddraw_progress_bar(0, 1, cook_progress());
 
@@ -697,7 +717,8 @@ void window_color(unsigned color) {
     unsigned g = (color >>  8) & 255;
     unsigned r = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
-    glClearColor(r / 255.0, g / 255.0, b / 255.0, 1.0);
+    wincolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+//  glClearColor(wincolor.r, wincolor.g, wincolor.b, 1.0);
 }
 void window_icon(const char *file_icon) {
     unsigned len = file_size(file_icon); // len = len ? len : vfs_size(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
@@ -944,3 +965,36 @@ void window_aspect_unlock() {
     if(!window) return;
     window_aspect_lock(0, 0);
 }
+
+void window_transparent(int enabled) {
+    #if !is(ems)
+    if( !window_has_fullscreen() ) {
+        if( enabled ) {
+            glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+            //glfwMaximizeWindow(window);
+        } else {
+            //glfwRestoreWindow(window);
+            glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE);
+        }
+    }
+    #endif
+}
+int window_has_transparent() {
+    return ifdef(ems, 0, glfwGetWindowAttrib(window, GLFW_DECORATED) != GLFW_TRUE);
+}
+
+void window_maximize(int enabled) {
+    ifdef(ems, return);
+    if( !window_has_fullscreen() ) {
+        if( enabled ) {
+            glfwMaximizeWindow(window);
+        } else {
+            glfwRestoreWindow(window);
+        }
+    }
+}
+int window_has_maximize() {
+    return ifdef(ems, 0, glfwGetWindowAttrib(window, GLFW_MAXIMIZED) == GLFW_TRUE);
+}
+
+

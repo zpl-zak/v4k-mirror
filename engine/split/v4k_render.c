@@ -1042,7 +1042,7 @@ void fullscreen_quad_rgb( texture_t texture, float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_inv_gamma.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" , "");
+        program = shader(vs, fs, "", "fragcolor" , NULL);
         u_inv_gamma = glGetUniformLocation(program, "u_inv_gamma");
         glGenVertexArrays( 1, (GLuint*)&vao );
     }
@@ -1073,7 +1073,7 @@ void fullscreen_quad_rgb_flipped( texture_t texture, float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_inv_gamma.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" , "");
+        program = shader(vs, fs, "", "fragcolor" , NULL);
         u_inv_gamma = glGetUniformLocation(program, "u_inv_gamma");
         glGenVertexArrays( 1, (GLuint*)&vao );
     }
@@ -1104,7 +1104,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3], float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_ycbr_gamma_saturation.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" , "");
+        program = shader(vs, fs, "", "fragcolor" , NULL);
         u_gamma = glGetUniformLocation(program, "u_gamma");
 
         uy = glGetUniformLocation(program, "u_texture_y");
@@ -1148,7 +1148,7 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3], float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_ycbr_gamma_saturation.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" , "");
+        program = shader(vs, fs, "", "fragcolor" , NULL);
         u_gamma = glGetUniformLocation(program, "u_gamma");
 
         uy = glGetUniformLocation(program, "u_texture_y");
@@ -1439,7 +1439,7 @@ static void sprite_render_meshes() {
     if( sprite_program < 0 ) {
         sprite_program = shader( vfs_read("shaders/vs_324_24_sprite.glsl"), vfs_read("shaders/fs_24_4_sprite.glsl"),
             "att_Position,att_TexCoord,att_Color",
-            "fragColor", ""
+            "fragColor", NULL
         );
     }
 
@@ -2456,7 +2456,7 @@ skybox_t skybox(const char *asset, int flags) {
     sky.flags = flags ? flags : !!asset; // either cubemap or rayleigh
     sky.program = shader(vfs_read("shaders/vs_3_3_skybox.glsl"),
         sky.flags ? vfs_read("fs_3_4_skybox.glsl") : vfs_read("shaders/fs_3_4_skybox_rayleigh.glsl"),
-        "att_position", "fragcolor", "");
+        "att_position", "fragcolor", NULL);
 
     // sky cubemap & SH
     if( asset ) {
@@ -3038,7 +3038,7 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
 
     strcat(fs2, fs);
 
-    p->program = shader(vs, fs2, "vtexcoord", "fragColor" , "");
+    p->program = shader(vs, fs2, "vtexcoord", "fragColor" , NULL);
 
     FREE(fs2);
 
@@ -3099,6 +3099,9 @@ void postfx_clear(postfx *fx) {
 }
 
 bool postfx_begin(postfx *fx, int width, int height) {
+    // reset clear color: needed in case transparent window is being used (alpha != 0)
+    glClearColor(0,0,0,0); // @transparent
+
     width += !width;
     height += !height;
 
@@ -3405,7 +3408,7 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
     glGenVertexArrays(1, &s.vao);
 
     char *fs = stringf("%s%s", vfs_read("header_shadertoy.glsl"), file);
-    s.program = shader((flags&SHADERTOY_FLIP_Y) ? vfs_read("shaders/vs_shadertoy_flip.glsl") : vfs_read("shaders/vs_shadertoy.glsl"), fs, "", "fragColor", "");
+    s.program = shader((flags&SHADERTOY_FLIP_Y) ? vfs_read("shaders/vs_shadertoy_flip.glsl") : vfs_read("shaders/vs_shadertoy.glsl"), fs, "", "fragColor", NULL);
     FREE(fs);
 
     if( strstr(file, "noise3.jpg"))

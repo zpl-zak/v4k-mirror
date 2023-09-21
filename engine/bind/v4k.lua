@@ -2899,6 +2899,7 @@ WINDOW_PORTRAIT =64,
 WINDOW_LANDSCAPE =128,
 WINDOW_ASPECT =256,
 WINDOW_FIXED =512,
+WINDOW_TRANSPARENT =1024,
 WINDOW_VSYNC = 0,
 WINDOW_VSYNC_ADAPTIVE =4096,
 WINDOW_VSYNC_DISABLED =8192,
@@ -2933,6 +2934,10 @@ WINDOW_VSYNC_DISABLED =8192,
  int      window_has_pause();
  void     window_visible(int visible);
  int      window_has_visible();
+ void     window_maximize(int enabled);
+ int      window_has_maximize();
+ void     window_transparent(int enabled);
+ int      window_has_transparent();
  double   window_aspect();
  void     window_aspect_lock(unsigned numer, unsigned denom);
  void     window_aspect_unlock();

@@ -1,6 +1,6 @@
 #if ENABLE_PROFILER
 profiler_t profiler;
-int profiler_enabled = 1;
+int profiler_enabled = 0;
 
 void (profile_init)() { map_init(profiler, less_str, hash_str); profiler_enabled &= !!profiler; }
 int  (profile_enable)(bool on) { return profiler_enabled = on; }

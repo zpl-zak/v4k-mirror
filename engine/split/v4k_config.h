@@ -282,6 +282,7 @@ typedef char bool;
 #pragma comment(lib, "shell32")
 #pragma comment(lib, "user32")
 #pragma comment(lib, "winmm")
+#pragma comment(lib, "wininet")
 #pragma comment(lib, "ws2_32")
 #endif
 

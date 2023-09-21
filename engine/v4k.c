@@ -6854,7 +6854,7 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
     const char *vs_filename = 0, *fs_filename = 0;
     const char *vs = vs_filename ? file_read(vs_filename) : mv_vs_source;
     const char *fs = fs_filename ? file_read(fs_filename) : mv_fs_source;
-    f->program = shader(vs, fs, "vertexPosition,instanceGlyph", "outColor", "");
+    f->program = shader(vs, fs, "vertexPosition,instanceGlyph", "outColor", NULL);
 
     // figure out what ranges we're about to bake
     #define MERGE_TABLE(table) do { \
@@ -9266,6 +9266,7 @@ void* forget( void *ptr ) {
 #line 0
 
 #line 1 "v4k_network.c"
+
 #if is(tcc) && is(win32) // @fixme: https lib is broken with tcc. replaced with InternetReadFile() api for now
 
 #   include <wininet.h>
@@ -9288,7 +9289,6 @@ int download_file( FILE *out, const char *url ) {
 }
 
 array(char) download( const char *url ) {
-    int ok = false;
     char buffer[ 4096 ];
     DWORD response_size = 0, pos = 0;
 
@@ -9297,7 +9297,7 @@ array(char) download( const char *url ) {
     for( HINTERNET request = InternetOpenUrlA(session, url, NULL, 0, INTERNET_FLAG_RELOAD, 0); request; InternetCloseHandle(request), request = 0 )
     for(; InternetReadFile(request, buffer, sizeof(buffer), &response_size) != FALSE && response_size > 0; ) {
         array_resize(out, pos + response_size);
-        ok = !!memcpy(out + (pos += response_size) - response_size, buffer, response_size);
+        memcpy(out + (pos += response_size) - response_size, buffer, response_size);
     }
 
     return out;
@@ -11306,7 +11306,7 @@ void fullscreen_quad_rgb( texture_t texture, float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_inv_gamma.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" , "");
+        program = shader(vs, fs, "", "fragcolor" , NULL);
         u_inv_gamma = glGetUniformLocation(program, "u_inv_gamma");
         glGenVertexArrays( 1, (GLuint*)&vao );
     }
@@ -11337,7 +11337,7 @@ void fullscreen_quad_rgb_flipped( texture_t texture, float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_inv_gamma.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" , "");
+        program = shader(vs, fs, "", "fragcolor" , NULL);
         u_inv_gamma = glGetUniformLocation(program, "u_inv_gamma");
         glGenVertexArrays( 1, (GLuint*)&vao );
     }
@@ -11368,7 +11368,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3], float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_ycbr_gamma_saturation.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" , "");
+        program = shader(vs, fs, "", "fragcolor" , NULL);
         u_gamma = glGetUniformLocation(program, "u_gamma");
 
         uy = glGetUniformLocation(program, "u_texture_y");
@@ -11412,7 +11412,7 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3], float gamma ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
         const char* fs = vfs_read("shaders/fs_2_4_texel_ycbr_gamma_saturation.glsl");
 
-        program = shader(vs, fs, "", "fragcolor" , "");
+        program = shader(vs, fs, "", "fragcolor" , NULL);
         u_gamma = glGetUniformLocation(program, "u_gamma");
 
         uy = glGetUniformLocation(program, "u_texture_y");
@@ -11703,7 +11703,7 @@ static void sprite_render_meshes() {
     if( sprite_program < 0 ) {
         sprite_program = shader( vfs_read("shaders/vs_324_24_sprite.glsl"), vfs_read("shaders/fs_24_4_sprite.glsl"),
             "att_Position,att_TexCoord,att_Color",
-            "fragColor", ""
+            "fragColor", NULL
         );
     }
 
@@ -12720,7 +12720,7 @@ skybox_t skybox(const char *asset, int flags) {
     sky.flags = flags ? flags : !!asset; // either cubemap or rayleigh
     sky.program = shader(vfs_read("shaders/vs_3_3_skybox.glsl"),
         sky.flags ? vfs_read("fs_3_4_skybox.glsl") : vfs_read("shaders/fs_3_4_skybox_rayleigh.glsl"),
-        "att_position", "fragcolor", "");
+        "att_position", "fragcolor", NULL);
 
     // sky cubemap & SH
     if( asset ) {
@@ -13302,7 +13302,7 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
 
     strcat(fs2, fs);
 
-    p->program = shader(vs, fs2, "vtexcoord", "fragColor" , "");
+    p->program = shader(vs, fs2, "vtexcoord", "fragColor" , NULL);
 
     FREE(fs2);
 
@@ -13363,6 +13363,9 @@ void postfx_clear(postfx *fx) {
 }
 
 bool postfx_begin(postfx *fx, int width, int height) {
+    // reset clear color: needed in case transparent window is being used (alpha != 0)
+    glClearColor(0,0,0,0); // @transparent
+
     width += !width;
     height += !height;
 
@@ -13669,7 +13672,7 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
     glGenVertexArrays(1, &s.vao);
 
     char *fs = stringf("%s%s", vfs_read("header_shadertoy.glsl"), file);
-    s.program = shader((flags&SHADERTOY_FLIP_Y) ? vfs_read("shaders/vs_shadertoy_flip.glsl") : vfs_read("shaders/vs_shadertoy.glsl"), fs, "", "fragColor", "");
+    s.program = shader((flags&SHADERTOY_FLIP_Y) ? vfs_read("shaders/vs_shadertoy_flip.glsl") : vfs_read("shaders/vs_shadertoy.glsl"), fs, "", "fragColor", NULL);
     FREE(fs);
 
     if( strstr(file, "noise3.jpg"))
@@ -15859,7 +15862,7 @@ scene_t* scene_get_active() {
 scene_t* scene_push() {
     scene_t *s = REALLOC(0, sizeof(scene_t)), clear = {0}; *s = clear;
     const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") };
-    s->program = shader(strlerp(1, symbols, vfs_read("shaders/vs_332_32.glsl")), strlerp(1, symbols, vfs_read("shaders/fs_32_4_model.glsl")), "att_position,att_normal,att_texcoord,att_color", "fragcolor", "");
+    s->program = shader(strlerp(1, symbols, vfs_read("shaders/vs_332_32.glsl")), strlerp(1, symbols, vfs_read("shaders/fs_32_4_model.glsl")), "att_position,att_normal,att_texcoord,att_color", "fragcolor", NULL);
     s->skybox = skybox(NULL, 0);
     array_push(scenes, s);
     last_scene = s;
@@ -17300,8 +17303,8 @@ void thread_destroy( void *thd ) {
     #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(14.5,15)
     #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #else
-    #define UI_FONT_REGULAR_SIZE    UI_FONT_ENUM(14.5,15.5)
-    #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(16,17)
+    #define UI_FONT_REGULAR_SIZE    UI_FONT_ENUM(14.5,16)
+    #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(16,17.5)
     #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #endif
 
@@ -17450,6 +17453,13 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     // table[NK_COLOR_TAB_HEADER] = main;
     // table[NK_COLOR_SELECT] = nk_rgba(57, 67, 61, 255);
     // table[NK_COLOR_SELECT_ACTIVE] = main;
+
+	// @transparent
+	#if !is(ems)
+	if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE )
+	for(int i = 0; i < countof(table); ++i) table[i].a = 255; // table[i].a ? 255 : 0;
+	#endif
+	// @transparent
 
     nk_style_default(ui_ctx);
     nk_style_from_table(ui_ctx, table);
@@ -18025,6 +18035,71 @@ int ui_enable_(int enabled) {
         off.window.header.normal.data.color.a *= alpha;
         off.window.header.hover.data.color.a *= alpha;
         off.window.header.active.data.color.a *= alpha;
+
+        // @transparent {
+        // fixes for transparent windows
+        #if !is(ems)
+        float hsva[4];
+        if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE ) {
+            #define fix(col) off.col = nk_rgba_cf(nk_hsva_colorfv( (nk_colorf_hsva_fv(hsva, nk_color_cf(on.col)),hsva[1] *= alpha,hsva[2] *= alpha, hsva) ))
+            fix(contextual_button.normal.data.color);
+            fix(menu_button.normal.data.color);
+            fix(option.normal.data.color);
+            fix(option.cursor_normal.data.color);
+            fix(checkbox.normal.data.color);
+            fix(checkbox.cursor_normal.data.color);
+            fix(selectable.normal.data.color);
+            fix(selectable.normal_active.data.color);
+            fix(slider.normal.data.color);
+            fix(slider.bar_normal);
+            fix(slider.cursor_normal.data.color);
+            fix(slider.dec_button.normal.data.color);
+            fix(slider.inc_button.normal.data.color);
+            fix(progress.normal.data.color);
+            fix(progress.cursor_normal.data.color);
+            fix(property.normal.data.color);
+            fix(property.label_normal);
+            fix(property.edit.normal.data.color);
+            fix(property.edit.cursor_normal);
+            fix(property.edit.selected_normal);
+            fix(property.dec_button.normal.data.color);
+            fix(property.inc_button.normal.data.color);
+            fix(edit.normal.data.color);
+            fix(edit.cursor_normal);
+            fix(edit.selected_normal);
+            fix(scrollh.normal.data.color);
+            fix(scrollh.cursor_normal.data.color);
+            fix(scrollv.normal.data.color);
+            fix(scrollv.cursor_normal.data.color);
+            fix(combo.normal.data.color);
+            fix(combo.label_normal);
+            fix(combo.symbol_normal);
+            fix(combo.button.normal.data.color);
+            fix(window.header.normal.data.color);
+            fix(button.normal.data.color);
+            #undef fix
+            #define fix(field) on.field.a = off.field.a = 0
+            fix(button.border_color);
+            fix(button.border_color);
+            fix(button.border_color);
+            fix(contextual_button.border_color);
+            fix(menu_button.border_color);
+            fix(option.border_color);
+            fix(checkbox.border_color);
+            fix(slider.border_color);
+            fix(progress.border_color);
+            fix(property.border_color);
+            fix(edit.border_color);
+            fix(chart.border_color);
+            fix(scrollh.border_color);
+            fix(scrollv.border_color);
+            fix(tab.border_color);
+            fix(combo.border_color);
+            fix(window.border_color);
+            #undef fix
+        }
+        #endif
+        // } @transparent
     }
     static struct nk_input input;
     if (!enabled) {
@@ -18142,6 +18217,7 @@ void ui_render() {
 #if is(ems)
     glFinish();
 #endif
+
     ui_dirty = 1;
     ui_hue = 0;
 
@@ -18579,11 +18655,25 @@ int ui_window_end() {
     if(ui_window_has_menubar) nk_menubar_end(ui_ctx), ui_window_has_menubar = 0;
     nk_end(ui_ctx), ui_has_window = 0;
 
+    int closed = 0;
     if( nk_window_is_hidden(ui_ctx, ui_last_title) ) {
         nk_window_close(ui_ctx, ui_last_title);
         ui_show(ui_last_title, false);
         if( ui_last_enabled ) *ui_last_enabled = 0; // clear developers' flag
+        closed = 1;
     }
+
+    // @transparent
+    #if !is(ems)
+    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
+    if( closed && has_transparent_attrib && !ui_has_menubar() ) {
+        bool any_open = 0;
+        for each_map_ptr(ui_windows, char*, k, unsigned, v) any_open |= *v & 1;
+        if( !any_open ) glfwSetWindowShouldClose(window_handle(), GLFW_TRUE);
+    }
+    #endif
+    // @transparent
+
     return 0;
 }
 
@@ -18832,7 +18922,12 @@ int ui_button_transparent(const char *text) {
 
 static
 int ui_button_(const char *text) {
-    int ret = 0;
+    // @transparent
+    static bool transparency_fix_needed = 0; ifndef(ems, do_once transparency_fix_needed = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
+    const float dim = transparency_fix_needed && ui_alpha < 1 ? 0.5 : 1;
+    const float dim_alpha = transparency_fix_needed ? 1.0 : 0.90*ui_alpha;
+    const float text_alpha = transparency_fix_needed ? 1.0 : ui_alpha;
+    // @transparent
 
     if( 1 ) {
 #if UI_BUTTON_MONOCHROME
@@ -18852,20 +18947,20 @@ int ui_button_(const char *text) {
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,1.00,1.0*ui_alpha));
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.60,0.4*ui_alpha));
 #else // new
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba_f(0.00,0.00,0.00,ui_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_hover,  nk_rgba_f(0.11,0.11,0.11,ui_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_active, nk_rgba_f(0.00,0.00,0.00,ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba_f(0.00,0.00,0.00,text_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_hover,  nk_rgba_f(0.11,0.11,0.11,text_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_active, nk_rgba_f(0.00,0.00,0.00,text_alpha));
 
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.normal.data.color, nk_hsva_f(ui_hue,0.80,0.6,0.90*ui_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,0.85,0.9,0.90*ui_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.80,0.6,0.90*ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.normal.data.color, nk_hsva_f(ui_hue,0.80*dim,0.6*dim,dim_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,0.85*dim,0.9*dim,dim_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.80*dim,0.6*dim,dim_alpha));
 #endif
     }
 
     struct nk_rect bounds = nk_widget_bounds(ui_ctx);
 
     const char *split = strchr(text, '@'), *tooltip = split + 1;
-    ret = nk_button_text(ui_ctx, text, split ? (int)(split - text) : strlen(text) );
+    int ret = nk_button_text(ui_ctx, text, split ? (int)(split - text) : strlen(text) );
 
     const struct nk_input *in = &ui_ctx->input;
     if (split && nk_input_is_mouse_hovering_rect(in, bounds) && !ui_has_active_popups && nk_window_has_focus(ui_ctx)) {
@@ -19658,7 +19753,7 @@ int ui_demo(int do_windows) {
 #line 1 "v4k_profile.c"
 #if ENABLE_PROFILER
 profiler_t profiler;
-int profiler_enabled = 1;
+int profiler_enabled = 0;
 
 void (profile_init)() { map_init(profiler, less_str, hash_str); profiler_enabled &= !!profiler; }
 int  (profile_enable)(bool on) { return profiler_enabled = on; }
@@ -20070,6 +20165,7 @@ static double t, dt, fps, hz = 0.00;
 static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
+static vec4 wincolor = {0,0,0,1};
 
 // -----------------------------------------------------------------------------
 // glfw
@@ -20183,6 +20279,10 @@ struct nk_glfw *window_handle_nkglfw() {
 }
 
 void glNewFrame() {
+    // @transparent
+    // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1); // debug
+    // if( input_down(KEY_F2) ) window_maximize(window_has_maximize()^1); // debug
+    // @transparent
 
 #if 0 // is(ems)
     int canvasWidth, canvasHeight;
@@ -20219,6 +20319,8 @@ void glNewFrame() {
 
     glViewport(0, 0, window_width(), window_height());
 
+    // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
+    glClearColor(wincolor.r, wincolor.g, wincolor.b, window_has_transparent() ? 0 : wincolor.a); // @transparent
     //glClearColor(0.15,0.15,0.15,1);
     //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -20233,10 +20335,14 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     scale = 100.f;
     #endif
 
+    if( flag("--fullscreen") ) scale = 100;
     scale = (scale < 1 ? scale * 100 : scale);
+
     bool FLAGS_FULLSCREEN = scale > 100;
     bool FLAGS_FULLSCREEN_DESKTOP = scale == 100;
     bool FLAGS_WINDOWED = scale < 100;
+    bool FLAGS_TRANSPARENT = flag("--transparent") || (flags & WINDOW_TRANSPARENT);
+    if( FLAGS_TRANSPARENT ) FLAGS_FULLSCREEN = 0, FLAGS_FULLSCREEN_DESKTOP = 0, FLAGS_WINDOWED = 1;
     scale = (scale > 100 ? 100 : scale) / 100.f;
     int winWidth = window_canvas().w * scale;
     int winHeight = window_canvas().h * scale;
@@ -20258,6 +20364,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
         winHeight = mode->height;
     }
     if( FLAGS_WINDOWED ) {
+        ifndef(ems, glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, FLAGS_TRANSPARENT ? GLFW_TRUE : GLFW_FALSE)); // @transparent
         // windowed
         float ratio = (float)winWidth / (winHeight + !winHeight);
         if( flags & WINDOW_SQUARE )    winWidth = winHeight = winWidth > winHeight ? winHeight : winWidth;
@@ -20322,6 +20429,13 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     PRINTF("GPU device: %s\n", glGetString(GL_RENDERER));
     PRINTF("GPU driver: %s\n", glGetString(GL_VERSION));
 
+    #if !is(ems)
+    if( FLAGS_TRANSPARENT ) { // @transparent
+        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+        if( scale >= 1 ) glfwMaximizeWindow(window);
+    }
+    #endif
+
     g->ctx = ui_ctx;
     g->nk_glfw = &nk_glfw;
     g->window = window;
@@ -20362,6 +20476,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
                    if(JOB_ID==JOB_MAX-1)ddraw_line(vec3(-1,y+pixel*2,0), vec3(1,   y+pixel*2,0)); /* full line */ \
                 } while(0)
 
+                if( FLAGS_TRANSPARENT ) {} else // @transparent
                 for(int i = 0; i < cook_jobs(); ++i) ddraw_progress_bar(i, cook_jobs(), jobs[i].progress);
                 // ddraw_progress_bar(0, 1, cook_progress());
 
@@ -20660,7 +20775,8 @@ void window_color(unsigned color) {
     unsigned g = (color >>  8) & 255;
     unsigned r = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
-    glClearColor(r / 255.0, g / 255.0, b / 255.0, 1.0);
+    wincolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+//  glClearColor(wincolor.r, wincolor.g, wincolor.b, 1.0);
 }
 void window_icon(const char *file_icon) {
     unsigned len = file_size(file_icon); // len = len ? len : vfs_size(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
@@ -20907,6 +21023,39 @@ void window_aspect_unlock() {
     if(!window) return;
     window_aspect_lock(0, 0);
 }
+
+void window_transparent(int enabled) {
+    #if !is(ems)
+    if( !window_has_fullscreen() ) {
+        if( enabled ) {
+            glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+            //glfwMaximizeWindow(window);
+        } else {
+            //glfwRestoreWindow(window);
+            glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE);
+        }
+    }
+    #endif
+}
+int window_has_transparent() {
+    return ifdef(ems, 0, glfwGetWindowAttrib(window, GLFW_DECORATED) != GLFW_TRUE);
+}
+
+void window_maximize(int enabled) {
+    ifdef(ems, return);
+    if( !window_has_fullscreen() ) {
+        if( enabled ) {
+            glfwMaximizeWindow(window);
+        } else {
+            glfwRestoreWindow(window);
+        }
+    }
+}
+int window_has_maximize() {
+    return ifdef(ems, 0, glfwGetWindowAttrib(window, GLFW_MAXIMIZED) == GLFW_TRUE);
+}
+
+
 #line 0
 
 #line 1 "v4k_obj.c"

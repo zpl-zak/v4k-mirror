@@ -380,6 +380,7 @@ typedef char bool;
 #pragma comment(lib, "shell32")
 #pragma comment(lib, "user32")
 #pragma comment(lib, "winmm")
+#pragma comment(lib, "wininet")
 #pragma comment(lib, "ws2_32")
 #endif
 
@@ -2450,7 +2451,7 @@ API unsigned bgraf( float b, float g, float r, float a );
 API float    alpha( unsigned rgba );
 
 #define RGBX(rgb,x)   ( ((rgb)&0xFFFFFF) | (((unsigned)(x))<<24) )
-#define RGB3(r,g,b)   ( ((r)<<16) | ((g)<<8) | (b) )
+#define RGB3(r,g,b)   ( (255<<24) | ((r)<<16) | ((g)<<8) | (b) )
 #define RGB4(r,g,b,a) RGBX(RGB3(r,g,b),a)
 
 #define BLACK   RGBX(0x000000,255)
@@ -2472,7 +2473,7 @@ API float    alpha( unsigned rgba );
 #define ORANGE  RGB3(  255,144,48 )
 #define PURPLE  RGB3(  102,77,102 ) // 178,128,255 )
 #define YELLOW  RGB3(   255,224,0 )
-#define GRAY    RGB3( 149,149,149 )
+#define GRAY    RGB3(  32, 32, 32 ) // 149,149,149 )
 #define PINK    RGB3(  255,48,144 )
 #define AQUA    RGB3(  48,255,144 )
 
@@ -3603,6 +3604,7 @@ enum WINDOW_FLAGS {
     WINDOW_LANDSCAPE = 0x80,
     WINDOW_ASPECT = 0x100, // keep aspect
     WINDOW_FIXED = 0x200, // disable resizing
+    WINDOW_TRANSPARENT = 0x400,
 
     WINDOW_VSYNC = 0,
     WINDOW_VSYNC_ADAPTIVE = 0x1000,
@@ -3647,6 +3649,10 @@ API void     window_pause(int paused);
 API int      window_has_pause();
 API void     window_visible(int visible);
 API int      window_has_visible();
+API void     window_maximize(int enabled);
+API int      window_has_maximize();
+API void     window_transparent(int enabled);
+API int      window_has_transparent();
 
 API double   window_aspect();
 API void     window_aspect_lock(unsigned numer, unsigned denom);

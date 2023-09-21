@@ -115,6 +115,12 @@ int main() {
             ui_panel_end();
         }
 
+        static bool show_main_window = 1;
+        if ( ui_window("Workbench", &show_main_window) ) {
+            ui_label("v4.games");
+            ui_window_end();
+        }
+
         for (int i=0; i<array_count(assets); i++) {
             asset_t *f = (assets+i);
             if (ui_window(f->name, &f->opened)) {

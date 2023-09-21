@@ -25,8 +25,8 @@
     #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(14.5,15)
     #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #else
-    #define UI_FONT_REGULAR_SIZE    UI_FONT_ENUM(14.5,15.5)
-    #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(16,17)
+    #define UI_FONT_REGULAR_SIZE    UI_FONT_ENUM(14.5,16)
+    #define UI_FONT_HEADING_SIZE    UI_FONT_ENUM(16,17.5)
     #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #endif
 
@@ -175,6 +175,13 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     // table[NK_COLOR_TAB_HEADER] = main;
     // table[NK_COLOR_SELECT] = nk_rgba(57, 67, 61, 255);
     // table[NK_COLOR_SELECT_ACTIVE] = main;
+
+	// @transparent
+	#if !is(ems)
+	if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE )
+	for(int i = 0; i < countof(table); ++i) table[i].a = 255; // table[i].a ? 255 : 0;
+	#endif
+	// @transparent
 
     nk_style_default(ui_ctx);
     nk_style_from_table(ui_ctx, table);
@@ -750,6 +757,71 @@ int ui_enable_(int enabled) {
         off.window.header.normal.data.color.a *= alpha;
         off.window.header.hover.data.color.a *= alpha;
         off.window.header.active.data.color.a *= alpha;
+
+        // @transparent {
+        // fixes for transparent windows
+        #if !is(ems)
+        float hsva[4];
+        if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE ) {
+            #define fix(col) off.col = nk_rgba_cf(nk_hsva_colorfv( (nk_colorf_hsva_fv(hsva, nk_color_cf(on.col)),hsva[1] *= alpha,hsva[2] *= alpha, hsva) ))
+            fix(contextual_button.normal.data.color);
+            fix(menu_button.normal.data.color);
+            fix(option.normal.data.color);
+            fix(option.cursor_normal.data.color);
+            fix(checkbox.normal.data.color);
+            fix(checkbox.cursor_normal.data.color);
+            fix(selectable.normal.data.color);
+            fix(selectable.normal_active.data.color);
+            fix(slider.normal.data.color);
+            fix(slider.bar_normal);
+            fix(slider.cursor_normal.data.color);
+            fix(slider.dec_button.normal.data.color);
+            fix(slider.inc_button.normal.data.color);
+            fix(progress.normal.data.color);
+            fix(progress.cursor_normal.data.color);
+            fix(property.normal.data.color);
+            fix(property.label_normal);
+            fix(property.edit.normal.data.color);
+            fix(property.edit.cursor_normal);
+            fix(property.edit.selected_normal);
+            fix(property.dec_button.normal.data.color);
+            fix(property.inc_button.normal.data.color);
+            fix(edit.normal.data.color);
+            fix(edit.cursor_normal);
+            fix(edit.selected_normal);
+            fix(scrollh.normal.data.color);
+            fix(scrollh.cursor_normal.data.color);
+            fix(scrollv.normal.data.color);
+            fix(scrollv.cursor_normal.data.color);
+            fix(combo.normal.data.color);
+            fix(combo.label_normal);
+            fix(combo.symbol_normal);
+            fix(combo.button.normal.data.color);
+            fix(window.header.normal.data.color);
+            fix(button.normal.data.color);
+            #undef fix
+            #define fix(field) on.field.a = off.field.a = 0
+            fix(button.border_color);
+            fix(button.border_color);
+            fix(button.border_color);
+            fix(contextual_button.border_color);
+            fix(menu_button.border_color);
+            fix(option.border_color);
+            fix(checkbox.border_color);
+            fix(slider.border_color);
+            fix(progress.border_color);
+            fix(property.border_color);
+            fix(edit.border_color);
+            fix(chart.border_color);
+            fix(scrollh.border_color);
+            fix(scrollv.border_color);
+            fix(tab.border_color);
+            fix(combo.border_color);
+            fix(window.border_color);
+            #undef fix
+        }
+        #endif
+        // } @transparent
     }
     static struct nk_input input;
     if (!enabled) {
@@ -867,6 +939,7 @@ void ui_render() {
 #if is(ems)
     glFinish();
 #endif
+
     ui_dirty = 1;
     ui_hue = 0;
 
@@ -1304,11 +1377,25 @@ int ui_window_end() {
     if(ui_window_has_menubar) nk_menubar_end(ui_ctx), ui_window_has_menubar = 0;
     nk_end(ui_ctx), ui_has_window = 0;
 
+    int closed = 0;
     if( nk_window_is_hidden(ui_ctx, ui_last_title) ) {
         nk_window_close(ui_ctx, ui_last_title);
         ui_show(ui_last_title, false);
         if( ui_last_enabled ) *ui_last_enabled = 0; // clear developers' flag
+        closed = 1;
     }
+
+    // @transparent
+    #if !is(ems)
+    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
+    if( closed && has_transparent_attrib && !ui_has_menubar() ) {
+        bool any_open = 0;
+        for each_map_ptr(ui_windows, char*, k, unsigned, v) any_open |= *v & 1;
+        if( !any_open ) glfwSetWindowShouldClose(window_handle(), GLFW_TRUE);
+    }
+    #endif
+    // @transparent
+
     return 0;
 }
 
@@ -1557,7 +1644,12 @@ int ui_button_transparent(const char *text) {
 
 static
 int ui_button_(const char *text) {
-    int ret = 0;
+    // @transparent
+    static bool transparency_fix_needed = 0; ifndef(ems, do_once transparency_fix_needed = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
+    const float dim = transparency_fix_needed && ui_alpha < 1 ? 0.5 : 1;
+    const float dim_alpha = transparency_fix_needed ? 1.0 : 0.90*ui_alpha;
+    const float text_alpha = transparency_fix_needed ? 1.0 : ui_alpha;
+    // @transparent
 
     if( 1 ) {
 #if UI_BUTTON_MONOCHROME
@@ -1577,20 +1669,20 @@ int ui_button_(const char *text) {
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,1.00,1.0*ui_alpha));
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.60,0.4*ui_alpha));
 #else // new
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba_f(0.00,0.00,0.00,ui_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_hover,  nk_rgba_f(0.11,0.11,0.11,ui_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_active, nk_rgba_f(0.00,0.00,0.00,ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba_f(0.00,0.00,0.00,text_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_hover,  nk_rgba_f(0.11,0.11,0.11,text_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_active, nk_rgba_f(0.00,0.00,0.00,text_alpha));
 
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.normal.data.color, nk_hsva_f(ui_hue,0.80,0.6,0.90*ui_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,0.85,0.9,0.90*ui_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.80,0.6,0.90*ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.normal.data.color, nk_hsva_f(ui_hue,0.80*dim,0.6*dim,dim_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,0.85*dim,0.9*dim,dim_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.80*dim,0.6*dim,dim_alpha));
 #endif
     }
 
     struct nk_rect bounds = nk_widget_bounds(ui_ctx);
 
     const char *split = strchr(text, '@'), *tooltip = split + 1;
-    ret = nk_button_text(ui_ctx, text, split ? (int)(split - text) : strlen(text) );
+    int ret = nk_button_text(ui_ctx, text, split ? (int)(split - text) : strlen(text) );
 
     const struct nk_input *in = &ui_ctx->input;
     if (split && nk_input_is_mouse_hovering_rect(in, bounds) && !ui_has_active_popups && nk_window_has_focus(ui_ctx)) {

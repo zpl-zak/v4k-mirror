@@ -1,3 +1,4 @@
+
 #if is(tcc) && is(win32) // @fixme: https lib is broken with tcc. replaced with InternetReadFile() api for now
 
 #   include <wininet.h>
@@ -20,7 +21,6 @@ int download_file( FILE *out, const char *url ) {
 }
 
 array(char) download( const char *url ) {
-    int ok = false;
     char buffer[ 4096 ];
     DWORD response_size = 0, pos = 0;
 
@@ -29,7 +29,7 @@ array(char) download( const char *url ) {
     for( HINTERNET request = InternetOpenUrlA(session, url, NULL, 0, INTERNET_FLAG_RELOAD, 0); request; InternetCloseHandle(request), request = 0 )
     for(; InternetReadFile(request, buffer, sizeof(buffer), &response_size) != FALSE && response_size > 0; ) {
         array_resize(out, pos + response_size);
-        ok = !!memcpy(out + (pos += response_size) - response_size, buffer, response_size);
+        memcpy(out + (pos += response_size) - response_size, buffer, response_size);
     }
 
     return out;

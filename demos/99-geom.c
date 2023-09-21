@@ -5,7 +5,7 @@ int main() {
     window_create(25, WINDOW_SQUARE);
     window_title(__FILE__);
 
-    unsigned program = shader_geom(vfs_read("shaders/geom-test/line.glsl"), vfs_read("shaders/geom-test/line-vs.glsl"), vfs_read("shaders/geom-test/line-fs.glsl"), "aPos", "FragColor");
+    unsigned program = shader_geom(vfs_read("shaders/geom-test/line.glsl"), vfs_read("shaders/geom-test/line-vs.glsl"), vfs_read("shaders/geom-test/line-fs.glsl"), "aPos", "FragColor", NULL );
 
     float points[] = {
         -0.5f,  0.5f, // top-left

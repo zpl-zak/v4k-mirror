@@ -16,6 +16,7 @@ enum WINDOW_FLAGS {
     WINDOW_LANDSCAPE = 0x80,
     WINDOW_ASPECT = 0x100, // keep aspect
     WINDOW_FIXED = 0x200, // disable resizing
+    WINDOW_TRANSPARENT = 0x400,
 
     WINDOW_VSYNC = 0,
     WINDOW_VSYNC_ADAPTIVE = 0x1000,
@@ -60,6 +61,10 @@ API void     window_pause(int paused);
 API int      window_has_pause();
 API void     window_visible(int visible);
 API int      window_has_visible();
+API void     window_maximize(int enabled);
+API int      window_has_maximize();
+API void     window_transparent(int enabled);
+API int      window_has_transparent();
 
 API double   window_aspect();
 API void     window_aspect_lock(unsigned numer, unsigned denom);
