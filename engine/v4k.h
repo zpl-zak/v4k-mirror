@@ -3097,7 +3097,7 @@ API int      fx_load(const char *file);
 API int      fx_load_from_mem(const char *nameid, const char *content);
 API void     fx_begin();
 API void     fx_begin_res(int w, int h);
-API void     fx_end(handle fb);
+API void     fx_end();
 API void     fx_enable(int pass, int enabled);
 API int      fx_enabled(int pass);
 API void     fx_enable_all(int enabled);

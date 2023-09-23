@@ -577,7 +577,7 @@ int main( int argc, const char *argv[] ) {
             glDepthFunc( GL_LESS );
         }
 
-        fx_end(0);
+        fx_end();
 
         // ---------------------------------------------------------------------
         // UI

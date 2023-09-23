@@ -584,7 +584,7 @@ void game_loop(void *userdata) {
 
     //fx_begin();
     //ddraw_flush();
-    //fx_end(0);
+    //fx_end();
 
     if( ui_panel("Vis", 0) ) {
         ui_bool("Skybox render", &draw_skybox);

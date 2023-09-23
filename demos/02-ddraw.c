@@ -88,7 +88,7 @@ int main() {
                 collide_demo();
             }
 
-        fx_end(0);
+        fx_end();
 
         // ui
         if( ui_panel("App", 0) ) {

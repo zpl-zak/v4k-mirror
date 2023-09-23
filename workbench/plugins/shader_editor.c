@@ -133,7 +133,7 @@ __declspec(dllexport) int plug_tick(asset_t *f) {
     	ddraw_grid(0);
     	ddraw_flush();
 		model_render(models[s->model], cam.proj, cam.view, models[s->model].pivot, 0);
-		fx_end(s->fb);
+		fx_end();
 
 		// fbo_bind(s->fb);
 		// fullscreen_quad_rgb(s->tex, 1.0);

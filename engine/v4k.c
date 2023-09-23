@@ -13212,7 +13212,7 @@ void postfx_destroy(postfx *fx);
 
 bool postfx_load(postfx *fx, const char *name, const char *fragment);
 bool postfx_begin(postfx *fx, int width, int height);
-bool postfx_end(postfx *fx, handle fb);
+bool postfx_end(postfx *fx);
 
 bool postfx_enabled(postfx *fx, int pass_number);
 bool postfx_enable(postfx *fx, int pass_number, bool enabled);
@@ -13363,6 +13363,8 @@ void postfx_clear(postfx *fx) {
     fx->mask = fx->enabled = 0;
 }
 
+static __thread array(handle) last_fb;
+
 bool postfx_begin(postfx *fx, int width, int height) {
     // reset clear color: needed in case transparent window is being used (alpha != 0)
     glClearColor(0,0,0,0); // @transparent
@@ -13370,9 +13372,9 @@ bool postfx_begin(postfx *fx, int width, int height) {
     width += !width;
     height += !height;
 
-    int last_fb;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
-    fbo_bind(last_fb);
+    int fb;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &fb);
+    array_push(last_fb, fb);
 
     // resize if needed
     if( fx->diffuse[0].w != width || fx->diffuse[0].h != height ) {
@@ -13397,7 +13399,8 @@ bool postfx_begin(postfx *fx, int width, int height) {
     uint64_t num_active_passes = popcnt64(fx->mask);
     bool active = fx->enabled && num_active_passes;
     if( !active ) {
-        fbo_bind(last_fb);
+        array_pop(last_fb);
+        fbo_bind(fb);
         return false;
     }
 
@@ -13414,13 +13417,15 @@ bool postfx_begin(postfx *fx, int width, int height) {
     return true;
 }
 
-bool postfx_end(postfx *fx, handle fb) {
+bool postfx_end(postfx *fx) {
     uint64_t num_active_passes = popcnt64(fx->mask);
     bool active = fx->enabled && num_active_passes;
     if( !active ) {
         return false;
     }
 
+    handle fb = *array_back(last_fb); 
+    array_pop(last_fb);
     fbo_bind(fb);
 
     // disable depth test in 2d rendering
@@ -13483,8 +13488,6 @@ bool postfx_end(postfx *fx, handle fb) {
     if(is_depth_test_enabled);
     glEnable(GL_DEPTH_TEST);
 
-    fbo_bind(fb);
-
     return true;
 }
 
@@ -13509,8 +13512,8 @@ void fx_begin() {
 void fx_begin_res(int w, int h) {
     postfx_begin(&fx, w, h);
 }
-void fx_end(handle fb) {
-    postfx_end(&fx,fb);
+void fx_end() {
+    postfx_end(&fx);
 }
 int fx_enabled(int pass) {
     return postfx_enabled(&fx, pass);

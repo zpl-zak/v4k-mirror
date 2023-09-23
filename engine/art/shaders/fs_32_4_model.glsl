@@ -46,29 +46,26 @@ const int LIGHT_SPOT = 2;
 uniform light_t u_lights[MAX_LIGHTS];
 
 vec3 calculate_light(light_t l, vec3 normal, vec3 fragPos, vec3 viewDir) {
-    vec3 lightColor = l.color;
-
     vec3 lightDir;
     float attenuation = 1.0;
 
     if (l.type == LIGHT_DIRECTIONAL) {
         lightDir = normalize(-l.dir);
     } else if (l.type == LIGHT_POINT) {
-        vec3 toLight = fragPos - l.pos;
+        vec3 toLight = l.pos - fragPos;
         lightDir = normalize(toLight);
         float distance = length(toLight);
-        float factor = distance / l.radius;
+        float factor = distance / (l.radius*l.radius);
         attenuation = clamp(1.0 - factor, 0.0, 1.0);
     }
 
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
 
     // vec3 reflectDir = reflect(-lightDir, normal);
     // float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     // vec3 specular = spec * lightColor;
 
-    return (diffuse /* + specular */) * l.color;
+    return (diff /* + specular */) * l.color;
 }
 
 void main() {
@@ -95,9 +92,9 @@ void main() {
 
     // analytical lights (phong shading)
     // @todo: support more shading models (blinn-phong, ue4 brdf, ...)
-    // for (int i=0; i<u_num_lights; i++) {
-    //     lit += vec4(calculate_light(u_lights[i], n, v_position, /* @todo: push vdeye */ vec3(1.0,1.0,1.0)), 0.0);
-    // }
+    for (int i=0; i<u_num_lights; i++) {
+        lit += vec4(calculate_light(u_lights[i], n, v_position, /* @todo: push vdeye */ vec3(1.0,1.0,1.0)), 0.0);
+    }
 
     // base
     vec4 diffuse;

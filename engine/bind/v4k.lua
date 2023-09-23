@@ -2591,7 +2591,7 @@ float *pixels;
  int      fx_load_from_mem(const char *nameid, const char *content);
  void     fx_begin();
  void     fx_begin_res(int w, int h);
- void     fx_end(handle fb);
+ void     fx_end();
  void     fx_enable(int pass, int enabled);
  int      fx_enabled(int pass);
  void     fx_enable_all(int enabled);

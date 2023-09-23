@@ -69,7 +69,7 @@ int main() {
             model_render(witch, cam.proj, cam.view, witch.pivot, 0);
 
         // render end (postfx)
-        fx_end(0);
+        fx_end();
 
         // input controllers
 

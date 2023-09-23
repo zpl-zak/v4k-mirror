@@ -125,7 +125,7 @@ int main() {
         }
 
         // post-fxs end here
-        fx_end(0);
+        fx_end();
 
         // queue ui
         if( ui_panel("Camera", 0)) {

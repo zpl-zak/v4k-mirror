@@ -608,7 +608,7 @@ if "!vis!"=="yes" echo !cc! engine\v4k.c !export! !args! ^&^& if "!dll!"=="dll" 
 
 rem editor
 if "!editor!"=="yes" (
-set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL -DVFS_ALWAYS_PACK
+set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL
 rem if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
 rem !echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
 rem !echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1

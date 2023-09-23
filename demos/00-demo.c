@@ -180,7 +180,7 @@ int main() {
         }
 
         // post-fxs end here
-        fx_end(0);
+        fx_end();
 
         // font demo
         do_once font_scales(FONT_FACE1, 48, 24, 18, 12, 9, 6);

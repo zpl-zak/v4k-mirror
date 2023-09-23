@@ -90,7 +90,7 @@ int main() {
                 }
             }
 
-        fx_end(0);
+        fx_end();
 
         if( ui_panel("Animation", 0) ) {
             if( ui_bool("Show aabb", &do_showaabb) );
