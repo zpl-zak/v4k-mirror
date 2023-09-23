@@ -13,6 +13,7 @@ if "%1"=="help" (
     echo %0 [cook]                  ; cook .zipfiles with tools/cook.ini cookbook
     echo %0 [sync]                  ; sync repo to latest
     echo %0 [fwk]                   ; prepare files for fwk PR
+    echo %0 [fwk_sync]              ; update fwk-mirror fork
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [html5]                 ; build HTML5 demo
     echo %0 [web]                   ; run Python webserver in html5 dir
@@ -211,6 +212,14 @@ if "%1"=="vps" (
     call make.bat docs
     tools\pscp -4 -batch -agent -P 22 -l app engine\v4k.html 128.140.14.212:/home/app/microblog/app/static/v4k/index.html
     rem tools\pscp -4 -batch -agent -P 22 -l app engine\joint\v4k.h 128.140.14.212:/home/app/microblog/app/static/v4k/v4k.h
+    exit /b
+)
+
+if "%1"=="fwk_sync" (
+    pushd ..\fwk-mirror
+    call MAKE.bat sync
+    popd
+    call MAKE.bat fwk
     exit /b
 )
 

@@ -12754,6 +12754,7 @@ skybox_t skybox(const char *asset, int flags) {
         shader_float("uRayleighScaleHeight", 8000.0);
         shader_float("uMieScaleHeight", 1200.0);
         shader_float("uMiePreferredDirection", 0.758);
+        skybox_mie_calc_sh(&sky, 1.2);
     }
 
     return sky;
@@ -15846,6 +15847,54 @@ void object_billboard(object_t *obj, unsigned mode) {
 
 // -----------------------------------------------------------------------------
 
+light_t light() {
+    light_t l = {0};
+    l.color = vec3(1,1,1);
+    l.radius = 2.5f;
+    l.dir = vec3(1,-1,-1);
+
+    return l;
+}
+
+void light_type(light_t* l, char type) {
+    l->cached = 0;
+    l->type = type;
+}
+
+void light_color(light_t* l, vec3 color) {
+    l->cached = 0;
+    l->color = color;
+}
+
+void light_teleport(light_t* l, vec3 pos) {
+    l->cached = 0;
+    l->pos = pos;
+}
+
+void light_dir(light_t* l, vec3 dir) {
+    l->cached = 0;
+    l->dir = dir;
+}
+
+void light_radius(light_t* l, float radius) {
+    l->cached = 0;
+    l->radius = radius;
+}
+
+void light_update(unsigned num_lights, light_t *lv) {
+    shader_int("u_num_lights", num_lights);
+
+    for (unsigned i=0; i < num_lights; ++i) {
+        lv[i].cached = 1;
+        shader_int(va("u_lights[%d].type", i), lv[i].type);
+        shader_vec3(va("u_lights[%d].color", i), lv[i].color);
+        shader_vec3(va("u_lights[%d].pos", i), lv[i].pos);
+        shader_vec3(va("u_lights[%d].dir", i), lv[i].dir);
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 array(scene_t*) scenes;
 scene_t* last_scene;
 
@@ -15949,6 +15998,24 @@ object_t* scene_index(unsigned obj_index) {
     return &last_scene->objs[obj_index];
 }
 
+light_t* scene_spawn_light() {
+    light_t l = light();
+    array_push(last_scene->lights, l);
+
+    return array_back(last_scene->lights);
+}
+
+unsigned scene_count_light() {
+    return array_count(last_scene->lights);
+}
+
+light_t* scene_index_light(unsigned light_index) {
+    unsigned light_count = scene_count_light();
+    ASSERT(light_index < light_count, "Light index %d exceeds number (%d) of spawned lights", light_index, light_count);
+    return &last_scene->lights[light_index];
+}
+
+
 void scene_render(int flags) {
     camera_t *cam = camera_get_active();
 
@@ -15985,6 +16052,14 @@ void scene_render(int flags) {
     // @todo texture mode
 
     if( flags & SCENE_FOREGROUND ) {
+        bool do_relighting = 0;
+        for (unsigned j = 0; j < array_count(last_scene->lights); ++j) {
+            if (!last_scene->lights[j].cached) {
+                do_relighting = 1;
+                break;
+            }
+        }
+
         for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
             object_t *obj = scene_index(j);
             model_t *model = &obj->model;
@@ -15999,6 +16074,17 @@ void scene_render(int flags) {
                     array_push(old_textures, model->iqm->textures[i]);
                     model->iqm->textures[i] = *array_back(obj->textures);
                 }
+            }
+
+            if ( do_relighting || !obj->light_cached ) {
+                obj->light_cached = 1;
+                shader_bind(model->program);
+                light_update(array_count(last_scene->lights), last_scene->lights);
+            }
+
+            if ( flags&SCENE_UPDATE_SH_COEF ) {
+                shader_bind(model->program);
+                shader_vec3v("u_coefficients_sh", 9, last_scene->skybox.cubemap.sh);
             }
 
             model->billboard = obj->billboard;

@@ -39,6 +39,10 @@ int main() {
     object_move(obj3, vec3(-10+5*1,0,-10));
     object_pivot(obj3, vec3(0,90,0));
 
+    // create point light
+    light_t* l = scene_spawn_light();
+    light_type(l, LIGHT_POINT);
+
     while(window_swap() && !input(KEY_ESC)) {
         // draw environment
         viewport_color( RGB3(22,22,32) );
@@ -47,8 +51,11 @@ int main() {
         // update video
         video_decode( v );
 
+        // update light position
+        light_teleport(l, cam.position);
+
         // draw scene
-        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND);
+        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF);
 
         // fps camera
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);

@@ -3214,6 +3214,7 @@ typedef struct object_t {
     model_t model;
     aabb bounds;
     unsigned billboard; // [0..7] x(4),y(2),z(1) masks
+    bool light_cached; //< used by scene to update light data
 } object_t;
 
 API object_t object();
@@ -3232,6 +3233,37 @@ API void object_billboard(object_t *obj, unsigned mode);
 
 // object_pose(transform); // @todo
 
+
+// light
+enum LIGHT_TYPE {
+    LIGHT_DIRECTIONAL,
+    LIGHT_POINT,
+    LIGHT_SPOT,
+};
+
+enum LIGHT_FLAGS {
+    LIGHT_CAST_SHADOWS = 1,
+};
+
+typedef struct light_t {
+    char type;
+    vec3 color;
+    vec3 pos, dir;
+    float radius;
+    bool cached; //< used by scene to invalidate cached light data
+    //@todo: inner/outer cone, flags, cookie, flare
+} light_t;
+
+API light_t light();
+// API void    light_flags(int flags);
+API void    light_type(light_t* l, char type);
+API void    light_color(light_t* l, vec3 color);
+API void    light_teleport(light_t* l, vec3 pos);
+API void    light_dir(light_t* l, vec3 dir);
+API void    light_radius(light_t* l, float radius);
+// API void    light_cone(light_t* l, float inner, float outer);
+API void    light_update(unsigned num_lights, light_t *lv);
+
 // scene
 
 enum SCENE_FLAGS {
@@ -3239,12 +3271,14 @@ enum SCENE_FLAGS {
     SCENE_CULLFACE = 2,
     SCENE_BACKGROUND = 4,
     SCENE_FOREGROUND = 8,
+    SCENE_UPDATE_SH_COEF = 16,
 };
 
 typedef struct scene_t {
     handle program;
 
     array(object_t) objs;
+    array(light_t) lights;
 
     // special objects below:
     skybox_t skybox;
@@ -3261,6 +3295,10 @@ API void      scene_render(int flags);
 API object_t* scene_spawn();
 API unsigned  scene_count();
 API object_t* scene_index(unsigned index);
+
+API light_t*  scene_spawn_light();
+API unsigned  scene_count_light();
+API light_t*  scene_index_light(unsigned index);
 #line 0
 
 #line 1 "v4k_script.h"

@@ -2490,6 +2490,7 @@ skybox_t skybox(const char *asset, int flags) {
         shader_float("uRayleighScaleHeight", 8000.0);
         shader_float("uMieScaleHeight", 1200.0);
         shader_float("uMiePreferredDirection", 0.758);
+        skybox_mie_calc_sh(&sky, 1.2);
     }
 
     return sky;

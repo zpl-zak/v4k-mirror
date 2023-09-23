@@ -1392,6 +1392,17 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API void object_scale(object_t *obj, vec3 sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void object_scale(object_t *obj, vec3 sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void object_scale(object_t *obj, vec3 sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 color;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 pos, dir;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_color(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_color(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_color(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_teleport(light_t* l, vec3 pos);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_teleport(light_t* l, vec3 pos);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_teleport(light_t* l, vec3 pos);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_dir(light_t* l, vec3 dir);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_dir(light_t* l, vec3 dir);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 ui_get_dims();
@@ -2660,6 +2671,7 @@ handle* textures;
 model_t model;
 aabb bounds;
 unsigned billboard;
+bool light_cached;
 } object_t;
  object_t object();
  void object_rotate(object_t *obj, vec3 euler);
@@ -2673,15 +2685,39 @@ unsigned billboard;
  void object_diffuse_push(object_t *obj, texture_t tex);
  void object_diffuse_pop(object_t *obj);
  void object_billboard(object_t *obj, unsigned mode);
+enum LIGHT_TYPE {
+LIGHT_DIRECTIONAL,
+LIGHT_POINT,
+LIGHT_SPOT,
+};
+enum LIGHT_FLAGS {
+LIGHT_CAST_SHADOWS = 1,
+};
+typedef struct light_t {
+char type;
+vec3 color;
+vec3 pos, dir;
+float radius;
+bool cached;
+} light_t;
+ light_t light();
+ void    light_type(light_t* l, char type);
+ void    light_color(light_t* l, vec3 color);
+ void    light_teleport(light_t* l, vec3 pos);
+ void    light_dir(light_t* l, vec3 dir);
+ void    light_radius(light_t* l, float radius);
+ void    light_update(unsigned num_lights, light_t *lv);
 enum SCENE_FLAGS {
 SCENE_WIREFRAME = 1,
 SCENE_CULLFACE = 2,
 SCENE_BACKGROUND = 4,
 SCENE_FOREGROUND = 8,
+SCENE_UPDATE_SH_COEF = 16,
 };
 typedef struct scene_t {
 handle program;
 object_t* objs;
+light_t* lights;
 skybox_t skybox;
 int u_coefficients_sh;
 } scene_t;
@@ -2693,6 +2729,9 @@ int u_coefficients_sh;
  object_t* scene_spawn();
  unsigned  scene_count();
  object_t* scene_index(unsigned index);
+ light_t*  scene_spawn_light();
+ unsigned  scene_count_light();
+ light_t*  scene_index_light(unsigned index);
  void script_init();
  void script_run(const char *script);
  void script_runfile(const char *pathfile);
