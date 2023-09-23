@@ -3260,6 +3260,7 @@ typedef struct light_t {
     struct {
         float constant, linear, quadratic;
     } falloff;
+    float specularPower;
     float innerCone, outerCone;
     //@todo: cookie, flare
 
@@ -3275,6 +3276,7 @@ API void    light_specular(light_t* l, vec3 color);
 API void    light_ambient(light_t* l, vec3 color);
 API void    light_teleport(light_t* l, vec3 pos);
 API void    light_dir(light_t* l, vec3 dir);
+API void    light_power(light_t* l, float power);
 API void    light_falloff(light_t* l, float constant, float linear, float quadratic);
 API void    light_cone(light_t* l, float innerCone, float outerCone);
 API void    light_update(unsigned num_lights, light_t *lv);

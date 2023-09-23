@@ -41,6 +41,7 @@ struct light_t {
     vec3 ambient;
     vec3 pos;
     vec3 dir;
+    float power;
     float innerCone;
     float outerCone;
 
@@ -75,8 +76,7 @@ vec3 shading_phong(light_t l) {
         float distance = length(toLight);
         attenuation = 1.0 / (l.constant + l.linear * distance + l.quadratic * (distance * distance));
         
-        // Calculate spotlight effect
-        float angle = dot(l.dir, normalize(-lightDir));
+        float angle = dot(l.dir, -lightDir);
         if (angle > l.outerCone) {
             float intensity = (angle-l.outerCone)/(l.innerCone-l.outerCone);
             attenuation *= clamp(intensity, 0.0, 1.0);
@@ -85,10 +85,17 @@ vec3 shading_phong(light_t l) {
         }
     }
 
-    float diffuse = max(dot(v_normal, lightDir), 0.0);
+    // fast-rejection for faraway vertices
+    if (attenuation <= 0.01) {
+        return vec3(0,0,0);
+    }
+
+    vec3 n = normalize(v_normal_ws);
+
+    float diffuse = max(dot(n, lightDir), 0.0);
 
     vec3 halfVec = normalize(lightDir + u_cam_dir);
-    float specular = pow(max(dot(v_normal, halfVec), 0.0), 32);
+    float specular = pow(max(dot(n, halfVec), 0.0), l.power);
 
     return (attenuation*l.ambient + diffuse*attenuation*l.diffuse + specular*attenuation*l.specular);
 }
@@ -107,7 +114,7 @@ vec3 lighting() {
 }
 
 void main() {
-    vec3 n = /*normalize*/(v_normal);
+    vec3 n = normalize(v_normal_ws);
 
     vec4 lit = vec4(1.0, 1.0, 1.0, 1.0);
     // SH lighting

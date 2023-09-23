@@ -248,6 +248,7 @@ light_t light() {
     l.falloff.constant = 1.0f;
     l.falloff.linear = 0.09f;
     l.falloff.quadratic = 0.0032f;
+    l.specularPower = 32.f;
     l.innerCone = 0.9f; // 25 deg
     l.outerCone = 0.85f; // 31 deg
 
@@ -284,6 +285,11 @@ void light_dir(light_t* l, vec3 dir) {
     l->dir = dir;
 }
 
+void light_power(light_t* l, float power) {
+    l->cached = 0;
+    l->specularPower = power;
+}
+
 void light_falloff(light_t* l, float constant, float linear, float quadratic) {
     l->cached = 0;
     l->falloff.constant = constant;
@@ -292,6 +298,7 @@ void light_falloff(light_t* l, float constant, float linear, float quadratic) {
 }
 
 void light_cone(light_t* l, float innerCone, float outerCone) {
+    l->cached = 0;
     l->innerCone = acos(innerCone);
     l->outerCone = acos(outerCone);
 }
@@ -307,6 +314,7 @@ void light_update(unsigned num_lights, light_t *lv) {
         shader_vec3(va("u_lights[%d].diffuse", i), lv[i].diffuse);
         shader_vec3(va("u_lights[%d].specular", i), lv[i].specular);
         shader_vec3(va("u_lights[%d].ambient", i), lv[i].ambient);
+        shader_float(va("u_lights[%d].power", i), lv[i].specularPower);
         shader_float(va("u_lights[%d].constant", i), lv[i].falloff.constant);
         shader_float(va("u_lights[%d].linear", i), lv[i].falloff.linear);
         shader_float(va("u_lights[%d].quadratic", i), lv[i].falloff.quadratic);

@@ -42,6 +42,9 @@ int main() {
     // create point light
     light_t* l = scene_spawn_light();
     light_type(l, LIGHT_SPOT);
+    light_ambient(l, vec3(0.03,0.03,0.06));
+    light_specular(l, scale3(vec3(1,1.0,0.2), 2.5f));
+    light_power(l, 56.f);
 
     while(window_swap() && !input(KEY_ESC)) {
         // draw environment
@@ -51,7 +54,7 @@ int main() {
         // update video
         video_decode( v );
 
-        // update light position
+        // update light data
         light_teleport(l, cam.position);
         light_dir(l, cam.look);
 

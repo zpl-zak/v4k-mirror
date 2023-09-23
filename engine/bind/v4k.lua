@@ -2706,6 +2706,7 @@ vec3 pos, dir;
 struct {
 float constant, linear, quadratic;
 } falloff;
+float specularPower;
 float innerCone, outerCone;
 bool cached;
 } light_t;
@@ -2716,6 +2717,7 @@ bool cached;
  void    light_ambient(light_t* l, vec3 color);
  void    light_teleport(light_t* l, vec3 pos);
  void    light_dir(light_t* l, vec3 dir);
+ void    light_power(light_t* l, float power);
  void    light_falloff(light_t* l, float constant, float linear, float quadratic);
  void    light_cone(light_t* l, float innerCone, float outerCone);
  void    light_update(unsigned num_lights, light_t *lv);

@@ -3684,21 +3684,21 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         glUniformMatrix4fv( loc, 1, GL_FALSE, vp);
     }
     if( (loc = glGetUniformLocation(shader, "u_cam_pos")) >= 0 ) {
-        vec3 pos = vec3(view[3], view[6], view[9]);
+        vec3 pos = vec3(view[12], view[13], view[14]);
         glUniform3fv( loc, 1, &pos.x );
     }
     else
     if( (loc = glGetUniformLocation(shader, "cam_pos")) >= 0 ) {
-        vec3 pos = vec3(view[3], view[6], view[9]);
+        vec3 pos = vec3(view[12], view[13], view[14]);
         glUniform3fv( loc, 1, &pos.x );
     }
     if( (loc = glGetUniformLocation(shader, "u_cam_dir")) >= 0 ) {
-        vec3 dir = vec3(view[0], view[1], view[2]);
+        vec3 dir = norm3(vec3(view[2], view[6], view[10]));
         glUniform3fv( loc, 1, &dir.x );
     }
     else
     if( (loc = glGetUniformLocation(shader, "cam_dir")) >= 0 ) {
-        vec3 dir = vec3(view[0], view[1], view[2]);
+        vec3 dir = norm3(vec3(view[2], view[6], view[10]));
         glUniform3fv( loc, 1, &dir.x );
     }
 #if 0
