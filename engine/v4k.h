@@ -3005,6 +3005,14 @@ enum MODEL_FLAGS {
     MODEL_RIMLIGHT = 16
 };
 
+//@todo: make this data-driven
+// enum SHADING_MODE {
+//     SHADING_NONE,
+//     SHADING_PHONG,
+//     SHADING_CARTOON,
+//     // SHADING_PBR,
+// };
+
 typedef struct model_t {
     struct iqm_t *iqm; // private
 
@@ -3247,21 +3255,28 @@ enum LIGHT_FLAGS {
 
 typedef struct light_t {
     char type;
-    vec3 color;
+    vec3 diffuse, specular, ambient;
     vec3 pos, dir;
-    float radius;
+    struct {
+        float constant, linear, quadratic;
+    } falloff;
+    float innerCone, outerCone;
+    //@todo: cookie, flare
+
+    // internals
     bool cached; //< used by scene to invalidate cached light data
-    //@todo: inner/outer cone, flags, cookie, flare
 } light_t;
 
 API light_t light();
 // API void    light_flags(int flags);
 API void    light_type(light_t* l, char type);
-API void    light_color(light_t* l, vec3 color);
+API void    light_diffuse(light_t* l, vec3 color);
+API void    light_specular(light_t* l, vec3 color);
+API void    light_ambient(light_t* l, vec3 color);
 API void    light_teleport(light_t* l, vec3 pos);
 API void    light_dir(light_t* l, vec3 dir);
-API void    light_radius(light_t* l, float radius);
-// API void    light_cone(light_t* l, float inner, float outer);
+API void    light_falloff(light_t* l, float constant, float linear, float quadratic);
+API void    light_cone(light_t* l, float innerCone, float outerCone);
 API void    light_update(unsigned num_lights, light_t *lv);
 
 // scene
@@ -3275,8 +3290,6 @@ enum SCENE_FLAGS {
 };
 
 typedef struct scene_t {
-    handle program;
-
     array(object_t) objs;
     array(light_t) lights;
 

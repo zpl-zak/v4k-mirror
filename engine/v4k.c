@@ -13947,6 +13947,24 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         mat44 vp; multiply44x2(vp, proj, view);
         glUniformMatrix4fv( loc, 1, GL_FALSE, vp);
     }
+    if( (loc = glGetUniformLocation(shader, "u_cam_pos")) >= 0 ) {
+        vec3 pos = vec3(view[3], view[6], view[9]);
+        glUniform3fv( loc, 1, &pos.x );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "cam_pos")) >= 0 ) {
+        vec3 pos = vec3(view[3], view[6], view[9]);
+        glUniform3fv( loc, 1, &pos.x );
+    }
+    if( (loc = glGetUniformLocation(shader, "u_cam_dir")) >= 0 ) {
+        vec3 dir = vec3(view[0], view[1], view[2]);
+        glUniform3fv( loc, 1, &dir.x );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "cam_dir")) >= 0 ) {
+        vec3 dir = vec3(view[0], view[1], view[2]);
+        glUniform3fv( loc, 1, &dir.x );
+    }
 #if 0
     // @todo: mat44 projview (useful?)
 #endif
@@ -14383,13 +14401,14 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     model_t m = {0};
 
     const char *ptr = (const char *)mem;
-    static int shaderprog = -1;
-    if( shaderprog < 0 ) {
+    // can't cache shader programs since we enable features via flags here
+    // static int shaderprog = -1;
+    // if( shaderprog < 0 ) {
         const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
-        shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_332_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
+        int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_332_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
-            (flags&MODEL_RIMLIGHT)?"RIM":NULL);
-    }
+            va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
+    // }
 
     iqm_t *q = CALLOC(1, sizeof(iqm_t));
     program = shaderprog;
@@ -15852,9 +15871,13 @@ void object_billboard(object_t *obj, unsigned mode) {
 
 light_t light() {
     light_t l = {0};
-    l.color = vec3(1,1,1);
-    l.radius = 2.5f;
+    l.diffuse = vec3(1,1,1);
     l.dir = vec3(1,-1,-1);
+    l.falloff.constant = 1.0f;
+    l.falloff.linear = 0.09f;
+    l.falloff.quadratic = 0.0032f;
+    l.innerCone = 0.9f; // 25 deg
+    l.outerCone = 0.85f; // 31 deg
 
     return l;
 }
@@ -15864,9 +15887,19 @@ void light_type(light_t* l, char type) {
     l->type = type;
 }
 
-void light_color(light_t* l, vec3 color) {
+void light_diffuse(light_t* l, vec3 color) {
     l->cached = 0;
-    l->color = color;
+    l->diffuse = color;
+}
+
+void light_specular(light_t* l, vec3 color) {
+    l->cached = 0;
+    l->specular = color;
+}
+
+void light_ambient(light_t* l, vec3 color) {
+    l->cached = 0;
+    l->ambient = color;
 }
 
 void light_teleport(light_t* l, vec3 pos) {
@@ -15879,9 +15912,16 @@ void light_dir(light_t* l, vec3 dir) {
     l->dir = dir;
 }
 
-void light_radius(light_t* l, float radius) {
+void light_falloff(light_t* l, float constant, float linear, float quadratic) {
     l->cached = 0;
-    l->radius = radius;
+    l->falloff.constant = constant;
+    l->falloff.linear = linear;
+    l->falloff.quadratic = quadratic;
+}
+
+void light_cone(light_t* l, float innerCone, float outerCone) {
+    l->innerCone = acos(innerCone);
+    l->outerCone = acos(outerCone);
 }
 
 void light_update(unsigned num_lights, light_t *lv) {
@@ -15890,9 +15930,16 @@ void light_update(unsigned num_lights, light_t *lv) {
     for (unsigned i=0; i < num_lights; ++i) {
         lv[i].cached = 1;
         shader_int(va("u_lights[%d].type", i), lv[i].type);
-        shader_vec3(va("u_lights[%d].color", i), lv[i].color);
         shader_vec3(va("u_lights[%d].pos", i), lv[i].pos);
         shader_vec3(va("u_lights[%d].dir", i), lv[i].dir);
+        shader_vec3(va("u_lights[%d].diffuse", i), lv[i].diffuse);
+        shader_vec3(va("u_lights[%d].specular", i), lv[i].specular);
+        shader_vec3(va("u_lights[%d].ambient", i), lv[i].ambient);
+        shader_float(va("u_lights[%d].constant", i), lv[i].falloff.constant);
+        shader_float(va("u_lights[%d].linear", i), lv[i].falloff.linear);
+        shader_float(va("u_lights[%d].quadratic", i), lv[i].falloff.quadratic);
+        shader_float(va("u_lights[%d].innerCone", i), lv[i].innerCone);
+        shader_float(va("u_lights[%d].outerCone", i), lv[i].outerCone);
     }
 }
 
@@ -15913,8 +15960,6 @@ scene_t* scene_get_active() {
 
 scene_t* scene_push() {
     scene_t *s = REALLOC(0, sizeof(scene_t)), clear = {0}; *s = clear;
-    const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") };
-    s->program = shader(strlerp(1, symbols, vfs_read("shaders/vs_332_32.glsl")), strlerp(1, symbols, vfs_read("shaders/fs_32_4_model.glsl")), "att_position,att_normal,att_texcoord,att_color", "fragcolor", NULL);
     s->skybox = skybox(NULL, 0);
     array_push(scenes, s);
     last_scene = s;
@@ -16025,7 +16070,6 @@ void scene_render(int flags) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glActiveTexture(GL_TEXTURE0);
-    glUseProgram(last_scene->program);
 
     if(flags & SCENE_BACKGROUND) {
         if(last_scene->skybox.program) {
@@ -16046,7 +16090,6 @@ void scene_render(int flags) {
 
     glDepthFunc(GL_LESS);
     glActiveTexture(GL_TEXTURE0);
-//  glUseProgram(last_scene->program);
 
     // @fixme: CW ok for one-sided rendering. CCW ok for FXs. we need both
     (flags & SCENE_CULLFACE ? glEnable : glDisable)(GL_CULL_FACE); glCullFace(GL_BACK); glFrontFace(GL_CCW);

@@ -1392,11 +1392,17 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API void object_scale(object_t *obj, vec3 sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void object_scale(object_t *obj, vec3 sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void object_scale(object_t *obj, vec3 sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 color;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 diffuse, specular, ambient;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 pos, dir;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_color(light_t* l, vec3 color);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_color(light_t* l, vec3 color);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_color(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_diffuse(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_diffuse(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_diffuse(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_specular(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_specular(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_specular(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_ambient(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_ambient(light_t* l, vec3 color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_ambient(light_t* l, vec3 color);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_teleport(light_t* l, vec3 pos);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_teleport(light_t* l, vec3 pos);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_teleport(light_t* l, vec3 pos);
@@ -2695,17 +2701,23 @@ LIGHT_CAST_SHADOWS = 1,
 };
 typedef struct light_t {
 char type;
-vec3 color;
+vec3 diffuse, specular, ambient;
 vec3 pos, dir;
-float radius;
+struct {
+float constant, linear, quadratic;
+} falloff;
+float innerCone, outerCone;
 bool cached;
 } light_t;
  light_t light();
  void    light_type(light_t* l, char type);
- void    light_color(light_t* l, vec3 color);
+ void    light_diffuse(light_t* l, vec3 color);
+ void    light_specular(light_t* l, vec3 color);
+ void    light_ambient(light_t* l, vec3 color);
  void    light_teleport(light_t* l, vec3 pos);
  void    light_dir(light_t* l, vec3 dir);
- void    light_radius(light_t* l, float radius);
+ void    light_falloff(light_t* l, float constant, float linear, float quadratic);
+ void    light_cone(light_t* l, float innerCone, float outerCone);
  void    light_update(unsigned num_lights, light_t *lv);
 enum SCENE_FLAGS {
 SCENE_WIREFRAME = 1,
@@ -2715,7 +2727,6 @@ SCENE_FOREGROUND = 8,
 SCENE_UPDATE_SH_COEF = 16,
 };
 typedef struct scene_t {
-handle program;
 object_t* objs;
 light_t* lights;
 skybox_t skybox;

@@ -572,6 +572,14 @@ enum MODEL_FLAGS {
     MODEL_RIMLIGHT = 16
 };
 
+//@todo: make this data-driven
+// enum SHADING_MODE {
+//     SHADING_NONE,
+//     SHADING_PHONG,
+//     SHADING_CARTOON,
+//     // SHADING_PBR,
+// };
+
 typedef struct model_t {
     struct iqm_t *iqm; // private
 

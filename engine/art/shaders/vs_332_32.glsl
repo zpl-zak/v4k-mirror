@@ -6,10 +6,11 @@ in vec3 att_normal;
 in vec2 att_texcoord;
 in vec4 att_color;
 out vec4 v_color;
+out vec3 v_position;
+out vec3 v_position_ws;
 out vec3 v_normal;
 out vec3 v_normal_ws;
 out vec2 v_texcoord;
-
 
 // shadow
 uniform mat4 model, view, proj;
@@ -26,6 +27,8 @@ void do_shadow() {
 
 void main() {
     gl_Position = u_mvp * vec4(att_position, 1.0);
+    v_position = att_position;
+    v_position_ws = vec3(model * vec4(att_position, 1.));
     v_normal = normalize(att_normal);
     v_normal_ws = normalize(vec3(model * vec4(att_normal, 0.))); // normal world/model space
     v_texcoord = att_texcoord;

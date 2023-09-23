@@ -7,6 +7,7 @@ uniform bool u_matcaps = false;
 uniform vec4 u_diffuse = vec4(1.0,1.0,1.0,1.0);
 
 in vec3 v_position;
+in vec3 v_position_ws;
 #ifdef RIM
 uniform mat4 M; // RIM
 uniform vec3 u_rimcolor = vec3(0.2,0.2,0.2);
@@ -28,14 +29,25 @@ vec4 shadowing() {
 return shadowmap(vpeye, vneye, v_texcoord, sc);
 }
 
+uniform vec3 u_cam_pos;
+uniform vec3 u_cam_dir;
+
 uniform int u_num_lights;
 
 struct light_t {
     int type;
-    vec3 color;
+    vec3 diffuse;
+    vec3 specular;
+    vec3 ambient;
     vec3 pos;
     vec3 dir;
-    float radius;
+    float innerCone;
+    float outerCone;
+
+    // falloff
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 #define MAX_LIGHTS 16
@@ -45,27 +57,53 @@ const int LIGHT_SPOT = 2;
 
 uniform light_t u_lights[MAX_LIGHTS];
 
-vec3 calculate_light(light_t l, vec3 normal, vec3 fragPos, vec3 viewDir) {
+#ifdef SHADING_PHONG
+vec3 shading_phong(light_t l) {
     vec3 lightDir;
     float attenuation = 1.0;
 
     if (l.type == LIGHT_DIRECTIONAL) {
         lightDir = normalize(-l.dir);
     } else if (l.type == LIGHT_POINT) {
-        vec3 toLight = l.pos - fragPos;
+        vec3 toLight = l.pos - v_position_ws;
         lightDir = normalize(toLight);
         float distance = length(toLight);
-        float factor = distance / (l.radius*l.radius);
-        attenuation = clamp(1.0 - factor, 0.0, 1.0);
+        attenuation = 1.0 / (l.constant + l.linear * distance + l.quadratic * (distance * distance));
+    } else if (l.type == LIGHT_SPOT) {
+        vec3 toLight = l.pos - v_position_ws;
+        lightDir = normalize(toLight);
+        float distance = length(toLight);
+        attenuation = 1.0 / (l.constant + l.linear * distance + l.quadratic * (distance * distance));
+        
+        // Calculate spotlight effect
+        float angle = dot(l.dir, normalize(-lightDir));
+        if (angle > l.outerCone) {
+            float intensity = (angle-l.outerCone)/(l.innerCone-l.outerCone);
+            attenuation *= clamp(intensity, 0.0, 1.0);
+        } else {
+            attenuation = 0.0;
+        }
     }
 
-    float diff = max(dot(normal, lightDir), 0.0);
+    float diffuse = max(dot(v_normal, lightDir), 0.0);
 
-    // vec3 reflectDir = reflect(-lightDir, normal);
-    // float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    // vec3 specular = spec * lightColor;
+    vec3 halfVec = normalize(lightDir + u_cam_dir);
+    float specular = pow(max(dot(v_normal, halfVec), 0.0), 32);
 
-    return (diff /* + specular */) * l.color;
+    return (attenuation*l.ambient + diffuse*attenuation*l.diffuse + specular*attenuation*l.specular);
+}
+#endif
+
+vec3 lighting() {
+    vec3 lit = vec3(0,0,0);
+#ifndef SHADING_NONE
+    for (int i=0; i<u_num_lights; i++) {
+    #ifdef SHADING_PHONG
+        lit += shading_phong(u_lights[i]);
+    #endif
+    }
+#endif
+    return lit;
 }
 
 void main() {
@@ -91,10 +129,7 @@ void main() {
     }
 
     // analytical lights (phong shading)
-    // @todo: support more shading models (blinn-phong, ue4 brdf, ...)
-    for (int i=0; i<u_num_lights; i++) {
-        lit += vec4(calculate_light(u_lights[i], n, v_position, /* @todo: push vdeye */ vec3(1.0,1.0,1.0)), 0.0);
-    }
+    lit += vec4(lighting(), 0.0);
 
     // base
     vec4 diffuse;

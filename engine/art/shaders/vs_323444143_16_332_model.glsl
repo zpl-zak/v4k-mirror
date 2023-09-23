@@ -57,7 +57,7 @@ in float att_vertexindex; // for blendshapes
 in vec4 att_color;
 in vec3 att_bitangent; // @todo: remove? also, ass2iqe might output this
 out vec4 v_color;
-out vec3 v_position;
+out vec3 v_position, v_position_ws;
 out vec3 v_normal, v_normal_ws;
 out vec2 v_texcoord;
 
@@ -115,6 +115,7 @@ void main() {
         
         v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
         v_normal = normalize(v_normal);
+        v_position_ws = (att_instanced_matrix * vec4( objPos, 1.0 )).xyz;
         v_position = att_position;
         v_texcoord = att_texcoord;
         v_color = att_color;

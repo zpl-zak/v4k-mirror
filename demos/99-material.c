@@ -41,7 +41,7 @@ int main() {
 
     // create point light
     light_t* l = scene_spawn_light();
-    light_type(l, LIGHT_POINT);
+    light_type(l, LIGHT_SPOT);
 
     while(window_swap() && !input(KEY_ESC)) {
         // draw environment
@@ -53,6 +53,7 @@ int main() {
 
         // update light position
         light_teleport(l, cam.position);
+        light_dir(l, cam.look);
 
         // draw scene
         scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF);

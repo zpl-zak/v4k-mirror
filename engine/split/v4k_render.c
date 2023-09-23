@@ -3683,6 +3683,24 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         mat44 vp; multiply44x2(vp, proj, view);
         glUniformMatrix4fv( loc, 1, GL_FALSE, vp);
     }
+    if( (loc = glGetUniformLocation(shader, "u_cam_pos")) >= 0 ) {
+        vec3 pos = vec3(view[3], view[6], view[9]);
+        glUniform3fv( loc, 1, &pos.x );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "cam_pos")) >= 0 ) {
+        vec3 pos = vec3(view[3], view[6], view[9]);
+        glUniform3fv( loc, 1, &pos.x );
+    }
+    if( (loc = glGetUniformLocation(shader, "u_cam_dir")) >= 0 ) {
+        vec3 dir = vec3(view[0], view[1], view[2]);
+        glUniform3fv( loc, 1, &dir.x );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "cam_dir")) >= 0 ) {
+        vec3 dir = vec3(view[0], view[1], view[2]);
+        glUniform3fv( loc, 1, &dir.x );
+    }
 #if 0
     // @todo: mat44 projview (useful?)
 #endif
@@ -4119,13 +4137,14 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     model_t m = {0};
 
     const char *ptr = (const char *)mem;
-    static int shaderprog = -1;
-    if( shaderprog < 0 ) {
+    // can't cache shader programs since we enable features via flags here
+    // static int shaderprog = -1;
+    // if( shaderprog < 0 ) {
         const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
-        shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_332_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
+        int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_332_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
-            (flags&MODEL_RIMLIGHT)?"RIM":NULL);
-    }
+            va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
+    // }
 
     iqm_t *q = CALLOC(1, sizeof(iqm_t));
     program = shaderprog;
