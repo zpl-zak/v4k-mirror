@@ -66,7 +66,7 @@ void game_loop(void *userdata) {
     mat44 projview; multiply44x2(projview, cam.proj, cam.view);
 
     // rendering
-    viewport_color3(vec3(0.15,0.15,0.15));
+    window_color(GRAY);
 #if 0
     viewport_clear(true, true);
     viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
