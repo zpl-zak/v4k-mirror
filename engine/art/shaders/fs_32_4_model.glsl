@@ -65,23 +65,20 @@ vec3 shading_phong(light_t l) {
 
     if (l.type == LIGHT_DIRECTIONAL) {
         lightDir = normalize(-l.dir);
-    } else if (l.type == LIGHT_POINT) {
+    } else if (l.type == LIGHT_POINT || l.type == LIGHT_SPOT) {
         vec3 toLight = l.pos - v_position_ws;
         lightDir = normalize(toLight);
         float distance = length(toLight);
         attenuation = 1.0 / (l.constant + l.linear * distance + l.quadratic * (distance * distance));
-    } else if (l.type == LIGHT_SPOT) {
-        vec3 toLight = l.pos - v_position_ws;
-        lightDir = normalize(toLight);
-        float distance = length(toLight);
-        attenuation = 1.0 / (l.constant + l.linear * distance + l.quadratic * (distance * distance));
-        
-        float angle = dot(l.dir, -lightDir);
-        if (angle > l.outerCone) {
-            float intensity = (angle-l.outerCone)/(l.innerCone-l.outerCone);
-            attenuation *= clamp(intensity, 0.0, 1.0);
-        } else {
-            attenuation = 0.0;
+
+        if (l.type == LIGHT_SPOT) {
+            float angle = dot(l.dir, -lightDir);
+            if (angle > l.outerCone) {
+                float intensity = (angle-l.outerCone)/(l.innerCone-l.outerCone);
+                attenuation *= clamp(intensity, 0.0, 1.0);
+            } else {
+                attenuation = 0.0;
+            }
         }
     }
 

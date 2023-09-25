@@ -193,8 +193,8 @@ void ModelRender( Model *G, const mat44 _worldRootMatrix ) {
         for( int i = 0, end = array_count(G->meshes); i < end; i++ ) {
             const Mesh *mesh = &G->meshes[ i ];
             // Postpone rendering transparent meshes
-            if(mesh->transparent != bTransparentPass)
-                continue;
+            // if(mesh->transparent != bTransparentPass)
+            //     continue;
 
             const pbr_material_t *material = &G->materials[ mesh->material_idx ];
             shader_colormap( "map_diffuse", material->diffuse );
