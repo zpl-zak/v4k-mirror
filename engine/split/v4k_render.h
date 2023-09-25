@@ -687,6 +687,7 @@ API char *   fx_name(int pass);
 API int      fx_find(const char *name);
 
 API int      ui_fx(int pass);
+API int      ui_fxs();
 
 // -----------------------------------------------------------------------------
 // utils

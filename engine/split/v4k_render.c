@@ -312,6 +312,8 @@ int ui_shader(unsigned shader) {
 }
 
 int ui_shaders() {
+    if( !map_count(shader_reflect) ) return 0;
+
     int changed = 0;
     int has_menu = ui_has_menubar();
     if( (has_menu ? ui_window("Shaders", 0) : ui_panel("Shaders", 0) ) ) {
@@ -2736,6 +2738,7 @@ void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength) {
     sky->cubemap.sh[3] = add3(sky->cubemap.sh[3], scale3(scaled_light, -0.488603f * norm_dir.x));
 }
 
+API vec4 window_getcolor_(); // internal use, not public
 
 int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     last_cubemap = &sky->cubemap;
@@ -2745,6 +2748,9 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     glDepthFunc(GL_LEQUAL);
     //glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
+
+    // we have to reset clear color here, because of wrong alpha compositing issues on native transparent windows otherwise
+    vec4 bgcolor = window_getcolor_(); glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, 1); // @transparent
 
     mat44 mvp; multiply44x2(mvp, proj, view);
 
@@ -2757,6 +2763,7 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     return 0; // @fixme: return sortable hash here?
 }
 int skybox_pop_state() {
+    //vec4 bgcolor = window_getcolor_(); glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, window_has_transparent() ? 0 : bgcolor.a); // @transparent
     //glDepthMask(GL_TRUE);
     //glClear(GL_DEPTH_BUFFER_BIT);
     return 0;
@@ -3405,6 +3412,22 @@ int fx_find(const char *name) {
 }
 int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
+}
+int ui_fxs() {
+    if(!fx.num_loaded) return 0;
+
+    int changed = 0;
+    int has_menu = ui_has_menubar();
+    if( (has_menu ? ui_window("FX", 0) : ui_panel("FX", 0) ) ) {
+        for( int i = 0; i < 64; ++i ) {
+            char *name = fx_name(i); if( !name ) break;
+            bool b = fx_enabled(i);
+            if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
+            ui_fx(i);
+        }
+        (has_menu ? ui_window_end : ui_panel_end)();
+    }
+    return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -4664,7 +4687,8 @@ void model_destroy(model_t m) {
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
     char *anim_file = vfs_read(va("%s@animlist.txt", pathfile));
-    if (!anim_file) return a;
+    if( !anim_file ) anim_file = vfs_read(pathfile);
+    if( anim_file ) {
     for each_substring(anim_file, "\r\n", anim) {
         int from, to;
         char anim_name[128] = {0};
@@ -4673,5 +4697,6 @@ anims_t animations(const char *pathfile, int flags) {
             array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
     }
     a.speed = 1.0;
+    }
     return a;
 }

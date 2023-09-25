@@ -176,6 +176,15 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     // table[NK_COLOR_SELECT] = nk_rgba(57, 67, 61, 255);
     // table[NK_COLOR_SELECT_ACTIVE] = main;
 
+    // @transparent
+    #if !is(ems)
+    if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE ) {
+        table[NK_COLOR_WINDOW].a =
+        table[NK_COLOR_HEADER].a = 255;
+    }
+    #endif
+    // @transparent
+
     nk_style_default(ui_ctx);
     nk_style_from_table(ui_ctx, table);
 
@@ -864,7 +873,9 @@ void ui_render() {
      * rendering the UI. */
     //nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
-    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_FALSE); // @transparent
+    GLfloat bkColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bkColor); // @transparent
+    glClearColor(0,0,0,1); // @transparent
+    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,!bkColor[3] ? GL_TRUE : GL_FALSE);  // @transparent
     nk_glfw3_render(&nk_glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
     glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);  // @transparent
 

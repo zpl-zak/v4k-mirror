@@ -183,8 +183,9 @@ void (map_erase)(map* m, void *key, uint64_t keyhash) {
     }
 }
 
-int (map_count)(map* m) {
+int (map_count)(map* m) { // clean deferred GC_SLOT only
     return m->count;
+
     int counter = 0;
     for( int i = 0; i < MAP_HASHSIZE; ++i) {
         for( pair *cur = m->array[i]; cur; cur = cur->next ) {
@@ -194,7 +195,11 @@ int (map_count)(map* m) {
     return counter;
 }
 
-void (map_gc)(map* m) {
+int (map_isempty)(map* m) { // clean deferred GC_SLOT only
+    return !m->count;
+}
+
+void (map_gc)(map* m) { // clean deferred GC_SLOT only
 #if MAP_DONT_ERASE
     for( pair *next, *cur = m->array[MAP_GC_SLOT]; cur; cur = next ) {
         next = cur->next;
@@ -327,6 +332,7 @@ void (set_erase)(set* m, void *key, uint64_t keyhash) {
 
 int (set_count)(const set* m) { // does not include GC_SLOT
     return m->count;
+
     int counter = 0;
     for( int i = 0; i < SET_HASHSIZE; ++i) {
         for( const set_item *cur = m->array[i]; cur; cur = cur->next ) {
@@ -334,6 +340,10 @@ int (set_count)(const set* m) { // does not include GC_SLOT
         }
     }
     return counter;
+}
+
+int (set_isempty)(const set *m) { // clean deferred GC_SLOT only
+    return !m->count;
 }
 
 void (set_gc)(set* m) { // clean deferred GC_SLOT only

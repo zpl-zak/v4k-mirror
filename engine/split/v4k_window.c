@@ -107,7 +107,9 @@ static double t, dt, fps, hz = 0.00;
 static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
-static vec4 wincolor = {0,0,0,1};
+static vec4 winbgcolor = {0,0,0,1};
+
+vec4 window_getcolor_() { return winbgcolor; } // internal
 
 // -----------------------------------------------------------------------------
 // glfw
@@ -221,10 +223,10 @@ struct nk_glfw *window_handle_nkglfw() {
 }
 
 void glNewFrame() {
-    // @transparent
-    // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1); // debug
-    // if( input_down(KEY_F2) ) window_maximize(window_has_maximize()^1); // debug
-    // @transparent
+    // @transparent debug
+    // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1);
+    // if( input_down(KEY_F2) ) window_maximize(window_has_maximize()^1);
+    // @transparent debug
 
 #if 0 // is(ems)
     int canvasWidth, canvasHeight;
@@ -262,7 +264,7 @@ void glNewFrame() {
     glViewport(0, 0, window_width(), window_height());
 
     // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
-    glClearColor(wincolor.r, wincolor.g, wincolor.b, window_has_transparent() ? 0 : wincolor.a); // @transparent
+    glClearColor(winbgcolor.r, winbgcolor.g, winbgcolor.b, window_has_transparent() ? 0 : winbgcolor.a); // @transparent
     //glClearColor(0.15,0.15,0.15,1);
     //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -306,7 +308,13 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
         winHeight = mode->height;
     }
     if( FLAGS_WINDOWED ) {
-        ifndef(ems, glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, FLAGS_TRANSPARENT ? GLFW_TRUE : GLFW_FALSE)); // @transparent
+        #if !is(ems)
+        if( FLAGS_TRANSPARENT ) { // @transparent
+            //glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE); // see through. requires undecorated
+            //glfwWindowHint(GLFW_FLOATING, GLFW_TRUE); // always on top
+            glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+        }
+        #endif
         // windowed
         float ratio = (float)winWidth / (winHeight + !winHeight);
         if( flags & WINDOW_SQUARE )    winWidth = winHeight = winWidth > winHeight ? winHeight : winWidth;
@@ -503,6 +511,7 @@ int window_frame_begin() {
     profile_render();
 
     ui_shaders();
+    ui_fxs();
  
 #if 0 // deprecated
     // run user-defined hooks
@@ -719,8 +728,7 @@ void window_color(unsigned color) {
     unsigned g = (color >>  8) & 255;
     unsigned r = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
-    wincolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
-//  glClearColor(wincolor.r, wincolor.g, wincolor.b, 1.0);
+    winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }
 void window_icon(const char *file_icon) {
     unsigned len = file_size(file_icon); // len = len ? len : vfs_size(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
@@ -973,9 +981,11 @@ void window_transparent(int enabled) {
     if( !window_has_fullscreen() ) {
         if( enabled ) {
             glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+            //glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH , GLFW_TRUE);
             //glfwMaximizeWindow(window);
         } else {
             //glfwRestoreWindow(window);
+            //glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH , GLFW_FALSE);
             glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE);
         }
     }

@@ -1,11 +1,14 @@
 #if ENABLE_PROFILER
 profiler_t profiler;
-int profiler_enabled = 0;
+int profiler_enabled = 1;
 
 void (profile_init)() { map_init(profiler, less_str, hash_str); profiler_enabled &= !!profiler; }
 int  (profile_enable)(bool on) { return profiler_enabled = on; }
 void (profile_render)() { 
-    if(!profiler_enabled) return;
+    // @transparent
+    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
+    if( has_transparent_attrib ) return;
+    // @transparent
 
     int has_menu = ui_has_menubar();
     if( !has_menu ) {

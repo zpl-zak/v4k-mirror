@@ -636,6 +636,7 @@ static __thread unsigned array_n_;
     set_clear(&(m)->base) \
     )
 
+#define set_isempty(m)      set_isempty(&(m)->base)
 #define set_count(m)        set_count(&(m)->base)
 #define set_gc(m)           set_gc(&(m)->base)
 
@@ -674,6 +675,7 @@ API void  (set_free)(set *m);
 API void  (set_insert)(set *m, set_item *p, void *key, uint64_t keyhash, void *super);
 API void  (set_erase)(set *m, void *key, uint64_t keyhash);
 API void* (set_find)(const set *m, void *key, uint64_t keyhash);
+API int   (set_isempty)(const set *m);
 API int   (set_count)(const set *m);
 API void  (set_gc)(set *m); // only if using SET_DONT_ERASE
 API void  (set_clear)(set* m);
@@ -767,6 +769,7 @@ API void  (set_clear)(set* m);
     map_clear(&(m)->base) \
     )
 
+#define map_isempty(m)      map_isempty(&(m)->base)
 #define map_count(m)        map_count(&(m)->base)
 #define map_gc(m)           map_gc(&(m)->base)
 
@@ -811,6 +814,7 @@ API void  (map_free)(map *m);
 API void  (map_insert)(map *m, pair *p, void *key, void *value, uint64_t keyhash, void *super);
 API void  (map_erase)(map *m, void *key, uint64_t keyhash);
 API void* (map_find)(map *m, void *key, uint64_t keyhash);
+API int   (map_isempty)(map *m);
 API int   (map_count)(map *m);
 API void  (map_gc)(map *m); // only if using MAP_DONT_ERASE
 API bool  (map_sort)(map* m);
@@ -3138,6 +3142,7 @@ API char *   fx_name(int pass);
 API int      fx_find(const char *name);
 
 API int      ui_fx(int pass);
+API int      ui_fxs();
 
 // -----------------------------------------------------------------------------
 // utils

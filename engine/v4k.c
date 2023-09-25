@@ -287,8 +287,9 @@ void (map_erase)(map* m, void *key, uint64_t keyhash) {
     }
 }
 
-int (map_count)(map* m) {
+int (map_count)(map* m) { // clean deferred GC_SLOT only
     return m->count;
+
     int counter = 0;
     for( int i = 0; i < MAP_HASHSIZE; ++i) {
         for( pair *cur = m->array[i]; cur; cur = cur->next ) {
@@ -298,7 +299,11 @@ int (map_count)(map* m) {
     return counter;
 }
 
-void (map_gc)(map* m) {
+int (map_isempty)(map* m) { // clean deferred GC_SLOT only
+    return !m->count;
+}
+
+void (map_gc)(map* m) { // clean deferred GC_SLOT only
 #if MAP_DONT_ERASE
     for( pair *next, *cur = m->array[MAP_GC_SLOT]; cur; cur = next ) {
         next = cur->next;
@@ -431,6 +436,7 @@ void (set_erase)(set* m, void *key, uint64_t keyhash) {
 
 int (set_count)(const set* m) { // does not include GC_SLOT
     return m->count;
+
     int counter = 0;
     for( int i = 0; i < SET_HASHSIZE; ++i) {
         for( const set_item *cur = m->array[i]; cur; cur = cur->next ) {
@@ -438,6 +444,10 @@ int (set_count)(const set* m) { // does not include GC_SLOT
         }
     }
     return counter;
+}
+
+int (set_isempty)(const set *m) { // clean deferred GC_SLOT only
+    return !m->count;
 }
 
 void (set_gc)(set* m) { // clean deferred GC_SLOT only
@@ -10624,6 +10634,8 @@ int ui_shader(unsigned shader) {
 }
 
 int ui_shaders() {
+    if( !map_count(shader_reflect) ) return 0;
+
     int changed = 0;
     int has_menu = ui_has_menubar();
     if( (has_menu ? ui_window("Shaders", 0) : ui_panel("Shaders", 0) ) ) {
@@ -13048,6 +13060,7 @@ void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength) {
     sky->cubemap.sh[3] = add3(sky->cubemap.sh[3], scale3(scaled_light, -0.488603f * norm_dir.x));
 }
 
+API vec4 window_getcolor_(); // internal use, not public
 
 int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     last_cubemap = &sky->cubemap;
@@ -13057,6 +13070,9 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     glDepthFunc(GL_LEQUAL);
     //glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
+
+    // we have to reset clear color here, because of wrong alpha compositing issues on native transparent windows otherwise
+    vec4 bgcolor = window_getcolor_(); glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, 1); // @transparent
 
     mat44 mvp; multiply44x2(mvp, proj, view);
 
@@ -13069,6 +13085,7 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     return 0; // @fixme: return sortable hash here?
 }
 int skybox_pop_state() {
+    //vec4 bgcolor = window_getcolor_(); glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, window_has_transparent() ? 0 : bgcolor.a); // @transparent
     //glDepthMask(GL_TRUE);
     //glClear(GL_DEPTH_BUFFER_BIT);
     return 0;
@@ -13717,6 +13734,22 @@ int fx_find(const char *name) {
 }
 int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
+}
+int ui_fxs() {
+    if(!fx.num_loaded) return 0;
+
+    int changed = 0;
+    int has_menu = ui_has_menubar();
+    if( (has_menu ? ui_window("FX", 0) : ui_panel("FX", 0) ) ) {
+        for( int i = 0; i < 64; ++i ) {
+            char *name = fx_name(i); if( !name ) break;
+            bool b = fx_enabled(i);
+            if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
+            ui_fx(i);
+        }
+        (has_menu ? ui_window_end : ui_panel_end)();
+    }
+    return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -14976,7 +15009,8 @@ void model_destroy(model_t m) {
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
     char *anim_file = vfs_read(va("%s@animlist.txt", pathfile));
-    if (!anim_file) return a;
+    if( !anim_file ) anim_file = vfs_read(pathfile);
+    if( anim_file ) {
     for each_substring(anim_file, "\r\n", anim) {
         int from, to;
         char anim_name[128] = {0};
@@ -14985,6 +15019,7 @@ anims_t animations(const char *pathfile, int flags) {
             array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
     }
     a.speed = 1.0;
+    }
     return a;
 }
 #line 0
@@ -17782,6 +17817,15 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     // table[NK_COLOR_SELECT] = nk_rgba(57, 67, 61, 255);
     // table[NK_COLOR_SELECT_ACTIVE] = main;
 
+    // @transparent
+    #if !is(ems)
+    if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE ) {
+        table[NK_COLOR_WINDOW].a =
+        table[NK_COLOR_HEADER].a = 255;
+    }
+    #endif
+    // @transparent
+
     nk_style_default(ui_ctx);
     nk_style_from_table(ui_ctx, table);
 
@@ -18470,7 +18514,9 @@ void ui_render() {
      * rendering the UI. */
     //nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
-    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_FALSE); // @transparent
+    GLfloat bkColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bkColor); // @transparent
+    glClearColor(0,0,0,1); // @transparent
+    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,!bkColor[3] ? GL_TRUE : GL_FALSE);  // @transparent
     nk_glfw3_render(&nk_glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
     glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);  // @transparent
 
@@ -20006,12 +20052,15 @@ int ui_demo(int do_windows) {
 #line 1 "v4k_profile.c"
 #if ENABLE_PROFILER
 profiler_t profiler;
-int profiler_enabled = 0;
+int profiler_enabled = 1;
 
 void (profile_init)() { map_init(profiler, less_str, hash_str); profiler_enabled &= !!profiler; }
 int  (profile_enable)(bool on) { return profiler_enabled = on; }
 void (profile_render)() { 
-    if(!profiler_enabled) return;
+    // @transparent
+    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
+    if( has_transparent_attrib ) return;
+    // @transparent
 
     int has_menu = ui_has_menubar();
     if( !has_menu ) {
@@ -20418,7 +20467,9 @@ static double t, dt, fps, hz = 0.00;
 static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
-static vec4 wincolor = {0,0,0,1};
+static vec4 winbgcolor = {0,0,0,1};
+
+vec4 window_getcolor_() { return winbgcolor; } // internal
 
 // -----------------------------------------------------------------------------
 // glfw
@@ -20532,10 +20583,10 @@ struct nk_glfw *window_handle_nkglfw() {
 }
 
 void glNewFrame() {
-    // @transparent
-    // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1); // debug
-    // if( input_down(KEY_F2) ) window_maximize(window_has_maximize()^1); // debug
-    // @transparent
+    // @transparent debug
+    // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1);
+    // if( input_down(KEY_F2) ) window_maximize(window_has_maximize()^1);
+    // @transparent debug
 
 #if 0 // is(ems)
     int canvasWidth, canvasHeight;
@@ -20573,7 +20624,7 @@ void glNewFrame() {
     glViewport(0, 0, window_width(), window_height());
 
     // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
-    glClearColor(wincolor.r, wincolor.g, wincolor.b, window_has_transparent() ? 0 : wincolor.a); // @transparent
+    glClearColor(winbgcolor.r, winbgcolor.g, winbgcolor.b, window_has_transparent() ? 0 : winbgcolor.a); // @transparent
     //glClearColor(0.15,0.15,0.15,1);
     //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -20617,7 +20668,13 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
         winHeight = mode->height;
     }
     if( FLAGS_WINDOWED ) {
-        ifndef(ems, glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, FLAGS_TRANSPARENT ? GLFW_TRUE : GLFW_FALSE)); // @transparent
+        #if !is(ems)
+        if( FLAGS_TRANSPARENT ) { // @transparent
+            //glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE); // see through. requires undecorated
+            //glfwWindowHint(GLFW_FLOATING, GLFW_TRUE); // always on top
+            glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+        }
+        #endif
         // windowed
         float ratio = (float)winWidth / (winHeight + !winHeight);
         if( flags & WINDOW_SQUARE )    winWidth = winHeight = winWidth > winHeight ? winHeight : winWidth;
@@ -20814,6 +20871,7 @@ int window_frame_begin() {
     profile_render();
 
     ui_shaders();
+    ui_fxs();
  
 #if 0 // deprecated
     // run user-defined hooks
@@ -21030,8 +21088,7 @@ void window_color(unsigned color) {
     unsigned g = (color >>  8) & 255;
     unsigned r = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
-    wincolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
-//  glClearColor(wincolor.r, wincolor.g, wincolor.b, 1.0);
+    winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }
 void window_icon(const char *file_icon) {
     unsigned len = file_size(file_icon); // len = len ? len : vfs_size(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
@@ -21284,9 +21341,11 @@ void window_transparent(int enabled) {
     if( !window_has_fullscreen() ) {
         if( enabled ) {
             glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+            //glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH , GLFW_TRUE);
             //glfwMaximizeWindow(window);
         } else {
             //glfwRestoreWindow(window);
+            //glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH , GLFW_FALSE);
             glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE);
         }
     }
