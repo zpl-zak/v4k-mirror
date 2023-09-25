@@ -10,6 +10,8 @@
 
 #include "v4k.h"
 
+array(mat44)  M;     // instanced transforms
+
 int main() {
     bool do_showaabb = 0;
     bool do_showbones = 0;
@@ -22,8 +24,20 @@ int main() {
 
     camera_t cam = camera();
     skybox_t sky = skybox("cubemaps/stardust", 0);
-    model_t  mdl = model("Stan.fbx", MODEL_RIMLIGHT);
-    anims_t    a = animations("Stan.fbx", 0);
+    model_t  mdl = model("George.fbx", MODEL_RIMLIGHT); // kgirls01.fbx
+    anims_t    a = animations("George.fbx", 0); // kgirl/animlist.txt
+
+    // 32*32 max instances
+    int NUM_INSTANCES = 1;
+    array_resize(M, 32*32);
+    for(int z = 0, i = 0; z < 32; ++z) {
+        for(int x = 0; x < 32; ++x, ++i) {
+            vec3 p = vec3(-x*9,0,-z*9);
+            vec3 r = vec3(0,-90,0); // kgirl: 0,0,0
+            vec3 s = vec3(2,2,2);
+            compose44(M[i], p, eulerq(r), s);
+        }
+    }
 
     // shader_bind(mdl.program);
     // shader_vec3("u_rimcolor", vec3(0.12,0.23,0.34));
@@ -74,12 +88,12 @@ int main() {
 
             // characters
             profile("Skeletal render") {
-                if( do_showmodel ) model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
+                if( do_showmodel ) model_render_instanced(mdl, cam.proj, cam.view, M /*mdl.pivot*/, 0, NUM_INSTANCES);
 
-                if( do_showbones ) model_render_skeleton(mdl, mdl.pivot);
+                if( do_showbones ) model_render_skeleton(mdl, M[0] /*mdl.pivot*/);
 
                 if( do_showaabb ) {
-                    aabb box = model_aabb(mdl, mdl.pivot);
+                    aabb box = model_aabb(mdl, M[0] /*mdl.pivot*/);
                     ddraw_aabb(box.min, box.max);
                 }
 
@@ -97,6 +111,9 @@ int main() {
             if( ui_bool("Show bones", &do_showbones) );
             if( ui_bool("Show models", &do_showmodel) );
             if( ui_bool("Show gizmo", &do_showgizmo) );
+
+            ui_separator();
+            if( ui_int("Instances", &NUM_INSTANCES)) NUM_INSTANCES = clampi(NUM_INSTANCES, 1, array_count(M));
             ui_separator();
 
             ui_label(va("Anim %s [%d.. %.2f ..%d]", a.anims[ a.inuse ].name, anim.min, mdl.curframe, anim.max ));
@@ -155,6 +172,7 @@ int main() {
                 char *name = fx_name(i); if( !name ) break;
                 bool b = fx_enabled(i);
                 if( ui_bool(name, &b) ) fx_enable(i, b);
+                ui_fx(i);
             }
             ui_panel_end();
         }

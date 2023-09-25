@@ -1,5 +1,5 @@
-uniform float intensity = 0.003f;
-uniform float angle = 0.0f;
+uniform float intensity = 0.003f; /// min:0.001 max:0.10 set:0.003
+uniform float angle = 0.0f; /// min:0 max:6.28 set:0
 
 void main() {
     vec2 uv = TEXCOORD.st;

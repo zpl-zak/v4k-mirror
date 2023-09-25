@@ -62,6 +62,9 @@ void shader_print(const char *source) {
     }
 }
 
+// sorted by shader handle. an array of properties per shader. properties are plain strings.
+static __thread map(unsigned, array(char*)) shader_reflect;
+
 static
 GLuint shader_compile( GLenum type, const char *source ) {
     GLuint shader = glCreateShader(type);
@@ -187,7 +190,138 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
     }
 */
 
+    // shader compiled fine, before returning, let's parse the source and reflect the uniforms
+    array(char*) props = 0;
+    do_once map_init_int( shader_reflect );
+    if(vs) for each_substring(vs, "\r\n", line) {
+        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
+            array_push(props, STRDUP(line));
+        }
+    }
+    if(fs) for each_substring(fs, "\r\n", line) {
+        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
+            array_push(props, STRDUP(line));
+        }
+    }
+    if(gs) for each_substring(gs, "\r\n", line) {
+        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
+            array_push(props, STRDUP(line));
+        }
+    }
+    if( props ) {
+        map_insert(shader_reflect, program, props);
+    }
+
     return program;
+}
+
+unsigned shader_properties(unsigned shader) {
+    array(char*) *found = map_find(shader_reflect, shader);
+    return found ? array_count(*found) : 0;
+}
+
+char** shader_property(unsigned shader, unsigned property) {
+    array(char*) *found = map_find(shader_reflect, shader);
+    return found ? &(*found)[property] : NULL;
+}
+
+int ui_shader(unsigned shader) {
+    int changed = 0;
+
+    unsigned num_properties = shader_properties(shader);
+    for( unsigned i = 0; i < num_properties; ++i ) {
+        char **ptr = shader_property(shader,i);
+
+        const char *line = *ptr; // debug: ui_label(line);
+        char uniform[32], type[32], name[32];
+        if( sscanf(line, "%s %s %s", uniform, type, name) != 3) continue;
+
+        int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
+        vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
+        vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
+        vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
+        char* tip = strstr(line, "tip:"); tip = tip && tip[4] ? tip + 4 : 0;
+        char *label = !tip ? va("%c%s", name[0] - 32 * !!(name[0] >= 'a'), name+1) :
+            va("%c%s " ICON_MD_HELP "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tip);
+
+        if(minv.x > maxv.x) swapf(&minv.x, &maxv.x);
+        if(minv.y > maxv.y) swapf(&minv.y, &maxv.y);
+        if(minv.z > maxv.z) swapf(&minv.z, &maxv.z);
+        if(minv.w > maxv.w) swapf(&minv.w, &maxv.w);
+
+        // supports int,float,vec2/3/4,color3/4
+        int touched = 0;
+        if( type[0] == 'i' ) {
+            int v = setv.x;
+
+            if( (touched = ui_int(label, &v)) != 0 ) {
+                setv.x = clampi(v, minv.x, maxv.x); // min..max range
+            }
+        }
+        else if( type[0] == 'f' ) {
+            setv.x = (clampf(setv.x, minv.x, maxv.x) - minv.x) / (maxv.x - minv.x);
+
+            if( (touched = ui_slider2(label, &setv.x, va("%5.2f", setv.x))) != 0 ) {
+                setv.x = clampf(minv.x + setv.x * (maxv.x-minv.x), minv.x, maxv.x); // min..max range
+            }
+        }
+        else if( type[0] == 'v' && type[3] == '2' ) {
+            setv.xy = clamp2(setv.xy,minv.xy,maxv.xy);
+
+            if( (touched = ui_float2(label, &setv.x)) != 0 ) {
+                setv.xy = clamp2(setv.xy,minv.xy,maxv.xy);
+            }
+        }
+        else if( type[0] == 'v' && type[3] == '3' ) {
+            setv.xyz = clamp3(setv.xyz,minv.xyz,maxv.xyz);
+
+            if( (touched = (is_color ? ui_color3f : ui_float3)(label, &setv.x)) != 0 ) {
+                setv.xyz = clamp3(setv.xyz,minv.xyz,maxv.xyz);
+            }
+        }
+        else if( type[0] == 'v' && type[3] == '4' ) {
+            setv = clamp4(setv,minv,maxv);
+
+            if( (touched = (is_color ? ui_color4f : ui_float4)(label, &setv.x)) != 0 ) {
+                setv = clamp4(setv,minv,maxv);
+            }
+        }
+
+        if( touched ) {
+            // send to shader
+            GLint shader_bak; glGetIntegerv(GL_CURRENT_PROGRAM, &shader_bak);
+            glUseProgram(shader);
+            /**/ if(type[0] == 'i') glUniform1i(glGetUniformLocation(shader, name), setv.x);
+            else if(type[0] == 'f') glUniform1f(glGetUniformLocation(shader, name), setv.x);
+            else if(type[3] == '2') glUniform2fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            else if(type[3] == '3') glUniform3fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            else if(type[3] == '4') glUniform4fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            glUseProgram(shader_bak);
+
+            // upgrade value
+            *ptr = FREE(*ptr);
+            *ptr = stringf("%s %s %s ///set:%s min:%s max:%s tip:%s", uniform,type,name,ftoa4(setv),ftoa4(minv),ftoa4(maxv),tip?tip:"");
+
+            changed = 1;
+        }
+    }
+
+    if(num_properties) ui_separator();
+
+    return changed;
+}
+
+int ui_shaders() {
+    int changed = 0;
+    int has_menu = ui_has_menubar();
+    if( (has_menu ? ui_window("Shaders", 0) : ui_panel("Shaders", 0) ) ) {
+        for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
+            ui_section(va("Shader %d",*k));
+            changed |= ui_shader(*k);
+        }
+        (has_menu ? ui_window_end : ui_panel_end)();
+    }
+    return changed;
 }
 
 unsigned compute(const char *cs){
@@ -2847,16 +2981,6 @@ void* screenshot_async( int n ) { // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 // -----------------------------------------------------------------------------
 // viewports
 
-void viewport_color3(vec3 color3) {
-    glClearColor(color3.x, color3.y, color3.z, 1);
-}
-void viewport_color(uint32_t rgba) {
-    float b = ((rgba >>  0) & 255) / 255.f;
-    float g = ((rgba >>  8) & 255) / 255.f;
-    float r = ((rgba >> 16) & 255) / 255.f;
-    glClearColor(r, g, b, 1);
-}
-
 void viewport_clear(bool color, bool depth) {
     glClearDepthf(1);
     glClearStencil(0);
@@ -2956,6 +3080,8 @@ bool postfx_enable(postfx *fx, int pass_number, bool enabled);
 void postfx_clear(postfx *fx);
 
 char* postfx_name(postfx *fx, int slot);
+
+int   ui_postfx(postfx *fx, int slot);
 
 struct passfx {
     mesh_t m;
@@ -3099,6 +3225,14 @@ void postfx_clear(postfx *fx) {
     fx->mask = fx->enabled = 0;
 }
 
+int ui_postfx(postfx *fx, int pass) {
+    int on = ui_enabled();
+    ui_enable( postfx_enabled(fx,pass) );
+    int rc = ui_shader(fx->pass[pass].program);
+    ui_enable( on );
+    return rc;
+}
+
 static __thread array(handle) last_fb;
 
 bool postfx_begin(postfx *fx, int width, int height) {
@@ -3224,6 +3358,9 @@ bool postfx_end(postfx *fx) {
     if(is_depth_test_enabled);
     glEnable(GL_DEPTH_TEST);
 
+    // restore clear color: needed in case transparent window is being used (alpha != 0)
+    glClearColor(0,0,0,1); // @transparent
+
     return true;
 }
 
@@ -3265,6 +3402,9 @@ char *fx_name(int pass) {
 }
 int fx_find(const char *name) {
     return postfx_find(&fx, name);
+}
+int ui_fx(int pass) {
+    return ui_postfx(&fx, pass);
 }
 
 // -----------------------------------------------------------------------------
@@ -4530,7 +4670,7 @@ anims_t animations(const char *pathfile, int flags) {
         char anim_name[128] = {0};
         if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
         array_push(a.anims, !!strstri(anim_name, "loop") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
-        array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", "");
+            array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
     }
     a.speed = 1.0;
     return a;

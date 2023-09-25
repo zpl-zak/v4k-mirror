@@ -142,6 +142,7 @@ void demo_kids() {
 int main(int argc, char **argv) {
     window_create(75.f, 0);
     window_title("V4K - Sprite");
+    window_color( SILVER );
 
     // options
     int do_cats = 1;
@@ -154,10 +155,8 @@ int main(int argc, char **argv) {
     shadowImage = texture( "cat-shadow.png", TEXTURE_LINEAR );
     inputs = texture( "prompts_tilemap_34x24_16x16x1.png", TEXTURE_LINEAR );
 
-    // load all post fx files
-    for(const char **list = file_list("./","fx**.fs"); *list; list++) {
-        fx_load(*list);
-    }
+    // load all fx files, including subdirs
+    fx_load("fx**.fs");
 
     // init camera (x,y) (z = zoom)
     camera_t cam = camera();
@@ -168,8 +167,6 @@ int main(int argc, char **argv) {
         if( input(KEY_F5)) window_reload();
         if( input(KEY_F11)) window_fullscreen( window_has_fullscreen() ^ 1);
         if( input(KEY_ESC) ) break;
-
-        viewport_color3(vec3(0.4,0.4,0.4));
 
         // camera panning (x,y) & zooming (z)
         if( !ui_hover() && !ui_active() ) {
@@ -222,6 +219,7 @@ int main(int argc, char **argv) {
                 char *name = fx_name(i); if( !name ) break;
                 bool b = fx_enabled(i);
                 if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
+                ui_fx(i);
             }
             ui_panel_end();
         }

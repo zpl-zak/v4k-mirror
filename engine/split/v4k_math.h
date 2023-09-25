@@ -156,7 +156,8 @@ API float len2     (vec2   a          );
 API vec2  norm2    (vec2   a          );
 API int   finite2  (vec2   a          );
 API vec2  mix2  (vec2 a,vec2 b,float t);
-API vec2  clamp2(vec2 v,float a,float b);
+API vec2  clamp2(vec2 v,vec2 a,vec2 b);
+API vec2  clamp2f(vec2 v,float a,float b);
 // ----------------------------------------------------------------------------
 
 API vec3  rnd3     (void); // @todo: rnd2,rnd4,rndq
@@ -187,7 +188,8 @@ API vec3  norm3    (vec3   a          );
 API vec3  norm3sq  (vec3   a          );
 API int   finite3  (vec3   a          );
 API vec3  mix3  (vec3 a,vec3 b,float t);
-API vec3  clamp3(vec3 v,float a,float b);
+API vec3  clamp3(vec3 v,vec3 a,vec3 b);
+API vec3  clamp3f(vec3 v,float a,float b);
 //vec3 tricross3 (vec3 a, vec3 b, vec3 c);
 API void  ortho3   (vec3 *left, vec3 *up, vec3 v);
 
@@ -223,7 +225,8 @@ API vec4  norm4    (vec4   a          );
 API vec4  norm4sq  (vec4   a          );
 API int   finite4  (vec4   a          );
 API vec4  mix4  (vec4 a,vec4 b,float t);
-API vec4  clamp4(vec4 v,float a,float b);
+API vec4  clamp4(vec4 v,vec4 a,vec4 b);
+API vec4  clamp4f(vec4 v,float a,float b);
 // vec4 cross4(vec4 v0, vec4 v1);
 
 // ----------------------------------------------------------------------------
@@ -325,7 +328,7 @@ API vec4 transform444(const mat44 m, const vec4 p);
 API bool unproject44(vec3 *out, vec3 xyd, vec4 viewport, mat44 mvp);
 
 // ----------------------------------------------------------------------------
-// !!! for debugging
+// debugging and utils
 
 API void print2( vec2 v );
 API void print3( vec3 v );
@@ -334,3 +337,18 @@ API void printq( quat q );
 API void print33( float *m );
 API void print34( float *m );
 API void print44( float *m );
+
+API vec2 atof2(const char *s);
+API vec3 atof3(const char *s);
+API vec4 atof4(const char *s);
+
+API char* ftoa(float f);
+API char* ftoa2(vec2 v);
+API char* ftoa3(vec3 v);
+API char* ftoa4(vec4 v);
+
+API void swapf(float *a, float *b);
+API void swapf2(vec2 *a, vec2 *b);
+API void swapf3(vec3 *a, vec3 *b);
+API void swapf4(vec4 *a, vec4 *b);
+

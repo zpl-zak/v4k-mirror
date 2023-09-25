@@ -501,6 +501,8 @@ int window_frame_begin() {
     ui_create();
 
     profile_render();
+
+    ui_shaders();
  
 #if 0 // deprecated
     // run user-defined hooks

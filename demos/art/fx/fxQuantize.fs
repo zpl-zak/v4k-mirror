@@ -1,4 +1,4 @@
-uniform float factor = 3.0; // [1(max)..255(min)]
+uniform float factor = 3.0; /// min:1 max:255 set:3
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = fragCoord.xy / iResolution.xy;

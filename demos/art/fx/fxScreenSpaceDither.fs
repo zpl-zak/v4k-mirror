@@ -5,7 +5,7 @@
 // note: valve edition from http://alex.vlachos.com/graphics/Alex_Vlachos_Advanced_VR_Rendering_GDC2015.pdf
 // note: input in pixels (ie not normalized uv)
 
-uniform float intensity = 250.0; // [2..255]
+uniform float intensity = 250.0; /// min:245 max:255 set:250
 
 vec3 ScreenSpaceDither2(vec2 vScreenPos, float colorDepth) {
     // lestyn's RGB dither (7 asm instructions) from Portal 2 X360, slightly modified for VR

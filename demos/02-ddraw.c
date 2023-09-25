@@ -111,6 +111,7 @@ int main() {
                 char *name = fx_name(i); if( !name ) break;
                 bool b = fx_enabled(i);
                 if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
+                ui_fx(i);
             }
             ui_panel_end();
         }

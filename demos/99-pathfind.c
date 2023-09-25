@@ -1,7 +1,4 @@
-#define COOK_ON_DEMAND 1
 #include "v4k.h"
-
-#define min(a,b) (a>b?b:a)
 
 bool topdown_cam = 1;
 
@@ -56,7 +53,7 @@ void draw_scene() {
 
         for( int y = oz; y < (oz+dd); ++y )
             for( int x = ox; x < (ox+ww); ++x )
-                chunk[ (x + W/2) + min(y + Z/2, Z-1) * W ] |= 1;
+                chunk[ (x + W/2) + mini(y + Z/2, Z-1) * W ] |= 1;
     }
 
     ddraw_color(BLUE);

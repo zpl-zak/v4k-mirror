@@ -1,7 +1,7 @@
 // exposure tone mapping
 // https://learnopengl.com/Advanced-Lighting/HDR
 
-uniform float exposure = 1.0; // [0.1 .. 5]
+uniform float exposure = 1.0; // min:0.1 max:5 set:1
 
 out vec4 color;
 

@@ -106,11 +106,11 @@ const char * app_exec( const char *cmd ) {
     return snprintf(output, 16, "%-15d", rc), buf[-1] = ' ', output;
 }
 
-void app_spawn( const char *cmd ) {
-    if( !cmd[0] ) return;
+int app_spawn( const char *cmd ) {
+    if( !cmd[0] ) return -1;
     cmd = file_normalize(cmd);
 
-    system(cmd);
+    return system(cmd);
 }
 
 #if is(osx)

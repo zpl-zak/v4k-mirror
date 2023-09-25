@@ -988,7 +988,8 @@ API float len2     (vec2   a          );
 API vec2  norm2    (vec2   a          );
 API int   finite2  (vec2   a          );
 API vec2  mix2  (vec2 a,vec2 b,float t);
-API vec2  clamp2(vec2 v,float a,float b);
+API vec2  clamp2(vec2 v,vec2 a,vec2 b);
+API vec2  clamp2f(vec2 v,float a,float b);
 // ----------------------------------------------------------------------------
 
 API vec3  rnd3     (void); // @todo: rnd2,rnd4,rndq
@@ -1019,7 +1020,8 @@ API vec3  norm3    (vec3   a          );
 API vec3  norm3sq  (vec3   a          );
 API int   finite3  (vec3   a          );
 API vec3  mix3  (vec3 a,vec3 b,float t);
-API vec3  clamp3(vec3 v,float a,float b);
+API vec3  clamp3(vec3 v,vec3 a,vec3 b);
+API vec3  clamp3f(vec3 v,float a,float b);
 //vec3 tricross3 (vec3 a, vec3 b, vec3 c);
 API void  ortho3   (vec3 *left, vec3 *up, vec3 v);
 
@@ -1055,7 +1057,8 @@ API vec4  norm4    (vec4   a          );
 API vec4  norm4sq  (vec4   a          );
 API int   finite4  (vec4   a          );
 API vec4  mix4  (vec4 a,vec4 b,float t);
-API vec4  clamp4(vec4 v,float a,float b);
+API vec4  clamp4(vec4 v,vec4 a,vec4 b);
+API vec4  clamp4f(vec4 v,float a,float b);
 // vec4 cross4(vec4 v0, vec4 v1);
 
 // ----------------------------------------------------------------------------
@@ -1157,7 +1160,7 @@ API vec4 transform444(const mat44 m, const vec4 p);
 API bool unproject44(vec3 *out, vec3 xyd, vec4 viewport, mat44 mvp);
 
 // ----------------------------------------------------------------------------
-// !!! for debugging
+// debugging and utils
 
 API void print2( vec2 v );
 API void print3( vec3 v );
@@ -1166,6 +1169,21 @@ API void printq( quat q );
 API void print33( float *m );
 API void print34( float *m );
 API void print44( float *m );
+
+API vec2 atof2(const char *s);
+API vec3 atof3(const char *s);
+API vec4 atof4(const char *s);
+
+API char* ftoa(float f);
+API char* ftoa2(vec2 v);
+API char* ftoa3(vec3 v);
+API char* ftoa4(vec4 v);
+
+API void swapf(float *a, float *b);
+API void swapf2(vec2 *a, vec2 *b);
+API void swapf3(vec3 *a, vec3 *b);
+API void swapf4(vec4 *a, vec4 *b);
+
 #line 0
 
 
@@ -2473,7 +2491,8 @@ API float    alpha( unsigned rgba );
 #define ORANGE  RGB3(  255,144,48 )
 #define PURPLE  RGB3(  102,77,102 ) // 178,128,255 )
 #define YELLOW  RGB3(   255,224,0 )
-#define GRAY    RGB3(  32, 32, 32 ) // 149,149,149 )
+#define GRAY    RGB3(    32,32,32 ) // dark gray
+#define SILVER  RGB3( 149,149,149 ) // dark white, gray-ish
 #define PINK    RGB3(  255,48,144 )
 #define AQUA    RGB3(  48,255,144 )
 
@@ -2769,6 +2788,14 @@ API     void shader_texture_unit(const char *sampler, unsigned texture, unsigned
 API     void shader_colormap(const char *name, colormap_t cm);
 API unsigned shader_get_active();
 API void     shader_destroy(unsigned shader);
+
+// reflection. [0..N] are shader properties
+
+API unsigned     shader_properties(unsigned shader);
+API char**       shader_property(unsigned shader, unsigned property_no);
+
+API int          ui_shader(unsigned shader);
+API int          ui_shaders();
 
 // compute shaders
 enum BUFFER_MODE {
@@ -3096,8 +3123,6 @@ API int      skybox_pop_state(); // @to deprecate
 // -----------------------------------------------------------------------------
 // post-fxs
 
-API void     viewport_color(uint32_t color); // background(uint32_t) instead?
-API void     viewport_color3(vec3 color); // background3(vec3) instead?
 API void     viewport_clear(bool color, bool depth);
 API void     viewport_clip(vec2 from, vec2 to);
 
@@ -3111,6 +3136,8 @@ API int      fx_enabled(int pass);
 API void     fx_enable_all(int enabled);
 API char *   fx_name(int pass);
 API int      fx_find(const char *name);
+
+API int      ui_fx(int pass);
 
 // -----------------------------------------------------------------------------
 // utils
@@ -3435,7 +3462,7 @@ API void        tty_attach();
 API void        tty_detach();
 
 API const char* app_exec(const char *command); // returns ("%15d %s", retcode, output_last_line)
-API void 		app_spawn(const char *command);
+API int         app_spawn(const char *command);
 API int         app_cores();
 API int         app_battery(); /// return battery level [1..100]. also positive if charging (+), negative if discharging (-), and 0 if no battery is present.
 
@@ -3579,8 +3606,8 @@ API int ui_window_end();
 API int  ui_show(const char *panel_or_window_title, int enabled);
 API int  ui_dims(const char *panel_or_window_title, float width, float height);
 API int  ui_visible(const char *panel_or_window_title); // @todo: include ui_collapse() items that are open as well?
-API int  ui_enable();
-API int  ui_disable();
+API int  ui_enable(int on);
+API int  ui_enabled();
 API vec2 ui_get_dims();
 
 API int ui_has_menubar();

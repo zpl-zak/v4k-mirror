@@ -68,8 +68,8 @@ API int ui_window_end();
 API int  ui_show(const char *panel_or_window_title, int enabled);
 API int  ui_dims(const char *panel_or_window_title, float width, float height);
 API int  ui_visible(const char *panel_or_window_title); // @todo: include ui_collapse() items that are open as well?
-API int  ui_enable();
-API int  ui_disable();
+API int  ui_enable(int on);
+API int  ui_enabled();
 API vec2 ui_get_dims();
 
 API int ui_has_menubar();

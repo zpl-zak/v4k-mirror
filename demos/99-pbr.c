@@ -193,8 +193,8 @@ void ModelRender( Model *G, const mat44 _worldRootMatrix ) {
         for( int i = 0, end = array_count(G->meshes); i < end; i++ ) {
             const Mesh *mesh = &G->meshes[ i ];
             // Postpone rendering transparent meshes
-            // if(mesh->transparent != bTransparentPass)
-            //     continue;
+            if(mesh->transparent != bTransparentPass)
+                continue;
 
             const pbr_material_t *material = &G->materials[ mesh->material_idx ];
             shader_colormap( "map_diffuse", material->diffuse );
@@ -363,7 +363,7 @@ unsigned gShader = ~0u;
 unsigned gShaderConfig = ~0u;
 
 bool LoadShaderConfig( int slot ) { // name,vs,fs
-    unsigned newShader = shader( vfs_read(shaders[slot][0]), vfs_read(shaders[slot][1]), NULL, NULL , "");
+    unsigned newShader = shader( vfs_read(shaders[slot][0]), vfs_read(shaders[slot][1]), NULL, NULL, NULL );
     if( newShader == ~0u ) return false;
 
     shader_destroy( gShader );
@@ -418,7 +418,7 @@ int main( int argc, const char *argv[] ) {
     lightYaw = g_skybox.sunYaw;
     lightPitch = g_skybox.sunPitch;
 
-    unsigned skysphereShader = shader( vfs_read("Skyboxes/skysphere.vs"), vfs_read("Skyboxes/skysphere.fs"), NULL, NULL , "");
+    unsigned skysphereShader = shader( vfs_read("Skyboxes/skysphere.vs"), vfs_read("Skyboxes/skysphere.fs"), NULL, NULL, NULL );
     Model skysphere = { 0 }; ModelLoad(&skysphere, "Skyboxes/skysphere.fbx"); ModelRebind(&skysphere, skysphereShader);
 
     if( ModelLoad( &gModel, argc > 1 && argv[1][0] != '-' ? argv[ 1 ] : "damagedhelmet.gltf" ) ) {
@@ -653,6 +653,7 @@ int main( int argc, const char *argv[] ) {
                 char *name = fx_name(i); if( !name ) break;
                 bool b = fx_enabled(i);
                 if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
+                ui_fx(i);
             }
             ui_panel_end();
         }

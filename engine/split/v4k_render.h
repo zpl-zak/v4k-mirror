@@ -40,7 +40,8 @@ API float    alpha( unsigned rgba );
 #define ORANGE  RGB3(  255,144,48 )
 #define PURPLE  RGB3(  102,77,102 ) // 178,128,255 )
 #define YELLOW  RGB3(   255,224,0 )
-#define GRAY    RGB3(  32, 32, 32 ) // 149,149,149 )
+#define GRAY    RGB3(    32,32,32 ) // dark gray
+#define SILVER  RGB3( 149,149,149 ) // dark white, gray-ish
 #define PINK    RGB3(  255,48,144 )
 #define AQUA    RGB3(  48,255,144 )
 
@@ -336,6 +337,14 @@ API     void shader_texture_unit(const char *sampler, unsigned texture, unsigned
 API     void shader_colormap(const char *name, colormap_t cm);
 API unsigned shader_get_active();
 API void     shader_destroy(unsigned shader);
+
+// reflection. [0..N] are shader properties
+
+API unsigned     shader_properties(unsigned shader);
+API char**       shader_property(unsigned shader, unsigned property_no);
+
+API int          ui_shader(unsigned shader);
+API int          ui_shaders();
 
 // compute shaders
 enum BUFFER_MODE {
@@ -663,8 +672,6 @@ API int      skybox_pop_state(); // @to deprecate
 // -----------------------------------------------------------------------------
 // post-fxs
 
-API void     viewport_color(uint32_t color); // background(uint32_t) instead?
-API void     viewport_color3(vec3 color); // background3(vec3) instead?
 API void     viewport_clear(bool color, bool depth);
 API void     viewport_clip(vec2 from, vec2 to);
 
@@ -678,6 +685,8 @@ API int      fx_enabled(int pass);
 API void     fx_enable_all(int enabled);
 API char *   fx_name(int pass);
 API int      fx_find(const char *name);
+
+API int      ui_fx(int pass);
 
 // -----------------------------------------------------------------------------
 // utils

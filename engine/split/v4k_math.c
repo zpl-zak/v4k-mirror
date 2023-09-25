@@ -9,6 +9,54 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+vec2 atof2(const char *s) {
+    vec2 v = {0};
+    sscanf(s, "%f,%f", &v.x, &v.y);
+    return v;
+}
+vec3 atof3(const char *s) {
+    vec3 v = {0};
+    sscanf(s, "%f,%f,%f", &v.x, &v.y, &v.z);
+    return v;
+}
+vec4 atof4(const char *s) {
+    vec4 v = {0};
+    sscanf(s, "%f,%f,%f,%f", &v.x, &v.y, &v.z, &v.w);
+    return v;
+}
+
+char* ftoa(float f) {
+    return va("%f", f);
+}
+char* ftoa2(vec2 v) {
+    return va("%f,%f", v.x, v.y);
+}
+char* ftoa3(vec3 v) {
+    return va("%f,%f,%f", v.x, v.y, v.z);
+}
+char* ftoa4(vec4 v) {
+    return va("%f,%f,%f,%f", v.x, v.y, v.z, v.w);
+}
+
+void swapf(float *a, float *b) {
+    float t = *a; *a = *b; *b = *a;
+}
+void swapf2(vec2 *a, vec2 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+}
+void swapf3(vec3 *a, vec3 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+    float z = a->z; a->z = b->z; b->z = a->z;
+}
+void swapf4(vec4 *a, vec4 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+    float z = a->z; a->z = b->z; b->z = a->z;
+    float w = a->w; a->w = b->w; b->w = a->w;
+}
+
 static uint64_t rand_xoro256(uint64_t x256_s[4]) { // xoshiro256+ 1.0 by David Blackman and Sebastiano Vigna (PD)
     const uint64_t result = x256_s[0] + x256_s[3];
     const uint64_t t = x256_s[1] << 17;
@@ -206,7 +254,8 @@ vec2  norm2    (vec2   a          ) { return len2sq(a) == 0 ? a : scale2(a, 1 / 
 vec2  norm2sq  (vec2   a          ) { return len2sq(a) == 0 ? a : scale2(a, 1 / len2sq(a)); }
 int   finite2  (vec2   a          ) { return FINITE(a.x) && FINITE(a.y); }
 vec2  mix2  (vec2 a,vec2 b,float t) { return add2(scale2((a),1-(t)), scale2((b), t)); }
-vec2  clamp2(vec2 v,float a,float b){ return vec2(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a)); }
+vec2  clamp2(vec2 v, vec2 a, vec2 b){ return vec2(maxf(minf(b.x,v.x),a.x),maxf(minf(b.y,v.y),a.y)); }
+vec2 clamp2f(vec2 v,float a,float b){ return vec2(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a)); }
 // ----------------------------------------------------------------------------
 
 vec3  ptr3     (const float *a    ) { return vec3(a[0],a[1],a[2]); }
@@ -236,7 +285,8 @@ vec3  norm3    (vec3   a          ) { return len3sq(a) == 0 ? a : scale3(a, 1 / 
 vec3  norm3sq  (vec3   a          ) { return len3sq(a) == 0 ? a : scale3(a, 1 / len3sq(a)); }
 int   finite3  (vec3   a          ) { return finite2(vec2(a.x,a.y)) && FINITE(a.z); }
 vec3  mix3  (vec3 a,vec3 b,float t) { return add3(scale3((a),1-(t)), scale3((b), t)); }
-vec3  clamp3(vec3 v,float a,float b){ return vec3(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a),maxf(minf(b,v.z),a)); }
+vec3  clamp3(vec3 v, vec3 a, vec3 b){ return vec3(maxf(minf(b.x,v.x),a.x),maxf(minf(b.y,v.y),a.y),maxf(minf(b.z,v.z),a.z)); }
+vec3 clamp3f(vec3 v,float a,float b){ return vec3(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a),maxf(minf(b,v.z),a)); }
 //vec3 tricross3 (vec3 a, vec3 b, vec3 c) { return cross3(a,cross3(b,c)); } // useful?
 void  ortho3   (vec3 *left, vec3 *up, vec3 v) {
 #if 0
@@ -290,7 +340,8 @@ vec4  norm4    (vec4   a          ) { return len4sq(a) == 0 ? a : scale4(a, 1 / 
 vec4  norm4sq  (vec4   a          ) { return len4sq(a) == 0 ? a : scale4(a, 1 / len4sq(a)); }
 int   finite4  (vec4   a          ) { return finite3(vec3(a.x,a.y,a.z)) && FINITE(a.w); }
 vec4  mix4  (vec4 a,vec4 b,float t) { return add4(scale4((a),1-(t)), scale4((b), t)); }
-vec4  clamp4(vec4 v,float a,float b){ return vec4(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a),maxf(minf(b,v.z),a),maxf(minf(b,v.w),a)); }
+vec4  clamp4(vec4 v, vec4 a, vec4 b){ return vec4(maxf(minf(b.x,v.x),a.x),maxf(minf(b.y,v.y),a.y),maxf(minf(b.z,v.z),a.z),maxf(minf(b.w,v.w),a.w)); }
+vec4 clamp4f(vec4 v,float a,float b){ return vec4(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a),maxf(minf(b,v.z),a),maxf(minf(b,v.w),a)); }
 // vec4 cross4(vec4 v0, vec4 v1) { return vec34(cross3(v0.xyz, v1.xyz), (v0.w + v1.w) * 0.5f); } // may fail
 
 // ----------------------------------------------------------------------------

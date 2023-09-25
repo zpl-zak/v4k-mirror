@@ -1,4 +1,3 @@
-#define COOK_ON_DEMAND 1
 #include "v4k.h"
 
 int yes() {

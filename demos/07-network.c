@@ -75,14 +75,3 @@ int main() {
 // https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-demo.c
 // https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-script.c
 // https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-socket.c
-
-#if 0 // teal
-    script_run("local tl=require(\"tl\")\ntl.loader()");
-    script_run("addsub = require(\"s2\"); print (addsub.add(10, 20))");
-s2.tl:
-    local function add(a: number, b: number): number
-       return a + b
-    end
-    local s = add(1,2)
-    print(s)
-#endif

@@ -127,7 +127,7 @@ static void nk_config_custom_fonts() {
     // nk_style_load_all_cursors(ctx, atlas->cursors); glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
-static void nk_config_custom_style() {
+static void nk_config_custom_theme() {
     #ifdef UI_HUE
     float default_hue = UI_HUE;
     #else
@@ -175,13 +175,6 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     // table[NK_COLOR_TAB_HEADER] = main;
     // table[NK_COLOR_SELECT] = nk_rgba(57, 67, 61, 255);
     // table[NK_COLOR_SELECT_ACTIVE] = main;
-
-	// @transparent
-	#if !is(ems)
-	if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE )
-	for(int i = 0; i < countof(table); ++i) table[i].a = 255; // table[i].a ? 255 : 0;
-	#endif
-	// @transparent
 
     nk_style_default(ui_ctx);
     nk_style_from_table(ui_ctx, table);
@@ -407,7 +400,7 @@ static map(char*,unsigned) ui_windows = 0;
 static void ui_init() {
     do_once {
         nk_config_custom_fonts();
-        nk_config_custom_style();
+        nk_config_custom_theme();
 
         map_init(ui_windows, less_str, hash_str);
     }
@@ -757,71 +750,6 @@ int ui_enable_(int enabled) {
         off.window.header.normal.data.color.a *= alpha;
         off.window.header.hover.data.color.a *= alpha;
         off.window.header.active.data.color.a *= alpha;
-
-        // @transparent {
-        // fixes for transparent windows
-        #if !is(ems)
-        float hsva[4];
-        if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE ) {
-            #define fix(col) off.col = nk_rgba_cf(nk_hsva_colorfv( (nk_colorf_hsva_fv(hsva, nk_color_cf(on.col)),hsva[1] *= alpha,hsva[2] *= alpha, hsva) ))
-            fix(contextual_button.normal.data.color);
-            fix(menu_button.normal.data.color);
-            fix(option.normal.data.color);
-            fix(option.cursor_normal.data.color);
-            fix(checkbox.normal.data.color);
-            fix(checkbox.cursor_normal.data.color);
-            fix(selectable.normal.data.color);
-            fix(selectable.normal_active.data.color);
-            fix(slider.normal.data.color);
-            fix(slider.bar_normal);
-            fix(slider.cursor_normal.data.color);
-            fix(slider.dec_button.normal.data.color);
-            fix(slider.inc_button.normal.data.color);
-            fix(progress.normal.data.color);
-            fix(progress.cursor_normal.data.color);
-            fix(property.normal.data.color);
-            fix(property.label_normal);
-            fix(property.edit.normal.data.color);
-            fix(property.edit.cursor_normal);
-            fix(property.edit.selected_normal);
-            fix(property.dec_button.normal.data.color);
-            fix(property.inc_button.normal.data.color);
-            fix(edit.normal.data.color);
-            fix(edit.cursor_normal);
-            fix(edit.selected_normal);
-            fix(scrollh.normal.data.color);
-            fix(scrollh.cursor_normal.data.color);
-            fix(scrollv.normal.data.color);
-            fix(scrollv.cursor_normal.data.color);
-            fix(combo.normal.data.color);
-            fix(combo.label_normal);
-            fix(combo.symbol_normal);
-            fix(combo.button.normal.data.color);
-            fix(window.header.normal.data.color);
-            fix(button.normal.data.color);
-            #undef fix
-            #define fix(field) on.field.a = off.field.a = 0
-            fix(button.border_color);
-            fix(button.border_color);
-            fix(button.border_color);
-            fix(contextual_button.border_color);
-            fix(menu_button.border_color);
-            fix(option.border_color);
-            fix(checkbox.border_color);
-            fix(slider.border_color);
-            fix(progress.border_color);
-            fix(property.border_color);
-            fix(edit.border_color);
-            fix(chart.border_color);
-            fix(scrollh.border_color);
-            fix(scrollv.border_color);
-            fix(tab.border_color);
-            fix(combo.border_color);
-            fix(window.border_color);
-            #undef fix
-        }
-        #endif
-        // } @transparent
     }
     static struct nk_input input;
     if (!enabled) {
@@ -838,11 +766,11 @@ int ui_enable_(int enabled) {
 }
 
 static int ui_is_enabled = 1;
-int ui_enable() {
-    return ui_is_enabled ? 0 : ui_enable_(ui_is_enabled = 1);
+int ui_enable(int on) {
+    return ui_is_enabled == on ? 0 : ui_enable_(ui_is_enabled = on);
 }
-int ui_disable() {
-    return ui_is_enabled ? ui_enable_(ui_is_enabled = 0) ^ 1 : 0;
+int ui_enabled() {
+    return ui_is_enabled;
 }
 
 static
@@ -860,7 +788,7 @@ void ui_create() {
         nk_glfw3_new_frame(&nk_glfw); //g->nk_glfw);
         ui_dirty = 0;
 
-        ui_enable();
+        ui_enable(1);
     }
 }
 
@@ -935,7 +863,11 @@ void ui_render() {
      * Make sure to either a.) save and restore or b.) reset your own state after
      * rendering the UI. */
     //nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+
+    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_FALSE); // @transparent
     nk_glfw3_render(&nk_glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);  // @transparent
+
 #if is(ems)
     glFinish();
 #endif
@@ -1644,13 +1576,6 @@ int ui_button_transparent(const char *text) {
 
 static
 int ui_button_(const char *text) {
-    // @transparent
-    static bool transparency_fix_needed = 0; ifndef(ems, do_once transparency_fix_needed = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
-    const float dim = transparency_fix_needed && ui_alpha < 1 ? 0.5 : 1;
-    const float dim_alpha = transparency_fix_needed ? 1.0 : 0.90*ui_alpha;
-    const float text_alpha = transparency_fix_needed ? 1.0 : ui_alpha;
-    // @transparent
-
     if( 1 ) {
 #if UI_BUTTON_MONOCHROME
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba(0,0,0,ui_alpha));
@@ -1669,13 +1594,13 @@ int ui_button_(const char *text) {
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,1.00,1.0*ui_alpha));
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.60,0.4*ui_alpha));
 #else // new
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba_f(0.00,0.00,0.00,text_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_hover,  nk_rgba_f(0.11,0.11,0.11,text_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_active, nk_rgba_f(0.00,0.00,0.00,text_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba_f(0.00,0.00,0.00,ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_hover,  nk_rgba_f(0.11,0.11,0.11,ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_active, nk_rgba_f(0.00,0.00,0.00,ui_alpha));
 
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.normal.data.color, nk_hsva_f(ui_hue,0.80*dim,0.6*dim,dim_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,0.85*dim,0.9*dim,dim_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.80*dim,0.6*dim,dim_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.normal.data.color, nk_hsva_f(ui_hue,0.80,0.6,0.90*ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,0.85,0.9,0.90*ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.80,0.6,0.90*ui_alpha));
 #endif
     }
 
@@ -2336,7 +2261,7 @@ int ui_demo(int do_windows) {
             if(choice == 2) ui_notify(va("My random toast (%d)", rand()), va("This is notification #%d", ++hits));
             if(choice == 3) disable_all ^= 1;
 
-        if( disable_all ) ui_disable();
+        if( disable_all ) ui_enable(0);
 
         if( ui_browse(&browsed_file, &show_browser) ) puts(browsed_file);
 
@@ -2385,7 +2310,7 @@ int ui_demo(int do_windows) {
         if( ui_buttons(3, "yes", "no", "maybe") ) { puts("button clicked"); }
         if( ui_dialog("my dialog", __FILE__ "\n" __DATE__ "\n" "Public Domain.", 2/*two buttons*/, &show_dialog) ) {}
 
-        if( disable_all ) ui_enable();
+        if( disable_all ) ui_enable(1);
 
         ui_panel_end();
     }

@@ -1,5 +1,5 @@
-uniform int thickness = 2;
-uniform vec4 border_color = vec4(1,1,0,1);
+uniform int thickness = 2; /// set:2
+uniform vec4 border_color = vec4(1,1,0,1); /// set:1,1,0,1
 
 void main() {
     vec4 texel = texture(iChannel0, uv);

@@ -4803,10 +4803,6 @@ const char *vfs_resolve(const char *pathfile) {
     return pathfile;
 }
 
-#ifndef VFS_ALWAYS_PACK
-#define VFS_ALWAYS_PACK flag("--vfs-always-pack")
-#endif
-
 char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_unpack()
     // @fixme: handle \\?\ absolute path (win)
     if (!pathfile[0]) return file_load(pathfile, size_out);
@@ -4878,7 +4874,8 @@ if( found && *found == 0 ) {
         ptr = vfs_unpack(pathfile, &size);
 
         // asset not found? maybe it has not been cooked yet at this point (see --cook-on-demand)
-        if( (!ptr && COOK_ON_DEMAND) || VFS_ALWAYS_PACK ) {
+        if( !ptr && COOK_ON_DEMAND ) {
+
             static thread_mutex_t mutex, *init = 0; if(!init) thread_mutex_init(init = &mutex);
             thread_mutex_lock(&mutex);
 
@@ -8232,6 +8229,54 @@ void input_demo() {
 #include <stdint.h>
 #include <stdbool.h>
 
+vec2 atof2(const char *s) {
+    vec2 v = {0};
+    sscanf(s, "%f,%f", &v.x, &v.y);
+    return v;
+}
+vec3 atof3(const char *s) {
+    vec3 v = {0};
+    sscanf(s, "%f,%f,%f", &v.x, &v.y, &v.z);
+    return v;
+}
+vec4 atof4(const char *s) {
+    vec4 v = {0};
+    sscanf(s, "%f,%f,%f,%f", &v.x, &v.y, &v.z, &v.w);
+    return v;
+}
+
+char* ftoa(float f) {
+    return va("%f", f);
+}
+char* ftoa2(vec2 v) {
+    return va("%f,%f", v.x, v.y);
+}
+char* ftoa3(vec3 v) {
+    return va("%f,%f,%f", v.x, v.y, v.z);
+}
+char* ftoa4(vec4 v) {
+    return va("%f,%f,%f,%f", v.x, v.y, v.z, v.w);
+}
+
+void swapf(float *a, float *b) {
+    float t = *a; *a = *b; *b = *a;
+}
+void swapf2(vec2 *a, vec2 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+}
+void swapf3(vec3 *a, vec3 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+    float z = a->z; a->z = b->z; b->z = a->z;
+}
+void swapf4(vec4 *a, vec4 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+    float z = a->z; a->z = b->z; b->z = a->z;
+    float w = a->w; a->w = b->w; b->w = a->w;
+}
+
 static uint64_t rand_xoro256(uint64_t x256_s[4]) { // xoshiro256+ 1.0 by David Blackman and Sebastiano Vigna (PD)
     const uint64_t result = x256_s[0] + x256_s[3];
     const uint64_t t = x256_s[1] << 17;
@@ -8429,7 +8474,8 @@ vec2  norm2    (vec2   a          ) { return len2sq(a) == 0 ? a : scale2(a, 1 / 
 vec2  norm2sq  (vec2   a          ) { return len2sq(a) == 0 ? a : scale2(a, 1 / len2sq(a)); }
 int   finite2  (vec2   a          ) { return FINITE(a.x) && FINITE(a.y); }
 vec2  mix2  (vec2 a,vec2 b,float t) { return add2(scale2((a),1-(t)), scale2((b), t)); }
-vec2  clamp2(vec2 v,float a,float b){ return vec2(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a)); }
+vec2  clamp2(vec2 v, vec2 a, vec2 b){ return vec2(maxf(minf(b.x,v.x),a.x),maxf(minf(b.y,v.y),a.y)); }
+vec2 clamp2f(vec2 v,float a,float b){ return vec2(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a)); }
 // ----------------------------------------------------------------------------
 
 vec3  ptr3     (const float *a    ) { return vec3(a[0],a[1],a[2]); }
@@ -8459,7 +8505,8 @@ vec3  norm3    (vec3   a          ) { return len3sq(a) == 0 ? a : scale3(a, 1 / 
 vec3  norm3sq  (vec3   a          ) { return len3sq(a) == 0 ? a : scale3(a, 1 / len3sq(a)); }
 int   finite3  (vec3   a          ) { return finite2(vec2(a.x,a.y)) && FINITE(a.z); }
 vec3  mix3  (vec3 a,vec3 b,float t) { return add3(scale3((a),1-(t)), scale3((b), t)); }
-vec3  clamp3(vec3 v,float a,float b){ return vec3(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a),maxf(minf(b,v.z),a)); }
+vec3  clamp3(vec3 v, vec3 a, vec3 b){ return vec3(maxf(minf(b.x,v.x),a.x),maxf(minf(b.y,v.y),a.y),maxf(minf(b.z,v.z),a.z)); }
+vec3 clamp3f(vec3 v,float a,float b){ return vec3(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a),maxf(minf(b,v.z),a)); }
 //vec3 tricross3 (vec3 a, vec3 b, vec3 c) { return cross3(a,cross3(b,c)); } // useful?
 void  ortho3   (vec3 *left, vec3 *up, vec3 v) {
 #if 0
@@ -8513,7 +8560,8 @@ vec4  norm4    (vec4   a          ) { return len4sq(a) == 0 ? a : scale4(a, 1 / 
 vec4  norm4sq  (vec4   a          ) { return len4sq(a) == 0 ? a : scale4(a, 1 / len4sq(a)); }
 int   finite4  (vec4   a          ) { return finite3(vec3(a.x,a.y,a.z)) && FINITE(a.w); }
 vec4  mix4  (vec4 a,vec4 b,float t) { return add4(scale4((a),1-(t)), scale4((b), t)); }
-vec4  clamp4(vec4 v,float a,float b){ return vec4(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a),maxf(minf(b,v.z),a),maxf(minf(b,v.w),a)); }
+vec4  clamp4(vec4 v, vec4 a, vec4 b){ return vec4(maxf(minf(b.x,v.x),a.x),maxf(minf(b.y,v.y),a.y),maxf(minf(b.z,v.z),a.z),maxf(minf(b.w,v.w),a.w)); }
+vec4 clamp4f(vec4 v,float a,float b){ return vec4(maxf(minf(b,v.x),a),maxf(minf(b,v.y),a),maxf(minf(b,v.z),a),maxf(minf(b,v.w),a)); }
 // vec4 cross4(vec4 v0, vec4 v1) { return vec34(cross3(v0.xyz, v1.xyz), (v0.w + v1.w) * 0.5f); } // may fail
 
 // ----------------------------------------------------------------------------
@@ -10326,6 +10374,9 @@ void shader_print(const char *source) {
     }
 }
 
+// sorted by shader handle. an array of properties per shader. properties are plain strings.
+static __thread map(unsigned, array(char*)) shader_reflect;
+
 static
 GLuint shader_compile( GLenum type, const char *source ) {
     GLuint shader = glCreateShader(type);
@@ -10451,7 +10502,138 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
     }
 */
 
+    // shader compiled fine, before returning, let's parse the source and reflect the uniforms
+    array(char*) props = 0;
+    do_once map_init_int( shader_reflect );
+    if(vs) for each_substring(vs, "\r\n", line) {
+        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
+            array_push(props, STRDUP(line));
+        }
+    }
+    if(fs) for each_substring(fs, "\r\n", line) {
+        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
+            array_push(props, STRDUP(line));
+        }
+    }
+    if(gs) for each_substring(gs, "\r\n", line) {
+        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
+            array_push(props, STRDUP(line));
+        }
+    }
+    if( props ) {
+        map_insert(shader_reflect, program, props);
+    }
+
     return program;
+}
+
+unsigned shader_properties(unsigned shader) {
+    array(char*) *found = map_find(shader_reflect, shader);
+    return found ? array_count(*found) : 0;
+}
+
+char** shader_property(unsigned shader, unsigned property) {
+    array(char*) *found = map_find(shader_reflect, shader);
+    return found ? &(*found)[property] : NULL;
+}
+
+int ui_shader(unsigned shader) {
+    int changed = 0;
+
+    unsigned num_properties = shader_properties(shader);
+    for( unsigned i = 0; i < num_properties; ++i ) {
+        char **ptr = shader_property(shader,i);
+
+        const char *line = *ptr; // debug: ui_label(line);
+        char uniform[32], type[32], name[32];
+        if( sscanf(line, "%s %s %s", uniform, type, name) != 3) continue;
+
+        int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
+        vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
+        vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
+        vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
+        char* tip = strstr(line, "tip:"); tip = tip && tip[4] ? tip + 4 : 0;
+        char *label = !tip ? va("%c%s", name[0] - 32 * !!(name[0] >= 'a'), name+1) :
+            va("%c%s " ICON_MD_HELP "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tip);
+
+        if(minv.x > maxv.x) swapf(&minv.x, &maxv.x);
+        if(minv.y > maxv.y) swapf(&minv.y, &maxv.y);
+        if(minv.z > maxv.z) swapf(&minv.z, &maxv.z);
+        if(minv.w > maxv.w) swapf(&minv.w, &maxv.w);
+
+        // supports int,float,vec2/3/4,color3/4
+        int touched = 0;
+        if( type[0] == 'i' ) {
+            int v = setv.x;
+
+            if( (touched = ui_int(label, &v)) != 0 ) {
+                setv.x = clampi(v, minv.x, maxv.x); // min..max range
+            }
+        }
+        else if( type[0] == 'f' ) {
+            setv.x = (clampf(setv.x, minv.x, maxv.x) - minv.x) / (maxv.x - minv.x);
+
+            if( (touched = ui_slider2(label, &setv.x, va("%5.2f", setv.x))) != 0 ) {
+                setv.x = clampf(minv.x + setv.x * (maxv.x-minv.x), minv.x, maxv.x); // min..max range
+            }
+        }
+        else if( type[0] == 'v' && type[3] == '2' ) {
+            setv.xy = clamp2(setv.xy,minv.xy,maxv.xy);
+
+            if( (touched = ui_float2(label, &setv.x)) != 0 ) {
+                setv.xy = clamp2(setv.xy,minv.xy,maxv.xy);
+            }
+        }
+        else if( type[0] == 'v' && type[3] == '3' ) {
+            setv.xyz = clamp3(setv.xyz,minv.xyz,maxv.xyz);
+
+            if( (touched = (is_color ? ui_color3f : ui_float3)(label, &setv.x)) != 0 ) {
+                setv.xyz = clamp3(setv.xyz,minv.xyz,maxv.xyz);
+            }
+        }
+        else if( type[0] == 'v' && type[3] == '4' ) {
+            setv = clamp4(setv,minv,maxv);
+
+            if( (touched = (is_color ? ui_color4f : ui_float4)(label, &setv.x)) != 0 ) {
+                setv = clamp4(setv,minv,maxv);
+            }
+        }
+
+        if( touched ) {
+            // send to shader
+            GLint shader_bak; glGetIntegerv(GL_CURRENT_PROGRAM, &shader_bak);
+            glUseProgram(shader);
+            /**/ if(type[0] == 'i') glUniform1i(glGetUniformLocation(shader, name), setv.x);
+            else if(type[0] == 'f') glUniform1f(glGetUniformLocation(shader, name), setv.x);
+            else if(type[3] == '2') glUniform2fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            else if(type[3] == '3') glUniform3fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            else if(type[3] == '4') glUniform4fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            glUseProgram(shader_bak);
+
+            // upgrade value
+            *ptr = FREE(*ptr);
+            *ptr = stringf("%s %s %s ///set:%s min:%s max:%s tip:%s", uniform,type,name,ftoa4(setv),ftoa4(minv),ftoa4(maxv),tip?tip:"");
+
+            changed = 1;
+        }
+    }
+
+    if(num_properties) ui_separator();
+
+    return changed;
+}
+
+int ui_shaders() {
+    int changed = 0;
+    int has_menu = ui_has_menubar();
+    if( (has_menu ? ui_window("Shaders", 0) : ui_panel("Shaders", 0) ) ) {
+        for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
+            ui_section(va("Shader %d",*k));
+            changed |= ui_shader(*k);
+        }
+        (has_menu ? ui_window_end : ui_panel_end)();
+    }
+    return changed;
 }
 
 unsigned compute(const char *cs){
@@ -13111,16 +13293,6 @@ void* screenshot_async( int n ) { // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 // -----------------------------------------------------------------------------
 // viewports
 
-void viewport_color3(vec3 color3) {
-    glClearColor(color3.x, color3.y, color3.z, 1);
-}
-void viewport_color(uint32_t rgba) {
-    float b = ((rgba >>  0) & 255) / 255.f;
-    float g = ((rgba >>  8) & 255) / 255.f;
-    float r = ((rgba >> 16) & 255) / 255.f;
-    glClearColor(r, g, b, 1);
-}
-
 void viewport_clear(bool color, bool depth) {
     glClearDepthf(1);
     glClearStencil(0);
@@ -13220,6 +13392,8 @@ bool postfx_enable(postfx *fx, int pass_number, bool enabled);
 void postfx_clear(postfx *fx);
 
 char* postfx_name(postfx *fx, int slot);
+
+int   ui_postfx(postfx *fx, int slot);
 
 struct passfx {
     mesh_t m;
@@ -13363,6 +13537,14 @@ void postfx_clear(postfx *fx) {
     fx->mask = fx->enabled = 0;
 }
 
+int ui_postfx(postfx *fx, int pass) {
+    int on = ui_enabled();
+    ui_enable( postfx_enabled(fx,pass) );
+    int rc = ui_shader(fx->pass[pass].program);
+    ui_enable( on );
+    return rc;
+}
+
 static __thread array(handle) last_fb;
 
 bool postfx_begin(postfx *fx, int width, int height) {
@@ -13488,6 +13670,9 @@ bool postfx_end(postfx *fx) {
     if(is_depth_test_enabled);
     glEnable(GL_DEPTH_TEST);
 
+    // restore clear color: needed in case transparent window is being used (alpha != 0)
+    glClearColor(0,0,0,1); // @transparent
+
     return true;
 }
 
@@ -13529,6 +13714,9 @@ char *fx_name(int pass) {
 }
 int fx_find(const char *name) {
     return postfx_find(&fx, name);
+}
+int ui_fx(int pass) {
+    return ui_postfx(&fx, pass);
 }
 
 // -----------------------------------------------------------------------------
@@ -14794,7 +14982,7 @@ anims_t animations(const char *pathfile, int flags) {
         char anim_name[128] = {0};
         if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
         array_push(a.anims, !!strstri(anim_name, "loop") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
-        array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", "");
+            array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
     }
     a.speed = 1.0;
     return a;
@@ -14899,7 +15087,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
                 vec3 rgbf = {((rgb>>16)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>0)&255)/255.f};
                 glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
                 // config vertex data
-                glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STREAM_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STATIC_DRAW);
                 glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
                 // feed vertex data
                 glDrawArrays(mode, 0, count);
@@ -14931,7 +15119,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
                     vec3 rgbf = {((rgb>>16)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>0)&255)/255.f};
                     glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
                     // config vertex data
-                    glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STREAM_DRAW);
+                    glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STATIC_DRAW);
                     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
                     // feed vertex data
                     glDrawArrays(mode, 0, count);
@@ -15017,7 +15205,7 @@ void ddraw_ground_(float scale) { // 10x10
         ddraw_line(vec3(-scale,0,i), vec3(+scale,0,i)); // horiz
         ddraw_line(vec3(i,0,-scale), vec3(i,0,+scale)); // vert
     }
-    ddraw_color( GRAY ); // inner
+    ddraw_color( RGB3(149,149,149) ); // inner, light grey
     for( float i = -scale + scale/10, c = 1; c < 20; ++c, i += (scale/10) ) {
         ddraw_line_thin(vec3(-scale,0,i), vec3(+scale,0,i)); // horiz
         ddraw_line_thin(vec3(i,0,-scale), vec3(i,0,+scale)); // vert
@@ -15561,7 +15749,7 @@ void ddraw_init() {
     do_once {
     for( int i = 0; i < 2; ++i )
     for( int j = 0; j < 3; ++j ) map_init(dd_lists[i][j], less_int, hash_int);
-    dd_program = shader(dd_vs,dd_fs,"att_position","fragcolor", "");
+    dd_program = shader(dd_vs,dd_fs,"att_position","fragcolor", NULL);
     dd_u_color = glGetUniformLocation(dd_program, "u_color");
     ddraw_flush(); // alloc vao & vbo, also resets color
     }
@@ -16448,11 +16636,11 @@ const char * app_exec( const char *cmd ) {
     return snprintf(output, 16, "%-15d", rc), buf[-1] = ' ', output;
 }
 
-void app_spawn( const char *cmd ) {
-    if( !cmd[0] ) return;
+int app_spawn( const char *cmd ) {
+    if( !cmd[0] ) return -1;
     cmd = file_normalize(cmd);
 
-    system(cmd);
+    return system(cmd);
 }
 
 #if is(osx)
@@ -17545,7 +17733,7 @@ static void nk_config_custom_fonts() {
     // nk_style_load_all_cursors(ctx, atlas->cursors); glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
-static void nk_config_custom_style() {
+static void nk_config_custom_theme() {
     #ifdef UI_HUE
     float default_hue = UI_HUE;
     #else
@@ -17593,13 +17781,6 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     // table[NK_COLOR_TAB_HEADER] = main;
     // table[NK_COLOR_SELECT] = nk_rgba(57, 67, 61, 255);
     // table[NK_COLOR_SELECT_ACTIVE] = main;
-
-	// @transparent
-	#if !is(ems)
-	if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE )
-	for(int i = 0; i < countof(table); ++i) table[i].a = 255; // table[i].a ? 255 : 0;
-	#endif
-	// @transparent
 
     nk_style_default(ui_ctx);
     nk_style_from_table(ui_ctx, table);
@@ -17825,7 +18006,7 @@ static map(char*,unsigned) ui_windows = 0;
 static void ui_init() {
     do_once {
         nk_config_custom_fonts();
-        nk_config_custom_style();
+        nk_config_custom_theme();
 
         map_init(ui_windows, less_str, hash_str);
     }
@@ -18175,71 +18356,6 @@ int ui_enable_(int enabled) {
         off.window.header.normal.data.color.a *= alpha;
         off.window.header.hover.data.color.a *= alpha;
         off.window.header.active.data.color.a *= alpha;
-
-        // @transparent {
-        // fixes for transparent windows
-        #if !is(ems)
-        float hsva[4];
-        if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE ) {
-            #define fix(col) off.col = nk_rgba_cf(nk_hsva_colorfv( (nk_colorf_hsva_fv(hsva, nk_color_cf(on.col)),hsva[1] *= alpha,hsva[2] *= alpha, hsva) ))
-            fix(contextual_button.normal.data.color);
-            fix(menu_button.normal.data.color);
-            fix(option.normal.data.color);
-            fix(option.cursor_normal.data.color);
-            fix(checkbox.normal.data.color);
-            fix(checkbox.cursor_normal.data.color);
-            fix(selectable.normal.data.color);
-            fix(selectable.normal_active.data.color);
-            fix(slider.normal.data.color);
-            fix(slider.bar_normal);
-            fix(slider.cursor_normal.data.color);
-            fix(slider.dec_button.normal.data.color);
-            fix(slider.inc_button.normal.data.color);
-            fix(progress.normal.data.color);
-            fix(progress.cursor_normal.data.color);
-            fix(property.normal.data.color);
-            fix(property.label_normal);
-            fix(property.edit.normal.data.color);
-            fix(property.edit.cursor_normal);
-            fix(property.edit.selected_normal);
-            fix(property.dec_button.normal.data.color);
-            fix(property.inc_button.normal.data.color);
-            fix(edit.normal.data.color);
-            fix(edit.cursor_normal);
-            fix(edit.selected_normal);
-            fix(scrollh.normal.data.color);
-            fix(scrollh.cursor_normal.data.color);
-            fix(scrollv.normal.data.color);
-            fix(scrollv.cursor_normal.data.color);
-            fix(combo.normal.data.color);
-            fix(combo.label_normal);
-            fix(combo.symbol_normal);
-            fix(combo.button.normal.data.color);
-            fix(window.header.normal.data.color);
-            fix(button.normal.data.color);
-            #undef fix
-            #define fix(field) on.field.a = off.field.a = 0
-            fix(button.border_color);
-            fix(button.border_color);
-            fix(button.border_color);
-            fix(contextual_button.border_color);
-            fix(menu_button.border_color);
-            fix(option.border_color);
-            fix(checkbox.border_color);
-            fix(slider.border_color);
-            fix(progress.border_color);
-            fix(property.border_color);
-            fix(edit.border_color);
-            fix(chart.border_color);
-            fix(scrollh.border_color);
-            fix(scrollv.border_color);
-            fix(tab.border_color);
-            fix(combo.border_color);
-            fix(window.border_color);
-            #undef fix
-        }
-        #endif
-        // } @transparent
     }
     static struct nk_input input;
     if (!enabled) {
@@ -18256,11 +18372,11 @@ int ui_enable_(int enabled) {
 }
 
 static int ui_is_enabled = 1;
-int ui_enable() {
-    return ui_is_enabled ? 0 : ui_enable_(ui_is_enabled = 1);
+int ui_enable(int on) {
+    return ui_is_enabled == on ? 0 : ui_enable_(ui_is_enabled = on);
 }
-int ui_disable() {
-    return ui_is_enabled ? ui_enable_(ui_is_enabled = 0) ^ 1 : 0;
+int ui_enabled() {
+    return ui_is_enabled;
 }
 
 static
@@ -18278,7 +18394,7 @@ void ui_create() {
         nk_glfw3_new_frame(&nk_glfw); //g->nk_glfw);
         ui_dirty = 0;
 
-        ui_enable();
+        ui_enable(1);
     }
 }
 
@@ -18353,7 +18469,11 @@ void ui_render() {
      * Make sure to either a.) save and restore or b.) reset your own state after
      * rendering the UI. */
     //nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+
+    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_FALSE); // @transparent
     nk_glfw3_render(&nk_glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);  // @transparent
+
 #if is(ems)
     glFinish();
 #endif
@@ -19062,13 +19182,6 @@ int ui_button_transparent(const char *text) {
 
 static
 int ui_button_(const char *text) {
-    // @transparent
-    static bool transparency_fix_needed = 0; ifndef(ems, do_once transparency_fix_needed = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
-    const float dim = transparency_fix_needed && ui_alpha < 1 ? 0.5 : 1;
-    const float dim_alpha = transparency_fix_needed ? 1.0 : 0.90*ui_alpha;
-    const float text_alpha = transparency_fix_needed ? 1.0 : ui_alpha;
-    // @transparent
-
     if( 1 ) {
 #if UI_BUTTON_MONOCHROME
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba(0,0,0,ui_alpha));
@@ -19087,13 +19200,13 @@ int ui_button_(const char *text) {
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,1.00,1.0*ui_alpha));
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.60,0.4*ui_alpha));
 #else // new
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba_f(0.00,0.00,0.00,text_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_hover,  nk_rgba_f(0.11,0.11,0.11,text_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_active, nk_rgba_f(0.00,0.00,0.00,text_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba_f(0.00,0.00,0.00,ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_hover,  nk_rgba_f(0.11,0.11,0.11,ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_active, nk_rgba_f(0.00,0.00,0.00,ui_alpha));
 
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.normal.data.color, nk_hsva_f(ui_hue,0.80*dim,0.6*dim,dim_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,0.85*dim,0.9*dim,dim_alpha));
-        nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.80*dim,0.6*dim,dim_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.normal.data.color, nk_hsva_f(ui_hue,0.80,0.6,0.90*ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.hover.data.color,  nk_hsva_f(ui_hue,0.85,0.9,0.90*ui_alpha));
+        nk_style_push_color(ui_ctx, &ui_ctx->style.button.active.data.color, nk_hsva_f(ui_hue,0.80,0.6,0.90*ui_alpha));
 #endif
     }
 
@@ -19754,7 +19867,7 @@ int ui_demo(int do_windows) {
             if(choice == 2) ui_notify(va("My random toast (%d)", rand()), va("This is notification #%d", ++hits));
             if(choice == 3) disable_all ^= 1;
 
-        if( disable_all ) ui_disable();
+        if( disable_all ) ui_enable(0);
 
         if( ui_browse(&browsed_file, &show_browser) ) puts(browsed_file);
 
@@ -19803,7 +19916,7 @@ int ui_demo(int do_windows) {
         if( ui_buttons(3, "yes", "no", "maybe") ) { puts("button clicked"); }
         if( ui_dialog("my dialog", __FILE__ "\n" __DATE__ "\n" "Public Domain.", 2/*two buttons*/, &show_dialog) ) {}
 
-        if( disable_all ) ui_enable();
+        if( disable_all ) ui_enable(1);
 
         ui_panel_end();
     }
@@ -20699,6 +20812,8 @@ int window_frame_begin() {
     ui_create();
 
     profile_render();
+
+    ui_shaders();
  
 #if 0 // deprecated
     // run user-defined hooks
