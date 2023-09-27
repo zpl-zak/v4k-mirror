@@ -20935,7 +20935,7 @@ int window_frame_begin() {
     }
 
     // @transparent
-    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
+    static bool has_transparent_attrib = 0; do_once ifdef(ems, false, has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
     if( has_transparent_attrib ) may_render_stats = 0;
     // @transparent
 
