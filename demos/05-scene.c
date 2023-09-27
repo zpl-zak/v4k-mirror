@@ -142,14 +142,6 @@ int main() {
             if(ui_bool("Two sided", &do_twosided)) {}
             ui_panel_end();
         }
-        if( ui_panel("FX", 0) ) {
-            for( int i = 0; i < 64; ++i ) {
-                char *name = fx_name(i); if( !name ) break;
-                bool b = fx_enabled(i);
-                if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
-            }
-            ui_panel_end();
-        }
     }
 }
 
@@ -164,7 +156,7 @@ int main() {
 // create camera
 camera_t cam = camera();
 // load video, RGB texture, no audio
-video_t *v = video( "bjork-all-is-full-of-love.mp4", VIDEO_RGB | VIDEO_NO_AUDIO ); video_seek(v, 30);
+video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO | VIDEO_LOOP ); video_seek(v, 30);
 // load texture
 texture_t t1 = texture("kgirl/g01_texture.png", TEXTURE_RGB);
 texture_t t2 = texture("matcaps/material3", 0);

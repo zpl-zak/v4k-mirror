@@ -145,8 +145,8 @@ default_hue = 0.52;
     struct nk_color active     = nk_hsv_f(    0.600, 0.00, 0.150); // bright b/w
     struct nk_color table[NK_COLOR_COUNT] = {0};
     table[NK_COLOR_TEXT] = nk_rgba(210, 210, 210, 255);
-    table[NK_COLOR_WINDOW] = nk_rgba(42, 42, 42, 215);
-    table[NK_COLOR_HEADER] = nk_rgba(51, 51, 56, 220);
+    table[NK_COLOR_WINDOW] = nk_rgba(42, 42, 42, 245);
+    table[NK_COLOR_HEADER] = nk_rgba(51, 51, 56, 245);
     table[NK_COLOR_BORDER] = nk_rgba(46, 46, 46, 255);
     table[NK_COLOR_BUTTON] = main;
     table[NK_COLOR_BUTTON_HOVER] = hover;
@@ -537,7 +537,7 @@ int ui_active() {
 }
 
 static
-int ui_enable_(int enabled) {
+int ui_set_enable_(int enabled) {
     static struct nk_style off, on;
     do_once {
         off = on = ui_ctx->style;
@@ -775,8 +775,11 @@ int ui_enable_(int enabled) {
 }
 
 static int ui_is_enabled = 1;
-int ui_enable(int on) {
-    return ui_is_enabled == on ? 0 : ui_enable_(ui_is_enabled = on);
+int ui_enable() {
+    return ui_is_enabled == 1 ? 0 : ui_set_enable_(ui_is_enabled = 1);
+}
+int ui_disable() {
+    return ui_is_enabled == 0 ? 0 : ui_set_enable_(ui_is_enabled = 0);
 }
 int ui_enabled() {
     return ui_is_enabled;
@@ -1558,6 +1561,20 @@ ui_label_icon_clicked_R.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x
 
     return ui_label_icon_clicked_R.x;
 }
+int ui_label2_bool(const char *text, bool value) {
+    bool b = !!value;
+    return ui_bool(text, &b), 0;
+}
+int ui_label2_float(const char *text, float value) {
+    float f = (float)value;
+    return ui_float(text, &f), 0;
+}
+int ui_label2_wrap(const char *label, const char *str) { // @fixme: does not work (remove dynamic layout?)
+    nk_layout_row_dynamic(ui_ctx, 0, 2  - (label ? !label[0] : 1));
+    ui_label_(label, NK_TEXT_LEFT);
+    nk_text_wrap(ui_ctx, str, strlen(str));
+    return 0;
+}
 int ui_label2_toolbar(const char *label, const char *icons) {
     int mouse_click = ui_label2(label, va(">%s", icons));
     int choice = !mouse_click ? 0 : 1 + -mouse_click / (UI_ICON_FONTSIZE + UI_ICON_SPACING_X); // divided by px per ICON_MD_ glyph approximately
@@ -1670,18 +1687,6 @@ int ui_buttons(int buttons, ...) {
 
 int ui_button(const char *s) {
     return ui_buttons(1, s);
-}
-
-int ui_const_bool(const char *text, const double value) {
-    bool b = !!value;
-    return ui_bool(text, &b), 0;
-}
-int ui_const_float(const char *text, const double value) {
-    float f = (float)value;
-    return ui_float(text, &f), 0;
-}
-int ui_const_string(const char *label, const char *text) {
-    return ui_label2(label, text);
 }
 
 int ui_toggle(const char *label, bool *value) {
@@ -1947,13 +1952,6 @@ int ui_buffer(const char *label, char *buffer, int buflen) {
     return !!(active & NK_EDIT_COMMITED) ? nk_edit_unfocus(ui_ctx), 1 : 0;
 }
 
-int ui_text_wrap(const char *label, char *text) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2  - (label ? !label[0] : 1));
-    ui_label_(label, NK_TEXT_LEFT);
-    nk_text_wrap(ui_ctx, text, strlen(text));
-    return 0; 
-}
-
 int ui_string(const char *label, char **str) {
     char *bak = va("%s%c", *str ? *str : "", '\0');
     int rc = ui_buffer(label, bak, strlen(bak)+2);
@@ -2077,8 +2075,8 @@ int ui_dialog(const char *title, const char *text, int choices, bool *show) { //
     return *show;
 }
 
-#define ui_bits_template(X) \
-int ui_bits##X(const char *label, uint##X##_t *enabled) { \
+#define ui_bitmask_template(X) \
+int ui_bitmask##X(const char *label, uint##X##_t *enabled) { \
     /* @fixme: better way to retrieve widget width? nk_layout_row_dynamic() seems excessive */ \
     nk_layout_row_dynamic(ui_ctx, 1, 1); \
     struct nk_rect bounds = nk_widget_bounds(ui_ctx); \
@@ -2109,9 +2107,9 @@ int ui_bits##X(const char *label, uint##X##_t *enabled) { \
     return copy ^ *enabled; \
 }
 
-ui_bits_template(8);
-ui_bits_template(16);
-//ui_bits_template(32);
+ui_bitmask_template(8);
+ui_bitmask_template(16);
+//ui_bitmask_template(32);
 
 int ui_console() { // @fixme: buggy
     static char *cmd = 0;
@@ -2272,13 +2270,15 @@ int ui_demo(int do_windows) {
             if(choice == 2) ui_notify(va("My random toast (%d)", rand()), va("This is notification #%d", ++hits));
             if(choice == 3) disable_all ^= 1;
 
-        if( disable_all ) ui_enable(0);
+        if( disable_all ) ui_disable();
 
         if( ui_browse(&browsed_file, &show_browser) ) puts(browsed_file);
 
         if( ui_section("Labels")) {}
         if( ui_label("my label")) {}
         if( ui_label("my label with tooltip@built on " __DATE__ " " __TIME__)) {}
+        if( ui_label2_toolbar("my toolbar", ICON_MD_STAR ICON_MD_STAR_OUTLINE ICON_MD_BOOKMARK ICON_MD_BOOKMARK_BORDER) ) {}
+        //if( ui_label2_wrap("my long label", "and some long long long long text wrapped")) {}
 
         if( ui_section("Types")) {}
         if( ui_bool("my bool", &boolean) ) puts("bool changed");
@@ -2311,7 +2311,7 @@ int ui_demo(int do_windows) {
         }
 
         if( ui_section("Others")) {}
-        if( ui_bits8("my bitmask", &bitmask) ) printf("bitmask changed %x\n", bitmask);
+        if( ui_bitmask8("my bitmask", &bitmask) ) printf("bitmask changed %x\n", bitmask);
         if( ui_toggle("my toggle", &toggle) ) printf("toggle %s\n", toggle ? "on":"off");
         if( ui_image("my image", texture_checker().id, 0, 0) ) { puts("image clicked"); }
 
@@ -2321,7 +2321,7 @@ int ui_demo(int do_windows) {
         if( ui_buttons(3, "yes", "no", "maybe") ) { puts("button clicked"); }
         if( ui_dialog("my dialog", __FILE__ "\n" __DATE__ "\n" "Public Domain.", 2/*two buttons*/, &show_dialog) ) {}
 
-        if( disable_all ) ui_enable(1);
+        if( disable_all ) ui_enable(); // restore enabled state
 
         ui_panel_end();
     }

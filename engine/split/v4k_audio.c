@@ -386,6 +386,9 @@ float audio_volume_master(float gain) {
 }
 
 int audio_play_gain_pitch_pan( audio_t a, int flags, float gain, float pitch, float pan ) {
+    static bool muted = 0; do_once muted = flag("--mute") || flag("--muted");
+    if(muted) return 1;
+
     if( flags & AUDIO_IGNORE_MIXER_GAIN ) {
         // do nothing, gain used as-is
     } else {

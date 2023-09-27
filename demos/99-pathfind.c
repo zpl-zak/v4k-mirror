@@ -1,3 +1,8 @@
+// pathfind demo
+// - rlyeh, public domain
+//
+// @todo: use 2d sprites instead, will shorten things
+
 #include "v4k.h"
 
 bool topdown_cam = 1;
@@ -5,7 +10,7 @@ bool topdown_cam = 1;
 void move_players();
 
 int main() {
-    window_create(75, 0); // WINDOW_MSAA4);
+    window_create(85, 0); // WINDOW_MSAA4);
     window_title(__FILE__);
     window_fps_lock(60);
 
@@ -49,6 +54,10 @@ void draw_scene() {
         float dd = randi(1,10);
         float hh = randi(3,10);
         aabb b = { vec3(ox,0,oz), vec3(ox+ww,hh,oz+dd) };
+
+        static aabb spawn_zone = { {-10,-10,-10},{10,10,10} };
+        if( aabb_hit_aabb(b, spawn_zone) ) continue;
+
         array_push(blockers, b);
 
         for( int y = oz; y < (oz+dd); ++y )
@@ -248,7 +257,9 @@ void move_players() {
 
     // ui
     if( ui_panel("Controls", 0) ) {
-        ui_label2("Girl",  ICON_MD_MOUSE   " Set Waypoint");
+        ui_label2("[F1]",  ICON_MD_KEYBOARD     " Debug traversal visualization");
+        ui_label2("[Left mouse]",   ICON_MD_MOUSE   " Set Waypoint");
+        ui_label2("[Right mouse]",   ICON_MD_MOUSE   " Toggle camera");
         ui_label2("Girl",  ICON_MD_GAMEPAD " CURSOR keys");
         ui_label2("Alien", ICON_MD_GAMEPAD " W,A,S,D keys");
         ui_label2("Robot", ICON_MD_GAMEPAD " I,J,K,L keys");

@@ -130,7 +130,7 @@ void DrawModel(mesh_t *m) {
         "fragcolor = vec4(v_normal, 1.0);\n" // diffuse
     "}";
 
-    static unsigned program; do_once program = shader(vs, fs, "att_position,att_normal", "fragcolor", "");
+    static unsigned program; do_once program = shader(vs, fs, "att_position,att_normal", "fragcolor", NULL);
     shader_bind(program);
     shader_mat44("VP", VP);
     shader_mat44("M", M);

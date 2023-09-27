@@ -27,8 +27,7 @@ int main() {
 
     // animated models loading (no flags)
     model_t girl = model("kgirl/kgirls01.fbx", 0);
-    vec3 pos = vec3(0,0,0), sca = vec3(2,2,2), rot = vec3(-90,0,0);
-    compose44( girl.pivot, pos, eulerq(rot), sca); // position, rotation, scale
+    compose44( girl.pivot, vec3(0,0,0), eulerq(vec3(-90,0,0)), vec3(2,2,2)); // position, rotation, scale
 
     // camera
     camera_t cam = camera();
@@ -38,7 +37,7 @@ int main() {
 
     // audio (both clips & streams)
     audio_t SFX1 = audio_clip( "coin.wav" ), SFX2 = audio_clip( "pew.sfxr" );
-    audio_t BGM1 = audio_stream( "waterworld-map.fur"), BGM2 = audio_stream( "larry.mid" ), BGM = BGM1;
+    audio_t BGM1 = audio_stream( "waterworld-map.fur" ), BGM2 = audio_stream( "larry.mid" ), BGM = BGM1;
     audio_play(SFX1, 0);
     audio_play(BGM, 0);
 
@@ -60,17 +59,17 @@ int main() {
         camera_move(&cam, wasdecq.x,wasdecq.y,wasdecq.z);
         camera_fps(&cam, mouse.x,mouse.y);
         window_cursor( !active );
-     
-        // debug draw
-        ddraw_grid(0);
-        if(do_debugdraw) ddraw_demo(); // showcase many debugdraw shapes
-        ddraw_flush();
-        
-        // draw skybox
-        skybox_render(&sky, cam.proj, cam.view);
 
         // apply post-fxs from here
         fx_begin();
+
+            // debug draw
+            ddraw_ground(0);
+            if(do_debugdraw) ddraw_demo(); // showcase many debugdraw shapes
+            ddraw_flush();
+
+            // draw skybox
+            skybox_render(&sky, cam.proj, cam.view);
 
             // animate girl
             float delta = window_delta() * 30; // 30fps anim
@@ -81,10 +80,6 @@ int main() {
 
         // post-fxs end here
         fx_end();
-
-        gizmo(&pos, &rot, &sca);
-        model_render_skeleton(girl, girl.pivot);
-        compose44( girl.pivot, pos, eulerq(rot), sca); // position, rotation, scale
 
         // font demo
         font_print(va(FONT_BOTTOM FONT_RIGHT FONT_H6 "%5.2f FPS", window_fps()));
@@ -114,12 +109,6 @@ int main() {
             if( ui_label2_toolbar("BGM: Leisure Suit Larry", ICON_MD_VOLUME_UP)) audio_stop(BGM), audio_play(BGM = BGM2, 0);
             if( ui_label2_toolbar("SFX: Coin", ICON_MD_VOLUME_UP)) audio_play(SFX1, 0);
             if( ui_label2_toolbar("SFX: Pew", ICON_MD_VOLUME_UP)) audio_play(SFX2, 0);
-
-            ui_section("FX");
-            for( int i = 0, on; i < 64 && fx_name(i); ++i ) {
-                bool enabled = fx_enabled(i);
-                if( ui_bool(fx_name(i), &enabled) ) fx_enable(i, enabled);
-            }
 
             ui_panel_end();
         }

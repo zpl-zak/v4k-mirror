@@ -1,5 +1,5 @@
-uniform float contrast = 1.5; /// set:1.5 tip:"bleach-to-gray < 1 > saturate"
-uniform float brightness = 0; /// set:0 max:2
+uniform float contrast; /// set:1.5 tip:"bleach-to-gray < 1 > saturate"
+uniform float brightness; /// set:0 max:2
 
 void main() {
     vec4 pixelColor = texture(iChannel0, TEXCOORD.st);

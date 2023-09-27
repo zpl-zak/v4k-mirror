@@ -25,7 +25,6 @@ API int    ui_float4(const char *label, float value[4]);
 API int    ui_double(const char *label, double *value);
 API int    ui_buffer(const char *label, char *buffer, int buflen);
 API int    ui_string(const char *label, char **string);
-API int    ui_text_wrap(const char *label, char *text);
 API int    ui_color3(const char *label, float *color3); //[0..255]
 API int    ui_color3f(const char *label, float *color3); //[0..1]
 API int    ui_color4(const char *label, float *color4); //[0..255]
@@ -47,18 +46,17 @@ API int    ui_image(const char *label, handle id, unsigned w, unsigned h); //(w,
 API int    ui_subimage(const char *label, handle id, unsigned iw, unsigned ih, unsigned sx, unsigned sy, unsigned sw, unsigned sh);
 API int    ui_colormap(const char *label, colormap_t *cm); // returns num member changed: 1 for color, 2 for texture map
 API int    ui_separator();
-API int    ui_bits8(const char *label, uint8_t *bits);
-API int    ui_bits16(const char *label, uint16_t *bits);
+API int    ui_bitmask8(const char *label, uint8_t *bits);
+API int    ui_bitmask16(const char *label, uint16_t *bits);
 API int    ui_console();
 API int    ui_clampf(const char *label, float *value, float minf, float maxf);
 API int    ui_label(const char *label);
 API int    ui_label2(const char *label, const char *caption);
+API int    ui_label2_bool(const char *label, bool enabled);
+API int    ui_label2_float(const char *label, float value);
 API int    ui_label2_toolbar(const char *label, const char *icons);
 API int    ui_slider(const char *label, float *value);
 API int    ui_slider2(const char *label, float *value, const char *caption);
-API int    ui_const_bool(const char *label, const double value);
-API int    ui_const_float(const char *label, const double value);
-API int    ui_const_string(const char *label, const char *value);
 API int   ui_contextual_end();
 API int   ui_collapse_clicked();
 API int   ui_collapse_end();
@@ -68,9 +66,11 @@ API int ui_window_end();
 API int  ui_show(const char *panel_or_window_title, int enabled);
 API int  ui_dims(const char *panel_or_window_title, float width, float height);
 API int  ui_visible(const char *panel_or_window_title); // @todo: include ui_collapse() items that are open as well?
-API int  ui_enable(int on);
-API int  ui_enabled();
 API vec2 ui_get_dims();
+
+API int  ui_enable();
+API int  ui_enabled();
+API int  ui_disable();
 
 API int ui_has_menubar();
 API int ui_menu(const char *items); // semicolon-separated or comma-separated items

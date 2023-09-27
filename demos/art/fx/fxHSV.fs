@@ -1,6 +1,6 @@
-uniform float h = 1.0; /// set:1.0 tip:"hue color shift"
-uniform float s = 0.5; /// set:0.5 tip:"gray: <1, saturate: >1"
-uniform float v = 1.0; /// set:1.0 tip:"black: <1, white: >1"
+uniform float h; /// set:1.58 tip:"hue color shift"
+uniform float s; /// set:1.51 tip:"gray: <1, saturate: >1"
+uniform float v; /// set:1.05 tip:"black: <1, white: >1"
 
 vec3 hsv2rgb(vec3 c) {
     return mix(vec3(1.),clamp((abs(fract(c.r+vec3(3.,2.,1.)/3.)*6.-3.)-1.),0.,1.),c.g)*c.b;

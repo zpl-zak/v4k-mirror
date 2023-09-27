@@ -1,4 +1,4 @@
-uniform float intensity = 0.25; /// set:0.25 max:2
+uniform float intensity; /// set:0.25 max:2
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ){
     vec2 uv = fragCoord / iResolution.xy;

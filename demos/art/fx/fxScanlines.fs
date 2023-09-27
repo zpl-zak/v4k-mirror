@@ -1,5 +1,5 @@
-uniform float hardness = 0.1; /// set:0.1 max:2
-uniform float flickering = 0.01; /// set:0.01
+uniform float hardness; /// set:0.1 max:2
+uniform float flickering; /// set:0.01
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = fragCoord.xy / iResolution.xy;

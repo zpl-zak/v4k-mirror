@@ -32,10 +32,10 @@ int main() {
     array_resize(M, 32*32);
     for(int z = 0, i = 0; z < 32; ++z) {
         for(int x = 0; x < 32; ++x, ++i) {
-            vec3 p = vec3(-x*9,0,-z*9);
-            vec3 r = vec3(0,-90,0); // kgirl: 0,0,0
-            vec3 s = vec3(2,2,2);
-            compose44(M[i], p, eulerq(r), s);
+            vec3 pos = vec3(-x*3,0,-z*3);
+            vec3 rot = vec3(0,-90,0); // kgirl: 0,0,0
+            vec3 sca = vec3(1,1,1); // kgirl: 2,2,2
+            compose44(M[i], pos, eulerq(rot), sca);
         }
     }
 
@@ -165,15 +165,6 @@ int main() {
             shader_bind(mdl.program);
             shader_vec3("u_rimcolor", rimcolor);
             shader_vec3("u_rimrange", rimrange);
-            ui_panel_end();
-        }
-        if( ui_panel("FX", 0) ) {
-            for( int i = 0; i < 64; ++i ) {
-                char *name = fx_name(i); if( !name ) break;
-                bool b = fx_enabled(i);
-                if( ui_bool(name, &b) ) fx_enable(i, b);
-                ui_fx(i);
-            }
             ui_panel_end();
         }
     }

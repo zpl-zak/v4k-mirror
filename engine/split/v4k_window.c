@@ -356,7 +356,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     #if is(ems)
     if( FLAGS_FULLSCREEN ) window_fullscreen(1);
     #else
-    gladLoadGL(glfwGetProcAddress);
+    int gl_version = gladLoadGL(glfwGetProcAddress);
     #endif
 
     glDebugEnable();
@@ -380,6 +380,8 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     PRINTF("GPU driver: %s\n", glGetString(GL_VERSION));
 
     #if !is(ems)
+    PRINTF("GPU OpenGL: %d.%d\n", GLAD_VERSION_MAJOR(gl_version), GLAD_VERSION_MINOR(gl_version));
+
     if( FLAGS_TRANSPARENT ) { // @transparent
         glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
         if( scale >= 1 ) glfwMaximizeWindow(window);
@@ -508,10 +510,51 @@ int window_frame_begin() {
 
     ui_create();
 
-    profile_render();
+    bool may_render_stats = 1;
 
-    ui_shaders();
+    int has_menu = ui_has_menubar();
+    if( !has_menu ) {
+        static int cook_on_demand; do_once cook_on_demand = COOK_ON_DEMAND;
+        if( !cook_on_demand ) {
+            // render profiler, unless we are in the cook progress screen
+            static unsigned frames = 0; if(frames <= 0) frames += cook_progress() >= 100;
+            may_render_stats = (frames > 0);
+        }
+    }
+
+    // @transparent
+    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
+    if( has_transparent_attrib ) may_render_stats = 0;
+    // @transparent
+
+    // generate Debug panel contents
+    if( may_render_stats ) {
+        if( has_menu ? ui_window("Debug", 0) : ui_panel("Debug", 0) ) {
+
+            int open = 0, clicked_or_toggled = 0;
+
+            for( int p = (open = ui_collapse("FXs", "Debug.FXs")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
     ui_fxs();
+            }
+            for( int p = (open = ui_collapse("Profiler", "Debug.Profiler")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_profiler();
+            }
+            for( int p = (open = ui_collapse("Shaders", "Debug.Shaders")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_shaders();
+            }
+            for( int p = (open = ui_collapse("Keyboard", "Debug.Keyboard")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+
+            }
+            for( int p = (open = ui_collapse("Mouse",    "Debug.Mouse")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+
+            }
+            for( int p = (open = ui_collapse("Gamepads", "Debug.Gamepads")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+
+            }
+
+            (has_menu ? ui_window_end : ui_panel_end)();
+        }
+    }
  
 #if 0 // deprecated
     // run user-defined hooks

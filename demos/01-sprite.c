@@ -1,167 +1,218 @@
-// sprite demo: window, audio, camera, font, tiled, render, fx, spritesheet, input, ui. @todo: finish spine
-// - rlyeh, public domain.
+// sprite routines
+// - rlyeh,
 //
-// Compile with:
-//    `make     demos\01-sprite.c` (windows)
-// `sh MAKE.bat demos/01-sprite.c` (linux, osx)
+// credits: original lovely demo by rxi (MIT License).
+// see https://github.com/rxi/autobatch/tree/master/demo/cats
 
 #include "v4k.h"
 
-void demo_kids(vec3 offs) {
+texture_t kids, catImage, shadowImage, inputs;
+int NUM_SPRITES = 100, NUM_SPRITES_CHANGED = 1;
+
+typedef struct Cat {
+    int cat, flip;
+    double x, y;
+    double vx, vy;
+    double animSpeed;
+    double moveTimer;
+    double elapsed;
+} Cat;
+
+void demo_cats() {
+    static array(Cat) cats = 0;
+
     // init
-    static texture_t kids; do_once kids = texture( "spriteSheetExample.png", TEXTURE_LINEAR );
-    static vec3 pos[2] = {{490,362},{442,362}}, vel[2] = {0};
-    static int row[2] = {0,3}, frame[2] = {0};
-    static int inputs[2][4] = {{KEY_W,KEY_A,KEY_S,KEY_D},{KEY_UP,KEY_LEFT,KEY_DOWN,KEY_RIGHT}};
+    if( NUM_SPRITES_CHANGED ) {
+        NUM_SPRITES_CHANGED = 0;
+
+        array_resize(cats, NUM_SPRITES); int i = 0;
+        for each_array_ptr(cats, Cat, c) {
+            randset(i++);
+            c->x = randf() * window_width();
+            c->y = randf() * window_height();
+            c->vx = c->vy = 0;
+            c->cat = randi(0, 4);
+            c->flip = randf() < 0.5;
+            c->animSpeed = 0.8 + randf() * 0.3;
+            c->moveTimer = 0;
+            c->elapsed = 0;
+        }
+    }
 
     // move
-    for( int i = 0; i < countof(pos); ++i ) {
-        vel[i].x = input(inputs[i][3]) - input(inputs[i][1]);
-        vel[i].y = input(inputs[i][2]) - input(inputs[i][0]);
-        pos[i].x = fmod(pos[i].x + vel[i].x, window_width() + 128);
-        pos[i].y = fmod(pos[i].y + vel[i].y, window_height() + 128);
-        frame[i] += vel[i].x || vel[i].y;
+    const float dt = 1/120.f;
+    const int appw = window_width(), apph = window_height();
+
+    enum { yscale = 1 };
+    for( int i = 0; i < NUM_SPRITES; ++i ) {
+        Cat *c = &cats[i];
+        // Add velocity to position //and wrap to screen
+        c->x += yscale * c->vx * dt; // % ;
+        c->y += yscale * c->vy * dt; // % (int)window_height();
+        if( c->x < 0 ) c->x += appw; else if( c->x > appw ) c->x -= appw;
+        if( c->y < 0 ) c->y += apph; else if( c->y > apph ) c->y -= apph;
+        // Faster animation if walking
+        int boost = c->vx == 0 && c->vy == 0 ? 1 : 3;
+        // Update elapsed time
+        c->elapsed += dt * boost;
+        // Update move timer -- if we hit zero then change or zero velocity
+        c->moveTimer -= dt * boost;
+        if (c->moveTimer < 0) {
+            if (randf() < .2) {
+                c->vx = (randf() * 2 - 1) * 30 * 2;
+                c->vy = (randf() * 2 - 1) * 15 * 2;
+                c->flip = c->vx < 0;
+            } else {
+                c->vx = c->vy = 0;
+            }
+            c->moveTimer = 1 + randf() * 5;
+        }
     }
 
     // render
-    for( int i = 0; i < countof(pos); ++i ) {
-        int col = frame[i] / 10, num_frame = row[i] * 4 + col % 4; // 4x4 tilesheet
-        float position[3] = {pos[i].x,pos[i].y,pos[i].y}, offset[2]={0,0}, scale[2]={0.5,0.5};
-        float spritesheet[3]={num_frame,4,4};
-        sprite_sheet(kids,
-            spritesheet,        // num_frame in a 4x4 spritesheet
-            position, 0,        // position(x,y,depth:sort-by-Y), angle
-            offset, scale,      // offset(x,y), scale(x,y)
-            false, WHITE, false // is_additive, tint color, resolution-independent
+    uint32_t white = rgba(255,255,255,255);
+    uint32_t alpha = rgba(255,255,255,255*0.6);
+    for( int i = 0; i < NUM_SPRITES; ++i ) {
+        Cat *c = &cats[i];
+        // Get current animation frame (8x4 tilesheet)
+        double e = c->elapsed * c->animSpeed;
+        double frame_num = c->cat * 8 + floor( ((int)(e * 8)) % 4 );
+        frame_num = c->vx != 0 || c->vy != 0 ? frame_num + 4 : frame_num;
+        // Get x scale based on flip flag
+        int xscale = yscale * (c->flip ? -1 : 1);
+        // Draw
+        float angle = 0; //fmod(window_time()*360/5, 360);
+        float scale[2] = { 2*xscale, 2*yscale };
+        float position[3] = { c->x,c->y,c->y }, no_offset[2] = {0,0}, spritesheet[3] = { frame_num,8,4 };
+        sprite_sheet(catImage,
+            spritesheet,                // frame_number in a 8x4 spritesheet
+            position, angle,            // position(x,y,depth: sort by Y), angle
+            no_offset, scale,           // offset(x,y), scale(x,y)
+            0,white,0                   // is_additive, tint color, resolution independant
+        );
+        float position_neg_sort[3] = { c->x,c->y,-c->y }, offset[2] = {-1,5}, no_spritesheet[3] = {0,0,0};
+        sprite_sheet(shadowImage,
+            no_spritesheet,             // no frame_number (0x0 spritesheet)
+            position_neg_sort, angle,   // position(x,y,depth: sort by Y), angle
+            offset, scale,              // offset(x,y), scale(x,y)
+            0,alpha,0                   // is_additive, tint color, resolution independant
         );
     }
 }
 
-void demo_hud() {
-    // draw pixel-art hud, 16x16 ui element, scaled and positioned in resolution-independant way
-    static texture_t inputs; do_once inputs = texture( "prompts_tilemap_34x24_16x16x1.png", TEXTURE_LINEAR );
-    float spritesheet[3] = {17,34,24}, offset[2] = {0, - 2*absf(sin(window_time()*5))}; // sprite cell and animation
-    float scale[2] = {3, 3}, tile_w = 16 * scale[0], tile_h = 16 * scale[1]; // scaling
-    float position[3] = {window_width() - tile_w, window_height() - tile_h, window_height() }; // position in screen-coordinates (x,y,z-index)
-    sprite_sheet(inputs, spritesheet, position, 0/*deg*/, offset, scale, false, WHITE, 1);
+void demo_kids() {
+    static int angle; //++angle;
+    static int *x, *y, *v;
+
+    // init
+    if( NUM_SPRITES_CHANGED ) {
+        NUM_SPRITES_CHANGED = 0;
+
+        y = (int*)REALLOC(y, 0 );
+        x = (int*)REALLOC(x, NUM_SPRITES * sizeof(int) );
+        y = (int*)REALLOC(y, NUM_SPRITES * sizeof(int) );
+        v = (int*)REALLOC(v, NUM_SPRITES * sizeof(int) );
+        for( int i = 0; i < NUM_SPRITES; ++i ) {
+            randset(i);
+            x[i] = randi(0, window_width());
+            y[i] = randi(0, window_height());
+            v[i] = randi(1, 3);
+        }
+    }
+
+    // config
+    const int appw = window_width(), apph = window_height();
+
+    // move & render
+    for( int i = 0; i < NUM_SPRITES; ++i ) {
+        y[i] = (y[i] + v[i]) % (apph + 128);
+        int col = ((x[i] / 10) % 4); // 4x4 tilesheet
+        int row = ((y[i] / 10) % 4);
+        int num_frame = col * 4 + row;
+        float position[3] = {x[i],y[i],y[i]}, offset[2]={0,0}, scale[2]={1,1}, spritesheet[3]={num_frame,4,4};
+        sprite_sheet(kids,
+            spritesheet,      // num_frame in a 4x4 spritesheet
+            position, angle,  // position(x,y,depth: sort by Y), angle
+            offset, scale,    // offset(x,y), scale(x,y)
+            0, ~0u, 0         // is_additive, tint color, resolution independant
+        );
+    }
 }
 
-int main() {
-    // window (80% sized, MSAA x4 flag)
-    window_create(80.0, WINDOW_MSAA4);
-    window_title(__FILE__);
+int main(int argc, char **argv) {
+    window_create(75.f, 0);
+    window_title("V4K - Sprite");
+    window_color( SILVER );
 
-    // tiled map
-    tiled_t tmx = tiled(vfs_read("castle.tmx"));
-    // tmx.parallax = true;
+    // options
+    int do_cats = 1;
+    NUM_SPRITES = optioni("--num_sprites,-N", NUM_SPRITES);
+    if(do_cats) NUM_SPRITES/=2; // cat-sprite+cat-shadow == 2 sprites
 
-    // spine model
-    //spine_t *spn = spine("goblins.json", "goblins.atlas", 0);
+    // load sprites and sheets
+    kids = texture( "spriteSheetExample.png", TEXTURE_LINEAR );
+    catImage = texture( "cat.png", TEXTURE_LINEAR ); //
+    shadowImage = texture( "cat-shadow.png", TEXTURE_LINEAR );
+    inputs = texture( "prompts_tilemap_34x24_16x16x1.png", TEXTURE_LINEAR );
 
-    // camera 2d
+    // load all fx files, including subdirs
+    fx_load("fx**.fs");
+
+    // init camera (x,y) (z = zoom)
     camera_t cam = camera();
-    cam.position = vec3(window_width()/2, window_height()/2, 3); // at(CX,CY) zoom(x3)
+    cam.position = vec3(window_width()/2,window_height()/2,1);
     camera_enable(&cam);
 
-    // audio (both clips & streams)
-    audio_t clip1 = audio_clip( "coin.wav" );
-    audio_t clip2 = audio_clip( "pew.sfxr" );
-    audio_t stream1 = audio_stream( "larry.mid" );
-    audio_t stream2 = audio_stream( "monkey1.mid" );
-    audio_t BGM = stream1;
-    audio_play(BGM, 0);
-
-    // font config: faces (6 max) and colors (10 max)
-    #define FONT_CJK       FONT_FACE3
-    #define FONT_YELLOW    FONT_COLOR2
-    #define FONT_LIME      FONT_COLOR3
-    font_face(FONT_CJK,      "mplus-1p-medium.ttf", 48.f, FONT_JP|FONT_2048); // CJK|FONT_2048|FONT_OVERSAMPLE_Y);
-    font_color(FONT_YELLOW,  RGB4(255,255,0,255));
-    font_color(FONT_LIME,    RGB4(128,255,0,255));
-
-    // fx: load all post fx files in all subdirs. enable a few filters by default
-    fx_load("fx**.fs");
-    fx_enable(fx_find("fxCRT2.fs"), 1);
-    fx_enable(fx_find("fxGrain.fs"), 1);
-    fx_enable(fx_find("fxContrast.fs"), 1);
-    fx_enable(fx_find("fxVignette.fs"), 1);
-
-    // demo loop
-    while (window_swap() && !input_down(KEY_ESC)) {
-
-        // handle input
-        if( input_down(KEY_F5) ) window_reload();
-        if( input_down(KEY_F11) ) window_fullscreen( !window_has_fullscreen() );
+    while(window_swap()) {
+        if( input(KEY_F5)) window_reload();
+        if( input(KEY_F11)) window_fullscreen( window_has_fullscreen() ^ 1);
+        if( input(KEY_ESC) ) break;
 
         // camera panning (x,y) & zooming (z)
         if( !ui_hover() && !ui_active() ) {
-            if( input(MOUSE_L) ) cam.position.x += input_diff(MOUSE_X);
-            if( input(MOUSE_L) ) cam.position.y += input_diff(MOUSE_Y);
-            cam.position.z += input_diff(MOUSE_W) * 0.1;
+            if( input(MOUSE_L) ) cam.position.x -= input_diff(MOUSE_X);
+            if( input(MOUSE_L) ) cam.position.y -= input_diff(MOUSE_Y);
+            cam.position.z += input_diff(MOUSE_W) * 0.1; // cam.p.z += 0.001f; for tests
         }
 
         // apply post-fxs from here
         fx_begin();
 
-            profile("Rendering") {
-                vec3 center = add3(cam.position,vec3(-window_width()/1,-window_height()/2,0));
-                // render tiled map
-                tiled_render(tmx, center);
-                //
-                demo_kids(vec3(0,0,1));
-                demo_hud();
-                // render spine model
-                // spine_animate(spn, !window_has_pause() * window_delta());
-                // spine_render(spn, vec3(cam.position.x, cam.position.y, 1), true );
-                // sprite_flush();
+            profile("Sprite batching") {
+                if(do_cats) demo_cats(); else demo_kids();
             }
 
-            // subtitle sample
-            font_print(
-                FONT_BOTTOM FONT_CENTER
-                FONT_CJK FONT_H1
-                FONT_YELLOW "私はガラスを食べられます。" FONT_LIME "それは私を傷つけません。\n"
-            );
+            // flush retained renderer, so we ensure the fbos are up to date before fx_end()
+            profile("Sprite flushing") {
+                sprite_flush();
+            }
 
         // post-fxs end here
         fx_end();
 
-        // ui
-        if( ui_panel("Audio", 0)) {
-            static float bgm = 1, sfx = 1, master = 1;
-            if( ui_slider2("BGM", &bgm, va("%.2f", bgm))) audio_volume_stream(bgm);
-            if( ui_slider2("SFX", &sfx, va("%.2f", sfx))) audio_volume_clip(sfx);
-            if( ui_slider2("Master", &master, va("%.2f", master))) audio_volume_master(master);
-            if( ui_label2_toolbar("BGM: Leisure Suit Larry", ICON_MD_VOLUME_UP)) audio_stop(BGM), audio_play(BGM = stream1, AUDIO_SINGLE_INSTANCE);
-            if( ui_label2_toolbar("BGM: Monkey Island", ICON_MD_VOLUME_UP)) audio_stop(BGM), audio_play(BGM = stream2, AUDIO_SINGLE_INSTANCE);
-            if( ui_label2_toolbar("SFX: Coin", ICON_MD_VOLUME_UP)) audio_play(clip1, 0);
-            if( ui_label2_toolbar("SFX: Pew", ICON_MD_VOLUME_UP)) audio_play(clip2, 0);
-            ui_panel_end();
+        // draw pixel-art hud, 16x16 ui element, scaled and positioned in resolution-independant way
+        {
+            vec3 old_pos = camera_get_active()->position;
+
+            sprite_flush();
+            camera_get_active()->position = vec3(window_width()/2,window_height()/2,1);
+
+            float zindex = window_height(); // large number, on top
+            float spritesheet[3] = {17,34,24}, offset[2] = {0, - 2*absf(sin(window_time()*5))}; // sprite cell and animation
+            float scale[2] = {3, 3}, tile_w = 16 * scale[0], tile_h = 16 * scale[1]; // scaling
+            float position[3] = {window_width() - tile_w, window_height() - tile_h, zindex }; // position in screen-coordinates
+            sprite_sheet(inputs, spritesheet, position, 0/*rotation*/, offset, scale, false/*is_additive*/, WHITE/*color*/, false/*resolution_independant*/);
+
+            sprite_flush();
+            camera_get_active()->position = old_pos;
         }
-        if( ui_panel("Tiled", 0)) {
-            ui_float("Zoom in", &cam.position.z);
-            tiled_ui(&tmx);
-            ui_panel_end();
-        }
-        /*if( ui_panel("Spine", 0)) {
-            spine_ui(spn);
-            ui_panel_end();
-        }*/
-        if( ui_panel("FX", 0) ) {
-            for( int i = 0; i < 64; ++i ) {
-                char *name = fx_name(i); if( !name ) break;
-                bool b = fx_enabled(i);
-                if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
-            }
+
+        if( ui_panel("Sprite", 0) ) {
+            const char *labels[] = {"Kids","Cats"};
+            if( ui_list("Sprite type", labels, countof(labels), &do_cats) ) NUM_SPRITES_CHANGED = 1;
+            if( ui_int("Number of Sprites", &NUM_SPRITES) ) NUM_SPRITES_CHANGED = 1;
+            if( ui_clampf("Zoom", &cam.position.z, 0.1, 10));
             ui_panel_end();
         }
     }
 }
-
-// this demo supersedes following old sources:
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-audio.c
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-font.c
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-spine.c
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-sprite.c
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-tiled.c
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-tilemap.c

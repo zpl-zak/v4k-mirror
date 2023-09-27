@@ -1,22 +1,20 @@
 // ----------------------------------------------------------------------------
 
 static void v4k_pre_init() {
-    window_icon(va("%s.png", app_name()));
-    ifdef(win32,window_icon(va("%s.ico", app_name())));
+    const char *appname = app_name();
+    window_icon(va("%s.png", appname));
+    ifdef(win32,window_icon(va("%s.ico", appname)));
 
     glfwPollEvents();
 
     int i;
-#if 1 // #ifdef PARALLEL_INIT
     #pragma omp parallel for
-#endif
     for( i = 0; i <= 3; ++i) {
         /**/ if( i == 0 ) ddraw_init();// init this on thread#0 since it will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         else if( i == 1 ) sprite_init();
-        else if( i == 2 ) profile_init();
+        else if( i == 2 ) profiler_init();
         else if( i == 3 ) storage_mount("save/"), storage_read(), touch_init(); // for ems
     }
-    ;
 
     // window_swap();
 }

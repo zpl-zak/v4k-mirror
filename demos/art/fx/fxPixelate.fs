@@ -1,6 +1,6 @@
-uniform float CellSize = 2.5;  /// min:1 set:2.5 max:16
-//uniform float xCellSize = 2.5; /// min:1 set:2.5
-//uniform float yCellSize = 2.5; /// min:1 set:2.5
+uniform float CellSize;  /// min:1 set:2.5 max:16
+//uniform float xCellSize; /// min:1 set:2.5
+//uniform float yCellSize; /// min:1 set:2.5
 
 void main() {
     float xPixels = iWidth/CellSize, yPixels = iHeight/CellSize; //  iWidth/xCellSize, iHeight/yCellSize;

@@ -372,7 +372,7 @@ set other=
 set v4k=yes
 set hello=no
 set demos=no
-set extras=no
+set lab=no
 set editor=no
 set vis=no
 set proj=no
@@ -402,12 +402,12 @@ set run=no
     if "%1"=="nov4k"    set "v4k=no" && goto loop
     if "%1"=="nodemos"  set "demos=no" && goto loop
     if "%1"=="demos"    set "demos=yes" && set "hello=no" && goto loop
-    if "%1"=="extras"   set "extras=yes" && set "hello=no" && goto loop
+    if "%1"=="lab"      set "lab=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
     if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "v4k=no" && set "hello=no"&& goto loop
     if "%1"=="run"      set "run=yes" && goto loop
-    if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "extras=yes" && set "editor=yes" && set "hello=yes" && goto loop
+    if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "lab=yes" && set "editor=yes" && set "hello=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
     if "%1"=="cl"       set "cc=%1" && goto loop
@@ -646,8 +646,8 @@ if "!demos!"=="yes" (
 !echo! 07-network    && !cc! !o! 07-network.exe    demos\07-network.c       !import! !args! || set rc=1
 )
 
-rem extras
-if "!extras!"=="yes" (
+rem lab
+if "!lab!"=="yes" (
     for %%f in ("demos\99-*") do (
         !echo! %%~nf         && !cc! !o! %%~nf.exe         demos\%%~nf.c            !import! !args! || set rc=1
     )

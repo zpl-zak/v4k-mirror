@@ -51,44 +51,40 @@ int main() {
             }
         }
 
-        fx_begin();
+        // draw skybox
+        skybox_render(&sky, cam.proj, cam.view);
 
-            // draw skybox
-            skybox_render(&sky, cam.proj, cam.view);
+        // world
+        ddraw_grid(0);
 
-            // world
-            ddraw_grid(0);
+        // boids
+        static swarm_t sw;
+        if( do_boids_demo ) profile("boids") {
+            do_once sw = swarm();
+            do_once array_push(sw.steering_targets, vec3(0,0,0));
+            do_once for(int i = 0; i < 100; ++i)
+                array_push(sw.boids, boid(scale3(rnd3(),10), rnd3())); // pos,vel
 
-            // boids
-            static swarm_t sw;
-            if( do_boids_demo ) profile("boids") {
-                do_once sw = swarm();
-                do_once array_push(sw.steering_targets, vec3(0,0,0));
-                do_once for(int i = 0; i < 100; ++i)
-                    array_push(sw.boids, boid(scale3(rnd3(),10), rnd3())); // pos,vel
+            // move
+            sw.steering_targets[0] = cam.position;
+            swarm_update(&sw, window_delta());
 
-                // move
-                sw.steering_targets[0] = cam.position;
-                swarm_update(&sw, window_delta());
-
-                // draw
-                for (int j = 0, end = array_count(sw.boids); j < end; ++j) {
-                    vec3 dir = norm3(sub3(sw.boids[j].position, sw.boids[j].prev_position));
-                    ddraw_boid(sw.boids[j].position, dir);
-                }
+            // draw
+            for (int j = 0, end = array_count(sw.boids); j < end; ++j) {
+                vec3 dir = norm3(sub3(sw.boids[j].position, sw.boids[j].prev_position));
+                ddraw_boid(sw.boids[j].position, dir);
             }
+        }
 
-            // showcase many debugdraw shapes
-            if( do_debugdraw_demo ) {
-                ddraw_demo();
-            }
+        // showcase many debugdraw shapes
+        if( do_debugdraw_demo ) {
+            ddraw_demo();
+        }
 
-            // showcase many colliding tests
-            if( do_colliders_demo ) {
-                collide_demo();
-            }
-
-        fx_end();
+        // showcase many colliding tests
+        if( do_colliders_demo ) {
+            collide_demo();
+        }
 
         // ui
         if( ui_panel("App", 0) ) {
@@ -104,15 +100,6 @@ int main() {
         if( ui_panel("Camera", 0)) {
             if( ui_float("Speed", &cam.speed) ) {}
             if( ui_float3("Position", cam.position.v3) ) {}
-            ui_panel_end();
-        }
-        if( ui_panel("FX", 0) ) {
-            for( int i = 0; i < 64; ++i ) {
-                char *name = fx_name(i); if( !name ) break;
-                bool b = fx_enabled(i);
-                if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
-                ui_fx(i);
-            }
             ui_panel_end();
         }
     }

@@ -2313,7 +2313,7 @@ enum { NETWORK_USERID = 7,  NETWORK_COUNT , NETWORK_CAPACITY };
  extern void (*dtor[256])();
  void* obj_initialize( void **ptr, char *type_and_info );
   void *obj_tmpalloc;
- int profile_enable(bool on);
+ int profiler_enable(bool on);
 struct profile_t { double stat; int32_t cost, avg; };
 typedef struct { map base; struct { pair p; char * key; struct profile_t val; } tmp, *ptr; struct profile_t* tmpval;          int (*typed_cmp)(char *, char *); uint64_t (*typed_hash)(char *); } * profiler_t;
 extern  profiler_t profiler;
@@ -2504,6 +2504,8 @@ int texture_width;
  void     shader_destroy(unsigned shader);
  unsigned     shader_properties(unsigned shader);
  char**       shader_property(unsigned shader, unsigned property_no);
+ void         shader_apply_param(unsigned shader, unsigned param_no);
+ void         shader_apply_params(unsigned shader, const char *parameter_mask);
  int          ui_shader(unsigned shader);
  int          ui_shaders();
 enum BUFFER_MODE {
@@ -2515,8 +2517,8 @@ BUFFER_READ_WRITE
  void compute_dispatch(unsigned wx, unsigned wy, unsigned wz);
  void shader_image(texture_t t, unsigned unit, unsigned level, int layer, unsigned access);
  void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access);
- void image_write_barrier();
  void write_barrier();
+ void write_barrier_image();
 enum SSBO_USAGE {
 STATIC_DRAW,
 STATIC_READ,
@@ -2968,7 +2970,6 @@ PANEL_OPEN = 1,
  int    ui_double(const char *label, double *value);
  int    ui_buffer(const char *label, char *buffer, int buflen);
  int    ui_string(const char *label, char **string);
- int    ui_text_wrap(const char *label, char *text);
  int    ui_color3(const char *label, float *color3);
  int    ui_color3f(const char *label, float *color3);
  int    ui_color4(const char *label, float *color4);
@@ -2990,18 +2991,17 @@ PANEL_OPEN = 1,
  int    ui_subimage(const char *label, handle id, unsigned iw, unsigned ih, unsigned sx, unsigned sy, unsigned sw, unsigned sh);
  int    ui_colormap(const char *label, colormap_t *cm);
  int    ui_separator();
- int    ui_bits8(const char *label, uint8_t *bits);
- int    ui_bits16(const char *label, uint16_t *bits);
+ int    ui_bitmask8(const char *label, uint8_t *bits);
+ int    ui_bitmask16(const char *label, uint16_t *bits);
  int    ui_console();
  int    ui_clampf(const char *label, float *value, float minf, float maxf);
  int    ui_label(const char *label);
  int    ui_label2(const char *label, const char *caption);
+ int    ui_label2_bool(const char *label, bool enabled);
+ int    ui_label2_float(const char *label, float value);
  int    ui_label2_toolbar(const char *label, const char *icons);
  int    ui_slider(const char *label, float *value);
  int    ui_slider2(const char *label, float *value, const char *caption);
- int    ui_const_bool(const char *label, const double value);
- int    ui_const_float(const char *label, const double value);
- int    ui_const_string(const char *label, const char *value);
  int   ui_contextual_end();
  int   ui_collapse_clicked();
  int   ui_collapse_end();
@@ -3010,9 +3010,10 @@ PANEL_OPEN = 1,
  int  ui_show(const char *panel_or_window_title, int enabled);
  int  ui_dims(const char *panel_or_window_title, float width, float height);
  int  ui_visible(const char *panel_or_window_title);
- int  ui_enable(int on);
- int  ui_enabled();
  vec2 ui_get_dims();
+ int  ui_enable();
+ int  ui_enabled();
+ int  ui_disable();
  int ui_has_menubar();
  int ui_menu(const char *items);
  int ui_menu_editbox(char *buf, int bufcap);

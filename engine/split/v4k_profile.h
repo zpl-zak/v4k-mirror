@@ -5,9 +5,9 @@
 #   define profile(section)             for(int macro(i) = 1; macro(i); macro(i) = 0)
 #   define profile_incstat(name, accum) do {} while(0)
 #   define profile_setstat(name, value) do {} while(0)
-#   define profile_init()               do {} while(0)
-#   define profile_render()             do {} while(0)
-#   define profile_enable(x)            0
+#   define profiler_init()              do {} while(0)
+#   define profiler_enable(x)           0
+#   define ui_profiler()                do {} while(0)
 #else
 #   define profile(section) for( \
         struct profile_t *found = profiler_enabled ? \
@@ -20,7 +20,7 @@
 #   define profile_setstat(name, value) for( \
         struct profile_t *found = profiler_enabled ? map_find_or_add(profiler, name, (struct profile_t){0}) : NULL; \
         found; found->stat = value, found = NULL) ///+
-API int profile_enable(bool on);
+API int profiler_enable(bool on);
 
 struct profile_t { double stat; int32_t cost, avg; }; ///-
 typedef map(char *, struct profile_t) profiler_t; ///-

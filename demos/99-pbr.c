@@ -648,16 +648,6 @@ int main( int argc, const char *argv[] ) {
             ui_panel_end();
         }
 
-        if( ui_panel("FX", 0) ) {
-            for( int i = 0; i < 64; ++i ) {
-                char *name = fx_name(i); if( !name ) break;
-                bool b = fx_enabled(i);
-                if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
-                ui_fx(i);
-            }
-            ui_panel_end();
-        }
-
         if( ui_panel("Help", 0)) {
             if( fps_mode ) {
             ui_label("TAB: switch to Orbit camera mode");

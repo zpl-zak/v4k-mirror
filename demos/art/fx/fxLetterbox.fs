@@ -1,10 +1,13 @@
+uniform float amount; /// min:0 set:0.10 max:0.5
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+    vec2 uv = fragCoord.xy / iResolution.xy;
+
     // letterbox
-    if( abs(2.*fragCoord.y-iResolution.y) > iResolution.x * 0.42 ) {
+    if( uv.y < amount || (1.0-uv.y) < amount ) {
         fragColor = vec4( 0., 0., 0., 1. );
         return;
     }
 
-    vec2 uv = fragCoord.xy / iResolution.xy;
     fragColor = texture(iChannel0, uv);
 }

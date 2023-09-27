@@ -2,8 +2,8 @@
 // - rlyeh, public domain.
 //
 // Compile with:
-//    `make     demos\00-ui.c` (windows)
-// `sh MAKE.bat demos/00-ui.c` (linux, osx)
+//    `make     demos\01-ui.c` (windows)
+// `sh MAKE.bat demos/01-ui.c` (linux, osx)
 
 #include "v4k.h"
 
@@ -19,7 +19,7 @@ int main() {
     window_fps_lock(app_target_fps);
 
     // load video
-    video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB );
+    video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_LOOP );
 
     // app loop
     while( window_swap() ) {

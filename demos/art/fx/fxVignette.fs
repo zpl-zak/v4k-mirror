@@ -1,4 +1,4 @@
-uniform float radius = 0.75; /// set:0.75
+uniform float radius; /// set:0.75
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = fragCoord.xy / iResolution.xy;

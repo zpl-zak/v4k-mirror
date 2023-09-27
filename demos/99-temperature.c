@@ -76,7 +76,7 @@ int main() {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEX_WIDTH, TEX_WIDTH, 0, GL_RGBA, GL_FLOAT, img);
             shader_bind(comp);
             compute_dispatch(TEX_WIDTH/16, TEX_WIDTH/16, 1);
-            image_write_barrier();
+            write_barrier_image();
         } else {
             temp_calc(img);
             texture_update(&tex, TEX_WIDTH, TEX_WIDTH, 4, img, TEXTURE_LINEAR|TEXTURE_FLOAT);

@@ -1,4 +1,4 @@
-uniform float intensity = 0.004; /// set:0.004 max:0.03
+uniform float intensity; /// set:0.004 max:0.03
 
 highp float rand(vec2 co) {
     highp float a = 12.9898;

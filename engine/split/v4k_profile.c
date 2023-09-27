@@ -2,30 +2,14 @@
 profiler_t profiler;
 int profiler_enabled = 1;
 
-void (profile_init)() { map_init(profiler, less_str, hash_str); profiler_enabled &= !!profiler; }
-int  (profile_enable)(bool on) { return profiler_enabled = on; }
-void (profile_render)() { 
-    // @transparent
-    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
-    if( has_transparent_attrib ) return;
-    // @transparent
-
-    int has_menu = ui_has_menubar();
-    if( !has_menu ) {
-        static int cook_on_demand; do_once cook_on_demand = COOK_ON_DEMAND;
-        if( !cook_on_demand ) {
-            // render profiler, unless we are in the cook progress screen
-            static unsigned frames = 0; if(frames <= 0) frames += cook_progress() >= 100;
-            if( frames <= 0 ) return;
-        }
-    }
-
-    if( has_menu ? ui_window("Profiler", 0) : ui_panel("Profiler", 0) ) {
+void (profiler_init)() { map_init(profiler, less_str, hash_str); profiler_enabled &= !!profiler; }
+int  (profiler_enable)(bool on) { return profiler_enabled = on; }
+void (ui_profiler)() {
+    // @todo: ui_plot()
 
         double fps = window_fps();
         profile_setstat("Render.num_fps", fps);
 
-        if(1) { // @todo: ui_plot()
             // draw fps-meter: 300 samples, [0..70] range each, 70px height plot.
             nk_layout_row_dynamic(ui_ctx, 70, 1);
 
@@ -54,7 +38,6 @@ void (profile_render)() {
             if( index >= 0 ) {
                 nk_tooltipf(ui_ctx, "%.2f fps", (float)values[index]);
             }
-        }
 
         for each_map_ptr_sorted(profiler, const char *, key, struct profile_t, val ) {
             if( isnan(val->stat) ) {
@@ -65,9 +48,6 @@ void (profile_render)() {
                 ui_slider2(*key, &v, va("%.2f", val->stat));
                 val->stat = 0;
             }
-        }
-
-        (has_menu ? ui_window_end : ui_panel_end)();
     }
 }
 #endif

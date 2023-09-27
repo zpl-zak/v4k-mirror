@@ -1,3 +1,5 @@
+/// tip:"Requires MSAA off for best results"
+
 /*****************************************
  * FXAA 3.11 Implementation - effendiian
  * -------------------------------------

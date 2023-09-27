@@ -309,14 +309,14 @@ extern "C" {
 // system headers
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE   // for linux
+#define _GNU_SOURCE    ///- for linux
 #endif
 
 #if is(cl) && is(win32) // for VC IDE
-#define _CRT_SECURE_NO_WARNINGS
-#define _CRT_NONSTDC_NO_DEPRECATE
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _WIN32_WINNT 0x0600 // 0x0502 // GetInfoAddrW/FreeAddrInfoW for X86
+#define _CRT_SECURE_NO_WARNINGS ///-
+#define _CRT_NONSTDC_NO_DEPRECATE ///-
+#define _WINSOCK_DEPRECATED_NO_WARNINGS ///-
+#define _WIN32_WINNT 0x0600  ///- 0x0502 // GetInfoAddrW/FreeAddrInfoW for X86
 #endif
 
 #if is(cl)
@@ -2428,9 +2428,9 @@ static __thread void *obj_tmpalloc;
 #   define profile(section)             for(int macro(i) = 1; macro(i); macro(i) = 0)
 #   define profile_incstat(name, accum) do {} while(0)
 #   define profile_setstat(name, value) do {} while(0)
-#   define profile_init()               do {} while(0)
-#   define profile_render()             do {} while(0)
-#   define profile_enable(x)            0
+#   define profiler_init()              do {} while(0)
+#   define profiler_enable(x)           0
+#   define ui_profiler()                do {} while(0)
 #else
 #   define profile(section) for( \
         struct profile_t *found = profiler_enabled ? \
@@ -2443,7 +2443,7 @@ static __thread void *obj_tmpalloc;
 #   define profile_setstat(name, value) for( \
         struct profile_t *found = profiler_enabled ? map_find_or_add(profiler, name, (struct profile_t){0}) : NULL; \
         found; found->stat = value, found = NULL) ///+
-API int profile_enable(bool on);
+API int profiler_enable(bool on);
 
 struct profile_t { double stat; int32_t cost, avg; }; ///-
 typedef map(char *, struct profile_t) profiler_t; ///-
@@ -2798,6 +2798,9 @@ API void     shader_destroy(unsigned shader);
 API unsigned     shader_properties(unsigned shader);
 API char**       shader_property(unsigned shader, unsigned property_no);
 
+API void         shader_apply_param(unsigned shader, unsigned param_no);
+API void         shader_apply_params(unsigned shader, const char *parameter_mask);
+
 API int          ui_shader(unsigned shader);
 API int          ui_shaders();
 
@@ -2842,11 +2845,11 @@ API void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int 
 
 // gpu memory barriers
 
-/// Blocks main thread until all image operations are done by the GPU.
-API void image_write_barrier();
-
 /// Blocks main thread until all memory operations are done by the GPU.
 API void write_barrier();
+
+/// Blocks main thread until all image operations are done by the GPU.
+API void write_barrier_image();
 
 // ssbo
 /// `STATIC`, `DYNAMIC` AND `STREAM` specify the frequency at which we intend to access the data.
@@ -3568,7 +3571,6 @@ API int    ui_float4(const char *label, float value[4]);
 API int    ui_double(const char *label, double *value);
 API int    ui_buffer(const char *label, char *buffer, int buflen);
 API int    ui_string(const char *label, char **string);
-API int    ui_text_wrap(const char *label, char *text);
 API int    ui_color3(const char *label, float *color3); //[0..255]
 API int    ui_color3f(const char *label, float *color3); //[0..1]
 API int    ui_color4(const char *label, float *color4); //[0..255]
@@ -3590,18 +3592,17 @@ API int    ui_image(const char *label, handle id, unsigned w, unsigned h); //(w,
 API int    ui_subimage(const char *label, handle id, unsigned iw, unsigned ih, unsigned sx, unsigned sy, unsigned sw, unsigned sh);
 API int    ui_colormap(const char *label, colormap_t *cm); // returns num member changed: 1 for color, 2 for texture map
 API int    ui_separator();
-API int    ui_bits8(const char *label, uint8_t *bits);
-API int    ui_bits16(const char *label, uint16_t *bits);
+API int    ui_bitmask8(const char *label, uint8_t *bits);
+API int    ui_bitmask16(const char *label, uint16_t *bits);
 API int    ui_console();
 API int    ui_clampf(const char *label, float *value, float minf, float maxf);
 API int    ui_label(const char *label);
 API int    ui_label2(const char *label, const char *caption);
+API int    ui_label2_bool(const char *label, bool enabled);
+API int    ui_label2_float(const char *label, float value);
 API int    ui_label2_toolbar(const char *label, const char *icons);
 API int    ui_slider(const char *label, float *value);
 API int    ui_slider2(const char *label, float *value, const char *caption);
-API int    ui_const_bool(const char *label, const double value);
-API int    ui_const_float(const char *label, const double value);
-API int    ui_const_string(const char *label, const char *value);
 API int   ui_contextual_end();
 API int   ui_collapse_clicked();
 API int   ui_collapse_end();
@@ -3611,9 +3612,11 @@ API int ui_window_end();
 API int  ui_show(const char *panel_or_window_title, int enabled);
 API int  ui_dims(const char *panel_or_window_title, float width, float height);
 API int  ui_visible(const char *panel_or_window_title); // @todo: include ui_collapse() items that are open as well?
-API int  ui_enable(int on);
-API int  ui_enabled();
 API vec2 ui_get_dims();
+
+API int  ui_enable();
+API int  ui_enabled();
+API int  ui_disable();
 
 API int ui_has_menubar();
 API int ui_menu(const char *items); // semicolon-separated or comma-separated items

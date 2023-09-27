@@ -211,14 +211,14 @@
 // system headers
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE   // for linux
+#define _GNU_SOURCE    ///- for linux
 #endif
 
 #if is(cl) && is(win32) // for VC IDE
-#define _CRT_SECURE_NO_WARNINGS
-#define _CRT_NONSTDC_NO_DEPRECATE
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _WIN32_WINNT 0x0600 // 0x0502 // GetInfoAddrW/FreeAddrInfoW for X86
+#define _CRT_SECURE_NO_WARNINGS ///-
+#define _CRT_NONSTDC_NO_DEPRECATE ///-
+#define _WINSOCK_DEPRECATED_NO_WARNINGS ///-
+#define _WIN32_WINNT 0x0600  ///- 0x0502 // GetInfoAddrW/FreeAddrInfoW for X86
 #endif
 
 #if is(cl)

@@ -804,4 +804,5 @@ int cook_jobs() {
 
 void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"bin/" case on Linux.
     COOK_INI = pathfile_to_cook_ini;
+    ASSERT( file_exist(COOK_INI) );
 }

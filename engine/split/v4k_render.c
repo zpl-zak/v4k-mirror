@@ -194,22 +194,23 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
     array(char*) props = 0;
     do_once map_init_int( shader_reflect );
     if(vs) for each_substring(vs, "\r\n", line) {
-        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
-            array_push(props, STRDUP(line));
-        }
+        const char *found = strstr(line, "/""//");
+        if( found > line && line[0] == '/' && line[1] == '/' ) continue;
+        if( found ) array_push(props, STRDUP(line));
     }
     if(fs) for each_substring(fs, "\r\n", line) {
-        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
-            array_push(props, STRDUP(line));
-        }
+        const char *found = strstr(line, "/""//");
+        if( found > line && line[0] == '/' && line[1] == '/' ) continue;
+        if( found ) array_push(props, STRDUP(line));
     }
     if(gs) for each_substring(gs, "\r\n", line) {
-        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
-            array_push(props, STRDUP(line));
-        }
+        const char *found = strstr(line, "/""//");
+        if( found > line && line[0] == '/' && line[1] == '/' ) continue;
+        if( found ) array_push(props, STRDUP(line));
     }
     if( props ) {
         map_insert(shader_reflect, program, props);
+        for( int i = 0; i < array_count(props); ++i ) shader_apply_param(program, i);
     }
 
     return program;
@@ -222,7 +223,60 @@ unsigned shader_properties(unsigned shader) {
 
 char** shader_property(unsigned shader, unsigned property) {
     array(char*) *found = map_find(shader_reflect, shader);
-    return found ? &(*found)[property] : NULL;
+    return found && property < array_count(*found) ? &(*found)[property] : NULL;
+}
+
+void shader_apply_param(unsigned shader, unsigned param_no) {
+    unsigned num_properties = shader_properties(shader);
+    if( param_no < num_properties ) {
+        char *line = *shader_property(shader, param_no);
+
+        char type[32], name[32];
+        if( sscanf(line, "%*s %s %[^ =;/]", type, name) != 2 ) return;
+
+        int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
+        vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
+        vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
+        vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
+
+        if(minv.x > maxv.x) swapf(&minv.x, &maxv.x);
+        if(minv.y > maxv.y) swapf(&minv.y, &maxv.y);
+        if(minv.z > maxv.z) swapf(&minv.z, &maxv.z);
+        if(minv.w > maxv.w) swapf(&minv.w, &maxv.w);
+
+        if( !strstr(line, "max:") ) {
+        if(setv.x > maxv.x) maxv.x = setv.x;
+        if(setv.y > maxv.y) maxv.y = setv.y;
+        if(setv.z > maxv.z) maxv.z = setv.z;
+        if(setv.w > maxv.w) maxv.w = setv.w;
+        }
+
+        setv = clamp4(setv, minv, maxv);
+
+        if( strchr("ibfv", type[0]) ) {
+            GLint shader_bak; glGetIntegerv(GL_CURRENT_PROGRAM, &shader_bak);
+            glUseProgram(shader);
+            /**/ if(type[0] == 'i') glUniform1i(glGetUniformLocation(shader, name), setv.x);
+            else if(type[0] == 'b') glUniform1i(glGetUniformLocation(shader, name), !!setv.x);
+            else if(type[0] == 'f') glUniform1f(glGetUniformLocation(shader, name), setv.x);
+            else if(type[3] == '2') glUniform2fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            else if(type[3] == '3') glUniform3fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            else if(type[3] == '4') glUniform4fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            glUseProgram(shader_bak);
+        }
+    }
+}
+
+void shader_apply_params(unsigned shader, const char *parameter_mask) {
+    unsigned num_properties = shader_properties(shader);
+    for( unsigned i = 0; i < num_properties; ++i ) {
+        char *line = *shader_property(shader,i);
+
+        char name[32];
+        if( sscanf(line, "%*s %*s %s", name) != 1 ) continue;
+        if( !strmatch(name, parameter_mask) ) continue;
+        shader_apply_param(shader, i);
+    }
 }
 
 int ui_shader(unsigned shader) {
@@ -233,25 +287,43 @@ int ui_shader(unsigned shader) {
         char **ptr = shader_property(shader,i);
 
         const char *line = *ptr; // debug: ui_label(line);
-        char uniform[32], type[32], name[32];
-        if( sscanf(line, "%s %s %s", uniform, type, name) != 3) continue;
+        char* tip = strstr(line, "tip:"); tip = tip && tip[4] ? tip + 4 : 0;
+
+        char uniform[32], type[32], name[32], early_exit = '\0';
+        if( sscanf(line, "%s %s %[^ =;/]", uniform, type, name) != 3 ) continue; // @todo optimize: move to shader()
+        if( strcmp(uniform, "uniform") && strcmp(uniform, "}uniform") ) { if(tip) ui_label(va(ICON_MD_INFO "%s", tip)); continue; } // @todo optimize: move to shader()
 
         int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
         vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
         vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
         vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
-        char* tip = strstr(line, "tip:"); tip = tip && tip[4] ? tip + 4 : 0;
         char *label = !tip ? va("%c%s", name[0] - 32 * !!(name[0] >= 'a'), name+1) :
-            va("%c%s " ICON_MD_HELP "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tip);
+            va("%c%s  " ICON_MD_INFO  "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tip);
 
-        if(minv.x > maxv.x) swapf(&minv.x, &maxv.x);
-        if(minv.y > maxv.y) swapf(&minv.y, &maxv.y);
-        if(minv.z > maxv.z) swapf(&minv.z, &maxv.z);
-        if(minv.w > maxv.w) swapf(&minv.w, &maxv.w);
+        if(minv.x > maxv.x) swapf(&minv.x, &maxv.x); // @optimize: move to shader()
+        if(minv.y > maxv.y) swapf(&minv.y, &maxv.y); // @optimize: move to shader()
+        if(minv.z > maxv.z) swapf(&minv.z, &maxv.z); // @optimize: move to shader()
+        if(minv.w > maxv.w) swapf(&minv.w, &maxv.w); // @optimize: move to shader()
+
+        if( !strstr(line, "max:") ) {
+        if(setv.x > maxv.x) maxv.x = setv.x;
+        if(setv.y > maxv.y) maxv.y = setv.y;
+        if(setv.z > maxv.z) maxv.z = setv.z;
+        if(setv.w > maxv.w) maxv.w = setv.w;
+        }
+
+        setv = clamp4(setv, minv, maxv);
 
         // supports int,float,vec2/3/4,color3/4
         int touched = 0;
-        if( type[0] == 'i' ) {
+        if( type[0] == 'b' ) {
+            bool v = !!setv.x;
+
+            if( (touched = ui_bool(label, &v)) != 0 ) {
+                setv.x = v;
+            }
+        }
+        else if( type[0] == 'i' ) {
             int v = setv.x;
 
             if( (touched = ui_int(label, &v)) != 0 ) {
@@ -259,9 +331,11 @@ int ui_shader(unsigned shader) {
             }
         }
         else if( type[0] == 'f' ) {
-            setv.x = (clampf(setv.x, minv.x, maxv.x) - minv.x) / (maxv.x - minv.x);
+            setv.x = clampf(setv.x, minv.x, maxv.x);
+            char *caption = va("%5.2f", setv.x);
+            setv.x = (setv.x - minv.x) / (maxv.x - minv.x);
 
-            if( (touched = ui_slider2(label, &setv.x, va("%5.2f", setv.x))) != 0 ) {
+            if( (touched = ui_slider2(label, &setv.x, caption)) != 0 ) {
                 setv.x = clampf(minv.x + setv.x * (maxv.x-minv.x), minv.x, maxv.x); // min..max range
             }
         }
@@ -286,27 +360,19 @@ int ui_shader(unsigned shader) {
                 setv = clamp4(setv,minv,maxv);
             }
         }
+        else if( tip ) ui_label( tip );
 
         if( touched ) {
-            // send to shader
-            GLint shader_bak; glGetIntegerv(GL_CURRENT_PROGRAM, &shader_bak);
-            glUseProgram(shader);
-            /**/ if(type[0] == 'i') glUniform1i(glGetUniformLocation(shader, name), setv.x);
-            else if(type[0] == 'f') glUniform1f(glGetUniformLocation(shader, name), setv.x);
-            else if(type[3] == '2') glUniform2fv(glGetUniformLocation(shader, name), 1, &setv.x);
-            else if(type[3] == '3') glUniform3fv(glGetUniformLocation(shader, name), 1, &setv.x);
-            else if(type[3] == '4') glUniform4fv(glGetUniformLocation(shader, name), 1, &setv.x);
-            glUseProgram(shader_bak);
-
             // upgrade value
             *ptr = FREE(*ptr);
             *ptr = stringf("%s %s %s ///set:%s min:%s max:%s tip:%s", uniform,type,name,ftoa4(setv),ftoa4(minv),ftoa4(maxv),tip?tip:"");
 
+            // apply
+            shader_apply_param(shader, i);
+
             changed = 1;
         }
     }
-
-    if(num_properties) ui_separator();
 
     return changed;
 }
@@ -315,13 +381,14 @@ int ui_shaders() {
     if( !map_count(shader_reflect) ) return 0;
 
     int changed = 0;
-    int has_menu = ui_has_menubar();
-    if( (has_menu ? ui_window("Shaders", 0) : ui_panel("Shaders", 0) ) ) {
         for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
-            ui_section(va("Shader %d",*k));
+        int open = 0, clicked_or_toggled = 0;
+        char *id = va("##SHD%d", *k);
+        char *title = va("Shader %d", *k);
+        for( int p = (open = ui_collapse(title, id)), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            ui_label(va("Shader %d",*k));
             changed |= ui_shader(*k);
         }
-        (has_menu ? ui_window_end : ui_panel_end)();
     }
     return changed;
 }
@@ -376,7 +443,7 @@ void write_barrier(){
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
-void image_write_barrier(){
+void write_barrier_image(){
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
@@ -3234,9 +3301,9 @@ void postfx_clear(postfx *fx) {
 
 int ui_postfx(postfx *fx, int pass) {
     int on = ui_enabled();
-    ui_enable( postfx_enabled(fx,pass) );
+    ( postfx_enabled(fx,pass) ? ui_enable : ui_disable )();
     int rc = ui_shader(fx->pass[pass].program);
-    ui_enable( on );
+    ( on ? ui_enable : ui_disable )();
     return rc;
 }
 
@@ -3417,16 +3484,12 @@ int ui_fxs() {
     if(!fx.num_loaded) return 0;
 
     int changed = 0;
-    int has_menu = ui_has_menubar();
-    if( (has_menu ? ui_window("FX", 0) : ui_panel("FX", 0) ) ) {
         for( int i = 0; i < 64; ++i ) {
             char *name = fx_name(i); if( !name ) break;
             bool b = fx_enabled(i);
             if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
             ui_fx(i);
         }
-        (has_menu ? ui_window_end : ui_panel_end)();
-    }
     return changed;
 }
 

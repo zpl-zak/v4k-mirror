@@ -1,3 +1,5 @@
+/// tip:"Requires MSAA off for best results"
+
 // FXAA fragment shader by Timothy Lottes (public domain)
 // http://timothylottes.blogspot.com/
 

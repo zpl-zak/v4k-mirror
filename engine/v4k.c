@@ -1346,6 +1346,9 @@ float audio_volume_master(float gain) {
 }
 
 int audio_play_gain_pitch_pan( audio_t a, int flags, float gain, float pitch, float pan ) {
+    static bool muted = 0; do_once muted = flag("--mute") || flag("--muted");
+    if(muted) return 1;
+
     if( flags & AUDIO_IGNORE_MIXER_GAIN ) {
         // do nothing, gain used as-is
     } else {
@@ -3740,6 +3743,7 @@ int cook_jobs() {
 
 void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"bin/" case on Linux.
     COOK_INI = pathfile_to_cook_ini;
+    ASSERT( file_exist(COOK_INI) );
 }
 #line 0
 
@@ -8143,32 +8147,37 @@ bool input_touch_active() {
 void input_demo() {
     if( ui_panel("Input",0) ) {
         ui_section("Keyboard");
-        ui_const_bool("[Key 1]", input(KEY_1));
-        ui_const_bool("[Key 2]", input(KEY_2));
-        ui_const_bool("[Key 3]", input(KEY_3));
-        ui_const_bool("[Key 4]", input(KEY_4));
-        ui_const_bool("[Key 5]", input(KEY_5));
-        ui_const_bool("[Key 6]", input(KEY_6));
-        ui_const_bool("[Key 7]", input(KEY_7));
+
+        uint8_t keymap = 0;
+        keymap |= (!!input(KEY_1)) << 7;
+        keymap |= (!!input(KEY_2)) << 6;
+        keymap |= (!!input(KEY_3)) << 5;
+        keymap |= (!!input(KEY_4)) << 4;
+        keymap |= (!!input(KEY_5)) << 3;
+        keymap |= (!!input(KEY_6)) << 2;
+        keymap |= (!!input(KEY_7)) << 1;
+        keymap |= (!!input(KEY_8)) << 0;
+        ui_bitmask8("[Keys 1..8]", &keymap);
+
         ui_separator();
-        ui_const_bool("[Key 1] Down event", input_down(KEY_1) );
-        ui_const_bool("[Key 2] Held event", input_held(KEY_2) );
-        ui_const_bool("[Key 3] Up event", input_up(KEY_3) );
-        ui_const_bool("[Key 4] Idle event", input_idle(KEY_4) );
-        ui_const_bool("[Key 5] Click event", input_click(KEY_5,500) );
-        ui_const_bool("[Key 6] Click2 event", input_click2(KEY_6,1000) );
-        ui_const_bool("[Key 7] Repeat event", input_repeat(KEY_7,750) );
+        ui_label2_bool("[Key 1] Down event", input_down(KEY_1) );
+        ui_label2_bool("[Key 2] Held event", input_held(KEY_2) );
+        ui_label2_bool("[Key 3] Up event", input_up(KEY_3) );
+        ui_label2_bool("[Key 4] Idle event", input_idle(KEY_4) );
+        ui_label2_bool("[Key 5] Click event", input_click(KEY_5,500) );
+        ui_label2_bool("[Key 6] Click2 event", input_click2(KEY_6,1000) );
+        ui_label2_bool("[Key 7] Repeat event", input_repeat(KEY_7,750) );
         ui_separator();
 
         ui_section("Mouse");
-        ui_const_float("X", input(MOUSE_X));
-        ui_const_float("Y", input(MOUSE_Y));
+        ui_label2_float("X", input(MOUSE_X));
+        ui_label2_float("Y", input(MOUSE_Y));
         ui_separator();
-        ui_const_float("Wheel", input(MOUSE_W));
+        ui_label2_float("Wheel", input(MOUSE_W));
         ui_separator();
-        ui_const_bool("Left", input(MOUSE_L));
-        ui_const_bool("Middle", input(MOUSE_M));
-        ui_const_bool("Right", input(MOUSE_R));
+        ui_label2_bool("Left", input(MOUSE_L));
+        ui_label2_bool("Middle", input(MOUSE_M));
+        ui_label2_bool("Right", input(MOUSE_R));
         ui_separator();
         for( int i = 0; i <= CURSOR_SW_AUTO; ++i ) if(ui_button(va("Cursor shape #%d", i))) window_cursor_shape(i);
         ui_separator();
@@ -8180,45 +8189,45 @@ void input_demo() {
 
         input_use(gamepad_id);
 
-        ui_const_string("Name", input_frames(GAMEPAD_NAME,0));
-        ui_const_bool("Connected", input(GAMEPAD_CONNECTED));
+        ui_label2("Name", input_frames(GAMEPAD_NAME,0));
+        ui_label2_bool("Connected", input(GAMEPAD_CONNECTED));
 
         ui_separator();
 
-        ui_const_bool("A", input(GAMEPAD_A) );
-        ui_const_bool("B", input(GAMEPAD_B) );
-        ui_const_bool("X", input(GAMEPAD_X) );
-        ui_const_bool("Y", input(GAMEPAD_Y) );
-        ui_const_bool("Up", input(GAMEPAD_UP) );
-        ui_const_bool("Down", input(GAMEPAD_DOWN) );
-        ui_const_bool("Left", input(GAMEPAD_LEFT) );
-        ui_const_bool("Right", input(GAMEPAD_RIGHT) );
-        ui_const_bool("Menu", input(GAMEPAD_MENU) );
-        ui_const_bool("Start", input(GAMEPAD_START) );
+        ui_label2_bool("A", input(GAMEPAD_A) );
+        ui_label2_bool("B", input(GAMEPAD_B) );
+        ui_label2_bool("X", input(GAMEPAD_X) );
+        ui_label2_bool("Y", input(GAMEPAD_Y) );
+        ui_label2_bool("Up", input(GAMEPAD_UP) );
+        ui_label2_bool("Down", input(GAMEPAD_DOWN) );
+        ui_label2_bool("Left", input(GAMEPAD_LEFT) );
+        ui_label2_bool("Right", input(GAMEPAD_RIGHT) );
+        ui_label2_bool("Menu", input(GAMEPAD_MENU) );
+        ui_label2_bool("Start", input(GAMEPAD_START) );
 
         ui_separator();
 
-        ui_const_float("Left pad x", input(GAMEPAD_LPADX) );
-        ui_const_float("Left pad y", input(GAMEPAD_LPADY) );
-        ui_const_float("Left trigger", input(GAMEPAD_LT) );
-        ui_const_bool("Left bumper", input(GAMEPAD_LB) );
-        ui_const_bool("Left thumb", input(GAMEPAD_LTHUMB) );
+        ui_label2_float("Left pad x", input(GAMEPAD_LPADX) );
+        ui_label2_float("Left pad y", input(GAMEPAD_LPADY) );
+        ui_label2_float("Left trigger", input(GAMEPAD_LT) );
+        ui_label2_bool("Left bumper", input(GAMEPAD_LB) );
+        ui_label2_bool("Left thumb", input(GAMEPAD_LTHUMB) );
 
         vec2 v = input_filter_deadzone( input2(GAMEPAD_LPADX), 0.1f );
-        ui_const_float("Filtered pad x", v.x);
-        ui_const_float("Filtered pad y", v.y);
+        ui_label2_float("Filtered pad x", v.x);
+        ui_label2_float("Filtered pad y", v.y);
 
         ui_separator();
 
-        ui_const_float("Right pad x", input(GAMEPAD_RPADX) );
-        ui_const_float("Right pad y", input(GAMEPAD_RPADY) );
-        ui_const_float("Right trigger", input(GAMEPAD_RT) );
-        ui_const_bool("Right bumper", input(GAMEPAD_RB) );
-        ui_const_bool("Right thumb", input(GAMEPAD_RTHUMB) );
+        ui_label2_float("Right pad x", input(GAMEPAD_RPADX) );
+        ui_label2_float("Right pad y", input(GAMEPAD_RPADY) );
+        ui_label2_float("Right trigger", input(GAMEPAD_RT) );
+        ui_label2_bool("Right bumper", input(GAMEPAD_RB) );
+        ui_label2_bool("Right thumb", input(GAMEPAD_RTHUMB) );
 
         vec2 w = input_filter_deadzone( input2(GAMEPAD_RPADX), 0.1f );
-        ui_const_float("Filtered pad x", w.x);
-        ui_const_float("Filtered pad y", w.y);
+        ui_label2_float("Filtered pad x", w.x);
+        ui_label2_float("Filtered pad y", w.y);
 
         input_use(0);
 
@@ -10516,22 +10525,23 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
     array(char*) props = 0;
     do_once map_init_int( shader_reflect );
     if(vs) for each_substring(vs, "\r\n", line) {
-        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
-            array_push(props, STRDUP(line));
-        }
+        const char *found = strstr(line, "/""//");
+        if( found > line && line[0] == '/' && line[1] == '/' ) continue;
+        if( found ) array_push(props, STRDUP(line));
     }
     if(fs) for each_substring(fs, "\r\n", line) {
-        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
-            array_push(props, STRDUP(line));
-        }
+        const char *found = strstr(line, "/""//");
+        if( found > line && line[0] == '/' && line[1] == '/' ) continue;
+        if( found ) array_push(props, STRDUP(line));
     }
     if(gs) for each_substring(gs, "\r\n", line) {
-        if( strstr(line, "/""//") && !strbeg(line,"//") ) {
-            array_push(props, STRDUP(line));
-        }
+        const char *found = strstr(line, "/""//");
+        if( found > line && line[0] == '/' && line[1] == '/' ) continue;
+        if( found ) array_push(props, STRDUP(line));
     }
     if( props ) {
         map_insert(shader_reflect, program, props);
+        for( int i = 0; i < array_count(props); ++i ) shader_apply_param(program, i);
     }
 
     return program;
@@ -10544,7 +10554,60 @@ unsigned shader_properties(unsigned shader) {
 
 char** shader_property(unsigned shader, unsigned property) {
     array(char*) *found = map_find(shader_reflect, shader);
-    return found ? &(*found)[property] : NULL;
+    return found && property < array_count(*found) ? &(*found)[property] : NULL;
+}
+
+void shader_apply_param(unsigned shader, unsigned param_no) {
+    unsigned num_properties = shader_properties(shader);
+    if( param_no < num_properties ) {
+        char *line = *shader_property(shader, param_no);
+
+        char type[32], name[32];
+        if( sscanf(line, "%*s %s %[^ =;/]", type, name) != 2 ) return;
+
+        int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
+        vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
+        vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
+        vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
+
+        if(minv.x > maxv.x) swapf(&minv.x, &maxv.x);
+        if(minv.y > maxv.y) swapf(&minv.y, &maxv.y);
+        if(minv.z > maxv.z) swapf(&minv.z, &maxv.z);
+        if(minv.w > maxv.w) swapf(&minv.w, &maxv.w);
+
+        if( !strstr(line, "max:") ) {
+        if(setv.x > maxv.x) maxv.x = setv.x;
+        if(setv.y > maxv.y) maxv.y = setv.y;
+        if(setv.z > maxv.z) maxv.z = setv.z;
+        if(setv.w > maxv.w) maxv.w = setv.w;
+        }
+
+        setv = clamp4(setv, minv, maxv);
+
+        if( strchr("ibfv", type[0]) ) {
+            GLint shader_bak; glGetIntegerv(GL_CURRENT_PROGRAM, &shader_bak);
+            glUseProgram(shader);
+            /**/ if(type[0] == 'i') glUniform1i(glGetUniformLocation(shader, name), setv.x);
+            else if(type[0] == 'b') glUniform1i(glGetUniformLocation(shader, name), !!setv.x);
+            else if(type[0] == 'f') glUniform1f(glGetUniformLocation(shader, name), setv.x);
+            else if(type[3] == '2') glUniform2fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            else if(type[3] == '3') glUniform3fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            else if(type[3] == '4') glUniform4fv(glGetUniformLocation(shader, name), 1, &setv.x);
+            glUseProgram(shader_bak);
+        }
+    }
+}
+
+void shader_apply_params(unsigned shader, const char *parameter_mask) {
+    unsigned num_properties = shader_properties(shader);
+    for( unsigned i = 0; i < num_properties; ++i ) {
+        char *line = *shader_property(shader,i);
+
+        char name[32];
+        if( sscanf(line, "%*s %*s %s", name) != 1 ) continue;
+        if( !strmatch(name, parameter_mask) ) continue;
+        shader_apply_param(shader, i);
+    }
 }
 
 int ui_shader(unsigned shader) {
@@ -10555,25 +10618,43 @@ int ui_shader(unsigned shader) {
         char **ptr = shader_property(shader,i);
 
         const char *line = *ptr; // debug: ui_label(line);
-        char uniform[32], type[32], name[32];
-        if( sscanf(line, "%s %s %s", uniform, type, name) != 3) continue;
+        char* tip = strstr(line, "tip:"); tip = tip && tip[4] ? tip + 4 : 0;
+
+        char uniform[32], type[32], name[32], early_exit = '\0';
+        if( sscanf(line, "%s %s %[^ =;/]", uniform, type, name) != 3 ) continue; // @todo optimize: move to shader()
+        if( strcmp(uniform, "uniform") && strcmp(uniform, "}uniform") ) { if(tip) ui_label(va(ICON_MD_INFO "%s", tip)); continue; } // @todo optimize: move to shader()
 
         int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
         vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
         vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
         vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
-        char* tip = strstr(line, "tip:"); tip = tip && tip[4] ? tip + 4 : 0;
         char *label = !tip ? va("%c%s", name[0] - 32 * !!(name[0] >= 'a'), name+1) :
-            va("%c%s " ICON_MD_HELP "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tip);
+            va("%c%s  " ICON_MD_INFO  "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tip);
 
-        if(minv.x > maxv.x) swapf(&minv.x, &maxv.x);
-        if(minv.y > maxv.y) swapf(&minv.y, &maxv.y);
-        if(minv.z > maxv.z) swapf(&minv.z, &maxv.z);
-        if(minv.w > maxv.w) swapf(&minv.w, &maxv.w);
+        if(minv.x > maxv.x) swapf(&minv.x, &maxv.x); // @optimize: move to shader()
+        if(minv.y > maxv.y) swapf(&minv.y, &maxv.y); // @optimize: move to shader()
+        if(minv.z > maxv.z) swapf(&minv.z, &maxv.z); // @optimize: move to shader()
+        if(minv.w > maxv.w) swapf(&minv.w, &maxv.w); // @optimize: move to shader()
+
+        if( !strstr(line, "max:") ) {
+        if(setv.x > maxv.x) maxv.x = setv.x;
+        if(setv.y > maxv.y) maxv.y = setv.y;
+        if(setv.z > maxv.z) maxv.z = setv.z;
+        if(setv.w > maxv.w) maxv.w = setv.w;
+        }
+
+        setv = clamp4(setv, minv, maxv);
 
         // supports int,float,vec2/3/4,color3/4
         int touched = 0;
-        if( type[0] == 'i' ) {
+        if( type[0] == 'b' ) {
+            bool v = !!setv.x;
+
+            if( (touched = ui_bool(label, &v)) != 0 ) {
+                setv.x = v;
+            }
+        }
+        else if( type[0] == 'i' ) {
             int v = setv.x;
 
             if( (touched = ui_int(label, &v)) != 0 ) {
@@ -10581,9 +10662,11 @@ int ui_shader(unsigned shader) {
             }
         }
         else if( type[0] == 'f' ) {
-            setv.x = (clampf(setv.x, minv.x, maxv.x) - minv.x) / (maxv.x - minv.x);
+            setv.x = clampf(setv.x, minv.x, maxv.x);
+            char *caption = va("%5.2f", setv.x);
+            setv.x = (setv.x - minv.x) / (maxv.x - minv.x);
 
-            if( (touched = ui_slider2(label, &setv.x, va("%5.2f", setv.x))) != 0 ) {
+            if( (touched = ui_slider2(label, &setv.x, caption)) != 0 ) {
                 setv.x = clampf(minv.x + setv.x * (maxv.x-minv.x), minv.x, maxv.x); // min..max range
             }
         }
@@ -10608,27 +10691,19 @@ int ui_shader(unsigned shader) {
                 setv = clamp4(setv,minv,maxv);
             }
         }
+        else if( tip ) ui_label( tip );
 
         if( touched ) {
-            // send to shader
-            GLint shader_bak; glGetIntegerv(GL_CURRENT_PROGRAM, &shader_bak);
-            glUseProgram(shader);
-            /**/ if(type[0] == 'i') glUniform1i(glGetUniformLocation(shader, name), setv.x);
-            else if(type[0] == 'f') glUniform1f(glGetUniformLocation(shader, name), setv.x);
-            else if(type[3] == '2') glUniform2fv(glGetUniformLocation(shader, name), 1, &setv.x);
-            else if(type[3] == '3') glUniform3fv(glGetUniformLocation(shader, name), 1, &setv.x);
-            else if(type[3] == '4') glUniform4fv(glGetUniformLocation(shader, name), 1, &setv.x);
-            glUseProgram(shader_bak);
-
             // upgrade value
             *ptr = FREE(*ptr);
             *ptr = stringf("%s %s %s ///set:%s min:%s max:%s tip:%s", uniform,type,name,ftoa4(setv),ftoa4(minv),ftoa4(maxv),tip?tip:"");
 
+            // apply
+            shader_apply_param(shader, i);
+
             changed = 1;
         }
     }
-
-    if(num_properties) ui_separator();
 
     return changed;
 }
@@ -10637,13 +10712,14 @@ int ui_shaders() {
     if( !map_count(shader_reflect) ) return 0;
 
     int changed = 0;
-    int has_menu = ui_has_menubar();
-    if( (has_menu ? ui_window("Shaders", 0) : ui_panel("Shaders", 0) ) ) {
         for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
-            ui_section(va("Shader %d",*k));
+        int open = 0, clicked_or_toggled = 0;
+        char *id = va("##SHD%d", *k);
+        char *title = va("Shader %d", *k);
+        for( int p = (open = ui_collapse(title, id)), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            ui_label(va("Shader %d",*k));
             changed |= ui_shader(*k);
         }
-        (has_menu ? ui_window_end : ui_panel_end)();
     }
     return changed;
 }
@@ -10698,7 +10774,7 @@ void write_barrier(){
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
-void image_write_barrier(){
+void write_barrier_image(){
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
@@ -13556,9 +13632,9 @@ void postfx_clear(postfx *fx) {
 
 int ui_postfx(postfx *fx, int pass) {
     int on = ui_enabled();
-    ui_enable( postfx_enabled(fx,pass) );
+    ( postfx_enabled(fx,pass) ? ui_enable : ui_disable )();
     int rc = ui_shader(fx->pass[pass].program);
-    ui_enable( on );
+    ( on ? ui_enable : ui_disable )();
     return rc;
 }
 
@@ -13739,16 +13815,12 @@ int ui_fxs() {
     if(!fx.num_loaded) return 0;
 
     int changed = 0;
-    int has_menu = ui_has_menubar();
-    if( (has_menu ? ui_window("FX", 0) : ui_panel("FX", 0) ) ) {
         for( int i = 0; i < 64; ++i ) {
             char *name = fx_name(i); if( !name ) break;
             bool b = fx_enabled(i);
             if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
             ui_fx(i);
         }
-        (has_menu ? ui_window_end : ui_panel_end)();
-    }
     return changed;
 }
 
@@ -17786,8 +17858,8 @@ default_hue = 0.52;
     struct nk_color active     = nk_hsv_f(    0.600, 0.00, 0.150); // bright b/w
     struct nk_color table[NK_COLOR_COUNT] = {0};
     table[NK_COLOR_TEXT] = nk_rgba(210, 210, 210, 255);
-    table[NK_COLOR_WINDOW] = nk_rgba(42, 42, 42, 215);
-    table[NK_COLOR_HEADER] = nk_rgba(51, 51, 56, 220);
+    table[NK_COLOR_WINDOW] = nk_rgba(42, 42, 42, 245);
+    table[NK_COLOR_HEADER] = nk_rgba(51, 51, 56, 245);
     table[NK_COLOR_BORDER] = nk_rgba(46, 46, 46, 255);
     table[NK_COLOR_BUTTON] = main;
     table[NK_COLOR_BUTTON_HOVER] = hover;
@@ -18178,7 +18250,7 @@ int ui_active() {
 }
 
 static
-int ui_enable_(int enabled) {
+int ui_set_enable_(int enabled) {
     static struct nk_style off, on;
     do_once {
         off = on = ui_ctx->style;
@@ -18416,8 +18488,11 @@ int ui_enable_(int enabled) {
 }
 
 static int ui_is_enabled = 1;
-int ui_enable(int on) {
-    return ui_is_enabled == on ? 0 : ui_enable_(ui_is_enabled = on);
+int ui_enable() {
+    return ui_is_enabled == 1 ? 0 : ui_set_enable_(ui_is_enabled = 1);
+}
+int ui_disable() {
+    return ui_is_enabled == 0 ? 0 : ui_set_enable_(ui_is_enabled = 0);
 }
 int ui_enabled() {
     return ui_is_enabled;
@@ -19199,6 +19274,20 @@ ui_label_icon_clicked_R.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x
 
     return ui_label_icon_clicked_R.x;
 }
+int ui_label2_bool(const char *text, bool value) {
+    bool b = !!value;
+    return ui_bool(text, &b), 0;
+}
+int ui_label2_float(const char *text, float value) {
+    float f = (float)value;
+    return ui_float(text, &f), 0;
+}
+int ui_label2_wrap(const char *label, const char *str) { // @fixme: does not work (remove dynamic layout?)
+    nk_layout_row_dynamic(ui_ctx, 0, 2  - (label ? !label[0] : 1));
+    ui_label_(label, NK_TEXT_LEFT);
+    nk_text_wrap(ui_ctx, str, strlen(str));
+    return 0;
+}
 int ui_label2_toolbar(const char *label, const char *icons) {
     int mouse_click = ui_label2(label, va(">%s", icons));
     int choice = !mouse_click ? 0 : 1 + -mouse_click / (UI_ICON_FONTSIZE + UI_ICON_SPACING_X); // divided by px per ICON_MD_ glyph approximately
@@ -19311,18 +19400,6 @@ int ui_buttons(int buttons, ...) {
 
 int ui_button(const char *s) {
     return ui_buttons(1, s);
-}
-
-int ui_const_bool(const char *text, const double value) {
-    bool b = !!value;
-    return ui_bool(text, &b), 0;
-}
-int ui_const_float(const char *text, const double value) {
-    float f = (float)value;
-    return ui_float(text, &f), 0;
-}
-int ui_const_string(const char *label, const char *text) {
-    return ui_label2(label, text);
 }
 
 int ui_toggle(const char *label, bool *value) {
@@ -19588,13 +19665,6 @@ int ui_buffer(const char *label, char *buffer, int buflen) {
     return !!(active & NK_EDIT_COMMITED) ? nk_edit_unfocus(ui_ctx), 1 : 0;
 }
 
-int ui_text_wrap(const char *label, char *text) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2  - (label ? !label[0] : 1));
-    ui_label_(label, NK_TEXT_LEFT);
-    nk_text_wrap(ui_ctx, text, strlen(text));
-    return 0; 
-}
-
 int ui_string(const char *label, char **str) {
     char *bak = va("%s%c", *str ? *str : "", '\0');
     int rc = ui_buffer(label, bak, strlen(bak)+2);
@@ -19718,8 +19788,8 @@ int ui_dialog(const char *title, const char *text, int choices, bool *show) { //
     return *show;
 }
 
-#define ui_bits_template(X) \
-int ui_bits##X(const char *label, uint##X##_t *enabled) { \
+#define ui_bitmask_template(X) \
+int ui_bitmask##X(const char *label, uint##X##_t *enabled) { \
     /* @fixme: better way to retrieve widget width? nk_layout_row_dynamic() seems excessive */ \
     nk_layout_row_dynamic(ui_ctx, 1, 1); \
     struct nk_rect bounds = nk_widget_bounds(ui_ctx); \
@@ -19750,9 +19820,9 @@ int ui_bits##X(const char *label, uint##X##_t *enabled) { \
     return copy ^ *enabled; \
 }
 
-ui_bits_template(8);
-ui_bits_template(16);
-//ui_bits_template(32);
+ui_bitmask_template(8);
+ui_bitmask_template(16);
+//ui_bitmask_template(32);
 
 int ui_console() { // @fixme: buggy
     static char *cmd = 0;
@@ -19913,13 +19983,15 @@ int ui_demo(int do_windows) {
             if(choice == 2) ui_notify(va("My random toast (%d)", rand()), va("This is notification #%d", ++hits));
             if(choice == 3) disable_all ^= 1;
 
-        if( disable_all ) ui_enable(0);
+        if( disable_all ) ui_disable();
 
         if( ui_browse(&browsed_file, &show_browser) ) puts(browsed_file);
 
         if( ui_section("Labels")) {}
         if( ui_label("my label")) {}
         if( ui_label("my label with tooltip@built on " __DATE__ " " __TIME__)) {}
+        if( ui_label2_toolbar("my toolbar", ICON_MD_STAR ICON_MD_STAR_OUTLINE ICON_MD_BOOKMARK ICON_MD_BOOKMARK_BORDER) ) {}
+        //if( ui_label2_wrap("my long label", "and some long long long long text wrapped")) {}
 
         if( ui_section("Types")) {}
         if( ui_bool("my bool", &boolean) ) puts("bool changed");
@@ -19952,7 +20024,7 @@ int ui_demo(int do_windows) {
         }
 
         if( ui_section("Others")) {}
-        if( ui_bits8("my bitmask", &bitmask) ) printf("bitmask changed %x\n", bitmask);
+        if( ui_bitmask8("my bitmask", &bitmask) ) printf("bitmask changed %x\n", bitmask);
         if( ui_toggle("my toggle", &toggle) ) printf("toggle %s\n", toggle ? "on":"off");
         if( ui_image("my image", texture_checker().id, 0, 0) ) { puts("image clicked"); }
 
@@ -19962,7 +20034,7 @@ int ui_demo(int do_windows) {
         if( ui_buttons(3, "yes", "no", "maybe") ) { puts("button clicked"); }
         if( ui_dialog("my dialog", __FILE__ "\n" __DATE__ "\n" "Public Domain.", 2/*two buttons*/, &show_dialog) ) {}
 
-        if( disable_all ) ui_enable(1);
+        if( disable_all ) ui_enable(); // restore enabled state
 
         ui_panel_end();
     }
@@ -20054,30 +20126,14 @@ int ui_demo(int do_windows) {
 profiler_t profiler;
 int profiler_enabled = 1;
 
-void (profile_init)() { map_init(profiler, less_str, hash_str); profiler_enabled &= !!profiler; }
-int  (profile_enable)(bool on) { return profiler_enabled = on; }
-void (profile_render)() { 
-    // @transparent
-    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
-    if( has_transparent_attrib ) return;
-    // @transparent
-
-    int has_menu = ui_has_menubar();
-    if( !has_menu ) {
-        static int cook_on_demand; do_once cook_on_demand = COOK_ON_DEMAND;
-        if( !cook_on_demand ) {
-            // render profiler, unless we are in the cook progress screen
-            static unsigned frames = 0; if(frames <= 0) frames += cook_progress() >= 100;
-            if( frames <= 0 ) return;
-        }
-    }
-
-    if( has_menu ? ui_window("Profiler", 0) : ui_panel("Profiler", 0) ) {
+void (profiler_init)() { map_init(profiler, less_str, hash_str); profiler_enabled &= !!profiler; }
+int  (profiler_enable)(bool on) { return profiler_enabled = on; }
+void (ui_profiler)() {
+    // @todo: ui_plot()
 
         double fps = window_fps();
         profile_setstat("Render.num_fps", fps);
 
-        if(1) { // @todo: ui_plot()
             // draw fps-meter: 300 samples, [0..70] range each, 70px height plot.
             nk_layout_row_dynamic(ui_ctx, 70, 1);
 
@@ -20106,7 +20162,6 @@ void (profile_render)() {
             if( index >= 0 ) {
                 nk_tooltipf(ui_ctx, "%.2f fps", (float)values[index]);
             }
-        }
 
         for each_map_ptr_sorted(profiler, const char *, key, struct profile_t, val ) {
             if( isnan(val->stat) ) {
@@ -20117,9 +20172,6 @@ void (profile_render)() {
                 ui_slider2(*key, &v, va("%.2f", val->stat));
                 val->stat = 0;
             }
-        }
-
-        (has_menu ? ui_window_end : ui_panel_end)();
     }
 }
 #endif
@@ -20716,7 +20768,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     #if is(ems)
     if( FLAGS_FULLSCREEN ) window_fullscreen(1);
     #else
-    gladLoadGL(glfwGetProcAddress);
+    int gl_version = gladLoadGL(glfwGetProcAddress);
     #endif
 
     glDebugEnable();
@@ -20740,6 +20792,8 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     PRINTF("GPU driver: %s\n", glGetString(GL_VERSION));
 
     #if !is(ems)
+    PRINTF("GPU OpenGL: %d.%d\n", GLAD_VERSION_MAJOR(gl_version), GLAD_VERSION_MINOR(gl_version));
+
     if( FLAGS_TRANSPARENT ) { // @transparent
         glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
         if( scale >= 1 ) glfwMaximizeWindow(window);
@@ -20868,10 +20922,51 @@ int window_frame_begin() {
 
     ui_create();
 
-    profile_render();
+    bool may_render_stats = 1;
 
-    ui_shaders();
+    int has_menu = ui_has_menubar();
+    if( !has_menu ) {
+        static int cook_on_demand; do_once cook_on_demand = COOK_ON_DEMAND;
+        if( !cook_on_demand ) {
+            // render profiler, unless we are in the cook progress screen
+            static unsigned frames = 0; if(frames <= 0) frames += cook_progress() >= 100;
+            may_render_stats = (frames > 0);
+        }
+    }
+
+    // @transparent
+    static bool has_transparent_attrib = 0; do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE;
+    if( has_transparent_attrib ) may_render_stats = 0;
+    // @transparent
+
+    // generate Debug panel contents
+    if( may_render_stats ) {
+        if( has_menu ? ui_window("Debug", 0) : ui_panel("Debug", 0) ) {
+
+            int open = 0, clicked_or_toggled = 0;
+
+            for( int p = (open = ui_collapse("FXs", "Debug.FXs")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
     ui_fxs();
+            }
+            for( int p = (open = ui_collapse("Profiler", "Debug.Profiler")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_profiler();
+            }
+            for( int p = (open = ui_collapse("Shaders", "Debug.Shaders")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_shaders();
+            }
+            for( int p = (open = ui_collapse("Keyboard", "Debug.Keyboard")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+
+            }
+            for( int p = (open = ui_collapse("Mouse",    "Debug.Mouse")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+
+            }
+            for( int p = (open = ui_collapse("Gamepads", "Debug.Gamepads")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+
+            }
+
+            (has_menu ? ui_window_end : ui_panel_end)();
+        }
+    }
  
 #if 0 // deprecated
     // run user-defined hooks
@@ -22884,22 +22979,20 @@ int main() {
 // ----------------------------------------------------------------------------
 
 static void v4k_pre_init() {
-    window_icon(va("%s.png", app_name()));
-    ifdef(win32,window_icon(va("%s.ico", app_name())));
+    const char *appname = app_name();
+    window_icon(va("%s.png", appname));
+    ifdef(win32,window_icon(va("%s.ico", appname)));
 
     glfwPollEvents();
 
     int i;
-#if 1 // #ifdef PARALLEL_INIT
     #pragma omp parallel for
-#endif
     for( i = 0; i <= 3; ++i) {
         /**/ if( i == 0 ) ddraw_init();// init this on thread#0 since it will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         else if( i == 1 ) sprite_init();
-        else if( i == 2 ) profile_init();
+        else if( i == 2 ) profiler_init();
         else if( i == 3 ) storage_mount("save/"), storage_read(), touch_init(); // for ems
     }
-    ;
 
     // window_swap();
 }

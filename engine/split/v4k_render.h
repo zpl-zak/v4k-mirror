@@ -343,6 +343,9 @@ API void     shader_destroy(unsigned shader);
 API unsigned     shader_properties(unsigned shader);
 API char**       shader_property(unsigned shader, unsigned property_no);
 
+API void         shader_apply_param(unsigned shader, unsigned param_no);
+API void         shader_apply_params(unsigned shader, const char *parameter_mask);
+
 API int          ui_shader(unsigned shader);
 API int          ui_shaders();
 
@@ -387,11 +390,11 @@ API void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int 
 
 // gpu memory barriers
 
-/// Blocks main thread until all image operations are done by the GPU.
-API void image_write_barrier();
-
 /// Blocks main thread until all memory operations are done by the GPU.
 API void write_barrier();
+
+/// Blocks main thread until all image operations are done by the GPU.
+API void write_barrier_image();
 
 // ssbo
 /// `STATIC`, `DYNAMIC` AND `STREAM` specify the frequency at which we intend to access the data.

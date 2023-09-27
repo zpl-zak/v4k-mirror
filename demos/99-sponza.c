@@ -11,7 +11,7 @@ int main() {
     fx_load("fx**.fs");
 
     // load skybox
-    skybox_t sky = skybox(flag("--mie") ? 0 : "cubemaps/stardust", 0); // --mie for rayleigh/mie scattering
+    skybox_t sky = skybox(flag("--mie") ? 0 : "hdr/Tokyo_BigSight_1k.hdr", 0); // --mie for rayleigh/mie scattering
 
     // load static scene
     model_t sponza;
@@ -70,6 +70,6 @@ int main() {
         model_render(sponza, cam.proj, cam.view, M, 0);
 
         // post-fxs end here
-        fx_end();
+        fx_end(0);
     }
 }

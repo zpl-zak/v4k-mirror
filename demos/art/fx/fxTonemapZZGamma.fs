@@ -1,4 +1,4 @@
-uniform float gamma = 2.2; /// set:2.2
+uniform float gamma; /// set:2.2
 out vec4 color;
 
 void main(void) {
