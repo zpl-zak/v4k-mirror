@@ -613,7 +613,6 @@ rem if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !i
 rem !echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
 rem !echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
 
-del .art[00].zip > nul
 !echo! v4k && !cc! engine\v4k.c !export! !edit! !args! || set rc=1
 
 if "!cc!"=="cl" (
