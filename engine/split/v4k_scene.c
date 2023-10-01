@@ -6,23 +6,32 @@ static camera_t *last_camera;
 camera_t camera() {
     camera_t *old = last_camera;
 
-    camera_t cam = {0};
-    cam.speed = 1;
+    static camera_t cam = {0};
+    do_once {
+        cam.speed = 0.50f;
     cam.position = vec3(10,10,10);
-    cam.last_look = cam.last_move = vec3(0,0,0);
-    cam.up = vec3(0,1,0);
+        cam.updir = vec3(0,1,0);
     cam.fov = 45;
+
+        cam.damping = false;
+        cam.move_friction = 0.09f;
+        cam.move_damping = 0.96f;
+        cam.look_friction = 0.30f;
+        cam.look_damping = 0.96f;
+        cam.last_look = vec2(0,0);
+        cam.last_move = vec3(0,0,0);
 
     // update proj & view
     camera_lookat(&cam,vec3(-5,0,-5));
 
-    // @todo: remove this hack
-    static int smoothing = -1; if( smoothing < 0 ) smoothing = flag("--camera-smooth");
-    if( smoothing ) {
+        // @todo: remove this hack that is used to consolidate dampings
+        if( 1 ) {
+            vec3 zero = {0};
         for( int i = 0; i < 1000; ++i ) {
-            camera_move(&cam,0,0,0);
+                camera_moveby(&cam, zero);
             camera_fps(&cam,0,0);
         }
+    }
     }
 
     last_camera = old;
@@ -40,33 +49,37 @@ camera_t *camera_get_active() {
     return last_camera;
 }
 
-void camera_move(camera_t *cam, float incx, float incy, float incz) {
-    // enable camera smoothing
-    static int smoothing = -1; if( smoothing < 0 ) smoothing = flag("--camera-smooth");
-    if( smoothing ) {
-        float move_friction = 0.99f;
-        cam->last_move = scale3(cam->last_move, move_friction);
-        float move_filtering = 0.975f;
-        incx = cam->last_move.x = incx * (1 - move_filtering) + cam->last_move.x * move_filtering;
-        incy = cam->last_move.y = incy * (1 - move_filtering) + cam->last_move.y * move_filtering;
-        incz = cam->last_move.z = incz * (1 - move_filtering) + cam->last_move.z * move_filtering;
+void camera_moveby(camera_t *cam, vec3 inc) {
+    // calculate camera damping
+    if( cam->damping ) {
+        float fr = cam->move_friction; fr *= fr; fr *= fr; fr *= fr;
+        float sm = clampf(cam->move_damping, 0, 0.999f); sm *= sm; sm *= sm;
+
+        cam->last_move = scale3(cam->last_move, 1 - fr);
+        inc.x = cam->last_move.x = inc.x * (1 - sm) + cam->last_move.x * sm;
+        inc.y = cam->last_move.y = inc.y * (1 - sm) + cam->last_move.y * sm;
+        inc.z = cam->last_move.z = inc.z * (1 - sm) + cam->last_move.z * sm;
     }
 
-    vec3 dir = norm3(cross3(cam->look, cam->up));
-    cam->position = add3(cam->position, scale3(dir, incx)); // right
-    cam->position = add3(cam->position, scale3(cam->up, incy)); // up
-    cam->position = add3(cam->position, scale3(cam->look, incz)); // front
+    vec3 dir = norm3(cross3(cam->lookdir, cam->updir));
+    cam->position = add3(cam->position, scale3(dir, inc.x)); // right
+    cam->position = add3(cam->position, scale3(cam->updir, inc.y)); // up
+    cam->position = add3(cam->position, scale3(cam->lookdir, inc.z)); // front
 
     camera_fps(cam, 0, 0);
 }
 
 void camera_teleport(camera_t *cam, vec3 pos) {
+    bool damping = cam->damping;
+    cam->damping = 0;
+    cam->last_move = vec3(0,0,0);
     cam->position = pos;
     camera_fps(cam, 0, 0);
+    cam->damping = damping;
 }
 
 void camera_lookat(camera_t *cam, vec3 target) {
-    // invert expression that cam->look = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
+    // invert expression that cam->lookdir = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
     // look.y = sin p > y = asin(p)
     // look.x = cos y * cos p; -> cos p = look.x / cos y \ look.x / cos y = look.z / sin y
     // look.z = sin y * cos p; -> cos p = look.z / sin y /
@@ -88,33 +101,7 @@ void camera_enable(camera_t *cam) {
 }
 
 void camera_fov(camera_t *cam, float fov) {
-    cam->fov = fov;
-}
-
-void camera_fps(camera_t *cam, float yaw, float pitch) {
     last_camera = cam;
-
-    // enable camera smoothing
-    static int smoothing = -1; if( smoothing < 0 ) smoothing = flag("--camera-smooth");
-    if( smoothing ) {
-        float look_friction = 0.999f;
-        cam->last_look.x *= look_friction;
-        cam->last_look.y *= look_friction;
-        float look_filtering = 0.05f;
-        yaw = cam->last_look.y = yaw * look_filtering + cam->last_look.y * (1 - look_filtering);
-        pitch = cam->last_look.x = pitch * look_filtering + cam->last_look.x * (1 - look_filtering);
-    }
-
-    cam->yaw += yaw;
-    cam->yaw = fmod(cam->yaw, 360);
-    cam->pitch += pitch;
-    cam->pitch = cam->pitch > 89 ? 89 : cam->pitch < -89 ? -89 : cam->pitch;
-
-    const float deg2rad = 0.0174532f, y = cam->yaw * deg2rad, p = cam->pitch * deg2rad;
-    cam->look = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
-
-    lookat44(cam->view, cam->position, add3(cam->position, cam->look), cam->up); // eye,center,up
-    perspective44(cam->proj, cam->fov, window_width() / ((float)window_height()+!window_height()), 0.01f, 1000.f);
 
 #if 0 // isometric/dimetric
     #define orthogonal(proj, fov, aspect, znear, zfar) \
@@ -127,6 +114,33 @@ void camera_fps(camera_t *cam, float yaw, float pitch) {
     // cam->yaw = 45;
     cam->pitch = -ISOMETRIC;
 #endif
+    cam->fov = fov;
+    perspective44(cam->proj, cam->fov, window_width() / ((float)window_height()+!window_height()), 0.01f, 1000.f);
+}
+
+void camera_fps(camera_t *cam, float yaw, float pitch) {
+    last_camera = cam;
+
+    // camera damping
+    if( cam->damping ) {
+        float fr = cam->look_friction; fr *= fr; fr *= fr; fr *= fr;
+        float sm = clampf(cam->look_damping, 0, 0.999f); sm *= sm; sm *= sm;
+
+        cam->last_look = scale2(cam->last_look, 1 - fr);
+        yaw = cam->last_look.y = yaw * (1 - sm) + cam->last_look.y * sm;
+        pitch = cam->last_look.x = pitch * (1 - sm) + cam->last_look.x * sm;
+    }
+
+    cam->yaw += yaw;
+    cam->yaw = fmod(cam->yaw, 360);
+    cam->pitch += pitch;
+    cam->pitch = cam->pitch > 89 ? 89 : cam->pitch < -89 ? -89 : cam->pitch;
+
+    const float deg2rad = 0.0174532f, y = cam->yaw * deg2rad, p = cam->pitch * deg2rad;
+    cam->lookdir = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
+    lookat44(cam->view, cam->position, add3(cam->position, cam->lookdir), cam->updir); // eye,center,up
+
+    camera_fov(cam, cam->fov);
 }
 
 void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
@@ -164,6 +178,28 @@ void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
     // save for next call
     cam->last_move.x = _mouse.x;
     cam->last_move.y = _mouse.y;
+}
+
+int ui_camera( camera_t *cam ) {
+    int changed = 0;
+    changed |= ui_float("Speed", &cam->speed);
+    ui_separator();
+    changed |= ui_bool("Damping", &cam->damping);
+    if( !cam->damping ) ui_disable();
+    changed |= ui_slider2("Move friction", &cam->move_friction, va("%5.2f", cam->move_friction));
+    changed |= ui_slider2("Move damping", &cam->move_damping, va("%5.2f", cam->move_damping));
+    changed |= ui_slider2("View driction", &cam->look_friction, va("%5.2f", cam->look_friction));
+    changed |= ui_slider2("View damping", &cam->look_damping, va("%5.2f", cam->look_damping));
+    if( !cam->damping ) ui_enable();
+    ui_separator();
+    changed |= ui_float3("Position", &cam->position.x);
+    changed |= ui_float3("LookDir", &cam->lookdir.x);
+    changed |= ui_float3("UpDir", &cam->updir.x);
+    changed |= ui_mat44("View matrix", cam->view);
+    ui_separator();
+    changed |= ui_float("FOV (degrees)", &cam->fov);
+    changed |= ui_mat44("Projection matrix", cam->proj);
+    return changed;
 }
 
 // -----------------------------------------------------------------------------

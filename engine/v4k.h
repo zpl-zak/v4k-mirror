@@ -415,9 +415,10 @@ API uint32_t unhash_32(uint32_t x);
 API uint32_t hash_32(uint32_t x);
 API uint64_t hash_64(uint64_t x);
 API uint64_t hash_flt(double x);
-API uint64_t hash_str(const char* str);
 API uint64_t hash_int(int key);
 API uint64_t hash_ptr(const void* ptr);
+API uint64_t hash_bin(const void* ptr, unsigned len);
+API uint64_t hash_str(const char* str);
 
 // -----------------------------------------------------------------------------
 // bits
@@ -2018,12 +2019,12 @@ API float       input( int vk );
 API vec2        input2( int vk );
 API float       input_diff( int vk ); // @todo: rename diff->delta
 API vec2        input_diff2( int vk ); // @todo: rename diff2->delta2
+API const char* input_string( int vk );
 
 // -- extended polling api (read input at Nth frame ago)
 
-API float       input_frame( int vk, int frame );
-API vec2        input_frame2( int vk, int frame );
-API const char* input_frames( int vk, int frame );
+API float       input_frame( int vk, int Nth_frame );
+API vec2        input_frame2( int vk, int Nth_frame );
 
 // -- events api
 
@@ -2062,13 +2063,21 @@ API bool        input_touch_active();
 
 // -- utils
 
-API void        input_demo();
 API void        input_mappings(const char *filename); // update gamepad mappings (usually "gamecontrollerdb.txt" file)
-API void        input_send( int vk ); // @todo
-API void*       input_save_state( int id, int *size); // @todo
-API bool        input_load_state( int id, void *ptr, int size); // @todo
 API char        input_keychar(unsigned code); // Converts keyboard code to its latin char (if any)
 API int         input_anykey();
+
+// inject state
+API void        input_send( int vk ); // @todo
+// load/save input
+API array(char) save_input(); // @todo
+API bool        load_input(array(char) replay); // @todo
+
+// visualize input
+API int         ui_keyboard();
+API int         ui_mouse();
+API int         ui_gamepad(int id);
+API int         ui_gamepads();
 
 // --
 
@@ -3230,21 +3239,28 @@ API void ddraw_flush_projview(mat44 proj, mat44 view);
 
 typedef struct camera_t {
     mat44 view, proj;
-    vec3 position, up, look; // position, updir, lookdir
-    float yaw, pitch, speed; // mirror_x, mirror_y;
-    vec3 last_look, last_move; // used for friction and smoothing
-    float fov; // deg(45)
+    vec3 position, updir, lookdir;
+    float yaw, pitch; // mirror of (x,y) lookdir in deg;
+    float speed, fov; // fov in deg(45)
+
+    float move_friction, move_damping;
+    float look_friction, look_damping;
+    vec2 last_look; vec3 last_move; // used for friction and damping
+    bool damping;
 } camera_t;
 
 API camera_t camera();
 API void camera_teleport(camera_t *cam, vec3 pos);
-API void camera_move(camera_t *cam, float incx, float incy, float incz);
+API void camera_moveby(camera_t *cam, vec3 inc);
 API void camera_fov(camera_t *cam, float fov);
 API void camera_fps(camera_t *cam, float yaw, float pitch);
 API void camera_orbit(camera_t *cam, float yaw, float pitch, float inc_distance);
 API void camera_lookat(camera_t *cam, vec3 target);
 API void camera_enable(camera_t *cam);
 API camera_t *camera_get_active();
+
+API int  ui_camera(camera_t *cam);
+API void ddraw_camera(camera_t *cam);
 
 // object
 
@@ -3568,6 +3584,9 @@ API int    ui_float(const char *label, float *value);
 API int    ui_float2(const char *label, float value[2]);
 API int    ui_float3(const char *label, float value[3]);
 API int    ui_float4(const char *label, float value[4]);
+API int    ui_mat33(const char *label, float mat33[9]);
+API int    ui_mat34(const char *label, float mat34[12]);
+API int    ui_mat44(const char *label, float mat44[16]);
 API int    ui_double(const char *label, double *value);
 API int    ui_buffer(const char *label, char *buffer, int buflen);
 API int    ui_string(const char *label, char **string);

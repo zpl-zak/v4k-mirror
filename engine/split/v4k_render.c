@@ -378,7 +378,7 @@ int ui_shader(unsigned shader) {
 }
 
 int ui_shaders() {
-    if( !map_count(shader_reflect) ) return 0;
+    if( !map_count(shader_reflect) ) return ui_label(ICON_MD_WARNING " No shaders with annotations loaded."), 0;
 
     int changed = 0;
         for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
@@ -3481,7 +3481,7 @@ int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
 }
 int ui_fxs() {
-    if(!fx.num_loaded) return 0;
+    if(!fx.num_loaded) return ui_label(ICON_MD_WARNING " No Post FXs with annotations loaded."), 0;
 
     int changed = 0;
         for( int i = 0; i < 64; ++i ) {
@@ -3489,6 +3489,7 @@ int ui_fxs() {
             bool b = fx_enabled(i);
             if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
             ui_fx(i);
+        ui_separator();
         }
     return changed;
 }
@@ -4749,17 +4750,21 @@ void model_destroy(model_t m) {
 
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
-    char *anim_file = vfs_read(va("%s@animlist.txt", pathfile));
-    if( !anim_file ) anim_file = vfs_read(pathfile);
+    char *anim_file = vfs_read(strendi(pathfile,".txt") ? pathfile : va("%s@animlist.txt", pathfile));
     if( anim_file ) {
+        // deserialize anim
+        a.speed = 1.0;
     for each_substring(anim_file, "\r\n", anim) {
         int from, to;
         char anim_name[128] = {0};
         if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
-        array_push(a.anims, !!strstri(anim_name, "loop") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
+            array_push(a.anims, !!strstri(anim_name, "loop") || !strcmpi(anim_name, "idle") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
             array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
     }
-    a.speed = 1.0;
+    } else {
+        // placeholder
+        array_push(a.anims, clip(0,1,0,0));
+        array_back(a.anims)->name = STRDUP("Error"); // @leak
     }
     return a;
 }

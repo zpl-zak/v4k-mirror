@@ -57,6 +57,12 @@ uint64_t hash_str(const char* str) {
     while( *str ) hash = ( (unsigned char)*str++ ^ hash ) * 0x100000001b3ULL;
     return hash;
 }
+uint64_t hash_bin(const void* ptr, unsigned len) {
+    uint64_t hash = 14695981039346656037ULL; // hash(0),mul(131) faster than fnv1a, a few more collisions though
+    for( unsigned char *str = (unsigned char *)ptr; len--; )
+    hash = ( (unsigned char)*str++ ^ hash ) * 0x100000001b3ULL;
+    return hash;
+}
 uint64_t hash_int(int key) {
     return hash_32((uint32_t)key);
 }

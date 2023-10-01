@@ -628,6 +628,30 @@ void ddraw_frustum(float projview[16]) {
     // Connect the dots:
     ddraw_bounds(points);
 }
+
+void ddraw_camera(camera_t *cam) {
+    vec3 center = cam->position;
+    vec3 rightdir = cross3(cam->lookdir,cam->updir);
+    float proj[16]; // reproject perspective matrix with a smaller view distance (100 units)
+    perspective44(proj, cam->fov, window_width() / ((float)window_height()+!window_height()), 0.01f, 100.f);
+
+    ddraw_color_push(YELLOW);
+    // frustum
+    mat44 projview; multiply44x2(projview, /*cam->*/proj, cam->view);
+    ddraw_frustum(projview);
+    // top circles
+    ddraw_circle(add3(center,add3(cam->lookdir,cam->updir)), rightdir, 2);
+    ddraw_circle(add3(center,add3(neg3(cam->lookdir),cam->updir)), rightdir, 2);
+    // orientation
+    ddraw_color(RED);
+    ddraw_arrow(cam->position, add3(cam->position,cam->lookdir));
+    ddraw_color(GREEN);
+    ddraw_arrow(cam->position, add3(cam->position,cam->updir));
+    ddraw_color(BLUE);
+    ddraw_arrow(cam->position, add3(cam->position,rightdir));
+    ddraw_color_pop();
+}
+
 void ddraw_arrow(vec3 begin, vec3 end) {
     vec3 diff = sub3(end, begin);
     float len = len3(diff), stick_len = len * 2 / 3;

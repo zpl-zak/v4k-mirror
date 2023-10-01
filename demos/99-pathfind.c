@@ -12,7 +12,7 @@ void move_players();
 int main() {
     window_create(85, 0); // WINDOW_MSAA4);
     window_title(__FILE__);
-    window_fps_lock(60);
+    // window_fps_lock(60);
 
     // game loop
     while( window_swap() && !input(KEY_ESC) ) {

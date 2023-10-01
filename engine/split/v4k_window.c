@@ -523,33 +523,94 @@ int window_frame_begin() {
     }
 
     // @transparent
-    static bool has_transparent_attrib = 0; do_once ifdef(ems, false, has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
+    static bool has_transparent_attrib = 0; ifndef(ems, do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
     if( has_transparent_attrib ) may_render_stats = 0;
     // @transparent
 
     // generate Debug panel contents
     if( may_render_stats ) {
-        if( has_menu ? ui_window("Debug", 0) : ui_panel("Debug", 0) ) {
+        if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
+
+#if 1
+            static char *filter = 0;
+            static int do_filter = 0;
+            if( input_down(KEY_F) ) if( input(KEY_LCTRL) || input(KEY_RCTRL) ) do_filter ^= 1;
+            int choice = ui_toolbar(ICON_MD_SEARCH ";");
+            if( choice == 1 ) do_filter = 1;
+            if( do_filter ) {
+                ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &filter);
+                if( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 ) { // if clicked on CANCEL icon (1st icon)
+                    do_filter = 0;
+                }
+            } else {
+                if( filter ) filter[0] = '\0';
+            }
+            char *filter_mask = filter && filter[0] ? va("*%s*", filter) : "*";
+#endif
 
             int open = 0, clicked_or_toggled = 0;
 
-            for( int p = (open = ui_collapse("FXs", "Debug.FXs")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            #define ui_collapse_filtered(lbl,id) (strmatchi(lbl,filter_mask) && ui_collapse(lbl,id))
+
+            for( int p = (open = ui_collapse_filtered(ICON_MD_FOLDER_SPECIAL " Art", "Debug.Art")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                bool inlined = true;
+                const char *file = 0;
+                if( ui_browse(&file, &inlined) ) {
+                    const char *sep = ifdef(win32, "\"", "'");
+                    app_exec(va("%s %s%s%s", ifdef(win32, "start \"\"", ifdef(osx, "open", "xdg-open")), sep, file, sep));
+                }
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_ROCKET_LAUNCH " AI", "Debug.AI")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_VOLUME_UP " Audio", "Debug.Audio")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_VIDEOCAM " Camera", "Debug.Camera")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_camera( camera_get_active() );
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_BUILD " Cook", "Debug.Cook")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_SIGNAL_CELLULAR_ALT " Network", "Debug.Network")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_MOVIE " FXs", "Debug.FXs")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
     ui_fxs();
             }
-            for( int p = (open = ui_collapse("Profiler", "Debug.Profiler")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            for( int p = (open = ui_collapse_filtered(ICON_MD_SPEED " Profiler", "Debug.Profiler")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
                 ui_profiler();
             }
-            for( int p = (open = ui_collapse("Shaders", "Debug.Shaders")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            for( int p = (open = ui_collapse_filtered(ICON_MD_STAR_HALF " Shaders", "Debug.Shaders")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
                 ui_shaders();
             }
-            for( int p = (open = ui_collapse("Keyboard", "Debug.Keyboard")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-
+            for( int p = (open = ui_collapse_filtered(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_keyboard();
             }
-            for( int p = (open = ui_collapse("Mouse",    "Debug.Mouse")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-
+            for( int p = (open = ui_collapse_filtered(ICON_MD_MOUSE " Mouse", "Debug.Mouse")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_mouse();
             }
-            for( int p = (open = ui_collapse("Gamepads", "Debug.Gamepads")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            for( int p = (open = ui_collapse_filtered(ICON_MD_GAMEPAD " Gamepads", "Debug.Gamepads")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                for( int q = 0; q < 4; ++q ) {
+                    for( int r = (open = ui_collapse(va("Gamepad #%d",q+1), va("Debug.Gamepads%d",q))), dummy = (clicked_or_toggled = ui_collapse_clicked()); r; ui_collapse_end(), r = 0) {
+                        ui_gamepad(q);
+            }
+            }
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_VIEW_QUILT " UI", "Debug.UI")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                int choice = ui_toolbar(ICON_MD_RECYCLING " Reset layout;" ICON_MD_SAVE_AS " Save layout");
+                if( choice == 1 ) ui_layout_all_reset("*");
+                if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
 
+                for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
+                    bool visible = ui_visible(*k);
+                    if( ui_bool( *k, &visible ) ) {
+                        ui_show( *k, ui_visible(*k) ^ true );
+                    }
+                }
             }
 
             (has_menu ? ui_window_end : ui_panel_end)();
@@ -623,6 +684,9 @@ void window_frame_swap() {
 #endif
     glfwSwapBuffers(window);
     // emscripten_webgl_commit_frame();
+
+    static int delay = 0; do_once delay = optioni("--delay", 0);
+    if( delay && !COOK_ON_DEMAND && cook_progress() >= 100 ) sleep_ms( delay );
 }
 
 static

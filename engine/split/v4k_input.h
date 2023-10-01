@@ -18,12 +18,12 @@ API float       input( int vk );
 API vec2        input2( int vk );
 API float       input_diff( int vk ); // @todo: rename diff->delta
 API vec2        input_diff2( int vk ); // @todo: rename diff2->delta2
+API const char* input_string( int vk );
 
 // -- extended polling api (read input at Nth frame ago)
 
-API float       input_frame( int vk, int frame );
-API vec2        input_frame2( int vk, int frame );
-API const char* input_frames( int vk, int frame );
+API float       input_frame( int vk, int Nth_frame );
+API vec2        input_frame2( int vk, int Nth_frame );
 
 // -- events api
 
@@ -62,13 +62,21 @@ API bool        input_touch_active();
 
 // -- utils
 
-API void        input_demo();
 API void        input_mappings(const char *filename); // update gamepad mappings (usually "gamecontrollerdb.txt" file)
-API void        input_send( int vk ); // @todo
-API void*       input_save_state( int id, int *size); // @todo
-API bool        input_load_state( int id, void *ptr, int size); // @todo
 API char        input_keychar(unsigned code); // Converts keyboard code to its latin char (if any)
 API int         input_anykey();
+
+// inject state
+API void        input_send( int vk ); // @todo
+// load/save input
+API array(char) save_input(); // @todo
+API bool        load_input(array(char) replay); // @todo
+
+// visualize input
+API int         ui_keyboard();
+API int         ui_mouse();
+API int         ui_gamepad(int id);
+API int         ui_gamepads();
 
 // --
 

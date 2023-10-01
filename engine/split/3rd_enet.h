@@ -4910,7 +4910,7 @@ extern "C" {
 // =======================================================================//
 
     #if (defined _MSC_VER && defined _WIN32 && !defined _WIN64) || \
-        (defined __MINGW32__ && !defined __MINGW64__) // (!defined _WIN32 && defined __MINGW32__ && defined ENET_MINGW_COMPAT) //< @r-lyeh
+        (defined __MINGW32__ || defined __MINGW64__) // (!defined _WIN32 && defined __MINGW32__ && defined ENET_MINGW_COMPAT) //< @r-lyeh
         #define MUST_DEFINE_NTOP_PTON 1
     #else
         #define MUST_DEFINE_NTOP_PTON 0

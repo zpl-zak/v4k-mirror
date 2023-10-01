@@ -369,7 +369,9 @@ float input_frame( int vk, int frame ) {
 vec2 input_frame2( int vk, int frame ) {
     return vec2( input_frame(vk, frame), input_frame(vk+1, frame) );
 }
-const char *input_frames( int vk, int frame ) {
+
+const char *input_string( int vk ) {
+    int frame = 0;
     if( controller_id > 0 ) return ""; // @fixme
     struct controller_t *c = input_logger(frame, +0);
     return vk >= GAMEPAD_GUID ? c->strings[vk - GAMEPAD_GUID] : ""; // if in strings...
@@ -621,37 +623,9 @@ bool input_touch_active() {
 
 #endif // !is(ems)
 
-// ----------------------------------------------------------------------------
-
-void input_demo() {
-    if( ui_panel("Input",0) ) {
-        ui_section("Keyboard");
-
-        uint8_t keymap = 0;
-        keymap |= (!!input(KEY_1)) << 7;
-        keymap |= (!!input(KEY_2)) << 6;
-        keymap |= (!!input(KEY_3)) << 5;
-        keymap |= (!!input(KEY_4)) << 4;
-        keymap |= (!!input(KEY_5)) << 3;
-        keymap |= (!!input(KEY_6)) << 2;
-        keymap |= (!!input(KEY_7)) << 1;
-        keymap |= (!!input(KEY_8)) << 0;
-        ui_bitmask8("[Keys 1..8]", &keymap);
-
-        ui_separator();
-        ui_label2_bool("[Key 1] Down event", input_down(KEY_1) );
-        ui_label2_bool("[Key 2] Held event", input_held(KEY_2) );
-        ui_label2_bool("[Key 3] Up event", input_up(KEY_3) );
-        ui_label2_bool("[Key 4] Idle event", input_idle(KEY_4) );
-        ui_label2_bool("[Key 5] Click event", input_click(KEY_5,500) );
-        ui_label2_bool("[Key 6] Click2 event", input_click2(KEY_6,1000) );
-        ui_label2_bool("[Key 7] Repeat event", input_repeat(KEY_7,750) );
-        ui_separator();
-
-        ui_section("Mouse");
+int ui_mouse() {
         ui_label2_float("X", input(MOUSE_X));
         ui_label2_float("Y", input(MOUSE_Y));
-        ui_separator();
         ui_label2_float("Wheel", input(MOUSE_W));
         ui_separator();
         ui_label2_bool("Left", input(MOUSE_L));
@@ -659,17 +633,52 @@ void input_demo() {
         ui_label2_bool("Right", input(MOUSE_R));
         ui_separator();
         for( int i = 0; i <= CURSOR_SW_AUTO; ++i ) if(ui_button(va("Cursor shape #%d", i))) window_cursor_shape(i);
-        ui_separator();
 
-        static int gamepad_id = 0;
-        const char *list[] = {"1","2","3","4"};
-        ui_section("GamePads");
-        ui_list("Gamepad", list, 4, &gamepad_id);
+    return 0;
+}
 
+int ui_keyboard() {
+    char *keys[] = {
+        "ESC",
+        "TICK","1","2","3","4","5","6","7","8","9","0","BS",
+        "TAB","Q","W","E","R","T","Y","U","I","O","P",
+        "CAPS","A","S","D","F","G","H","J","K","L","ENTER",
+        "LSHIFT","Z","X","C","V","B","N","M","RSHIFT","^",
+        "LCTRL","LALT","SPACE","RALT","RCTRL","<","V",">",
+    };
+
+    vec2i rows[] = {
+        vec2i(0,1),
+        vec2i(1,13),
+        vec2i(13,24),
+        vec2i(24,35),
+        vec2i(35,45),
+        vec2i(45,countof(keys)),
+    };
+
+    for( int i = 0; i < countof(rows); ++i ) {
+        int any = 0;
+        char *row = 0;
+        for( int j = rows[i].x; j < rows[i].y; ++j ) {
+            strcatf(&row, input(KEY_ESC + j) ? (any|=1, "[%s]") : " %s ", keys[j]);
+        }
+        if(!any) ui_disable();
+        ui_label(row);
+        ui_enable();
+        FREE(row);
+    }
+
+    return 0;
+}
+
+int ui_gamepad(int gamepad_id) {
         input_use(gamepad_id);
 
-        ui_label2("Name", input_frames(GAMEPAD_NAME,0));
-        ui_label2_bool("Connected", input(GAMEPAD_CONNECTED));
+    bool connected = !!input(GAMEPAD_CONNECTED);
+
+    ui_label2("Name", connected ? input_string(GAMEPAD_NAME) : "(Not connected)");
+
+    if( !connected ) ui_disable();
 
         ui_separator();
 
@@ -708,8 +717,14 @@ void input_demo() {
         ui_label2_float("Filtered pad x", w.x);
         ui_label2_float("Filtered pad y", w.y);
 
-        input_use(0);
+    ui_enable();
 
-        ui_panel_end();
+    input_use(0);
+    return 0;
     }
+
+int ui_gamepads() {
+    for( int i = 0; i < 4; ++i ) ui_gamepad(i);
+
+    return 0;
 }

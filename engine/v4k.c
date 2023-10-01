@@ -161,6 +161,12 @@ uint64_t hash_str(const char* str) {
     while( *str ) hash = ( (unsigned char)*str++ ^ hash ) * 0x100000001b3ULL;
     return hash;
 }
+uint64_t hash_bin(const void* ptr, unsigned len) {
+    uint64_t hash = 14695981039346656037ULL; // hash(0),mul(131) faster than fnv1a, a few more collisions though
+    for( unsigned char *str = (unsigned char *)ptr; len--; )
+    hash = ( (unsigned char)*str++ ^ hash ) * 0x100000001b3ULL;
+    return hash;
+}
 uint64_t hash_int(int key) {
     return hash_32((uint32_t)key);
 }
@@ -4310,7 +4316,7 @@ char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensio
     int ids_count = 0;
     char ids[64][64] = { 0 };
     // split path stems
-    for each_substring(stem, "/\\", key) {
+    for each_substring(stem, "/\\@", key) {
         int tokens_count = 0;
         char* tokens[64] = { 0 };
         // split tokens
@@ -7890,7 +7896,9 @@ float input_frame( int vk, int frame ) {
 vec2 input_frame2( int vk, int frame ) {
     return vec2( input_frame(vk, frame), input_frame(vk+1, frame) );
 }
-const char *input_frames( int vk, int frame ) {
+
+const char *input_string( int vk ) {
+    int frame = 0;
     if( controller_id > 0 ) return ""; // @fixme
     struct controller_t *c = input_logger(frame, +0);
     return vk >= GAMEPAD_GUID ? c->strings[vk - GAMEPAD_GUID] : ""; // if in strings...
@@ -8142,37 +8150,9 @@ bool input_touch_active() {
 
 #endif // !is(ems)
 
-// ----------------------------------------------------------------------------
-
-void input_demo() {
-    if( ui_panel("Input",0) ) {
-        ui_section("Keyboard");
-
-        uint8_t keymap = 0;
-        keymap |= (!!input(KEY_1)) << 7;
-        keymap |= (!!input(KEY_2)) << 6;
-        keymap |= (!!input(KEY_3)) << 5;
-        keymap |= (!!input(KEY_4)) << 4;
-        keymap |= (!!input(KEY_5)) << 3;
-        keymap |= (!!input(KEY_6)) << 2;
-        keymap |= (!!input(KEY_7)) << 1;
-        keymap |= (!!input(KEY_8)) << 0;
-        ui_bitmask8("[Keys 1..8]", &keymap);
-
-        ui_separator();
-        ui_label2_bool("[Key 1] Down event", input_down(KEY_1) );
-        ui_label2_bool("[Key 2] Held event", input_held(KEY_2) );
-        ui_label2_bool("[Key 3] Up event", input_up(KEY_3) );
-        ui_label2_bool("[Key 4] Idle event", input_idle(KEY_4) );
-        ui_label2_bool("[Key 5] Click event", input_click(KEY_5,500) );
-        ui_label2_bool("[Key 6] Click2 event", input_click2(KEY_6,1000) );
-        ui_label2_bool("[Key 7] Repeat event", input_repeat(KEY_7,750) );
-        ui_separator();
-
-        ui_section("Mouse");
+int ui_mouse() {
         ui_label2_float("X", input(MOUSE_X));
         ui_label2_float("Y", input(MOUSE_Y));
-        ui_separator();
         ui_label2_float("Wheel", input(MOUSE_W));
         ui_separator();
         ui_label2_bool("Left", input(MOUSE_L));
@@ -8180,17 +8160,52 @@ void input_demo() {
         ui_label2_bool("Right", input(MOUSE_R));
         ui_separator();
         for( int i = 0; i <= CURSOR_SW_AUTO; ++i ) if(ui_button(va("Cursor shape #%d", i))) window_cursor_shape(i);
-        ui_separator();
 
-        static int gamepad_id = 0;
-        const char *list[] = {"1","2","3","4"};
-        ui_section("GamePads");
-        ui_list("Gamepad", list, 4, &gamepad_id);
+    return 0;
+}
 
+int ui_keyboard() {
+    char *keys[] = {
+        "ESC",
+        "TICK","1","2","3","4","5","6","7","8","9","0","BS",
+        "TAB","Q","W","E","R","T","Y","U","I","O","P",
+        "CAPS","A","S","D","F","G","H","J","K","L","ENTER",
+        "LSHIFT","Z","X","C","V","B","N","M","RSHIFT","^",
+        "LCTRL","LALT","SPACE","RALT","RCTRL","<","V",">",
+    };
+
+    vec2i rows[] = {
+        vec2i(0,1),
+        vec2i(1,13),
+        vec2i(13,24),
+        vec2i(24,35),
+        vec2i(35,45),
+        vec2i(45,countof(keys)),
+    };
+
+    for( int i = 0; i < countof(rows); ++i ) {
+        int any = 0;
+        char *row = 0;
+        for( int j = rows[i].x; j < rows[i].y; ++j ) {
+            strcatf(&row, input(KEY_ESC + j) ? (any|=1, "[%s]") : " %s ", keys[j]);
+        }
+        if(!any) ui_disable();
+        ui_label(row);
+        ui_enable();
+        FREE(row);
+    }
+
+    return 0;
+}
+
+int ui_gamepad(int gamepad_id) {
         input_use(gamepad_id);
 
-        ui_label2("Name", input_frames(GAMEPAD_NAME,0));
-        ui_label2_bool("Connected", input(GAMEPAD_CONNECTED));
+    bool connected = !!input(GAMEPAD_CONNECTED);
+
+    ui_label2("Name", connected ? input_string(GAMEPAD_NAME) : "(Not connected)");
+
+    if( !connected ) ui_disable();
 
         ui_separator();
 
@@ -8229,10 +8244,16 @@ void input_demo() {
         ui_label2_float("Filtered pad x", w.x);
         ui_label2_float("Filtered pad y", w.y);
 
-        input_use(0);
+    ui_enable();
 
-        ui_panel_end();
+    input_use(0);
+    return 0;
     }
+
+int ui_gamepads() {
+    for( int i = 0; i < 4; ++i ) ui_gamepad(i);
+
+    return 0;
 }
 #line 0
 
@@ -10709,7 +10730,7 @@ int ui_shader(unsigned shader) {
 }
 
 int ui_shaders() {
-    if( !map_count(shader_reflect) ) return 0;
+    if( !map_count(shader_reflect) ) return ui_label(ICON_MD_WARNING " No shaders with annotations loaded."), 0;
 
     int changed = 0;
         for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
@@ -13812,7 +13833,7 @@ int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
 }
 int ui_fxs() {
-    if(!fx.num_loaded) return 0;
+    if(!fx.num_loaded) return ui_label(ICON_MD_WARNING " No Post FXs with annotations loaded."), 0;
 
     int changed = 0;
         for( int i = 0; i < 64; ++i ) {
@@ -13820,6 +13841,7 @@ int ui_fxs() {
             bool b = fx_enabled(i);
             if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
             ui_fx(i);
+        ui_separator();
         }
     return changed;
 }
@@ -15080,17 +15102,21 @@ void model_destroy(model_t m) {
 
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
-    char *anim_file = vfs_read(va("%s@animlist.txt", pathfile));
-    if( !anim_file ) anim_file = vfs_read(pathfile);
+    char *anim_file = vfs_read(strendi(pathfile,".txt") ? pathfile : va("%s@animlist.txt", pathfile));
     if( anim_file ) {
+        // deserialize anim
+        a.speed = 1.0;
     for each_substring(anim_file, "\r\n", anim) {
         int from, to;
         char anim_name[128] = {0};
         if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
-        array_push(a.anims, !!strstri(anim_name, "loop") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
+            array_push(a.anims, !!strstri(anim_name, "loop") || !strcmpi(anim_name, "idle") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
             array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
     }
-    a.speed = 1.0;
+    } else {
+        // placeholder
+        array_push(a.anims, clip(0,1,0,0));
+        array_back(a.anims)->name = STRDUP("Error"); // @leak
     }
     return a;
 }
@@ -15727,6 +15753,30 @@ void ddraw_frustum(float projview[16]) {
     // Connect the dots:
     ddraw_bounds(points);
 }
+
+void ddraw_camera(camera_t *cam) {
+    vec3 center = cam->position;
+    vec3 rightdir = cross3(cam->lookdir,cam->updir);
+    float proj[16]; // reproject perspective matrix with a smaller view distance (100 units)
+    perspective44(proj, cam->fov, window_width() / ((float)window_height()+!window_height()), 0.01f, 100.f);
+
+    ddraw_color_push(YELLOW);
+    // frustum
+    mat44 projview; multiply44x2(projview, /*cam->*/proj, cam->view);
+    ddraw_frustum(projview);
+    // top circles
+    ddraw_circle(add3(center,add3(cam->lookdir,cam->updir)), rightdir, 2);
+    ddraw_circle(add3(center,add3(neg3(cam->lookdir),cam->updir)), rightdir, 2);
+    // orientation
+    ddraw_color(RED);
+    ddraw_arrow(cam->position, add3(cam->position,cam->lookdir));
+    ddraw_color(GREEN);
+    ddraw_arrow(cam->position, add3(cam->position,cam->updir));
+    ddraw_color(BLUE);
+    ddraw_arrow(cam->position, add3(cam->position,rightdir));
+    ddraw_color_pop();
+}
+
 void ddraw_arrow(vec3 begin, vec3 end) {
     vec3 diff = sub3(end, begin);
     float len = len3(diff), stick_len = len * 2 / 3;
@@ -15929,23 +15979,32 @@ static camera_t *last_camera;
 camera_t camera() {
     camera_t *old = last_camera;
 
-    camera_t cam = {0};
-    cam.speed = 1;
+    static camera_t cam = {0};
+    do_once {
+        cam.speed = 0.50f;
     cam.position = vec3(10,10,10);
-    cam.last_look = cam.last_move = vec3(0,0,0);
-    cam.up = vec3(0,1,0);
+        cam.updir = vec3(0,1,0);
     cam.fov = 45;
+
+        cam.damping = false;
+        cam.move_friction = 0.09f;
+        cam.move_damping = 0.96f;
+        cam.look_friction = 0.30f;
+        cam.look_damping = 0.96f;
+        cam.last_look = vec2(0,0);
+        cam.last_move = vec3(0,0,0);
 
     // update proj & view
     camera_lookat(&cam,vec3(-5,0,-5));
 
-    // @todo: remove this hack
-    static int smoothing = -1; if( smoothing < 0 ) smoothing = flag("--camera-smooth");
-    if( smoothing ) {
+        // @todo: remove this hack that is used to consolidate dampings
+        if( 1 ) {
+            vec3 zero = {0};
         for( int i = 0; i < 1000; ++i ) {
-            camera_move(&cam,0,0,0);
+                camera_moveby(&cam, zero);
             camera_fps(&cam,0,0);
         }
+    }
     }
 
     last_camera = old;
@@ -15963,33 +16022,37 @@ camera_t *camera_get_active() {
     return last_camera;
 }
 
-void camera_move(camera_t *cam, float incx, float incy, float incz) {
-    // enable camera smoothing
-    static int smoothing = -1; if( smoothing < 0 ) smoothing = flag("--camera-smooth");
-    if( smoothing ) {
-        float move_friction = 0.99f;
-        cam->last_move = scale3(cam->last_move, move_friction);
-        float move_filtering = 0.975f;
-        incx = cam->last_move.x = incx * (1 - move_filtering) + cam->last_move.x * move_filtering;
-        incy = cam->last_move.y = incy * (1 - move_filtering) + cam->last_move.y * move_filtering;
-        incz = cam->last_move.z = incz * (1 - move_filtering) + cam->last_move.z * move_filtering;
+void camera_moveby(camera_t *cam, vec3 inc) {
+    // calculate camera damping
+    if( cam->damping ) {
+        float fr = cam->move_friction; fr *= fr; fr *= fr; fr *= fr;
+        float sm = clampf(cam->move_damping, 0, 0.999f); sm *= sm; sm *= sm;
+
+        cam->last_move = scale3(cam->last_move, 1 - fr);
+        inc.x = cam->last_move.x = inc.x * (1 - sm) + cam->last_move.x * sm;
+        inc.y = cam->last_move.y = inc.y * (1 - sm) + cam->last_move.y * sm;
+        inc.z = cam->last_move.z = inc.z * (1 - sm) + cam->last_move.z * sm;
     }
 
-    vec3 dir = norm3(cross3(cam->look, cam->up));
-    cam->position = add3(cam->position, scale3(dir, incx)); // right
-    cam->position = add3(cam->position, scale3(cam->up, incy)); // up
-    cam->position = add3(cam->position, scale3(cam->look, incz)); // front
+    vec3 dir = norm3(cross3(cam->lookdir, cam->updir));
+    cam->position = add3(cam->position, scale3(dir, inc.x)); // right
+    cam->position = add3(cam->position, scale3(cam->updir, inc.y)); // up
+    cam->position = add3(cam->position, scale3(cam->lookdir, inc.z)); // front
 
     camera_fps(cam, 0, 0);
 }
 
 void camera_teleport(camera_t *cam, vec3 pos) {
+    bool damping = cam->damping;
+    cam->damping = 0;
+    cam->last_move = vec3(0,0,0);
     cam->position = pos;
     camera_fps(cam, 0, 0);
+    cam->damping = damping;
 }
 
 void camera_lookat(camera_t *cam, vec3 target) {
-    // invert expression that cam->look = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
+    // invert expression that cam->lookdir = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
     // look.y = sin p > y = asin(p)
     // look.x = cos y * cos p; -> cos p = look.x / cos y \ look.x / cos y = look.z / sin y
     // look.z = sin y * cos p; -> cos p = look.z / sin y /
@@ -16011,33 +16074,7 @@ void camera_enable(camera_t *cam) {
 }
 
 void camera_fov(camera_t *cam, float fov) {
-    cam->fov = fov;
-}
-
-void camera_fps(camera_t *cam, float yaw, float pitch) {
     last_camera = cam;
-
-    // enable camera smoothing
-    static int smoothing = -1; if( smoothing < 0 ) smoothing = flag("--camera-smooth");
-    if( smoothing ) {
-        float look_friction = 0.999f;
-        cam->last_look.x *= look_friction;
-        cam->last_look.y *= look_friction;
-        float look_filtering = 0.05f;
-        yaw = cam->last_look.y = yaw * look_filtering + cam->last_look.y * (1 - look_filtering);
-        pitch = cam->last_look.x = pitch * look_filtering + cam->last_look.x * (1 - look_filtering);
-    }
-
-    cam->yaw += yaw;
-    cam->yaw = fmod(cam->yaw, 360);
-    cam->pitch += pitch;
-    cam->pitch = cam->pitch > 89 ? 89 : cam->pitch < -89 ? -89 : cam->pitch;
-
-    const float deg2rad = 0.0174532f, y = cam->yaw * deg2rad, p = cam->pitch * deg2rad;
-    cam->look = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
-
-    lookat44(cam->view, cam->position, add3(cam->position, cam->look), cam->up); // eye,center,up
-    perspective44(cam->proj, cam->fov, window_width() / ((float)window_height()+!window_height()), 0.01f, 1000.f);
 
 #if 0 // isometric/dimetric
     #define orthogonal(proj, fov, aspect, znear, zfar) \
@@ -16050,6 +16087,33 @@ void camera_fps(camera_t *cam, float yaw, float pitch) {
     // cam->yaw = 45;
     cam->pitch = -ISOMETRIC;
 #endif
+    cam->fov = fov;
+    perspective44(cam->proj, cam->fov, window_width() / ((float)window_height()+!window_height()), 0.01f, 1000.f);
+}
+
+void camera_fps(camera_t *cam, float yaw, float pitch) {
+    last_camera = cam;
+
+    // camera damping
+    if( cam->damping ) {
+        float fr = cam->look_friction; fr *= fr; fr *= fr; fr *= fr;
+        float sm = clampf(cam->look_damping, 0, 0.999f); sm *= sm; sm *= sm;
+
+        cam->last_look = scale2(cam->last_look, 1 - fr);
+        yaw = cam->last_look.y = yaw * (1 - sm) + cam->last_look.y * sm;
+        pitch = cam->last_look.x = pitch * (1 - sm) + cam->last_look.x * sm;
+    }
+
+    cam->yaw += yaw;
+    cam->yaw = fmod(cam->yaw, 360);
+    cam->pitch += pitch;
+    cam->pitch = cam->pitch > 89 ? 89 : cam->pitch < -89 ? -89 : cam->pitch;
+
+    const float deg2rad = 0.0174532f, y = cam->yaw * deg2rad, p = cam->pitch * deg2rad;
+    cam->lookdir = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
+    lookat44(cam->view, cam->position, add3(cam->position, cam->lookdir), cam->updir); // eye,center,up
+
+    camera_fov(cam, cam->fov);
 }
 
 void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
@@ -16087,6 +16151,28 @@ void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
     // save for next call
     cam->last_move.x = _mouse.x;
     cam->last_move.y = _mouse.y;
+}
+
+int ui_camera( camera_t *cam ) {
+    int changed = 0;
+    changed |= ui_float("Speed", &cam->speed);
+    ui_separator();
+    changed |= ui_bool("Damping", &cam->damping);
+    if( !cam->damping ) ui_disable();
+    changed |= ui_slider2("Move friction", &cam->move_friction, va("%5.2f", cam->move_friction));
+    changed |= ui_slider2("Move damping", &cam->move_damping, va("%5.2f", cam->move_damping));
+    changed |= ui_slider2("View driction", &cam->look_friction, va("%5.2f", cam->look_friction));
+    changed |= ui_slider2("View damping", &cam->look_damping, va("%5.2f", cam->look_damping));
+    if( !cam->damping ) ui_enable();
+    ui_separator();
+    changed |= ui_float3("Position", &cam->position.x);
+    changed |= ui_float3("LookDir", &cam->lookdir.x);
+    changed |= ui_float3("UpDir", &cam->updir.x);
+    changed |= ui_mat44("View matrix", cam->view);
+    ui_separator();
+    changed |= ui_float("FOV (degrees)", &cam->fov);
+    changed |= ui_mat44("Projection matrix", cam->proj);
+    return changed;
 }
 
 // -----------------------------------------------------------------------------
@@ -17750,7 +17836,7 @@ void thread_destroy( void *thd ) {
 #else
     #define UI_ICON_FONTSIZE        UI_FONT_ENUM(20,20)
     #define UI_ICON_SPACING_X       UI_FONT_ENUM(0,0)
-    #define UI_ICON_SPACING_Y       UI_FONT_ENUM(6.5f,4.5f)
+    #define UI_ICON_SPACING_Y       UI_FONT_ENUM(6.5f,5.0f)
 #endif
 
 #define MAX_VERTEX_MEMORY 512 * 1024
@@ -18513,7 +18599,7 @@ void ui_create() {
         nk_glfw3_new_frame(&nk_glfw); //g->nk_glfw);
         ui_dirty = 0;
 
-        ui_enable(1);
+        ui_enable();
     }
 }
 
@@ -19171,26 +19257,35 @@ int ui_label_(const char *label, int alignment) {
     if( is_hovering ) {
         struct nk_rect winbounds = nk_window_get_bounds(ui_ctx);
         is_hovering &= nk_input_is_mouse_hovering_rect(input, winbounds);
-        is_hovering &= nk_window_has_focus(ui_ctx);
+
+        struct nk_window *win = ui_ctx->current;
+        bool has_contextual = !win->name; // contextual windows are annonymous
+
+        is_hovering &= has_contextual || nk_window_has_focus(ui_ctx);
     }
 
     int skip_color_tab = label && label[0] == '!';
     if( skip_color_tab) label++;
 
-    int indent = 8;
+    int spacing = 8; // between left colorbar and content
     struct nk_window *win = ui_ctx->current;
     struct nk_panel *layout = win->layout;
-    layout->at_x += indent;
-    layout->bounds.w -= indent;
+    layout->at_x += spacing;
+    layout->bounds.w -= spacing;
     if( !skip_color_tab ) {
-        bounds.w = is_hovering ? indent*3/4 : indent/2-1;
+        float w = is_hovering ? 4 : 2; // spacing*3/4 : spacing/2-1;
+        bounds.w = w;
         bounds.h -= 1;
         struct nk_command_buffer *canvas = nk_window_get_canvas(ui_ctx);
         nk_fill_rect(canvas, bounds, 0, nk_hsva_f(ui_hue, 0.75f, 0.8f, ui_alpha) );
     }
 
-    if(!label) return 0;
-    if(!label[0]) return 0;
+    if(!label || !label[0]) {
+        nk_label(ui_ctx, "", alignment);
+        layout->at_x -= spacing;
+        layout->bounds.w += spacing;
+        return 0;
+    }
 
         const char *split = strchr(label, '@');
             char buffer[128]; if( split ) label = (snprintf(buffer, 128, "%.*s", (int)(split-label), label), buffer);
@@ -19232,8 +19327,8 @@ if( font )  nk_style_pop_font(ui_ctx);
                 nk_tooltip(ui_ctx, split + 1);
             }
 
-    layout->at_x -= indent;
-    layout->bounds.w += indent;
+    layout->at_x -= spacing;
+    layout->bounds.w += spacing;
 
     // old way
     // ui_labeicon_l_icked_L.x = is_hovering ? nk_input_has_mouse_click_down_in_rect(input, NK_BUTTON_LEFT, layout->bounds, nk_true) : 0;
@@ -19251,7 +19346,7 @@ int ui_label(const char *text) {
     return ui_label_(text, align);
 }
 int ui_label2(const char *label, const char *text_) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
 
     int align1 = label[0] == '>' ? (label++, NK_TEXT_RIGHT) : label[0] == '=' ? (label++, NK_TEXT_CENTERED) : label[0] == '<' ? (label++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
     int align2 = text_[0] == '>' ? (text_++, NK_TEXT_RIGHT) : text_[0] == '=' ? (text_++, NK_TEXT_CENTERED) : text_[0] == '<' ? (text_++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
@@ -19283,7 +19378,7 @@ int ui_label2_float(const char *text, float value) {
     return ui_float(text, &f), 0;
 }
 int ui_label2_wrap(const char *label, const char *str) { // @fixme: does not work (remove dynamic layout?)
-    nk_layout_row_dynamic(ui_ctx, 0, 2  - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
     nk_text_wrap(ui_ctx, str, strlen(str));
     return 0;
@@ -19403,7 +19498,7 @@ int ui_button(const char *s) {
 }
 
 int ui_toggle(const char *label, bool *value) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     // nk_label(ui_ctx, label, alignment);
@@ -19421,7 +19516,7 @@ int ui_color4f(const char *label, float *color4) {
 static enum color_mode {COL_RGB, COL_HSV} ui_color_mode = COL_RGB;
 
 int ui_color4(const char *label, float *color4) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     struct nk_colorf after = { color4[0]*ui_alpha/255, color4[1]*ui_alpha/255, color4[2]*ui_alpha/255, color4[3]/255 }, before = after;
@@ -19467,7 +19562,7 @@ int ui_color3f(const char *label, float *color3) {
 }
 
 int ui_color3(const char *label, float *color3) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     struct nk_colorf after = { color3[0]*ui_alpha/255, color3[1]*ui_alpha/255, color3[2]*ui_alpha/255, 1 }, before = after;
@@ -19503,7 +19598,7 @@ int ui_color3(const char *label, float *color3) {
 }
 
 int ui_list(const char *label, const char **items, int num_items, int *selector) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     int val = nk_combo(ui_ctx, items, num_items, *selector, UI_ROW_HEIGHT, nk_vec2(200,200));
@@ -19514,7 +19609,7 @@ int ui_list(const char *label, const char **items, int num_items, int *selector)
 
 int ui_slider(const char *label, float *slider) {
     // return ui_slider2(label, slider, va("%.2f ", *slider));
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     nk_size val = *slider * 1000;
@@ -19523,7 +19618,7 @@ int ui_slider(const char *label, float *slider) {
     return chg;
 }
 int ui_slider2(const char *label, float *slider, const char *caption) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     struct nk_window *win = ui_ctx->current;
@@ -19547,7 +19642,7 @@ int ui_slider2(const char *label, float *slider, const char *caption) {
 }
 
 int ui_bool(const char *label, bool *enabled ) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     int val = *enabled;
@@ -19561,7 +19656,7 @@ int ui_bool(const char *label, bool *enabled ) {
 }
 
 int ui_int(const char *label, int *v) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     int prev = *v;
@@ -19570,7 +19665,7 @@ int ui_int(const char *label, int *v) {
 }
 
 int ui_unsigned(const char *label, unsigned *v) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     unsigned prev = *v;
@@ -19584,7 +19679,7 @@ int ui_short(const char *label, short *v) {
 }
 
 int ui_float(const char *label, float *v) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     float prev = v[0]; v[0] = nk_propertyf(ui_ctx, "#", -FLT_MAX, v[0], FLT_MAX, 0.01f,0.005f);
@@ -19592,7 +19687,7 @@ int ui_float(const char *label, float *v) {
 }
 
 int ui_double(const char *label, double *v) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     double prev = v[0]; v[0] = nk_propertyd(ui_ctx, "#", -DBL_MAX, v[0], DBL_MAX, 0.01f,0.005f);
@@ -19602,7 +19697,7 @@ int ui_double(const char *label, double *v) {
 int ui_clampf(const char *label, float *v, float minf, float maxf) {
     if( minf > maxf ) return ui_clampf(label, v, maxf, minf);
 
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     float prev = v[0]; v[0] = nk_propertyf(ui_ctx, "#", minf, v[0], maxf, 0.1f,0.05f);
@@ -19610,7 +19705,7 @@ int ui_clampf(const char *label, float *v, float minf, float maxf) {
 }
 
 int ui_float2(const char *label, float *v) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     char *buffer = va("%.2f, %.2f", v[0], v[1]);
@@ -19625,7 +19720,7 @@ int ui_float2(const char *label, float *v) {
 }
 
 int ui_float3(const char *label, float *v) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     char *buffer = va("%.2f, %.2f, %.2f", v[0], v[1], v[2]);
@@ -19641,7 +19736,7 @@ int ui_float3(const char *label, float *v) {
 }
 
 int ui_float4(const char *label, float *v) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2 - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     char *buffer = va("%.2f, %.2f, %.2f, %.2f", v[0], v[1], v[2], v[3]);
@@ -19657,8 +19752,34 @@ int ui_float4(const char *label, float *v) {
     return 0;
 }
 
+int ui_mat33(const char *label, float M[9]) {
+    int changed = 0;
+    changed |= ui_label(label);
+    changed |= ui_float3(NULL, M);
+    changed |= ui_float3(NULL, M+3);
+    changed |= ui_float3(NULL, M+6);
+    return changed;
+}
+int ui_mat34(const char *label, float M[12]) {
+    int changed = 0;
+    changed |= ui_label(label);
+    changed |= ui_float4(NULL, M);
+    changed |= ui_float4(NULL, M+4);
+    changed |= ui_float4(NULL, M+8);
+    return changed;
+}
+int ui_mat44(const char *label, float M[16]) {
+    int changed = 0;
+    changed |= ui_label(label);
+    changed |= ui_float4(NULL, M);
+    changed |= ui_float4(NULL, M+4);
+    changed |= ui_float4(NULL, M+8);
+    changed |= ui_float4(NULL, M+12);
+    return changed;
+}
+
 int ui_buffer(const char *label, char *buffer, int buflen) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2  - (label ? !label[0] : 1));
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
     int active = nk_edit_string_zero_terminated(ui_ctx, NK_EDIT_AUTO_SELECT|NK_EDIT_CLIPBOARD|NK_EDIT_FIELD/*NK_EDIT_BOX*/|NK_EDIT_SIG_ENTER, buffer, buflen, nk_filter_default);
@@ -19690,7 +19811,7 @@ int ui_separator() {
 }
 
 int ui_subimage(const char *label, handle id, unsigned iw, unsigned ih, unsigned sx, unsigned sy, unsigned sw, unsigned sh) {
-    nk_layout_row_dynamic(ui_ctx, sh < 30 || id == texture_checker().id ? 0 : sh, label && label[0] ? 2 : 1);
+    nk_layout_row_dynamic(ui_ctx, sh < 30 || id == texture_checker().id ? 0 : sh, 1 + (label && label[0]));
     if( label && label[0] ) ui_label_(label, NK_TEXT_LEFT);
 
     struct nk_rect bounds; nk_layout_peek(&bounds, ui_ctx); bounds.w -= 10; // bounds.w *= 0.95f;
@@ -20935,33 +21056,94 @@ int window_frame_begin() {
     }
 
     // @transparent
-    static bool has_transparent_attrib = 0; do_once ifdef(ems, false, has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
+    static bool has_transparent_attrib = 0; ifndef(ems, do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
     if( has_transparent_attrib ) may_render_stats = 0;
     // @transparent
 
     // generate Debug panel contents
     if( may_render_stats ) {
-        if( has_menu ? ui_window("Debug", 0) : ui_panel("Debug", 0) ) {
+        if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
+
+#if 1
+            static char *filter = 0;
+            static int do_filter = 0;
+            if( input_down(KEY_F) ) if( input(KEY_LCTRL) || input(KEY_RCTRL) ) do_filter ^= 1;
+            int choice = ui_toolbar(ICON_MD_SEARCH ";");
+            if( choice == 1 ) do_filter = 1;
+            if( do_filter ) {
+                ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &filter);
+                if( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 ) { // if clicked on CANCEL icon (1st icon)
+                    do_filter = 0;
+                }
+            } else {
+                if( filter ) filter[0] = '\0';
+            }
+            char *filter_mask = filter && filter[0] ? va("*%s*", filter) : "*";
+#endif
 
             int open = 0, clicked_or_toggled = 0;
 
-            for( int p = (open = ui_collapse("FXs", "Debug.FXs")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            #define ui_collapse_filtered(lbl,id) (strmatchi(lbl,filter_mask) && ui_collapse(lbl,id))
+
+            for( int p = (open = ui_collapse_filtered(ICON_MD_FOLDER_SPECIAL " Art", "Debug.Art")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                bool inlined = true;
+                const char *file = 0;
+                if( ui_browse(&file, &inlined) ) {
+                    const char *sep = ifdef(win32, "\"", "'");
+                    app_exec(va("%s %s%s%s", ifdef(win32, "start \"\"", ifdef(osx, "open", "xdg-open")), sep, file, sep));
+                }
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_ROCKET_LAUNCH " AI", "Debug.AI")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_VOLUME_UP " Audio", "Debug.Audio")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_VIDEOCAM " Camera", "Debug.Camera")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_camera( camera_get_active() );
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_BUILD " Cook", "Debug.Cook")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_SIGNAL_CELLULAR_ALT " Network", "Debug.Network")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                // @todo
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_MOVIE " FXs", "Debug.FXs")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
     ui_fxs();
             }
-            for( int p = (open = ui_collapse("Profiler", "Debug.Profiler")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            for( int p = (open = ui_collapse_filtered(ICON_MD_SPEED " Profiler", "Debug.Profiler")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
                 ui_profiler();
             }
-            for( int p = (open = ui_collapse("Shaders", "Debug.Shaders")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            for( int p = (open = ui_collapse_filtered(ICON_MD_STAR_HALF " Shaders", "Debug.Shaders")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
                 ui_shaders();
             }
-            for( int p = (open = ui_collapse("Keyboard", "Debug.Keyboard")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-
+            for( int p = (open = ui_collapse_filtered(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_keyboard();
             }
-            for( int p = (open = ui_collapse("Mouse",    "Debug.Mouse")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-
+            for( int p = (open = ui_collapse_filtered(ICON_MD_MOUSE " Mouse", "Debug.Mouse")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                ui_mouse();
             }
-            for( int p = (open = ui_collapse("Gamepads", "Debug.Gamepads")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            for( int p = (open = ui_collapse_filtered(ICON_MD_GAMEPAD " Gamepads", "Debug.Gamepads")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                for( int q = 0; q < 4; ++q ) {
+                    for( int r = (open = ui_collapse(va("Gamepad #%d",q+1), va("Debug.Gamepads%d",q))), dummy = (clicked_or_toggled = ui_collapse_clicked()); r; ui_collapse_end(), r = 0) {
+                        ui_gamepad(q);
+            }
+            }
+            }
+            for( int p = (open = ui_collapse_filtered(ICON_MD_VIEW_QUILT " UI", "Debug.UI")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+                int choice = ui_toolbar(ICON_MD_RECYCLING " Reset layout;" ICON_MD_SAVE_AS " Save layout");
+                if( choice == 1 ) ui_layout_all_reset("*");
+                if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
 
+                for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
+                    bool visible = ui_visible(*k);
+                    if( ui_bool( *k, &visible ) ) {
+                        ui_show( *k, ui_visible(*k) ^ true );
+                    }
+                }
             }
 
             (has_menu ? ui_window_end : ui_panel_end)();
@@ -21035,6 +21217,9 @@ void window_frame_swap() {
 #endif
     glfwSwapBuffers(window);
     // emscripten_webgl_commit_frame();
+
+    static int delay = 0; do_once delay = optioni("--delay", 0);
+    if( delay && !COOK_ON_DEMAND && cook_progress() >= 100 ) sleep_ms( delay );
 }
 
 static

@@ -53,7 +53,7 @@ int main() {
             vec2 filtered_rpad = input_filter_deadzone(input2(GAMEPAD_RPAD), 0.15f/*do_gamepad_deadzone*/ + 1e-3 );
             vec2 mouse = scale2(vec2(filtered_rpad.x, filtered_rpad.y), 1.0f);
             vec3 wasdec = scale3(vec3(filtered_lpad.x, input(GAMEPAD_LT) - input(GAMEPAD_RT), filtered_lpad.y), 1.0f);
-            camera_move(&cam, wasdec.x,wasdec.y,wasdec.z);
+            camera_moveby(&cam, wasdec);
             camera_fps(&cam, mouse.x,mouse.y);
             window_cursor( true );
         } else {
@@ -61,7 +61,7 @@ int main() {
             if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
             vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
             vec3 wasdecq = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-(input(KEY_C)||input(KEY_Q)),input(KEY_W)-input(KEY_S)), cam.speed);
-            camera_move(&cam, wasdecq.x,wasdecq.y,wasdecq.z);
+            camera_moveby(&cam, wasdecq);
             camera_fps(&cam, mouse.x,mouse.y);
             window_cursor( !active );
         }
@@ -106,7 +106,20 @@ int main() {
 
         fx_end();
 
-        if( ui_panel("Animation", 0) ) {
+        if ( ui_panel("Rim lighting", 0) ) {
+            static vec3 rimcolor = {0.2,0.2,0.2};
+            static vec3 rimrange = {0.11,0.98,0.5};
+            ui_color3f("Color", &rimcolor.x);
+            ui_clampf("Low", &rimrange.x, 0, 1);
+            ui_clampf("High", &rimrange.y, 0, 1);
+            ui_clampf("Mix", &rimrange.z, 0, 1);
+            // ui_vec
+            shader_bind(mdl.program);
+            shader_vec3("u_rimcolor", rimcolor);
+            shader_vec3("u_rimrange", rimrange);
+            ui_panel_end();
+        }
+        if( ui_panel("Animation", PANEL_OPEN) ) {
             if( ui_bool("Show aabb", &do_showaabb) );
             if( ui_bool("Show bones", &do_showbones) );
             if( ui_bool("Show models", &do_showmodel) );
@@ -134,8 +147,8 @@ int main() {
                 float progress = selected ? (mdl.curframe - anim.min) * 100.f / (anim.max - anim.min) : 0.f;
                 const char *caption = va("%s%s%s %.2f%%", selected ? "*":"", a.anims[i].name, a.anims[i].flags & ANIM_LOOP ? " (Loop)":"", progress);
                 int choice = ui_label2_toolbar(caption, va("%s %s %s", ICON_MD_REPLAY_CIRCLE_FILLED, a.inuse == i && a.speed <= 0 ? ICON_MD_NOT_STARTED : ICON_MD_PAUSE_CIRCLE, ICON_MD_PLAY_CIRCLE) );
-                if( choice == 1 ) { // play/restart
-                    if( mdl.curframe >= anim.max ) mdl.curframe = anim.min; // restart animation
+                if( choice == 1 ) { // play/pause
+                    if( mdl.curframe >= anim.max ) mdl.curframe = anim.min; // rewind animation
                     a.speed = 1.0f;
                     a.inuse = i;
                 }
@@ -150,21 +163,9 @@ int main() {
                     else
                     a.anims[ i ].flags |= ANIM_LOOP;
                     a.inuse = i;
+                    mdl.curframe = anim.min; // restart anim
                 }
             }
-            ui_panel_end();
-        }
-        if ( ui_panel("Rim lighting", 0) ) {
-            static vec3 rimcolor = {0.2,0.2,0.2};
-            static vec3 rimrange = {0.11,0.98,0.5};
-            ui_color3f("Color", &rimcolor.x);
-            ui_clampf("Low", &rimrange.x, 0, 1);
-            ui_clampf("High", &rimrange.y, 0, 1);
-            ui_clampf("Mix", &rimrange.z, 0, 1);
-            // ui_vec
-            shader_bind(mdl.program);
-            shader_vec3("u_rimcolor", rimcolor);
-            shader_vec3("u_rimrange", rimrange);
             ui_panel_end();
         }
     }

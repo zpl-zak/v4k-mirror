@@ -357,6 +357,7 @@ rem del ??-*.*                      > nul 2> nul
     rd /q /s _devel                 > nul 2> nul
     rd /q /s _release               > nul 2> nul
     rd /q /s _fwk                   > nul 2> nul
+    rd /q /s _cache                 > nul 2> nul
 rem rd /q /s _project               > nul 2> nul
     del tcc.bat                     > nul 2> nul
     del sh.bat                      > nul 2> nul
@@ -602,8 +603,32 @@ if not "!other!"=="" (
 
 rem framework
 if "!v4k!"=="yes" (
-if "!vis!"=="yes" echo !cc! engine\v4k.c !export! !args! ^&^& if "!dll!"=="dll" copy /y v4k.dll engine\bind ^> nul
-!echo! v4k          && !cc! engine\v4k.c !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll engine\bind  > nul || set rc=1
+    tools\file2hash engine\v4k.c engine\v4k.h engine\v4k. engine\joint\v4k.h -- !build! !import! !export! !args! !dll! > nul
+    set cache=_cache\.!errorlevel!
+    md _cache 2>nul >nul
+
+    rem cache for `make rel` cl:48s->25s, tcc:3.3s->1.8s
+    if exist !cache!.o   copy /y !cache!.o   v4k.o   2>nul >nul
+    if exist !cache!.obj copy /y !cache!.obj v4k.obj 2>nul >nul
+    if exist !cache!.lib copy /y !cache!.lib v4k.lib 2>nul >nul
+    if exist !cache!.dll copy /y !cache!.dll v4k.dll 2>nul >nul
+    if exist !cache!.def copy /y !cache!.def v4k.def 2>nul >nul
+    if exist !cache!.pdb copy /y !cache!.pdb v4k.pdb 2>nul >nul
+
+    if not exist "!cache!" (
+        !echo! v4k          && !cc! engine\v4k.c !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll engine\bind\lua  > nul || set rc=1
+        echo. > !cache!
+        if exist v4k.o   copy /y v4k.o   !cache!.o   2>nul >nul
+        if exist v4k.obj copy /y v4k.obj !cache!.obj 2>nul >nul
+        if exist v4k.lib copy /y v4k.lib !cache!.lib 2>nul >nul
+        if exist v4k.dll copy /y v4k.dll !cache!.dll 2>nul >nul
+        if exist v4k.def copy /y v4k.def !cache!.def 2>nul >nul
+        if exist v4k.pdb copy /y v4k.pdb !cache!.pdb 2>nul >nul
+    ) else (
+        rem cached. do not compile...
+        echo v4k.c ^(cached^)
+        if "!dll!"=="dll" copy /y !cache!.dll engine\bind\v4k.dll > nul || set rc=1
+    )
 )
 
 rem editor
@@ -632,7 +657,6 @@ for %%f in ("workbench\plugins\*.c") do (
 
 rem demos
 if "!demos!"=="yes" (
-!echo! 00-demo       && !cc! !o! 00-demo.exe       demos\00-demo.c          !import! !args! || set rc=1
 !echo! 00-ui         && !cc! !o! 00-ui.exe         demos\00-ui.c            !import! !args! || set rc=1
 !echo! 01-sprite     && !cc! !o! 01-sprite.exe     demos\01-sprite.c        !import! !args! || set rc=1
 !echo! 02-ddraw      && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c         !import! !args! || set rc=1

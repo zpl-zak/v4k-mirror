@@ -72,7 +72,6 @@ int main() {
 
     // camera
     camera_t cam = camera();
-    cam.speed = 0.2f;
 
     // audio (both clips & streams)
     audio_t SFX1 = audio_clip( "coin.wav" );
@@ -102,7 +101,7 @@ int main() {
         if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
         vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
         vec3 wasdecq = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-(input(KEY_C)||input(KEY_Q)),input(KEY_W)-input(KEY_S)), cam.speed);
-        camera_move(&cam, wasdecq.x,wasdecq.y,wasdecq.z);
+        camera_moveby(&cam, wasdecq);
         camera_fps(&cam, mouse.x,mouse.y);
         window_cursor( !active );
 
@@ -201,11 +200,6 @@ int main() {
             if(ui_dialog("About", __FILE__ "\n" __DATE__ "\n" "Public Domain.", 0, &do_about)) {}
             ui_panel_end();
         }
-        if( ui_panel("Camera", 0)) {
-            if( ui_float("Speed", &cam.speed) ) {}
-            if( ui_float3("Position", cam.position.v3) ) {}
-            ui_panel_end();
-        }
         if( ui_panel("Audio", 0)) {
             static float bgm = 1, sfx = 1, master = 1;
             if( ui_slider2("BGM", &bgm, va("%.2f", bgm))) audio_volume_stream(bgm);
@@ -219,7 +213,6 @@ int main() {
             ui_panel_end();
         }
 
-        input_demo(); // show some keyboard/mouse/gamepad UI tabs
         ui_demo(1); // show all UI widgets in a tab
     }
 

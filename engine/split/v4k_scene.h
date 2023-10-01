@@ -6,21 +6,28 @@
 
 typedef struct camera_t {
     mat44 view, proj;
-    vec3 position, up, look; // position, updir, lookdir
-    float yaw, pitch, speed; // mirror_x, mirror_y;
-    vec3 last_look, last_move; // used for friction and smoothing
-    float fov; // deg(45)
+    vec3 position, updir, lookdir;
+    float yaw, pitch; // mirror of (x,y) lookdir in deg;
+    float speed, fov; // fov in deg(45)
+
+    float move_friction, move_damping;
+    float look_friction, look_damping;
+    vec2 last_look; vec3 last_move; // used for friction and damping
+    bool damping;
 } camera_t;
 
 API camera_t camera();
 API void camera_teleport(camera_t *cam, vec3 pos);
-API void camera_move(camera_t *cam, float incx, float incy, float incz);
+API void camera_moveby(camera_t *cam, vec3 inc);
 API void camera_fov(camera_t *cam, float fov);
 API void camera_fps(camera_t *cam, float yaw, float pitch);
 API void camera_orbit(camera_t *cam, float yaw, float pitch, float inc_distance);
 API void camera_lookat(camera_t *cam, vec3 target);
 API void camera_enable(camera_t *cam);
 API camera_t *camera_get_active();
+
+API int  ui_camera(camera_t *cam);
+API void ddraw_camera(camera_t *cam);
 
 // object
 

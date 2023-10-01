@@ -21,9 +21,10 @@ API uint32_t unhash_32(uint32_t x);
 API uint32_t hash_32(uint32_t x);
 API uint64_t hash_64(uint64_t x);
 API uint64_t hash_flt(double x);
-API uint64_t hash_str(const char* str);
 API uint64_t hash_int(int key);
 API uint64_t hash_ptr(const void* ptr);
+API uint64_t hash_bin(const void* ptr, unsigned len);
+API uint64_t hash_str(const char* str);
 
 // -----------------------------------------------------------------------------
 // bits

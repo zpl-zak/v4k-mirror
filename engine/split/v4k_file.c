@@ -174,7 +174,7 @@ char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensio
     int ids_count = 0;
     char ids[64][64] = { 0 };
     // split path stems
-    for each_substring(stem, "/\\", key) {
+    for each_substring(stem, "/\\@", key) {
         int tokens_count = 0;
         char* tokens[64] = { 0 };
         // split tokens

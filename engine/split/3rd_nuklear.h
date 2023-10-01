@@ -24096,7 +24096,7 @@ nk_draw_symbol(struct nk_command_buffer *out, enum nk_symbol_type type,
             (type == NK_SYMBOL_TRIANGLE_DOWN) ? NK_GLYPH_CARET_DOWN_: //< @r-lyeh
             (type == NK_SYMBOL_TRIANGLE_LEFT) ? NK_GLYPH_CARET_LEFT_ : NK_GLYPH_CARET_RIGHT_; //< @r-lyeh
         struct nk_text text; //< @r-lyeh
-        text.padding = nk_vec2(-6,-2); //< @r-lyeh: 0,0 for FA
+        text.padding = nk_vec2(-6,-0); //< @r-lyeh: -6,-2 for MD, 0,0 for FA
         text.background = background; //< @r-lyeh
         text.text = foreground; //< @r-lyeh
         nk_widget_text(out, content, X, strlen(X), &text, NK_TEXT_LEFT|NK_TEXT_ALIGN_BOTTOM, font); //< @r-lyeh

@@ -229,8 +229,9 @@ static int browser_run(struct nk_context *ctx, struct browser *browser, int wind
     if( windowed ) nk_menubar_end(ctx);
     ctx->style.window.spacing.x = spacing_x;
 
-if(nk_window_has_focus(ctx))
-browser->zooming = clampf( browser->zooming + input_diff(MOUSE_W) * 0.1, 1, 3);
+if(nk_window_has_focus(ctx)) {
+browser->zooming = clampf( browser->zooming + (input(KEY_LCTRL) || input(KEY_RCTRL)) * input_diff(MOUSE_W) * 0.1, 1, 3);
+}
 
 bool compact = 0, tiny = browser->listing; // compact, no left panel. tiny, no large icons
 size_t cols = total_space.w / (100 * browser->zooming);
