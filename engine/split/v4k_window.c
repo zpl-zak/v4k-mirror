@@ -564,7 +564,7 @@ int window_frame_begin() {
                 // @todo
             }
             for( int p = (open = ui_collapse_filtered(ICON_MD_VOLUME_UP " Audio", "Debug.Audio")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-                // @todo
+                ui_audio();
             }
             for( int p = (open = ui_collapse_filtered(ICON_MD_VIDEOCAM " Camera", "Debug.Camera")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
                 ui_camera( camera_get_active() );

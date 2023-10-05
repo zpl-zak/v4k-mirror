@@ -1435,7 +1435,7 @@ API void    bt_addfun(const char *name, int(*func)());
 API bt_func bt_findfun(const char *name);
 API char   *bt_funcname(bt_func fn);
 
-API void ui_bt(bt_t *b);
+API int ui_bt(bt_t *b);
 #line 0
 
 #line 1 "v4k_audio.h"
@@ -1468,6 +1468,8 @@ API int     audio_stop( audio_t a );
 API float   audio_volume_clip(float gain);   // set     fx volume if gain is in [0..1] range. return current     fx volume in any case
 API float   audio_volume_stream(float gain); // set    bgm volume if gain is in [0..1] range. return current    bgm volume in any case
 API float   audio_volume_master(float gain); // set master volume if gain is in [0..1] range. return current master volume in any case
+
+API int ui_audio();
 
 enum AUDIO_FLAGS {
     AUDIO_1CH = 0, // default

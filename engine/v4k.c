@@ -1247,7 +1247,7 @@ int audio_init( int flags ) {
         ma_backend_oss,
         ma_backend_jack,
         ma_backend_opensl,
-        //ma_backend_webaudio,
+        ma_backend_webaudio,
         //ma_backend_openal,
         //ma_backend_sdl,
         ma_backend_null    // Lowest priority.
@@ -1511,6 +1511,40 @@ int audio_queue( const void *samples, int num_samples, int flags ) {
     while( !thread_queue_produce(&queue_mutex, aq, THREAD_QUEUE_WAIT_INFINITE) ) {}
 
     return audio_queue_voice;
+}
+
+int ui_audio() {
+    int changed = 0;
+
+    float sfx = sqrt(volume_clip), bgm = sqrt(volume_stream), master = sqrt(volume_master);
+    if( ui_slider2("BGM volume", &bgm, va("%.2f", bgm))) changed = 1, audio_volume_stream(bgm);
+    if( ui_slider2("SFX volume", &sfx, va("%.2f", sfx))) changed = 1, audio_volume_clip(sfx);
+    if( ui_slider2("Master volume", &master, va("%.2f", master))) changed = 1, audio_volume_master(master);
+
+    ui_separator();
+
+    int num_voices = sts_mixer_get_active_voices(&mixer);
+    ui_label2("Format", mixer.audio_format == 0 ? "None" : mixer.audio_format == 1 ? "8-bit" : mixer.audio_format == 2 ? "16-bit" : mixer.audio_format == 3 ? "32-bit integer" : "32-bit float");
+    ui_label2("Frequency", va("%4.1f KHz", mixer.frequency / 1000.0));
+    ui_label2("Voices", va("%d/%d", num_voices, STS_MIXER_VOICES));
+    ui_separator();
+
+    for( int i = 0; i < STS_MIXER_VOICES; ++i ) {
+        if( mixer.voices[i].state != STS_MIXER_VOICE_STOPPED ) { // PLAYING || STREAMING
+            ui_label(va("Voice %d", i+1));
+
+            // float mul = mixer.voices[i].state == STS_MIXER_VOICE_STREAMING ? 2 : 1;
+            // float div = mixer.voices[i].state == STS_MIXER_VOICE_STREAMING ? mixer.voices[i].stream->sample.length : mixer.voices[i].sample->length;
+            // float pct = mixer.voices[i].position * mul / div;
+            // if(ui_slider2("Position", &pct, va("%5.2f", pct))) changed = 1;
+            if(ui_slider2("Gain", &mixer.voices[i].gain, va("%5.2f", mixer.voices[i].gain))) changed = 1;
+            if(ui_slider2("Pitch", &mixer.voices[i].pitch, va("%5.2f", mixer.voices[i].pitch))) changed = 1;
+            if(ui_slider2("Pan", &mixer.voices[i].pan, va("%5.2f", mixer.voices[i].pan))) changed = 1;
+            ui_separator();
+        }
+    }
+
+    return changed;
 }
 #line 0
 
@@ -10433,7 +10467,7 @@ GLuint shader_compile( GLenum type, const char *source ) {
 
         // dump log with line numbers
         shader_print( source );
-        PANIC("ERROR: shader_compile(): %s\n%s\n", type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", buf);
+        PRINTF("!ERROR: shader_compile(): %s\n%s\n", type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", buf);
         return 0;
     }
 
@@ -21097,7 +21131,7 @@ int window_frame_begin() {
                 // @todo
             }
             for( int p = (open = ui_collapse_filtered(ICON_MD_VOLUME_UP " Audio", "Debug.Audio")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-                // @todo
+                ui_audio();
             }
             for( int p = (open = ui_collapse_filtered(ICON_MD_VIDEOCAM " Camera", "Debug.Camera")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
                 ui_camera( camera_get_active() );
@@ -22812,7 +22846,7 @@ int bt_run(bt_t *b) {
     return 0;
 }
 
-void ui_bt(bt_t *b) {
+int ui_bt(bt_t *b) {
     if( b ) {
         char *info = bt_funcname(b->action);
         if(!info) info = va("%d", array_count(b->children));
@@ -22824,6 +22858,7 @@ void ui_bt(bt_t *b) {
             ui_collapse_end();
         }
     }
+    return 0;
 }
 #line 0
 

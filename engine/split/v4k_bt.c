@@ -74,7 +74,7 @@ int bt_run(bt_t *b) {
     return 0;
 }
 
-void ui_bt(bt_t *b) {
+int ui_bt(bt_t *b) {
     if( b ) {
         char *info = bt_funcname(b->action);
         if(!info) info = va("%d", array_count(b->children));
@@ -86,4 +86,5 @@ void ui_bt(bt_t *b) {
             ui_collapse_end();
         }
     }
+    return 0;
 }

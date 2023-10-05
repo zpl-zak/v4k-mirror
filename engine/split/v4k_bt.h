@@ -187,4 +187,4 @@ API void    bt_addfun(const char *name, int(*func)());
 API bt_func bt_findfun(const char *name);
 API char   *bt_funcname(bt_func fn);
 
-API void ui_bt(bt_t *b);
+API int ui_bt(bt_t *b);

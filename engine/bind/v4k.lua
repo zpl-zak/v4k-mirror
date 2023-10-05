@@ -1876,7 +1876,7 @@ struct bt_t* children;
  void    bt_addfun(const char *name, int(*func)());
  bt_func bt_findfun(const char *name);
  char   *bt_funcname(bt_func fn);
- void ui_bt(bt_t *b);
+ int ui_bt(bt_t *b);
  void    midi_send(unsigned midi_msg);
 typedef struct audio_handle* audio_t;
  audio_t audio_clip( const char *pathfile );
@@ -1889,6 +1889,7 @@ typedef struct audio_handle* audio_t;
  float   audio_volume_clip(float gain);
  float   audio_volume_stream(float gain);
  float   audio_volume_master(float gain);
+ int ui_audio();
 enum AUDIO_FLAGS {
 AUDIO_1CH = 0,
 AUDIO_2CH = 1,

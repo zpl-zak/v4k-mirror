@@ -28,6 +28,8 @@ API float   audio_volume_clip(float gain);   // set     fx volume if gain is in 
 API float   audio_volume_stream(float gain); // set    bgm volume if gain is in [0..1] range. return current    bgm volume in any case
 API float   audio_volume_master(float gain); // set master volume if gain is in [0..1] range. return current master volume in any case
 
+API int ui_audio();
+
 enum AUDIO_FLAGS {
     AUDIO_1CH = 0, // default
     AUDIO_2CH = 1,
