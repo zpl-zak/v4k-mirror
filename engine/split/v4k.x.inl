@@ -120,13 +120,7 @@ errno_t fopen_s(
 #undef R
 #define error l_error
 #define panic l_panic
-#define Token LuaToken
-#define Table LuaTable
-#define rehash lua__rehash
 {{FILE:3rd_lua.h}}
-#undef Token
-#undef Table
-#undef rehash
 #undef cast
 #undef G
 //---
@@ -172,5 +166,13 @@ errno_t fopen_s(
 {{FILE:3rd_polychop.h}}
 #define SQLITE_OMIT_LOAD_EXTENSION
 #define SQLITE_CORE 1
+#define SQLITE_DEBUG 1
+#define Token SQToken
+#define Table SQTable
+#define rehash sqlite3__rehash
+#undef NB
 {{FILE:3rd_sqlite3.c}}
+#undef Token
+#undef Table
+#undef rehash
 #endif // V4K_3RD
