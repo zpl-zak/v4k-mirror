@@ -830,7 +830,7 @@ int main(int argc, char **argv) {
             section = NULL;
         }
 
-        if(strendi(line, "/""//-")) continue; // discard explicitly excluded lines
+        if(strstr/*strendi*/(line, "/""//-")) continue; // discard explicitly excluded lines
 
         learn(line);
 

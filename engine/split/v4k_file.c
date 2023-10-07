@@ -629,7 +629,7 @@ const char** vfs_list(const char *masks) {
 }
 
 static
-char *vfs_unpack(const char *pathfile, int *size) { // must free() after use
+char *vfs_unpack(const char *pathfile, int *size) { // must FREE() after use
     // @todo: add cache here
     char *data = NULL;
     for(archive_dir *dir = dir_mount; dir && !data; dir = dir->next) {

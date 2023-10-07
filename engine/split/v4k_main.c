@@ -65,7 +65,7 @@ void v4k_quit(void) {
 void v4k_init() {
     do_once {
         // install signal handlers
-        ifdef(debug, signal_hooks());
+        ifdef(debug, trap_install());
 
         // init panic handler
         panic_oom_reserve = SYS_REALLOC(panic_oom_reserve, 1<<20); // 1MiB

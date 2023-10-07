@@ -978,7 +978,13 @@ vec3 transform_scaling (const mat44 m, const vec3 scaling) {
 // ----------------------------------------------------------------------------
 // !!! for debugging
 
-#include <stdio.h>
+void printi_( int *m, int ii, int jj ) {
+    for( int j = 0; j < jj; ++j ) {
+        for( int i = 0; i < ii; ++i ) printf("%10d ", *m++);
+        puts("");
+    }
+//    puts("---");
+}
 void print_( float *m, int ii, int jj ) {
     for( int j = 0; j < jj; ++j ) {
         for( int i = 0; i < ii; ++i ) printf("%8.3f", *m++);
@@ -986,6 +992,8 @@ void print_( float *m, int ii, int jj ) {
     }
 //    puts("---");
 }
+void print2i( vec2i v ) { printi_(&v.x,2,1); }
+void print3i( vec3i v ) { printi_(&v.x,3,1); }
 void print2( vec2 v ) { print_(&v.x,2,1); }
 void print3( vec3 v ) { print_(&v.x,3,1); }
 void print4( vec4 v ) { print_(&v.x,4,1); }

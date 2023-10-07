@@ -7,7 +7,7 @@
 #endif
 
 {{FILE:3rd_glad.h}}
-{{FILE:3rd_font_md.h}}
+{{FILE:3rd_icon_md.h}}
 
 #ifdef V4K_3RD
 
@@ -175,4 +175,5 @@ errno_t fopen_s(
 #undef Token
 #undef Table
 #undef rehash
+#undef NB
 #endif // V4K_3RD

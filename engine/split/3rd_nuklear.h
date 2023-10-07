@@ -29136,7 +29136,7 @@ nk_combo_begin_text(struct nk_context *ctx, const char *selected, int len,
         else
             label.w = header.w - 2 * style->combo.content_padding.x;
         nk_widget_text(&win->buffer, label, selected, len, &text,
-            NK_TEXT_LEFT, ctx->style.font);
+            NK_TEXT_CENTERED, ctx->style.font); //< @r-lyeh NK_TEXT_LEFT>CENTERED
 
         /* draw open/close button */
         if (draw_button_symbol)

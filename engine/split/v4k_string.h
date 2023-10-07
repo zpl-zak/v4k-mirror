@@ -73,3 +73,14 @@ API char*           strjoin(array(char*) list, const char *separator);
 
 API char *          string8(const wchar_t *str);  /// convert from wchar16(win) to utf8/ascii
 API array(uint32_t) string32( const char *utf8 ); /// convert from utf8 to utf32
+
+// -----------------------------------------------------------------------------
+// ## string interning (quarks)
+// - rlyeh, public domain.
+
+unsigned    intern( const char *string );
+const char *quark( unsigned key );
+
+typedef array(char) quarks_db;
+unsigned    quark_intern( quarks_db*, const char *string );
+const char *quark_string( quarks_db*, unsigned key );

@@ -27,7 +27,7 @@ rpc_call rpc_new_call(const char *signature, rpc_function function) {
 #if RPC_DEBUG
             printf("%p %p %s `%s` %s(", function, (void*)hash, rettype, hash_sig, method); for(int i = 0, end = array_count(tokens); i < end; ++i) printf("%s%s", tokens[i], i == (end-1)? "":", "); puts(");");
 #endif
-            return (rpc_call) { strdup(method), function, hash }; // LEAK
+            return (rpc_call) { STRDUP(method), function, hash }; // LEAK
         }
     }
     return (rpc_call) {0};

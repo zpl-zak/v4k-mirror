@@ -2188,7 +2188,7 @@ bool spine_(spine_t *t, const char *file_json, const char *file_atlas, unsigned 
                 array_push(t->skins[i].rects, t->skins[0].rects[j]);
             }
         }
-        // @leak @fixme: free(t->skins[0])
+        // @leak @fixme: FREE(t->skins[0])
         for( int i = 0; i < array_count(t->skins)-1; ++i ) {
             t->skins[i] = t->skins[i+1];
         }

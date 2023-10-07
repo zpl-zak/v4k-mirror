@@ -219,7 +219,7 @@ extern "C" {
 #define countof(x)       (int)(sizeof (x) / sizeof 0[x])
 
 #define concat(a,b)      conc4t(a,b)
-#define conc4t(a,b)      a##b
+#define conc4t(a,b)      a##b ///-
 
 #define macro(name)      concat(name, __LINE__)
 #define defer(begin,end) for(int macro(i) = ((begin), 0); !macro(i); macro(i) = ((end), 1))
@@ -247,16 +247,16 @@ extern "C" {
 
 #define FILELINE                   __FILE__ ":" STRINGIZE(__LINE__)
 #define STRINGIZE(x)               STRINGIZ3(x)
-#define STRINGIZ3(x)               #x
+#define STRINGIZ3(x)               #x ///-
 
 #define EXPAND(name, ...)          EXPAND_QUOTE(EXPAND_JOIN(name, EXPAND_COUNT_ARGS(__VA_ARGS__)), (__VA_ARGS__))
-#define EXPAND_QUOTE(x, y)         x y
-#define EXPAND_JOIN(name, count)   EXPAND_J0IN(name, count)
-#define EXPAND_J0IN(name, count)   EXPAND_J01N(name, count)
-#define EXPAND_J01N(name, count)   name##count
-#define EXPAND_COUNT_ARGS(...)     EXPAND_ARGS((__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
-#define EXPAND_ARGS(args)          EXPAND_RETURN_COUNT args
-#define EXPAND_RETURN_COUNT(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, count, ...) count
+#define EXPAND_QUOTE(x, y)         x y ///-
+#define EXPAND_JOIN(name, count)   EXPAND_J0IN(name, count) ///-
+#define EXPAND_J0IN(name, count)   EXPAND_J01N(name, count) ///-
+#define EXPAND_J01N(name, count)   name##count ///-
+#define EXPAND_COUNT_ARGS(...)     EXPAND_ARGS((__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)) ///-
+#define EXPAND_ARGS(args)          EXPAND_RETURN_COUNT args ///-
+#define EXPAND_RETURN_COUNT(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, count, ...) count ///-
 
 #if is(cl) && !is(cpp)
 #define INLINE __inline
@@ -280,10 +280,13 @@ extern "C" {
 
 // usage: #define vec2(...) C_CAST(vec2, __VA_ARGS__)
 // typedef union vec2 { float X,Y; }; vec2 a = {0,1}, b = vec2(0,1);
-#if is(cpp)
-#define C_CAST(type, ...)  ( type { __VA_ARGS__ } )
-#else
-#define C_CAST(type, ...)  ((type){ __VA_ARGS__ } )
+#define C_CAST(type, ...)  ( ifdef(c,(type),type) { __VA_ARGS__ } )
+
+// -----------------------------------------------------------------------------
+// build info
+
+#ifndef BUILD_VERSION
+#define BUILD_VERSION ""
 #endif
 
 // -----------------------------------------------------------------------------
@@ -291,15 +294,9 @@ extern "C" {
 
 // win32 users would need to -DAPI=IMPORT/EXPORT as needed when using/building V4K as DLL.
 
-#if is(win32)
-#define IMPORT ifdef(gcc, __attribute__ ((dllimport)), __declspec(dllimport))
-#define EXPORT ifdef(gcc, __attribute__ ((dllexport)), __declspec(dllexport))
+#define IMPORT ifdef(win32, ifdef(gcc, __attribute__ ((dllimport)), __declspec(dllimport)))
+#define EXPORT ifdef(win32, ifdef(gcc, __attribute__ ((dllexport)), __declspec(dllexport)))
 #define STATIC
-#else
-#define IMPORT    
-#define EXPORT    
-#define STATIC
-#endif
 
 #ifndef API
 #define API STATIC
@@ -822,16 +819,32 @@ API bool  (map_sort)(map* m);
 API void  (map_clear)(map* m);
 
 // -----------------------------------------------------------------------------
-// four-cc, eight-cc
+// compile-time fourcc, eightcc
 
-API unsigned cc4(const char *id);
-API uint64_t cc8(const char *id);
 API char *cc4str(unsigned cc);
 API char *cc8str(uint64_t cc);
 
-// fast path
-#define cc4(abcd)      ( *(unsigned*) #abcd     "    "     ) // lil32() ?
-#define cc8(abcdefgh)  ( *(uint64_t*) #abcdefgh "        " ) // lil64() ?
+enum {
+#   define _(a,b,c,d,e) cc_##a, cc_##b, cc_##c, cc_##d, cc_##e
+    cc_1 = '1', _(2,3,4,5,6),_(7,8,9,0,_), cc_ = ' ',
+    cc_A = 'A', _(B,C,D,E,F),_(G,H,I,J,K),_(L,M,N,O,P),_(Q,R,S,T,U),_(V,W,X,Y,Z),
+    cc_a = 'a', _(b,c,d,e,f),_(g,h,i,j,k),_(l,m,n,o,p),_(q,r,s,t,u),_(v,w,x,y,z),
+#   undef _
+};
+
+#ifdef BIG
+#define cc4(a,b,c,d) ((uint32_t)(cc_##a<<24) | (cc_##b<<16) | (cc_##c<<8) | (cc_##d<<0))
+#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(a,b,c,d) << 32ULL) | cc4(e,f,g,h))
+#else
+#define cc4(a,b,c,d) ((uint32_t)(cc_##d<<24) | (cc_##c<<16) | (cc_##b<<8) | (cc_##a<<0))
+#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(e,f,g,h) << 32ULL) | cc4(a,b,c,d))
+#endif
+
+#define cc3(a,b,c) cc4(,a,b,c)
+#define cc5(a,b,c,d,e) cc6(,a,b,c,d,e)
+#define cc6(a,b,c,d,e,f) cc7(,a,b,c,d,e,f)
+#define cc7(a,b,c,d,e,f,g) cc8(,a,b,c,d,e,f,g)
+
 #line 0
 
 #line 1 "v4k_math.h"
@@ -1167,6 +1180,8 @@ API bool unproject44(vec3 *out, vec3 xyd, vec4 viewport, mat44 mvp);
 // ----------------------------------------------------------------------------
 // debugging and utils
 
+API void print2i( vec2i v );
+API void print3i( vec3i v );
 API void print2( vec2 v );
 API void print3( vec3 v );
 API void print4( vec4 v );
@@ -2299,136 +2314,100 @@ API int64_t  client_join(const char *ip, int port);
 
 #line 1 "v4k_obj.h"
 // -----------------------------------------------------------------------------
-// C object framework (constructors/destructors, methods, rtti, refcounting)
+// semantic versioning in a single byte (octal)
 // - rlyeh, public domain.
 //
-// ## object api (low level)
+// - single octal byte that represents semantic versioning (major.minor.patch).
+// - allowed range [0000..0377] ( <-> [0..255] decimal )
+// - comparison checks only major.minor tuple as per convention.
+
+API int semver( int major, int minor, int patch );
+API int semvercmp( int v1, int v2 );
+
+#define SEMVER(major,minor,patch) (0100 * (major) + 010 * (minor) + (patch))
+#define SEMVERCMP(v1,v2) (((v1) & 0110) - ((v2) & 0110))
+#define SEMVERFMT "%03o"
+
+// -----------------------------------------------------------------------------
+// autorun initializers for C
+// - rlyeh, public domain
 //
-// - [ ] make object from reflected type (factory)
-// - [x] make object (if debug, include callstack as well)
-// - [x] ctor method (optional, ref to constructor)
-// - [x] dtor method (optional, ref to deleter)
-// - [x] zero mem object
-// - [x] object logger
-// - [ ] iterate members in a struct
-//
-// - [x] clone/copy/mutate classes
-// - [x] load/save objects from/to memory/disk
-// - [ ] diff/patch objects
-// - [ ] experimental: support for AoSoA layout (using objcnt, 3bits)
-//
-// ## object decomposition
-//
-//                             <---------|--------->
-//            OBJ-SHADOW (64-bits)       |   OBJ CONTENT (N bytes)
-// +-----+-----+-------------+-----------+-----+-----+-----+-----+--
-// |TYPE |REFS.|   OBJ NAME  |  obj cnt  | ... | ... | ... | ... | .
-// +-----+-----+-------------+-----------+-----+-----+-----+-----+--
-// \-16-bits--/\---45-bits--/\--3-bits--/\-------N-bytes-----------
-//
-// OBJ TYPE+NAME format:
-// - [type] custom tags at 0x0
-// - [1..N] name
-// - [\n]   blank separator
-// - [comments, logger, infos, etc] << obj_printf();
-//
-// ## object limitations
-// - 256 classes max
-// - 256 references max
-// - 8-byte overhead per object
-// - 2 total allocs per object (could be flattened into 1 with some more work)
-//
-// @todo: obj_extend( "class_src", "class_dst" ); call[super(obj)]()
-// @todo: preferred load/save format: [ver:1,user:2,type:1] ([eof|size:7/15/23/31][blob:N])+ [crc:1/2/3/4]
-// @todo: more serious loading/saving spec
+// note: based on code by Joe Lowe (public domain).
+// note: XIU for C initializers, XCU for C++ initializers, XTU for C deinitializers
 
-// object api (heap+rtti)
+#ifdef __cplusplus
+#define AUTORUN \
+    static void AUTORUN_U(f)(void); \
+    static const int AUTORUN_J(AUTORUN_U(f),__1) = (AUTORUN_U(f)(), 1); \
+    static void AUTORUN_U(f)(void)
+#elif _MSC_VER
+#define AUTORUN \
+    static void AUTORUN_U(f)(void); \
+    static int AUTORUN_J(AUTORUN_U(f),__1) (){ AUTORUN_U(f)(); return 0; } \
+    __pragma(section(".CRT$XIU", long, read)) \
+    __declspec(allocate(".CRT$XIU")) \
+    static int(* AUTORUN_J(AUTORUN_U(f),__2) )() = AUTORUN_J(AUTORUN_U(f),__1); \
+    static void AUTORUN_U(f)(void)
+#else
+#define AUTORUN \
+    __attribute__((constructor)) \
+    static void AUTORUN_U(f)(void)
+#endif
 
-API void*       obj_malloc( int sz, ... );
-API void*       obj_calloc( int sz, ... );
-API void        obj_free( void *obj );
+// join + unique macro utils
 
-API bool        obj_typeeq( const void *obj1, const void *obj2 );
-API const char* obj_typeof( const void *obj );
-API unsigned    obj_typeid( const void *obj );
-API unsigned    obj_typeid_from_name( const char *name );
+#define AUTORUN_j(a, b) a##b
+#define AUTORUN_J(a, b) AUTORUN_j(a, b)
+#define AUTORUN_U(x)    AUTORUN_J(x, __LINE__)
 
-// object api (ctor/dtor, refcounting, oop)
+#if 0 // autorun demo
+void byebye(void) { puts("seen after main()"); }
+AUTORUN { puts("seen before main()"); }
+AUTORUN { puts("seen before main() too"); atexit( byebye ); }
+#endif
 
-API void        obj_new( const char *type, ... );
-API void        obj_del( void *obj );
+// -----------------------------------------------------------------------------
+// storage types. refer to vec2i/3i, vec2/3/4 if you plan to do math operations
 
-API void*       obj_ref( void *obj );
-API void*       obj_unref( void *obj );
+typedef struct byte2 { uint8_t x,y; } byte2;
+typedef struct byte3 { uint8_t x,y,z; } byte3;
+typedef struct byte4 { uint8_t x,y,z,w; } byte4;
 
-API void        obj_extend( const char *dstclass, const char *srcclass );
-API void        obj_override( const char *objclass, void (**vtable)(), void(*fn)() );
+typedef struct int2 { int x,y; } int2;
+typedef struct int3 { int x,y,z; } int3;
+typedef struct int4 { int x,y,z,w; } int4;
 
-// object: serialize
+typedef struct uint2 { unsigned int x,y; } uint2;
+typedef struct uint3 { unsigned int x,y,z; } uint3;
+typedef struct uint4 { unsigned int x,y,z,w; } uint4;
 
-API unsigned    obj_load(void *obj, const array(char) buffer);
-API unsigned    obj_load_file(void *obj, FILE *fp);
-API unsigned    obj_load_inplace(void *obj, const void *src, unsigned srclen);
+typedef struct float2 { float x,y; } float2;
+typedef struct float3 { float x,y,z; } float3;
+typedef struct float4 { float x,y,z,w; } float4;
 
-API array(char) obj_save(const void *obj); // empty if error. must array_free() after use
-API unsigned    obj_save_file(FILE *fp, const void *obj);
-API unsigned    obj_save_inplace(void *dst, unsigned cap, const void *obj);
+typedef struct double2 { double x,y; } double2;
+typedef struct double3 { double x,y,z; } double3;
+typedef struct double4 { double x,y,z,w; } double4;
 
-// object: utils
+#define byte2(x,y)       M_CAST(byte2, (uint8_t)(x), (uint8_t)(y) )
+#define byte3(x,y,z)     M_CAST(byte3, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z) )
+#define byte4(x,y,z,w)   M_CAST(byte4, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z), (uint8_t)(w) )
 
-API unsigned    obj_instances( const void *obj );
+#define int2(x,y)        M_CAST(int2, (int)(x), (int)(y) )
+#define int3(x,y,z)      M_CAST(int3, (int)(x), (int)(y), (int)(z) )
+#define int4(x,y,z,w)    M_CAST(int4, (int)(x), (int)(y), (int)(z), (int)(w) )
 
-API void        obj_zero( void *obj );
-API unsigned    obj_sizeof( const void *obj );
+#define uint2(x,y)       M_CAST(uint2, (unsigned)(x), (unsigned)(y) )
+#define uint3(x,y,z)     M_CAST(uint3, (unsigned)(x), (unsigned)(y), (unsigned)(z) )
+#define uint4(x,y,z,w)   M_CAST(uint4, (unsigned)(x), (unsigned)(y), (unsigned)(z), (unsigned)(w) )
 
-API void        obj_hexdump( const void *obj );
-API void        obj_hexdumpf( FILE *out, const void *obj );
+#define float2(x,y)      M_CAST(float2, (float)(x), (float)(y) )
+#define float3(x,y,z)    M_CAST(float3, (float)(x), (float)(y), (float)(z) )
+#define float4(x,y,z,w)  M_CAST(float4, (float)(x), (float)(y), (float)(z), (float)(w) )
 
-API void        obj_printf( void *obj, const char *text );
-API const char* obj_output( const void *obj );
-
-API void *      obj_clone(const void *obj);
-API void *      obj_copy(void **dst, const void *src);
-API void *      obj_mutate(void **dst, const void *src);
-
-// object: method dispatch tables
-
-#define ctor(obj) obj_method0(obj, ctor) // ctor[obj_typeid(obj)](obj)
-#define dtor(obj) obj_method0(obj, dtor) // dtor[obj_typeid(obj)](obj)
-
-API extern void (*ctor[256])(); ///-
-API extern void (*dtor[256])(); ///-
-
-// object: syntax sugars
-
-#define     obj_malloc(sz, ...) obj_initialize((void**)MALLOC(  sizeof(void*)+sz), stringf("\1untyped\n%s\n", "" #__VA_ARGS__))
-#define     obj_calloc(sz, ...) obj_initialize((void**)CALLOC(1,sizeof(void*)+sz), stringf("\1untyped\n%s\n", "" #__VA_ARGS__))
-
-#define     obj_new0(type) obj_new(type, 0)
-#define     obj_new(type, ...) ( \
-                obj_tmpalloc = obj_initialize((void**)CALLOC(1, sizeof(void*)+sizeof(type)), stringf("%c" #type "\n", (char)obj_typeid_from_name(#type))), \
-                (*(type*)obj_tmpalloc = (type){ __VA_ARGS__ }), \
-                ctor(obj_tmpalloc), \
-                (type*)obj_tmpalloc )
-
-#define     obj_override(class, method)    obj_override(#class, (void(**)())method, (void(*)())class##_##method)
-#define     obj_method0(obj, method)       method[obj_typeid(obj)]((obj))
-#define     obj_method(obj, method, ...)   method[obj_typeid(obj)]((obj), __VA_ARGS__)
-
-#define     obj_printf(obj, ...)           obj_printf(obj, va(__VA_ARGS__))
-
-#define     obj_extend(dstclass, srcclass) obj_extend(#dstclass, #srcclass)
-
-// object: implementation details
-
-// https://stackoverflow.com/questions/16198700/using-the-extra-16-bits-in-64-bit-pointers (note: using 19-bits here)
-#define OBJBOX(ptr, payload16) (void*)(((long long unsigned)(payload16) << 48) | (long long unsigned)(ptr))
-#define OBJUNBOX(ptr)          (void*)((long long unsigned)(ptr) & 0x0000FFFFFFFFFFFFull)
-#define OBJPAYLOAD16(ptr)      (((long long unsigned)(ptr)) >> 48)
-#define OBJPAYLOAD3(ptr)       (((long long unsigned)(ptr)) & 7)
-
-API void* obj_initialize( void **ptr, char *type_and_info );
-static __thread void *obj_tmpalloc;
+#define double2(x,y)     M_CAST(double2, (double)(x), (double)(y) )
+#define double3(x,y,z)   M_CAST(double3, (double)(x), (double)(y), (double)(z) )
+#define double4(x,y,z,w) M_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )
 #line 0
 
 #line 1 "v4k_profile.h"
@@ -3461,42 +3440,23 @@ API char*           strjoin(array(char*) list, const char *separator);
 
 API char *          string8(const wchar_t *str);  /// convert from wchar16(win) to utf8/ascii
 API array(uint32_t) string32( const char *utf8 ); /// convert from utf8 to utf32
+
+// -----------------------------------------------------------------------------
+// ## string interning (quarks)
+// - rlyeh, public domain.
+
+unsigned    intern( const char *string );
+const char *quark( unsigned key );
+
+typedef array(char) quarks_db;
+unsigned    quark_intern( quarks_db*, const char *string );
+const char *quark_string( quarks_db*, unsigned key );
 #line 0
 
-#line 1 "v4k_system.h"
+#line 1 "v4k_time.h"
 // -----------------------------------------------------------------------------
-// system framework utils
+// time framework utils
 // - rlyeh, public domain.
-//
-// Note: Windows users add `/Zi` compilation flags, else add `-g` and/or `-ldl` flags
-// Note: If you are linking your binary using GNU ld you need to add --export-dynamic
-
-API void*       thread( int (*thread_func)(void* user_data), void* user_data );
-API void        thread_destroy( void *thd );
-
-API int         argc();
-API char*       argv(int);
-
-API int         flag(const char *commalist); // --arg // app_flag?
-API const char* option(const char *commalist, const char *defaults); // --arg=value or --arg value
-API int         optioni(const char *commalist, int defaults); // argvi() ?
-API float       optionf(const char *commalist, float defaults); // app_option?
-
-API void        tty_color(unsigned color);
-API void        tty_reset();
-API void        tty_attach();
-API void        tty_detach();
-
-API const char* app_exec(const char *command); // returns ("%15d %s", retcode, output_last_line)
-API int         app_spawn(const char *command);
-API int         app_cores();
-API int         app_battery(); /// return battery level [1..100]. also positive if charging (+), negative if discharging (-), and 0 if no battery is present.
-
-API const char* app_name();
-API const char* app_path();
-API const char* app_cache();
-API const char* app_temp();
-API const char* app_cmdline();
 
 API uint64_t    date();        // YYYYMMDDhhmmss
 API uint64_t    date_epoch();  // linux epoch
@@ -3515,6 +3475,72 @@ API void        sleep_ns(double us);
 API unsigned    timer(unsigned ms, unsigned (*callback)(unsigned ms, void *arg), void *arg);
 API void        timer_destroy(unsigned timer_handle);
 
+// time sortable unique identifier (similar to ksuid/tuid; others: sno/xid/cuid/ulid)
+// - rlyeh, public domain.
+//
+// also similar to a mongo object id, 12 bytes as follows:
+// - 4-byte timestamp (ss). epoch: Tuesday, 12 September 2023 6:06:56
+// - 2-byte (machine or app hash)
+// - 2-byte (thread-id)
+// - 4-byte (rand counter, that gets increased at every id creation)
+
+typedef vec3i guid;
+
+API guid        guid_create();
+
+/*
+AUTORUN {
+    guid g1 = guid_create();
+    guid g2 = guid_create();
+    print3i(g1);
+    hexdump(&g1, sizeof(g1));
+    print3i(g2);
+    hexdump(&g2, sizeof(g2));
+}
+*/
+#line 0
+
+#line 1 "v4k_system.h"
+// -----------------------------------------------------------------------------
+// system framework utils
+// - rlyeh, public domain.
+//
+// Note: Windows users add `/Zi` compilation flags, else add `-g` and/or `-ldl` flags
+// Note: If you are linking your binary using GNU ld you need to add --export-dynamic
+
+API void*       thread( int (*thread_func)(void* user_data), void* user_data );
+API void        thread_destroy( void *thd );
+
+API int         argc();
+API char*       argv(int);
+
+API int         flag(const char *commalist); // --arg // app_flag?
+API const char* option(const char *commalist, const char *defaults); // --arg=string or --arg string
+API int         optioni(const char *commalist, int defaults); // --arg=integer or --arg integer  // argvi() ?
+API float       optionf(const char *commalist, float defaults); // --arg=float or --arg float    // flagf() ?
+
+API void        tty_attach();
+API void        tty_detach();
+API void        tty_color(unsigned color);
+API void        tty_reset();
+
+API const char* app_exec(const char *command); // returns ("%15d %s", retcode, output_last_line)
+API int         app_spawn(const char *command);
+API int         app_cores();
+API int         app_battery(); /// returns battery level [1..100]. also positive if charging (+), negative if discharging (-), and 0 if no battery is present.
+
+API const char* app_name();
+API const char* app_path();
+API const char* app_cache();
+API const char* app_temp();
+API const char* app_cmdline();
+
+API void        app_beep();
+API void        app_hang();
+API void        app_crash();
+API void        app_singleton(const char *guid);
+API bool        app_open(const char *folder_file_or_url);
+
 API char*       callstack( int traces ); // write callstack into a temporary string. <0 traces to invert order. do not free().
 API int         callstackf( FILE *fp, int traces ); // write callstack to file. <0 traces to invert order.
 
@@ -3525,12 +3551,12 @@ API void        hexdumpf( FILE *fp, const void *ptr, unsigned len, int width );
 API void        breakpoint(const char *optional_reason);
 API bool        has_debugger();
 
-API void        signal_hooks(void);
-API void        signal_handler_ignore(int signal);
-API void        signal_handler_quit(int signal);
-API void        signal_handler_abort(int signal);
-API void        signal_handler_debug(int signal);
-API const char *signal_name(int signal); // helper util
+API void        trap_install(void);
+API const char *trap_name(int signal);      // helper util
+API void        trap_on_ignore(int signal); // helper util
+API void        trap_on_quit(int signal);   // helper util
+API void        trap_on_abort(int signal);  // helper util
+API void        trap_on_debug(int signal);  // helper util
 
 API uint16_t    lil16(uint16_t n); // swap16 as lil
 API uint32_t    lil32(uint32_t n); // swap32 as lil
@@ -3559,6 +3585,10 @@ API int (PANIC)(const char *error, const char *file, int line);
 
 #define PRINTF(...)  PRINTF(va(__VA_ARGS__), 1[#__VA_ARGS__] == '!' ? callstack(+48) : "", __FILE__, __LINE__, __FUNCTION__)
 API int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
+
+#define test(expr) test(__FILE__,__LINE__,#expr,!!(expr))
+API int (test)(const char *file, int line, const char *expr, bool result);
+// AUTORUN { test(1<2); }
 #line 0
 
 #line 1 "v4k_ui.h"

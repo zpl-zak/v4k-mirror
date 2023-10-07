@@ -330,6 +330,8 @@ API bool unproject44(vec3 *out, vec3 xyd, vec4 viewport, mat44 mvp);
 // ----------------------------------------------------------------------------
 // debugging and utils
 
+API void print2i( vec2i v );
+API void print3i( vec3i v );
 API void print2( vec2 v );
 API void print3( vec3 v );
 API void print4( vec4 v );

@@ -144,6 +144,8 @@ extern "C" {
 
 {{FILE:v4k_string.h}}
 
+{{FILE:v4k_time.h}}
+
 {{FILE:v4k_system.h}}
 
 {{FILE:v4k_ui.h}}

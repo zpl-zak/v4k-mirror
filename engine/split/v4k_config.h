@@ -121,7 +121,7 @@
 #define countof(x)       (int)(sizeof (x) / sizeof 0[x])
 
 #define concat(a,b)      conc4t(a,b)
-#define conc4t(a,b)      a##b
+#define conc4t(a,b)      a##b ///-
 
 #define macro(name)      concat(name, __LINE__)
 #define defer(begin,end) for(int macro(i) = ((begin), 0); !macro(i); macro(i) = ((end), 1))
@@ -149,16 +149,16 @@
 
 #define FILELINE                   __FILE__ ":" STRINGIZE(__LINE__)
 #define STRINGIZE(x)               STRINGIZ3(x)
-#define STRINGIZ3(x)               #x
+#define STRINGIZ3(x)               #x ///-
 
 #define EXPAND(name, ...)          EXPAND_QUOTE(EXPAND_JOIN(name, EXPAND_COUNT_ARGS(__VA_ARGS__)), (__VA_ARGS__))
-#define EXPAND_QUOTE(x, y)         x y
-#define EXPAND_JOIN(name, count)   EXPAND_J0IN(name, count)
-#define EXPAND_J0IN(name, count)   EXPAND_J01N(name, count)
-#define EXPAND_J01N(name, count)   name##count
-#define EXPAND_COUNT_ARGS(...)     EXPAND_ARGS((__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
-#define EXPAND_ARGS(args)          EXPAND_RETURN_COUNT args
-#define EXPAND_RETURN_COUNT(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, count, ...) count
+#define EXPAND_QUOTE(x, y)         x y ///-
+#define EXPAND_JOIN(name, count)   EXPAND_J0IN(name, count) ///-
+#define EXPAND_J0IN(name, count)   EXPAND_J01N(name, count) ///-
+#define EXPAND_J01N(name, count)   name##count ///-
+#define EXPAND_COUNT_ARGS(...)     EXPAND_ARGS((__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)) ///-
+#define EXPAND_ARGS(args)          EXPAND_RETURN_COUNT args ///-
+#define EXPAND_RETURN_COUNT(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, count, ...) count ///-
 
 #if is(cl) && !is(cpp)
 #define INLINE __inline
@@ -182,10 +182,13 @@
 
 // usage: #define vec2(...) C_CAST(vec2, __VA_ARGS__)
 // typedef union vec2 { float X,Y; }; vec2 a = {0,1}, b = vec2(0,1);
-#if is(cpp)
-#define C_CAST(type, ...)  ( type { __VA_ARGS__ } )
-#else
-#define C_CAST(type, ...)  ((type){ __VA_ARGS__ } )
+#define C_CAST(type, ...)  ( ifdef(c,(type),type) { __VA_ARGS__ } )
+
+// -----------------------------------------------------------------------------
+// build info
+
+#ifndef BUILD_VERSION
+#define BUILD_VERSION ""
 #endif
 
 // -----------------------------------------------------------------------------
@@ -193,15 +196,9 @@
 
 // win32 users would need to -DAPI=IMPORT/EXPORT as needed when using/building V4K as DLL.
 
-#if is(win32)
-#define IMPORT ifdef(gcc, __attribute__ ((dllimport)), __declspec(dllimport))
-#define EXPORT ifdef(gcc, __attribute__ ((dllexport)), __declspec(dllexport))
+#define IMPORT ifdef(win32, ifdef(gcc, __attribute__ ((dllimport)), __declspec(dllimport)))
+#define EXPORT ifdef(win32, ifdef(gcc, __attribute__ ((dllexport)), __declspec(dllexport)))
 #define STATIC
-#else
-#define IMPORT    
-#define EXPORT    
-#define STATIC
-#endif
 
 #ifndef API
 #define API STATIC

@@ -173,7 +173,7 @@ static void*      editor_selected_obj = 0;
 static int        editor_key = 0;
 static vec2       editor_mouse = {0}; // 2d coord for ray/picking
 static bool       editor_gamepad = 1;
-static int        editor_hz = 144;
+static int        editor_hz = 60;
 static int        editor_hz_mid = 18;
 static int        editor_hz_low = 5;
 static bool       editor_power_saving = 0;
@@ -1014,7 +1014,7 @@ void editor_render_menubar() {
         break; case key_outliner:   ui_show("Outliner", ui_visible("Outliner") ^ true);
         break; case key_recording:  name = file_counter(va("%s.mp4",app_name())), window_record(name),     ui_notify(va("Video capturing: %s", name), date_string());
         break; case key_screenshot: name = file_counter(va("%s.png",app_name())), window_screenshot(name), ui_notify(va("Screenshot: %s", name), date_string());
-        break; case key_profiler:   ui_show("Profiler", profile_enable(ui_visible("Profiler") ^ true));
+        break; case key_profiler:   ui_show("Profiler", profiler_enable(ui_visible("Profiler") ^ true));
         break; case key_fullscreen: record_stop(), window_fullscreen( window_has_fullscreen() ^ 1 ); // framebuffer resizing corrupts video stream, so stop any recording beforehand
         break; case key_gamepad:    editor_gamepad ^= 1;
         break; case key_lit:        editor_lit ^= 1;
@@ -1040,12 +1040,12 @@ void editor_obj_render_properties_recursively(void *obj, const char *mask) {
 
         // contextual menu (open)
         if( ui_contextual() ) {
-            if( ui_button_transparent("<Load" ) ) do_context_obj = obj, do_context_cmd = cc4(load);
-            if( ui_button_transparent("<Save" ) ) do_context_obj = obj, do_context_cmd = cc4(save);
-            if( ui_button_transparent("<Merge") ) do_context_obj = obj, do_context_cmd = cc4(merge);
-            if( ui_button_transparent("<Cut"  ) ) do_context_obj = obj, do_context_cmd = cc4(cut);
-            if( ui_button_transparent("<Copy" ) ) do_context_obj = obj, do_context_cmd = cc4(copy);
-            if( ui_button_transparent("<Paste") ) do_context_obj = obj, do_context_cmd = cc4(paste);
+            if( ui_button_transparent("<Load" ) ) do_context_obj = obj, do_context_cmd = cc4(l,o,a,d);
+            if( ui_button_transparent("<Save" ) ) do_context_obj = obj, do_context_cmd = cc4(s,a,v,e);
+            if( ui_button_transparent("<Merge") ) do_context_obj = obj, do_context_cmd = cc5(m,e,r,g,e);
+            if( ui_button_transparent("<Cut"  ) ) do_context_obj = obj, do_context_cmd = cc3(c,u,t);
+            if( ui_button_transparent("<Copy" ) ) do_context_obj = obj, do_context_cmd = cc4(c,o,p,y);
+            if( ui_button_transparent("<Paste") ) do_context_obj = obj, do_context_cmd = cc5(p,a,s,t,e);
             ui_contextual_end();
         }
 
@@ -1061,12 +1061,12 @@ void editor_obj_render_properties_recursively(void *obj, const char *mask) {
 
     // contextual menu (close)
     if( !open && ui_contextual() ) {
-        if( ui_button_transparent("<Load" ) ) do_context_obj = obj, do_context_cmd = cc4(load);
-        if( ui_button_transparent("<Save" ) ) do_context_obj = obj, do_context_cmd = cc4(save);
-        if( ui_button_transparent("<Merge") ) do_context_obj = obj, do_context_cmd = cc4(merge);
-        if( ui_button_transparent("<Cut"  ) ) do_context_obj = obj, do_context_cmd = cc4(cut);
-        if( ui_button_transparent("<Copy" ) ) do_context_obj = obj, do_context_cmd = cc4(copy);
-        if( ui_button_transparent("<Paste") ) do_context_obj = obj, do_context_cmd = cc4(paste);
+        if( ui_button_transparent("<Load" ) ) do_context_obj = obj, do_context_cmd = cc4(l,o,a,d);
+        if( ui_button_transparent("<Save" ) ) do_context_obj = obj, do_context_cmd = cc4(s,a,v,e);
+        if( ui_button_transparent("<Merge") ) do_context_obj = obj, do_context_cmd = cc5(m,e,r,g,e);
+        if( ui_button_transparent("<Cut"  ) ) do_context_obj = obj, do_context_cmd = cc3(c,u,t);
+        if( ui_button_transparent("<Copy" ) ) do_context_obj = obj, do_context_cmd = cc4(c,o,p,y);
+        if( ui_button_transparent("<Paste") ) do_context_obj = obj, do_context_cmd = cc5(p,a,s,t,e);
         ui_contextual_end();
     }
 
@@ -1218,7 +1218,7 @@ void editor_render_windows() {
             void *k = *o;
             editor_obj_render_properties_recursively(k, mask);
         }
-        if( do_context_cmd == cc4(list) && do_context_obj ) {
+        if( do_context_cmd == cc4(l,i,s,t) && do_context_obj ) {
             printf("list [%p]\n", do_context_obj);
         }
         // draw: depth + state (alpha0=off)
@@ -1330,7 +1330,7 @@ ray *editor_pickup() {
 static
 void editor_init() {
     // enable outlines
-    do_once fx_load("editor/art/fx/fxOutline.fs");
+    do_once fx_load("editorOutline.fs");
     do_once fx_enable(0, 1);
 
     // init editor
@@ -1400,7 +1400,7 @@ void editor_camera_fps(void) {
     view = add2(view, vec2(touch_view.x, -touch_view.y));
 
     // apply inputs
-    camera_move(&cam, move.x,move.y,move.z);
+    camera_moveby(&cam, move);
     camera_fps(&cam, view.x,view.y);    
 }
 

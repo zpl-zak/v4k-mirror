@@ -844,6 +844,53 @@ array(uint32_t) string32( const char *utf8 ) {
     return out[slot];
 }
 
+// -----------------------------------------------------------------------------
+// quarks
+
+unsigned quark_intern( quarks_db *quarks, const char *string ) {
+    if( !*quarks ) {
+        // copy null string on init
+        array_push(*quarks, '\0');
+    }
+    if( string && string[0] ) {
+        int slen = strlen(string)+1;
+        int qlen = array_count(*quarks);
+        array_resize(*quarks, qlen + slen);
+        memcpy( array_back(*quarks) + 1 - slen, string, slen );
+        return qlen;
+    }
+    return 0;
+}
+const char *quark_string( quarks_db *quarks, unsigned key ) {
+    assert( *quarks );
+    return *quarks + key;
+}
+
+static __thread quarks_db qdb = 0;
+unsigned intern( const char *string ) {
+    return quark_intern( &qdb, string );
+}
+const char *quark( unsigned key ) {
+    return quark_string( &qdb, key );
+}
+
+#if 0
+AUTORUN {
+    assert( !intern(NULL) ); // quark #0, cannot intern null string
+    assert( !intern("") );   // quark #0, ok to intern empty string
+    assert( !quark(0)[0] );  // empty string for quark #0
+
+    unsigned q1 = intern("Hello");  // -> quark #1
+    unsigned q2 = intern("cruel");  // -> quark #2
+    unsigned q3 = intern("world."); // -> quark #3
+
+    char buf[256];
+    sprintf(buf, "%s %s %s", quark(q1), quark(q2), quark(q3));
+    assert( !strcmp("Hello cruel world.", buf) );
+
+    assert(~puts("Ok"));
+}
+#endif
 #line 0
 
 #line 1 "v4k_compat.c"
@@ -4805,7 +4852,7 @@ const char** vfs_list(const char *masks) {
 }
 
 static
-char *vfs_unpack(const char *pathfile, int *size) { // must free() after use
+char *vfs_unpack(const char *pathfile, int *size) { // must FREE() after use
     // @todo: add cache here
     char *data = NULL;
     for(archive_dir *dir = dir_mount; dir && !data; dir = dir->next) {
@@ -9272,7 +9319,13 @@ vec3 transform_scaling (const mat44 m, const vec3 scaling) {
 // ----------------------------------------------------------------------------
 // !!! for debugging
 
-#include <stdio.h>
+void printi_( int *m, int ii, int jj ) {
+    for( int j = 0; j < jj; ++j ) {
+        for( int i = 0; i < ii; ++i ) printf("%10d ", *m++);
+        puts("");
+    }
+//    puts("---");
+}
 void print_( float *m, int ii, int jj ) {
     for( int j = 0; j < jj; ++j ) {
         for( int i = 0; i < ii; ++i ) printf("%8.3f", *m++);
@@ -9280,6 +9333,8 @@ void print_( float *m, int ii, int jj ) {
     }
 //    puts("---");
 }
+void print2i( vec2i v ) { printi_(&v.x,2,1); }
+void print3i( vec3i v ) { printi_(&v.x,3,1); }
 void print2( vec2 v ) { print_(&v.x,2,1); }
 void print3( vec3 v ) { print_(&v.x,3,1); }
 void print4( vec4 v ) { print_(&v.x,4,1); }
@@ -9727,7 +9782,7 @@ rpc_call rpc_new_call(const char *signature, rpc_function function) {
 #if RPC_DEBUG
             printf("%p %p %s `%s` %s(", function, (void*)hash, rettype, hash_sig, method); for(int i = 0, end = array_count(tokens); i < end; ++i) printf("%s%s", tokens[i], i == (end-1)? "":", "); puts(");");
 #endif
-            return (rpc_call) { strdup(method), function, hash }; // LEAK
+            return (rpc_call) { STRDUP(method), function, hash }; // LEAK
         }
     }
     return (rpc_call) {0};
@@ -12574,7 +12629,7 @@ bool spine_(spine_t *t, const char *file_json, const char *file_atlas, unsigned 
                 array_push(t->skins[i].rects, t->skins[0].rects[j]);
             }
         }
-        // @leak @fixme: free(t->skins[0])
+        // @leak @fixme: FREE(t->skins[0])
         for( int i = 0; i < array_count(t->skins)-1; ++i ) {
             t->skins[i] = t->skins[i+1];
         }
@@ -16189,23 +16244,26 @@ void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
 
 int ui_camera( camera_t *cam ) {
     int changed = 0;
-    changed |= ui_float("Speed", &cam->speed);
-    ui_separator();
     changed |= ui_bool("Damping", &cam->damping);
     if( !cam->damping ) ui_disable();
-    changed |= ui_slider2("Move friction", &cam->move_friction, va("%5.2f", cam->move_friction));
-    changed |= ui_slider2("Move damping", &cam->move_damping, va("%5.2f", cam->move_damping));
-    changed |= ui_slider2("View driction", &cam->look_friction, va("%5.2f", cam->look_friction));
-    changed |= ui_slider2("View damping", &cam->look_damping, va("%5.2f", cam->look_damping));
+    changed |= ui_slider2("Move friction", &cam->move_friction, va("%5.3f", cam->move_friction));
+    changed |= ui_slider2("Move damping", &cam->move_damping, va("%5.3f", cam->move_damping));
+    changed |= ui_slider2("View friction", &cam->look_friction, va("%5.3f", cam->look_friction));
+    changed |= ui_slider2("View damping", &cam->look_damping, va("%5.3f", cam->look_damping));
     if( !cam->damping ) ui_enable();
     ui_separator();
-    changed |= ui_float3("Position", &cam->position.x);
-    changed |= ui_float3("LookDir", &cam->lookdir.x);
-    changed |= ui_float3("UpDir", &cam->updir.x);
+    changed |= ui_float("Speed", &cam->speed);
+    changed |= ui_float3("Position", cam->position.v3);
+    changed |= ui_float3("LookDir", cam->lookdir.v3);
+    changed |= ui_float3("UpDir", cam->updir.v3);
+    ui_disable();
     changed |= ui_mat44("View matrix", cam->view);
+    ui_enable();
     ui_separator();
     changed |= ui_float("FOV (degrees)", &cam->fov);
+    ui_disable();
     changed |= ui_mat44("Projection matrix", cam->proj);
+    ui_enable();
     return changed;
 }
 
@@ -16754,6 +16812,257 @@ bool script_tests() {
 #undef XMACRO
 #line 0
 
+#line 1 "v4k_time.c"
+// ----------------------------------------------------------------------------
+// time
+
+#if 0
+uint64_t time_gpu() {
+    GLint64 t = 123456789;
+    glGetInteger64v(GL_TIMESTAMP, &t);
+    return (uint64_t)t;
+}
+#endif
+uint64_t date() {
+    time_t epoch = time(0);
+    struct tm *ti = localtime(&epoch);
+    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
+}
+char *date_string() {
+    time_t epoch = time(0);
+    struct tm *ti = localtime(&epoch);
+    return va("%04d-%02d-%02d %02d:%02d:%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec);
+}
+uint64_t date_epoch() {
+    time_t epoch = time(0);
+    return epoch;
+}
+#if 0
+double time_ss() {
+    return glfwGetTime();
+}
+double time_ms() {
+    return glfwGetTime() * 1000.0;
+}
+uint64_t time_us() {
+    return (uint64_t)(glfwGetTime() * 1000000.0); // @fixme: use a high resolution timer instead, or time_gpu below
+}
+uint64_t sleep_us(uint64_t us) { // @fixme: use a high resolution sleeper instead
+    return sleep_ms( us / 1000.0 );
+}
+double sleep_ms(double ms) {
+    double now = time_ms();
+    if( ms <= 0 ) {
+#if is(win32)
+        Sleep(0); // yield
+#else
+        usleep(0);
+#endif
+    } else {
+#if is(win32)
+        Sleep(ms);
+#else
+        usleep(ms * 1000);
+#endif
+    }
+    return time_ms() - now;
+}
+double sleep_ss(double ss) {
+    return sleep_ms( ss * 1000 ) / 1000.0;
+}
+#endif
+
+// high-perf functions
+
+#define TIMER_E3 1000ULL
+#define TIMER_E6 1000000ULL
+#define TIMER_E9 1000000000ULL
+
+#ifdef CLOCK_MONOTONIC_RAW
+#define TIME_MONOTONIC CLOCK_MONOTONIC_RAW
+#elif defined CLOCK_MONOTONIC
+#define TIME_MONOTONIC CLOCK_MONOTONIC
+#else
+// #define TIME_MONOTONIC CLOCK_REALTIME // untested
+#endif
+
+static uint64_t nanotimer(uint64_t *out_freq) {
+    if( out_freq ) {
+#if is(win32)
+        LARGE_INTEGER li;
+        QueryPerformanceFrequency(&li);
+        *out_freq = li.QuadPart;
+//#elif is(ANDROID)
+//      *out_freq = CLOCKS_PER_SEC;
+#elif defined TIME_MONOTONIC
+        *out_freq = TIMER_E9;
+#else
+        *out_freq = TIMER_E6;
+#endif
+    }
+#if is(win32)
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    return (uint64_t)li.QuadPart;
+//#elif is(ANDROID)
+//    return (uint64_t)clock();
+#elif defined TIME_MONOTONIC
+    struct timespec ts;
+    clock_gettime(TIME_MONOTONIC, &ts);
+    return (TIMER_E9 * (uint64_t)ts.tv_sec) + ts.tv_nsec;
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (TIMER_E6 * (uint64_t)tv.tv_sec) + tv.tv_usec;
+#endif
+}
+
+uint64_t time_ns() {
+    static uint64_t epoch = 0;
+    static uint64_t freq = 0;
+    if( !freq ) {
+        epoch = nanotimer(&freq);
+    }
+
+    uint64_t a = nanotimer(NULL) - epoch;
+    uint64_t b = TIMER_E9;
+    uint64_t c = freq;
+
+    // Computes (a*b)/c without overflow, as long as both (a*b) and the overall result fit into 64-bits.
+    // [ref] https://github.com/rust-lang/rust/blob/3809bbf47c8557bd149b3e52ceb47434ca8378d5/src/libstd/sys_common/mod.rs#L124
+    uint64_t q = a / c;
+    uint64_t r = a % c;
+    return q * b + r * b / c;
+}
+uint64_t time_us() {
+    return time_ns() / TIMER_E3;
+}
+uint64_t time_ms() {
+    return time_ns() / TIMER_E6;
+}
+double time_ss() {
+    return time_ns() / 1e9; // TIMER_E9;
+}
+double time_mm() {
+    return time_ss() / 60;
+}
+double time_hh() {
+    return time_mm() / 60;
+}
+
+void sleep_ns( double ns ) {
+#if is(win32)
+    if( ns >= 100 ) {
+        LARGE_INTEGER li;      // Windows sleep in 100ns units
+        HANDLE timer = CreateWaitableTimer(NULL, TRUE, NULL);
+        li.QuadPart = (LONGLONG)(__int64)(-ns/100); // Negative for relative time
+        SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE);
+        WaitForSingleObject(timer, INFINITE);
+        CloseHandle(timer);
+#else
+    if( ns > 0 ) {
+        struct timespec wait = {0};
+        wait.tv_sec = ns / 1e9;
+        wait.tv_nsec = ns - wait.tv_sec * 1e9;
+        nanosleep(&wait, NULL);
+#endif
+    } else {
+#if is(win32)
+        Sleep(0); // yield, Sleep(0), SwitchToThread
+#else
+        usleep(0);
+#endif
+    }
+}
+void sleep_us( double us ) {
+    sleep_ns(us * 1e3);
+}
+void sleep_ms( double ms ) {
+    sleep_ns(ms * 1e6);
+}
+void sleep_ss( double ss ) {
+    sleep_ns(ss * 1e9);
+}
+
+// ----------------------------------------------------------------------------
+// timer
+
+struct timer_internal_t {
+    unsigned ms;
+    unsigned (*callback)(unsigned interval, void *arg);
+    void *arg;
+    thread_ptr_t thd;
+};
+
+static int timer_func(void *arg) {
+    struct timer_internal_t *p = (struct timer_internal_t*)arg;
+
+    sleep_ms( p->ms );
+
+    for( ;; ) {
+        unsigned then = time_ms();
+
+            p->ms = p->callback(p->ms, p->arg);
+            if( !p->ms ) break;
+
+        unsigned now = time_ms();
+        unsigned lapse = now - then;
+        int diff = p->ms - lapse;
+        sleep_ms( diff <= 0 ? 0 : diff );
+    }
+
+    thread_exit(0);
+    return 0;
+}
+
+static __thread array(struct timer_internal_t *) timers;
+
+unsigned timer(unsigned ms, unsigned (*callback)(unsigned ms, void *arg), void *arg) {
+    struct timer_internal_t *p = MALLOC( sizeof(struct timer_internal_t) );
+    p->ms = ms;
+    p->callback = callback;
+    p->arg = arg;
+    p->thd = thread_init( timer_func, p, "", 0 );
+
+    array_push(timers, p);
+    return array_count(timers);
+}
+void timer_destroy(unsigned i) {
+    if( i-- ) {
+        thread_join(timers[i]->thd);
+        thread_term(timers[i]->thd);
+        FREE(timers[i]);
+        timers[i] = 0;
+    }
+}
+
+// ----------------------------------------------------------------------------
+// guid
+
+//typedef vec3i guid;
+
+guid guid_create() {
+    static __thread unsigned counter = 0;
+    static uint64_t appid = 0; do_once appid = hash_str(app_name());
+
+    union conv {
+        struct {
+            unsigned timestamp : 32;
+            unsigned threadid  : 16; // inverted order in LE
+            unsigned appid     : 16; //
+            unsigned counter   : 32;
+        };
+        vec3i v3;
+    } c;
+    c.timestamp = date_epoch() - 0x65000000;
+    c.appid = (unsigned)appid;
+    c.threadid = (unsigned)(uintptr_t)thread_current_thread_id();
+    c.counter = ++counter;
+
+    return c.v3;
+}
+#line 0
+
 #line 1 "v4k_system.c"
 #if (is(tcc) && is(linux)) || (is(gcc) && !is(mingw)) // || is(clang)
 int __argc; char **__argv;
@@ -17009,9 +17318,9 @@ int callstackf( FILE *fp, int traces ) {
     return 0;
 }
 
-// signals --------------------------------------------------------------------
+// trap signals ---------------------------------------------------------------
 
-const char *signal_name(int signal) {
+const char *trap_name(int signal) {
     if(signal == SIGABRT) return "SIGABRT - \"abort\", abnormal termination";
     if(signal == SIGFPE) return "SIGFPE - floating point exception";
     if(signal == SIGILL) return "SIGILL - \"illegal\", invalid instruction";
@@ -17023,49 +17332,41 @@ const char *signal_name(int signal) {
     ifndef(win32, if(signal == SIGQUIT) return "SIGQUIT");
     return "??";
 }
-void signal_handler_ignore(int signal_) {
-    signal(signal_, signal_handler_ignore);
+void trap_on_ignore(int signal_) {
+    signal(signal_, trap_on_ignore);
 }
-void signal_handler_quit(int signal) {
-    // fprintf(stderr, "Ok: caught signal %s (%d)\n", signal_name(signal), signal);
+void trap_on_quit(int signal) {
+    // fprintf(stderr, "Ok: caught signal %s (%d)\n", trap_name(signal), signal);
     exit(0);
 }
-void signal_handler_abort(int signal) {
-    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", signal_name(signal), signal, callstack(16));
+void trap_on_abort(int signal) {
+    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
     exit(-1);
 }
-void signal_handler_debug(int signal) {
+void trap_on_debug(int signal) {
     breakpoint("Error: unexpected signal");
-    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", signal_name(signal), signal, callstack(16));
+    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
     exit(-1);
 }
-void signal_hooks(void) {
+void trap_install(void) {
     // expected signals
-    signal(SIGINT, signal_handler_quit);
-    signal(SIGTERM, signal_handler_quit);
-    ifndef(win32, signal(SIGQUIT, signal_handler_quit));
+    signal(SIGINT, trap_on_quit);
+    signal(SIGTERM, trap_on_quit);
+    ifndef(win32, signal(SIGQUIT, trap_on_quit));
     // unexpected signals
-    signal(SIGABRT, signal_handler_abort);
-    signal(SIGFPE, signal_handler_abort);
-    signal(SIGILL, signal_handler_abort);
-    signal(SIGSEGV, signal_handler_abort);
-    ifndef(win32, signal(SIGBUS, signal_handler_abort));
-    ifdef(linux, signal(SIGSTKFLT, signal_handler_abort));
+    signal(SIGABRT, trap_on_abort);
+    signal(SIGFPE, trap_on_abort);
+    signal(SIGILL, trap_on_abort);
+    signal(SIGSEGV, trap_on_abort);
+    ifndef(win32, signal(SIGBUS, trap_on_abort));
+    ifdef(linux, signal(SIGSTKFLT, trap_on_abort));
 }
 
-#ifdef SIGNAL_DEMO
-void crash() {
-    char *ptr = 0;
-    *ptr = 1;
+#ifdef TRAP_DEMO
+AUTORUN {
+    trap_install();
+    app_crash(); // app_hang();
 }
-void hang() {
-    for(;;);
-}
-int main(int argc, char **argv) {
-    signal_hooks();
-    crash(); // hang();
-}
-#define main main__
 #endif
 
 // endian ----------------------------------------------------------------------
@@ -17254,230 +17555,6 @@ int app_battery() {
 }
 
 #endif
-
-// ----------------------------------------------------------------------------
-// time
-
-#if 0
-uint64_t time_gpu() {
-    GLint64 t = 123456789;
-    glGetInteger64v(GL_TIMESTAMP, &t);
-    return (uint64_t)t;
-}
-#endif
-uint64_t date() {
-    time_t epoch = time(0);
-    struct tm *ti = localtime(&epoch);
-    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
-}
-char *date_string() {
-    time_t epoch = time(0);
-    struct tm *ti = localtime(&epoch);
-    return va("%04d-%02d-%02d %02d:%02d:%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec);
-}
-uint64_t date_epoch() {
-    time_t epoch = time(0);
-    return epoch;
-}
-#if 0
-double time_ss() {
-    return glfwGetTime();
-}
-double time_ms() {
-    return glfwGetTime() * 1000.0;
-}
-uint64_t time_us() {
-    return (uint64_t)(glfwGetTime() * 1000000.0); // @fixme: use a high resolution timer instead, or time_gpu below
-}
-uint64_t sleep_us(uint64_t us) { // @fixme: use a high resolution sleeper instead
-    return sleep_ms( us / 1000.0 );
-}
-double sleep_ms(double ms) {
-    double now = time_ms();
-    if( ms <= 0 ) {
-#if is(win32)
-        Sleep(0); // yield
-#else
-        usleep(0);
-#endif
-    } else {
-#if is(win32)
-        Sleep(ms);
-#else
-        usleep(ms * 1000);
-#endif
-    }
-    return time_ms() - now;
-}
-double sleep_ss(double ss) {
-    return sleep_ms( ss * 1000 ) / 1000.0;
-}
-#endif
-
-// high-perf functions
-
-#define TIMER_E3 1000ULL
-#define TIMER_E6 1000000ULL
-#define TIMER_E9 1000000000ULL
-
-#ifdef CLOCK_MONOTONIC_RAW
-#define TIME_MONOTONIC CLOCK_MONOTONIC_RAW
-#elif defined CLOCK_MONOTONIC
-#define TIME_MONOTONIC CLOCK_MONOTONIC
-#else
-// #define TIME_MONOTONIC CLOCK_REALTIME // untested
-#endif
-
-static uint64_t nanotimer(uint64_t *out_freq) {
-    if( out_freq ) {
-#if is(win32)
-        LARGE_INTEGER li;
-        QueryPerformanceFrequency(&li);
-        *out_freq = li.QuadPart;
-//#elif is(ANDROID)
-//      *out_freq = CLOCKS_PER_SEC;
-#elif defined TIME_MONOTONIC
-        *out_freq = TIMER_E9;
-#else
-        *out_freq = TIMER_E6;
-#endif
-    }
-#if is(win32)
-    LARGE_INTEGER li;
-    QueryPerformanceCounter(&li);
-    return (uint64_t)li.QuadPart;
-//#elif is(ANDROID)
-//    return (uint64_t)clock();
-#elif defined TIME_MONOTONIC
-    struct timespec ts;
-    clock_gettime(TIME_MONOTONIC, &ts);
-    return (TIMER_E9 * (uint64_t)ts.tv_sec) + ts.tv_nsec;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (TIMER_E6 * (uint64_t)tv.tv_sec) + tv.tv_usec;
-#endif
-}
-
-uint64_t time_ns() {
-    static uint64_t epoch = 0;
-    static uint64_t freq = 0;
-    if( !freq ) {
-        epoch = nanotimer(&freq);
-    }
-
-    uint64_t a = nanotimer(NULL) - epoch;
-    uint64_t b = TIMER_E9;
-    uint64_t c = freq;
-
-    // Computes (a*b)/c without overflow, as long as both (a*b) and the overall result fit into 64-bits.
-    // [ref] https://github.com/rust-lang/rust/blob/3809bbf47c8557bd149b3e52ceb47434ca8378d5/src/libstd/sys_common/mod.rs#L124
-    uint64_t q = a / c;
-    uint64_t r = a % c;
-    return q * b + r * b / c;
-}
-uint64_t time_us() {
-    return time_ns() / TIMER_E3;
-}
-uint64_t time_ms() {
-    return time_ns() / TIMER_E6;
-}
-double time_ss() {
-    return time_ns() / 1e9; // TIMER_E9;
-}
-double time_mm() {
-    return time_ss() / 60;
-}
-double time_hh() {
-    return time_mm() / 60;
-}
-
-void sleep_ns( double ns ) {
-#if is(win32)
-    if( ns >= 100 ) {
-        LARGE_INTEGER li;      // Windows sleep in 100ns units
-        HANDLE timer = CreateWaitableTimer(NULL, TRUE, NULL);
-        li.QuadPart = (LONGLONG)(__int64)(-ns/100); // Negative for relative time
-        SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE);
-        WaitForSingleObject(timer, INFINITE);
-        CloseHandle(timer);
-#else
-    if( ns > 0 ) {
-        struct timespec wait = {0};
-        wait.tv_sec = ns / 1e9;
-        wait.tv_nsec = ns - wait.tv_sec * 1e9;
-        nanosleep(&wait, NULL);
-#endif
-    } else {
-#if is(win32)
-        Sleep(0); // yield, Sleep(0), SwitchToThread
-#else
-        usleep(0);
-#endif
-    }
-}
-void sleep_us( double us ) {
-    sleep_ns(us * 1e3);
-}
-void sleep_ms( double ms ) {
-    sleep_ns(ms * 1e6);
-}
-void sleep_ss( double ss ) {
-    sleep_ns(ss * 1e9);
-}
-
-// ----------------------------------------------------------------------------
-// timer
-
-struct timer_internal_t {
-    unsigned ms;
-    unsigned (*callback)(unsigned interval, void *arg);
-    void *arg;
-    thread_ptr_t thd;
-};
-
-static int timer_func(void *arg) {
-    struct timer_internal_t *p = (struct timer_internal_t*)arg;
-
-    sleep_ms( p->ms );
-
-    for( ;; ) {
-        unsigned then = time_ms();
-
-            p->ms = p->callback(p->ms, p->arg);
-            if( !p->ms ) break;
-
-        unsigned now = time_ms();
-        unsigned lapse = now - then;
-        int diff = p->ms - lapse;
-        sleep_ms( diff <= 0 ? 0 : diff );
-    }
-
-    thread_exit(0);
-    return 0;
-}
-
-static __thread array(struct timer_internal_t *) timers;
-
-unsigned timer(unsigned ms, unsigned (*callback)(unsigned ms, void *arg), void *arg) {
-    struct timer_internal_t *p = MALLOC( sizeof(struct timer_internal_t) );
-    p->ms = ms;
-    p->callback = callback;
-    p->arg = arg;
-    p->thd = thread_init( timer_func, p, "", 0 );
-
-    array_push(timers, p);
-    return array_count(timers);
-}
-void timer_destroy(unsigned i) {
-    if( i-- ) {
-        thread_join(timers[i]->thd);
-        thread_term(timers[i]->thd);
-        FREE(timers[i]);
-        timers[i] = 0;
-    }
-}
-
 
 // ----------------------------------------------------------------------------
 // argc/v
@@ -17828,6 +17905,78 @@ void thread_destroy( void *thd ) {
     thread_term(thd);
 }
 
+void app_hang() {
+    for(;;);
+}
+void app_crash() {
+    int *p = 0;
+    *p = 42;
+}
+void app_beep() {
+    fputc('\x7', stdout);
+}
+
+void app_singleton(const char *guid) {
+    #ifdef _WIN32
+    do_once {
+        char buffer[128];
+        snprintf(buffer, 128, "Global\\{%s}", guid);
+        static HANDLE app_mutex = 0;
+        app_mutex = CreateMutexA(NULL, FALSE, buffer);
+        if( ERROR_ALREADY_EXISTS == GetLastError() ) {
+            exit(-1);
+        }
+    }
+    #endif
+}
+
+static
+bool app_open_folder(const char *file) {
+    char buf[1024];
+#ifdef _WIN32
+    snprintf(buf, sizeof(buf), "start \"\" \"%s\"", file);
+#elif __APPLE__
+    snprintf(buf, sizeof(buf), "%s \"%s\"", is_directory(file) ? "open" : "open --reveal", file);
+#else
+    snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
+#endif
+    return system(buf) == 0;
+}
+
+static
+bool app_open_file(const char *file) {
+    char buf[1024];
+#ifdef _WIN32
+    snprintf(buf, sizeof(buf), "start \"\" \"%s\"", file);
+#elif __APPLE__
+    snprintf(buf, sizeof(buf), "open \"%s\"", file);
+#else
+    snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
+#endif
+    return system(buf) == 0;
+}
+
+static
+bool app_open_url(const char *url) {
+    return app_open_file(url);
+}
+
+bool app_open(const char *link) {
+    if( file_directory(link) ) return app_open_folder(link);
+    if( file_exist(link) ) return app_open_file(link);
+    return app_open_url(link);
+}
+
+// ----------------------------------------------------------------------------
+// tests
+
+static __thread int test_oks, test_errs, test_once;
+static void test_exit(void) { printf("%d/%d tests passed\n", test_oks, test_oks+test_errs); }
+int (test)(const char *file, int line, const char *expr, bool result) {
+    test_once = test_once || !(atexit)(test_exit);
+    test_oks += result, test_errs += !result;
+    return fputc("F."[result], stdout) && (result || fprintf(stderr, "(%s %s:%d)", expr, file, line) );
+}
 #line 0
 
 #line 1 "v4k_ui.c"
@@ -18027,6 +18176,7 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     s->window.scrollbar_size = nk_vec2(5,5);
     s->property.rounding = 0;
     s->combo.border = 0;
+    s->combo.button_padding.x = -18;
     s->button.border = 1;
     s->edit.border = 0;
 
@@ -19738,11 +19888,16 @@ int ui_clampf(const char *label, float *v, float minf, float maxf) {
     return prev != v[0];
 }
 
+static bool ui_float_sign = 0;
+
 int ui_float2(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = va("%.2f, %.2f", v[0], v[1]);
+    char *buffer = ui_float_sign ?
+        --ui_float_sign, va("%+.3f %+.3f", v[0], v[1]) :
+        va("%.3f, %.3f", v[0], v[1]);
+
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         float prev0 = v[0]; nk_property_float(ui_ctx, "#X:", -FLT_MAX, &v[0], FLT_MAX, 1,0.5f);
@@ -19757,7 +19912,10 @@ int ui_float3(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = va("%.2f, %.2f, %.2f", v[0], v[1], v[2]);
+    char *buffer = ui_float_sign ?
+        --ui_float_sign, va("%+.2f %+.2f %+.2f", v[0], v[1], v[2]) :
+        va("%.2f, %.2f, %.2f", v[0], v[1], v[2]);
+
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         float prev0 = v[0]; nk_property_float(ui_ctx, "#X:", -FLT_MAX, &v[0], FLT_MAX, 1,0.5f);
@@ -19773,7 +19931,10 @@ int ui_float4(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = va("%.2f, %.2f, %.2f, %.2f", v[0], v[1], v[2], v[3]);
+    char *buffer = ui_float_sign ?
+        --ui_float_sign, va("%+.2f %+.2f %+.2f %+.2f", v[0], v[1], v[2], v[3]) :
+        va("%.2f,%.2f,%.2f,%.2f", v[0], v[1], v[2], v[3]);
+
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         float prev0 = v[0]; nk_property_float(ui_ctx, "#X:", -FLT_MAX, &v[0], FLT_MAX, 1,0.5f);
@@ -19783,10 +19944,12 @@ int ui_float4(const char *label, float *v) {
         nk_combo_end(ui_ctx);
         return prev0 != v[0] || prev1 != v[1] || prev2 != v[2] || prev3 != v[3];
     }
+
     return 0;
 }
 
 int ui_mat33(const char *label, float M[9]) {
+    ui_float_sign = 3;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float3(NULL, M);
@@ -19795,6 +19958,7 @@ int ui_mat33(const char *label, float M[9]) {
     return changed;
 }
 int ui_mat34(const char *label, float M[12]) {
+    ui_float_sign = 3;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float4(NULL, M);
@@ -19803,6 +19967,7 @@ int ui_mat34(const char *label, float M[12]) {
     return changed;
 }
 int ui_mat44(const char *label, float M[16]) {
+    ui_float_sign = 4;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float4(NULL, M);
@@ -20942,6 +21107,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     glfwSwapInterval(interval);
 
     const GLFWvidmode *mode = glfwGetVideoMode(monitor ? monitor : glfwGetPrimaryMonitor());
+    PRINTF("Build version: %s\n", BUILD_VERSION);
     PRINTF("Monitor: %s (%dHz, vsync=%d)\n", glfwGetMonitorName(monitor ? monitor : glfwGetPrimaryMonitor()), mode->refreshRate, interval);
     PRINTF("GPU device: %s\n", glGetString(GL_RENDERER));
     PRINTF("GPU driver: %s\n", glGetString(GL_VERSION));
@@ -21049,7 +21215,11 @@ char* window_stats() {
 
     // @todo: print %used/%avail kib mem, %used/%avail objs as well
     static char buf[256];
-    snprintf(buf, 256, "%s | boot %.2fs | %5.2ffps (%.2fms)%s%s", title, !boot_time ? now : boot_time, fps, (now - prev_frame) * 1000.f, cmdline[0] ? " | ":"", cmdline[0] ? cmdline:"");
+    snprintf(buf, 256, "%s%s%s%s | boot %.2fs | %5.2ffps (%.2fms)%s%s",
+        title, BUILD_VERSION[0] ? " (":"", BUILD_VERSION[0] ? BUILD_VERSION:"", BUILD_VERSION[0] ? ")":"",
+        !boot_time ? now : boot_time,
+        fps, (now - prev_frame) * 1000.f,
+        cmdline[0] ? " | ":"", cmdline[0] ? cmdline:"");
 
     prev_frame = now;
     ++num_frames;
@@ -21687,509 +21857,49 @@ int window_has_maximize() {
 #line 0
 
 #line 1 "v4k_obj.c"
-void *obj_initialize( void **ptr, char *type ) {
-    unsigned payload = ((unsigned char)type[0]) << 8; type[0] = '\1'; // @fixme: actually use this '\1' custom tag
-#ifndef NDEBUG
-    strcatf(&type, "%s", callstack(+16)); // debug: for debugging purposes only
-#endif
-    ptr[0] = OBJBOX((void *)type, payload);
-
-    return &ptr[1];
-}
-
-void obj_free( void *obj ) {
-    void *ptr = *((void**)obj - 1);
-    FREE( OBJUNBOX(ptr) );
-    obj = (void**)obj - 1;
-    FREE( obj );
-}
-
-void obj_del( void *obj ) {
-    unsigned type = obj_typeid(obj);
-    (type[dtor])(obj);
-    obj_free( obj );
-}
-
-unsigned obj_instances( const void *obj ) {
-    return OBJPAYLOAD3(obj) + 1;
-}
-
-// ---
-
-const char *obj_output( const void *obj ) {
-    void* ptr = *((void**)obj - 1);
-    char *str = OBJUNBOX(ptr);
-
-    while( *str != '\n' ) ++str;
-    return (const char *)str + 1;
-}
-void (obj_printf)( void *obj, const char *text ) {
-    void* ptr = *((void**)obj - 1);
-    char* str = OBJUNBOX(ptr);
-    unsigned payload = OBJPAYLOAD16(ptr);
-
-    strcatf(&str, "%s", text);
-
-    *((void**)obj - 1) = OBJBOX(str, payload);
-}
-
-// ---
-
-const char *obj_typeof( const void *obj ) {
-    void* ptr = *((void**)obj - 1);
-    ptr = OBJUNBOX(ptr);
-
-    char name[256]; sscanf((const char*)ptr + 1, "%[^\n]", name); // @fixme: overflow
-    return va("%s", name);
-}
-
-unsigned obj_typeid(const void *obj) {
-    void* ptr = *((void**)obj - 1);
-    unsigned payload = OBJPAYLOAD16(ptr);
-    return payload >> 8;
-}
-
-bool obj_typeeq( const void *obj1, const void *obj2 ) {
-    if( obj_typeid(obj1) != obj_typeid(obj2) ) return false;
-    return !strcmp( obj_typeof(obj1), obj_typeof(obj2) );
-}
-
-unsigned obj_typeid_from_name(const char *name) {
-    name += strbegi(name, "struct ") ? 8 : strbegi(name, "union ") ? 7 : 0;
-    unsigned typeid = hash_str(name) & 255; // @fixme: increase bits / decrease colliders (256 types only!)
-    ASSERT( typeid, "Name of given class has an empty (zeroed) hash. Limitation by design" );
-
-    static map(unsigned, char *) registered; // @fixme: add mutex
-    do_once map_init(registered, less_int, hash_int);
-    do_once map_insert(registered, 1, "(typeless)");
-    char **found = map_find(registered, typeid);
-    if(!found) map_insert(registered, typeid, STRDUP(name));
-    else ASSERT( !strcmp(name, *found), "Uh-oh, types collided. Please rename one of these two classes '%s'/'%s'", name, *found);
-
-    return typeid;
-}
-
-// ---
-
-unsigned obj_sizeof(const void *obj) {
-    void *ptr = (void**)obj - 1;
-    return ALLOCSIZE(ptr) - sizeof(void*);
-}
-
-void obj_zero(void *obj) {
-    // clear console log
-    void* ptr = *((void**)obj - 1);
-    char* str = OBJUNBOX(ptr);
-    if( str[0] ) {
-        unsigned payload = OBJPAYLOAD16(ptr);
-
-        unsigned namelen = strlen(obj_typeof(obj));
-        str = REALLOC(str, 1+namelen+2); // preserve \1+name+\n+\0
-        str[1+namelen+2-1] = '\0';
-
-        *((void**)obj - 1) = OBJBOX(str, payload);
-    }
-
-    // reset data
-    dtor(obj);
-    memset(obj, 0, obj_sizeof(obj));
-    ctor(obj);
-}
-
-void obj_hexdumpf(FILE *out, const void *obj) {
-    hexdumpf(out, obj, obj_sizeof(obj), 16);
-
-    const char *output = obj_output(obj);
-    fprintf( out, "; ptr=[%p] sizeof=%d typeof=%s typeid=%#x refs=%d\n%s%s\n",
-        obj, obj_sizeof(obj), obj_typeof(obj), obj_typeid(obj), (int)(OBJPAYLOAD16(obj) & 0xFF),
-        output[0] ? output : "(no output)", output[0] ? "---" : "");
-}
-
-void obj_hexdump(const void *obj) {
-    obj_hexdumpf( stdout, obj );
-}
-
-// object: load/save
-
-unsigned obj_load_buffer(void *obj, const void *src, unsigned srclen) {
-    unsigned objlen = obj_sizeof(obj);
-    if( srclen > objlen ) return 0; // @fixme: do something clever
-    memcpy(obj, src, srclen); // @fixme: do something clever
-    return objlen;
-}
-unsigned obj_load(void *obj, const array(char) buffer) {
-    unsigned bytes = buffer ? obj_load_buffer(obj, buffer, array_count((char*)buffer)) : 0;
-    return bytes;
-}
-unsigned obj_load_file(void *obj, FILE *fp) {
-    unsigned len = obj_sizeof(obj);
-    char *buffer = va("%*.s", len, "");
-    unsigned read = fread(buffer, 1, len, fp);
-    if( read != (1*len) ) {
-        return 0;
-    }
-    unsigned bytes = obj_load_buffer(obj, buffer, len);
-    return bytes;
-}
-
-unsigned obj_save_buffer(void *dst, unsigned cap, const void *obj) {
-    unsigned len = obj_sizeof(obj);
-    if( len > cap ) return 0;
-    memcpy(dst, obj, len); // @fixme: do something clever
-    return len;
-}
-array(char) obj_save(const void *obj) { // empty if error. must array_free() after use
-    array(char) data = 0;
-    unsigned len = obj_sizeof(obj);
-    array_resize(data, len);
-    unsigned bytes = obj_save_buffer(data, len, obj);
-    array_resize(data, bytes);
-    return data;
-}
-unsigned obj_save_file(FILE *fp, const void *obj) {
-    unsigned len = obj_sizeof(obj);
-    char *buffer = va("%*.s", len, "");
-    unsigned bytes = obj_save_buffer(buffer, len, obj);
-    if( bytes > 0 ) {
-        unsigned written = fwrite(buffer, 1, len, fp);
-        if( written == (1*len) ) {
-            return written;
-        }
-    }
-    return 0; // error
-}
-
-// ---
-
-static int __thread global_ref_count; // @fixme: make it atomic
-
-static void objref_check_atexit(void) {
-    if(global_ref_count > 0) fprintf(stderr, "Warn! Possible memory_leaks: %d refs not destroyed\n", global_ref_count);
-    if(global_ref_count < 0) fprintf(stderr, "Warn! Possible double free: %d refs double destroyed\n", -global_ref_count);
-}
-
-void* obj_ref(void *obj) {
-    do_once atexit(objref_check_atexit);
-
-    if( obj ) {
-        void *ptr = *((void**)obj - 1);
-        unsigned payload = OBJPAYLOAD16(ptr);
-        unsigned ref_count = payload & 255;
-        ASSERT(ref_count < 255, "Object cannot hold more than 256 refs. Limitation by design.");
-
-        *((void**)obj - 1) = OBJBOX(OBJUNBOX(ptr), payload + 1);
-        global_ref_count++;
-    }
-
-    return obj;
-}
-
-void* obj_unref(void *obj) {
-    if( obj ) {
-        void *ptr = *((void**)obj - 1);
-        unsigned payload = OBJPAYLOAD16(ptr);
-        unsigned ref_count = payload & 255;
-
-        *((void**)obj - 1) = OBJBOX(OBJUNBOX(ptr), payload - 1);
-        global_ref_count--;
-
-        if( ref_count <= 1 ) {
-            obj_del(obj);
-            return 0;
-        }
-    }
-
-    return obj;
-}
-
-// ---
-
-void dummy1() {}
-#define dummy8   dummy1,dummy1,dummy1,dummy1,dummy1,dummy1,dummy1,dummy1
-#define dummy64  dummy8,dummy8,dummy8,dummy8,dummy8,dummy8,dummy8,dummy8
-#define dummy256 dummy64,dummy64,dummy64,dummy64
-
-void (*dtor[256])() = { dummy256 };
-void (*ctor[256])() = { dummy256 };
-
-// ---
-
-static set(uintptr_t) vtables; // @fixme: add mutex
-
-void (obj_override)(const char *objclass, void (**vtable)(), void(*fn)()) {
-    do_once set_init(vtables, less_64, hash_64);
-    set_find_or_add(vtables, (uintptr_t)vtable);
-
-    vtable[ obj_typeid_from_name(objclass) ] = fn;
-}
-
-void (obj_extend)(const char *dstclass, const char *srcclass) { // wip, @testme
-    unsigned dst_id = obj_typeid_from_name(dstclass);
-    unsigned src_id = obj_typeid_from_name(srcclass);
-
-    // iterate src vtables, and assign them to dst
-    if(dst_id != src_id)
-    for each_set(vtables, void **, src_table) {
-        if( src_table[src_id] ) {
-            src_table[dst_id] = (void(*)()) (src_table[ src_id ]);
-        }
-    }
-}
-
-// ---
-
-void *obj_clone(const void *obj) { // @fixme: clone object console as well?
-    unsigned sz = obj_sizeof(obj);
-    const char *nm = obj_typeof(obj);
-    unsigned id = obj_typeid(obj);
-
-    void *obj2 = obj_initialize((void**)MALLOC(sizeof(void*)+sz), stringf("%c%s\n" "cloned" "\n", id, nm)); // STRDUP( OBJUNBOX(*((void**)obj - 1)) ));
-    memcpy(obj2, obj, sz);
-    return obj2;
-}
-
-void *obj_copy(void **dst, const void *src) {
-    if(!*dst) return *dst = obj_clone(src);
-
-    if( obj_typeeq(*dst, src) ) {
-        return memcpy(*dst, src, obj_sizeof(src));
-    }
-
-    return NULL;
-}
-
-void *obj_mutate(void **dst_, const void *src) {
-    // mutate a class. ie, convert a given object class into a different one,
-    // while preserving the original metas and references as much as possible.
+// -----------------------------------------------------------------------------
+// semantic versioning in a single byte (octal)
+// - rlyeh, public domain.
     //
-    // @fixme: systems might be tracking objects in the future. the fact that we
-    // can reallocate a pointer (and hence, change its address) seems way too dangerous,
-    // as the tracking systems could crash when referencing a mutated object.
-    // solutions: do not reallocate if sizeof(new_class) > sizeof(old_class) maybe? good enough?
-    // also, optimization hint: no need to reallocate if both sizes matches, just copy contents.
+// - single octal byte that represents semantic versioning (major.minor.patch).
+// - allowed range [0000..0377] ( <-> [0..255] decimal )
+// - comparison checks only major.minor tuple as per convention.
 
-    if(!*dst_) return *dst_ = obj_clone(src);
-
-    void *dst = *dst_;
-    dtor(dst);
-
-        unsigned src_sz = obj_sizeof(src);
-        unsigned src_id = obj_typeid(src);
-
-        void *dst_ptr = *((void**)dst - 1);
-        unsigned payload = (OBJPAYLOAD16(dst_ptr) & 255) | src_id << 8;
-        FREE( OBJUNBOX(dst_ptr) );
-        *((void**)dst - 1) = OBJBOX( STRDUP( OBJUNBOX(*((void**)src - 1)) ), payload);
-
-        void *base = (void*)((void**)dst - 1);
-        base = REALLOC(base, src_sz + sizeof(void*));
-        *dst_ = (char*)base + sizeof(void*);
-        dst = (char*)base + sizeof(void*);
-        memcpy(dst, src, src_sz);
-
-    ctor(dst);
-    return dst;
+int semver( int major, int minor, int patch ) {
+    return SEMVER(major, minor, patch);
+}
+int semvercmp( int v1, int v2 ) {
+    return SEMVERCMP(v1, v2);
 }
 
+#if 0
+AUTORUN {
+    for( int i= 0; i <= 255; ++i) printf(SEMVERFMT ",", i);
+    puts("");
 
-#ifdef OBJ_DEMO
+    printf(SEMVERFMT "\n", semver(3,7,7));
+    printf(SEMVERFMT "\n", semver(2,7,7));
+    printf(SEMVERFMT "\n", semver(1,7,7));
+    printf(SEMVERFMT "\n", semver(0,7,7));
 
-typedef struct MyObject {
-    char* id;
-    int x,y;
-    float rotation;
-    struct MyObject *next;
-} MyObject;
+    printf(SEMVERFMT "\n", semver(3,7,1));
+    printf(SEMVERFMT "\n", semver(2,5,3));
+    printf(SEMVERFMT "\n", semver(1,3,5));
+    printf(SEMVERFMT "\n", semver(0,1,7));
 
-void tests1() {
-    // Construct two objects
-    MyObject *root = obj_new(MyObject, 0);
-    MyObject *obj = obj_new(MyObject, "An identifier!", 0x11, 0x22, 3.1415f, root );
-
-    // Log some lines
-    obj_printf(root, "this is a logline #1\n");
-    obj_printf(root, "this is a logline #2\n");
-    obj_printf(root, "this is a logline #3\n");
-
-    obj_printf(obj, "yet another logline #1\n");
-    obj_printf(obj, "yet another logline #2\n");
-
-    // Dump contents of our objects
-
-    obj_hexdump(root);
-    obj_hexdump(obj);
-
-    // Save to mem
-
-    array(char) buffer = obj_save(obj);
-    printf("%d bytes\n", (int)array_count(buffer));
-
-    // Clear
-
-    obj_zero( obj );
-    obj_hexdump( obj );
-
-    // Reload
-
-    obj_load( obj, buffer );
-    obj_hexdump( obj );
-
-    // Copy tests
-
-    {
-        MyObject *clone = obj_clone(obj);
-        obj_hexdump(clone);
-        obj_del(clone);
-    }
-
-    {
-        MyObject *copy = 0;
-        obj_copy(&copy, obj);
-        obj_hexdump(copy);
-        obj_del(copy);
-    }
-
-    {
-        MyObject *copy = obj_new(MyObject, "A different identifier!", 0x33, 0x44, 0.0f, root );
-        obj_copy(&copy, obj);
-        obj_hexdump(copy);
-        obj_del(copy);
-    }
-
-    {
-        void *copy = obj_malloc(100, "an untyped class" );
-        obj_mutate(&copy, obj);
-        obj_hexdump(copy);
-        obj_copy(&copy, obj);
-        obj_hexdump(copy);
-        obj_del(copy);
-    }
-
-    // Benchmarking call overhead.
-    // We're here using dtor as a method to test. Since there is actually no
-    // destructor associated to this class, it will be safe to call it extensively (no double frees).
-    //
-    // results:
-    // 427 million calls/s @ old i5-4300/1.90Ghz laptop. compiled with "cl /Ox /Os /MT /DNDEBUG /GL /GF /arch:AVX2"
-
-    #ifndef N
-    #define N (INT32_MAX-1)
-    #endif
-
-    double t = (puts("benchmarking..."), -clock() / (double)CLOCKS_PER_SEC);
-    for( int i = 0; i < N; ++i ) {
-        dtor(root);
-    }
-    t += clock() / (double)CLOCKS_PER_SEC;
-    printf("Benchmark: %5.2f objcalls/s %5.2fM objcalls/s\n", N/(t), (N/1000)/(t*1000)); // ((N+N)*5) / (t) );
-
+    assert( semvercmp( 0357, 0300 )  > 0 );
+    assert( semvercmp( 0277, 0300 )  < 0 );
+    assert( semvercmp( 0277, 0200 )  > 0 );
+    assert( semvercmp( 0277, 0100 )  < 0 );
+    assert( semvercmp( 0076, 0070 ) == 0 );
+    assert( semvercmp( 0076, 0077 ) == 0 );
+    assert( semvercmp( 0176, 0170 ) == 0 );
+    assert( semvercmp( 0176, 0177 ) == 0 );
+    assert( semvercmp( 0276, 0270 ) == 0 );
+    assert( semvercmp( 0276, 0277 ) == 0 );
+    assert( semvercmp( 0376, 0370 ) == 0 );
+    assert( semvercmp( 0376, 0377 ) == 0 );
 }
-
-// --------------
-
-#define dump(obj) dump[obj_typeid(obj)](obj)
-#define area(obj) area[obj_typeid(obj)](obj)
-
-extern void  (*dump[256])();
-extern float (*area[256])();
-
-void  (*dump[256])() = {0};
-float (*area[256])() = {0};
-
-// --------------
-
-typedef struct box {
-    float w;
-} box;
-
-void  box_ctor(box *b) { printf("box already constructed: box-w:%f\n", b->w); }
-void  box_dtor(box *b) { puts("deleting box..."); }
-void  box_dump(box *b) { printf("box-w:%f\n", b->w); }
-float box_area(box *b) { return b->w * b->w; }
-
-#define REGISTER_BOX \
-    obj_override(box, ctor); \
-    obj_override(box, dump); \
-    obj_override(box, area); \
-    obj_override(box, dtor);
-
-typedef struct rect {
-    float w, h;
-} rect;
-
-void  rect_dump(rect *r) { printf("rect-w:%f rect-h:%f\n", r->w, r->h); }
-float rect_area(rect *r) { return r->w * r->h; }
-void  rect_dtor(rect *r) { puts("deleting rect..."); }
-
-#define REGISTER_RECT \
-    obj_override(rect, dump); \
-    obj_override(rect, area); \
-    obj_override(rect, dtor);
-
-void tests2() {
-    REGISTER_BOX
-    REGISTER_RECT
-
-    box *b = obj_new(box, 100);
-    rect *r = obj_new(rect, 100, 200);
-
-    dump(b);
-    dump(r);
-
-    printf("%f\n", area(b));
-    printf("%f\n", area(r));
-
-    obj_del(b);
-    obj_ref(r); obj_unref(r); //obj_del(r);
-
-    int *untyped = obj_malloc( sizeof(int) );
-    int *my_number = obj_malloc( sizeof(int), "a comment about my_number" );
-    char *my_text = obj_malloc( 32, "some debug info here" );
-
-    *untyped = 100;
-    *my_number = 123;
-    sprintf( my_text, "hello world" );
-
-    struct my_bitmap { int w, h, bpp; const char *pixels; };
-    struct my_bitmap *my_bitmap = obj_new(struct my_bitmap, 2,2,8, "\1\2\3\4");
-
-    printf( "%p(%s,%u)\n", my_bitmap, obj_typeof(my_bitmap), obj_typeid(my_bitmap) );
-    printf( "%d(%s,%d)\n", *untyped, obj_typeof(untyped), obj_typeid(untyped) );
-    printf( "%d(%s,%d)\n", *my_number, obj_typeof(my_number), obj_typeid(my_number) );
-    printf( "%s(%s,%d)\n", my_text, obj_typeof(my_text), obj_typeid(my_text) );
-
-    obj_printf(my_text, "hello world #1\n");
-    obj_printf(my_text, "hello world #2\n");
-    puts(obj_output(my_text));
-
-    printf( "%s(%s,%d)\n", my_text, obj_typeof(my_text), obj_typeid(my_text) );
-
-    printf( "equal?:%d\n", obj_typeeq(my_number, untyped) );
-    printf( "equal?:%d\n", obj_typeeq(my_number, my_number) );
-    printf( "equal?:%d\n", obj_typeeq(my_number, my_text) );
-    printf( "equal?:%d\n", obj_typeeq(my_number, my_bitmap) );
-
-    obj_free( untyped );
-    obj_free( my_text );
-    obj_free( my_bitmap );
-    obj_del( my_number ); // should not crash, even if allocated with obj_malloc()
-}
-
-int main() {
-    tests1();
-    tests2();
-    puts("ok");
-}
-
-/*
-    MEMBER( MyObject, char*, id );
-    MEMBER( MyObject, int, x );
-    MEMBER( MyObject, int, y );
-    MEMBER( MyObject, float, rotation, "(degrees)" );
-    MEMBER( MyObject, MyObject*, next, "(linked list)" );
-*/
-
-#define main main__
 #endif
 #line 0
 
@@ -22792,7 +22502,7 @@ bt_t bt(const char *ini_file, unsigned flags) {
     array(char*) m = strsplit(vfs_read(ini_file), "\r\n");
 
     bt_t *self = &root;
-    self->type = cc8(root);
+    self->type = cc4(r,o,o,t);
     //self->parent = self;
 
     for( int i = 0; i < array_count(m); ++i ) {
@@ -22828,20 +22538,20 @@ bt_t bt(const char *ini_file, unsigned flags) {
 int bt_run(bt_t *b) {
     int rc = 0;
 
-    /**/ if( b->type == cc8(     run) ) { return b->action ? b->action() : 0; }
-    else if( b->type == cc8(     not) ) { return !bt_run(b->children + 0); }
-    else if( b->type == cc8(   sleep) ) { return sleep_ss(b->argf), bt_run(b->children + 0); }
-    else if( b->type == cc8(   defer) ) { rc = bt_run(b->children + 0); return sleep_ss(b->argf), rc; }
-    else if( b->type == cc8(    loop) ) { int rc; for(int i = 0; i < b->argf; ++i) rc = bt_run(b->children + 0); return rc; }
-    else if( b->type == cc8(    once) ) { return b->argf ? 0 : (b->argf = 1), bt_run(b->children + 0); }
-    else if( b->type == cc8(   count) ) { return b->argf <= 0 ? 0 : --b->argf, bt_run(b->children + 0); }
-    else if( b->type == cc8(    pass) ) { return bt_run(b->children + 0), 1; }
-    else if( b->type == cc8(    fail) ) { return bt_run(b->children + 0), 0; }
-    else if( b->type == cc8(  result) ) { return bt_run(b->children + 0), !!b->argf; }
-    else if( b->type == cc8(     all) ) { for( int i = 0; i < array_count(b->children); ++i ) if(!bt_run(b->children+i)) return 0; return 1; }
-    else if( b->type == cc8(     any) ) { for( int i = 0; i < array_count(b->children); ++i ) if( bt_run(b->children+i)) return 1; return 0; }
-    else if( b->type == cc8(    root) ) { for( int i = 0; i < array_count(b->children); ++i ) rc|=bt_run(b->children+i); return rc; }
-    else if( b->type == cc8(rootfail) ) { rc = 1; for( int i = 0; i < array_count(b->children); ++i ) rc&=~bt_run(b->children+i); return rc; }
+    /**/ if( b->type == cc3(          r,u,n) ) { return b->action ? b->action() : 0; }
+    else if( b->type == cc3(          n,o,t) ) { return !bt_run(b->children + 0); }
+    else if( b->type == cc5(      s,l,e,e,p) ) { return sleep_ss(b->argf), bt_run(b->children + 0); }
+    else if( b->type == cc5(      d,e,f,e,r) ) { rc = bt_run(b->children + 0); return sleep_ss(b->argf), rc; }
+    else if( b->type == cc4(        l,o,o,p) ) { int rc; for(int i = 0; i < b->argf; ++i) rc = bt_run(b->children + 0); return rc; }
+    else if( b->type == cc4(        o,n,c,e) ) { return b->argf ? 0 : (b->argf = 1), bt_run(b->children + 0); }
+    else if( b->type == cc5(      c,o,u,n,t) ) { return b->argf <= 0 ? 0 : --b->argf, bt_run(b->children + 0); }
+    else if( b->type == cc4(        p,a,s,s) ) { return bt_run(b->children + 0), 1; }
+    else if( b->type == cc4(        f,a,i,l) ) { return bt_run(b->children + 0), 0; }
+    else if( b->type == cc6(    r,e,s,u,l,t) ) { return bt_run(b->children + 0), !!b->argf; }
+    else if( b->type == cc3(          a,l,l) ) { for( int i = 0; i < array_count(b->children); ++i ) if(!bt_run(b->children+i)) return 0; return 1; }
+    else if( b->type == cc3(          a,n,y) ) { for( int i = 0; i < array_count(b->children); ++i ) if( bt_run(b->children+i)) return 1; return 0; }
+    else if( b->type == cc4(        r,o,o,t) ) { for( int i = 0; i < array_count(b->children); ++i ) rc|=bt_run(b->children+i); return rc; }
+    else if( b->type == cc8(r,o,o,t,f,a,i,l) ) { rc = 1; for( int i = 0; i < array_count(b->children); ++i ) rc&=~bt_run(b->children+i); return rc; }
 
     return 0;
 }
@@ -23263,7 +22973,7 @@ void v4k_quit(void) {
 void v4k_init() {
     do_once {
         // install signal handlers
-        ifdef(debug, signal_hooks());
+        ifdef(debug, trap_install());
 
         // init panic handler
         panic_oom_reserve = SYS_REALLOC(panic_oom_reserve, 1<<20); // 1MiB

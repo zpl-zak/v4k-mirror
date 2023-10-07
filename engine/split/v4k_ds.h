@@ -428,13 +428,29 @@ API bool  (map_sort)(map* m);
 API void  (map_clear)(map* m);
 
 // -----------------------------------------------------------------------------
-// four-cc, eight-cc
+// compile-time fourcc, eightcc
 
-API unsigned cc4(const char *id);
-API uint64_t cc8(const char *id);
 API char *cc4str(unsigned cc);
 API char *cc8str(uint64_t cc);
 
-// fast path
-#define cc4(abcd)      ( *(unsigned*) #abcd     "    "     ) // lil32() ?
-#define cc8(abcdefgh)  ( *(uint64_t*) #abcdefgh "        " ) // lil64() ?
+enum {
+#   define _(a,b,c,d,e) cc_##a, cc_##b, cc_##c, cc_##d, cc_##e
+    cc_1 = '1', _(2,3,4,5,6),_(7,8,9,0,_), cc_ = ' ',
+    cc_A = 'A', _(B,C,D,E,F),_(G,H,I,J,K),_(L,M,N,O,P),_(Q,R,S,T,U),_(V,W,X,Y,Z),
+    cc_a = 'a', _(b,c,d,e,f),_(g,h,i,j,k),_(l,m,n,o,p),_(q,r,s,t,u),_(v,w,x,y,z),
+#   undef _
+};
+
+#ifdef BIG
+#define cc4(a,b,c,d) ((uint32_t)(cc_##a<<24) | (cc_##b<<16) | (cc_##c<<8) | (cc_##d<<0))
+#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(a,b,c,d) << 32ULL) | cc4(e,f,g,h))
+#else
+#define cc4(a,b,c,d) ((uint32_t)(cc_##d<<24) | (cc_##c<<16) | (cc_##b<<8) | (cc_##a<<0))
+#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(e,f,g,h) << 32ULL) | cc4(a,b,c,d))
+#endif
+
+#define cc3(a,b,c) cc4(,a,b,c)
+#define cc5(a,b,c,d,e) cc6(,a,b,c,d,e)
+#define cc6(a,b,c,d,e,f) cc7(,a,b,c,d,e,f)
+#define cc7(a,b,c,d,e,f,g) cc8(,a,b,c,d,e,f,g)
+

@@ -331,3 +331,50 @@ array(uint32_t) string32( const char *utf8 ) {
     return out[slot];
 }
 
+// -----------------------------------------------------------------------------
+// quarks
+
+unsigned quark_intern( quarks_db *quarks, const char *string ) {
+    if( !*quarks ) {
+        // copy null string on init
+        array_push(*quarks, '\0');
+    }
+    if( string && string[0] ) {
+        int slen = strlen(string)+1;
+        int qlen = array_count(*quarks);
+        array_resize(*quarks, qlen + slen);
+        memcpy( array_back(*quarks) + 1 - slen, string, slen );
+        return qlen;
+    }
+    return 0;
+}
+const char *quark_string( quarks_db *quarks, unsigned key ) {
+    assert( *quarks );
+    return *quarks + key;
+}
+
+static __thread quarks_db qdb = 0;
+unsigned intern( const char *string ) {
+    return quark_intern( &qdb, string );
+}
+const char *quark( unsigned key ) {
+    return quark_string( &qdb, key );
+}
+
+#if 0
+AUTORUN {
+    assert( !intern(NULL) ); // quark #0, cannot intern null string
+    assert( !intern("") );   // quark #0, ok to intern empty string
+    assert( !quark(0)[0] );  // empty string for quark #0
+
+    unsigned q1 = intern("Hello");  // -> quark #1
+    unsigned q2 = intern("cruel");  // -> quark #2
+    unsigned q3 = intern("world."); // -> quark #3
+
+    char buf[256];
+    sprintf(buf, "%s %s %s", quark(q1), quark(q2), quark(q3));
+    assert( !strcmp("Hello cruel world.", buf) );
+
+    assert(~puts("Ok"));
+}
+#endif

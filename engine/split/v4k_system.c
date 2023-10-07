@@ -252,9 +252,9 @@ int callstackf( FILE *fp, int traces ) {
     return 0;
 }
 
-// signals --------------------------------------------------------------------
+// trap signals ---------------------------------------------------------------
 
-const char *signal_name(int signal) {
+const char *trap_name(int signal) {
     if(signal == SIGABRT) return "SIGABRT - \"abort\", abnormal termination";
     if(signal == SIGFPE) return "SIGFPE - floating point exception";
     if(signal == SIGILL) return "SIGILL - \"illegal\", invalid instruction";
@@ -266,49 +266,41 @@ const char *signal_name(int signal) {
     ifndef(win32, if(signal == SIGQUIT) return "SIGQUIT");
     return "??";
 }
-void signal_handler_ignore(int signal_) {
-    signal(signal_, signal_handler_ignore);
+void trap_on_ignore(int signal_) {
+    signal(signal_, trap_on_ignore);
 }
-void signal_handler_quit(int signal) {
-    // fprintf(stderr, "Ok: caught signal %s (%d)\n", signal_name(signal), signal);
+void trap_on_quit(int signal) {
+    // fprintf(stderr, "Ok: caught signal %s (%d)\n", trap_name(signal), signal);
     exit(0);
 }
-void signal_handler_abort(int signal) {
-    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", signal_name(signal), signal, callstack(16));
+void trap_on_abort(int signal) {
+    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
     exit(-1);
 }
-void signal_handler_debug(int signal) {
+void trap_on_debug(int signal) {
     breakpoint("Error: unexpected signal");
-    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", signal_name(signal), signal, callstack(16));
+    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
     exit(-1);
 }
-void signal_hooks(void) {
+void trap_install(void) {
     // expected signals
-    signal(SIGINT, signal_handler_quit);
-    signal(SIGTERM, signal_handler_quit);
-    ifndef(win32, signal(SIGQUIT, signal_handler_quit));
+    signal(SIGINT, trap_on_quit);
+    signal(SIGTERM, trap_on_quit);
+    ifndef(win32, signal(SIGQUIT, trap_on_quit));
     // unexpected signals
-    signal(SIGABRT, signal_handler_abort);
-    signal(SIGFPE, signal_handler_abort);
-    signal(SIGILL, signal_handler_abort);
-    signal(SIGSEGV, signal_handler_abort);
-    ifndef(win32, signal(SIGBUS, signal_handler_abort));
-    ifdef(linux, signal(SIGSTKFLT, signal_handler_abort));
+    signal(SIGABRT, trap_on_abort);
+    signal(SIGFPE, trap_on_abort);
+    signal(SIGILL, trap_on_abort);
+    signal(SIGSEGV, trap_on_abort);
+    ifndef(win32, signal(SIGBUS, trap_on_abort));
+    ifdef(linux, signal(SIGSTKFLT, trap_on_abort));
 }
 
-#ifdef SIGNAL_DEMO
-void crash() {
-    char *ptr = 0;
-    *ptr = 1;
+#ifdef TRAP_DEMO
+AUTORUN {
+    trap_install();
+    app_crash(); // app_hang();
 }
-void hang() {
-    for(;;);
-}
-int main(int argc, char **argv) {
-    signal_hooks();
-    crash(); // hang();
-}
-#define main main__
 #endif
 
 // endian ----------------------------------------------------------------------
@@ -497,230 +489,6 @@ int app_battery() {
 }
 
 #endif
-
-// ----------------------------------------------------------------------------
-// time
-
-#if 0
-uint64_t time_gpu() {
-    GLint64 t = 123456789;
-    glGetInteger64v(GL_TIMESTAMP, &t);
-    return (uint64_t)t;
-}
-#endif
-uint64_t date() {
-    time_t epoch = time(0);
-    struct tm *ti = localtime(&epoch);
-    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
-}
-char *date_string() {
-    time_t epoch = time(0);
-    struct tm *ti = localtime(&epoch);
-    return va("%04d-%02d-%02d %02d:%02d:%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec);
-}
-uint64_t date_epoch() {
-    time_t epoch = time(0);
-    return epoch;
-}
-#if 0
-double time_ss() {
-    return glfwGetTime();
-}
-double time_ms() {
-    return glfwGetTime() * 1000.0;
-}
-uint64_t time_us() {
-    return (uint64_t)(glfwGetTime() * 1000000.0); // @fixme: use a high resolution timer instead, or time_gpu below
-}
-uint64_t sleep_us(uint64_t us) { // @fixme: use a high resolution sleeper instead
-    return sleep_ms( us / 1000.0 );
-}
-double sleep_ms(double ms) {
-    double now = time_ms();
-    if( ms <= 0 ) {
-#if is(win32)
-        Sleep(0); // yield
-#else
-        usleep(0);
-#endif
-    } else {
-#if is(win32)
-        Sleep(ms);
-#else
-        usleep(ms * 1000);
-#endif
-    }
-    return time_ms() - now;
-}
-double sleep_ss(double ss) {
-    return sleep_ms( ss * 1000 ) / 1000.0;
-}
-#endif
-
-// high-perf functions
-
-#define TIMER_E3 1000ULL
-#define TIMER_E6 1000000ULL
-#define TIMER_E9 1000000000ULL
-
-#ifdef CLOCK_MONOTONIC_RAW
-#define TIME_MONOTONIC CLOCK_MONOTONIC_RAW
-#elif defined CLOCK_MONOTONIC
-#define TIME_MONOTONIC CLOCK_MONOTONIC
-#else
-// #define TIME_MONOTONIC CLOCK_REALTIME // untested
-#endif
-
-static uint64_t nanotimer(uint64_t *out_freq) {
-    if( out_freq ) {
-#if is(win32)
-        LARGE_INTEGER li;
-        QueryPerformanceFrequency(&li);
-        *out_freq = li.QuadPart;
-//#elif is(ANDROID)
-//      *out_freq = CLOCKS_PER_SEC;
-#elif defined TIME_MONOTONIC
-        *out_freq = TIMER_E9;
-#else
-        *out_freq = TIMER_E6;
-#endif
-    }
-#if is(win32)
-    LARGE_INTEGER li;
-    QueryPerformanceCounter(&li);
-    return (uint64_t)li.QuadPart;
-//#elif is(ANDROID)
-//    return (uint64_t)clock();
-#elif defined TIME_MONOTONIC
-    struct timespec ts;
-    clock_gettime(TIME_MONOTONIC, &ts);
-    return (TIMER_E9 * (uint64_t)ts.tv_sec) + ts.tv_nsec;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (TIMER_E6 * (uint64_t)tv.tv_sec) + tv.tv_usec;
-#endif
-}
-
-uint64_t time_ns() {
-    static uint64_t epoch = 0;
-    static uint64_t freq = 0;
-    if( !freq ) {
-        epoch = nanotimer(&freq);
-    }
-
-    uint64_t a = nanotimer(NULL) - epoch;
-    uint64_t b = TIMER_E9;
-    uint64_t c = freq;
-
-    // Computes (a*b)/c without overflow, as long as both (a*b) and the overall result fit into 64-bits.
-    // [ref] https://github.com/rust-lang/rust/blob/3809bbf47c8557bd149b3e52ceb47434ca8378d5/src/libstd/sys_common/mod.rs#L124
-    uint64_t q = a / c;
-    uint64_t r = a % c;
-    return q * b + r * b / c;
-}
-uint64_t time_us() {
-    return time_ns() / TIMER_E3;
-}
-uint64_t time_ms() {
-    return time_ns() / TIMER_E6;
-}
-double time_ss() {
-    return time_ns() / 1e9; // TIMER_E9;
-}
-double time_mm() {
-    return time_ss() / 60;
-}
-double time_hh() {
-    return time_mm() / 60;
-}
-
-void sleep_ns( double ns ) {
-#if is(win32)
-    if( ns >= 100 ) {
-        LARGE_INTEGER li;      // Windows sleep in 100ns units
-        HANDLE timer = CreateWaitableTimer(NULL, TRUE, NULL);
-        li.QuadPart = (LONGLONG)(__int64)(-ns/100); // Negative for relative time
-        SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE);
-        WaitForSingleObject(timer, INFINITE);
-        CloseHandle(timer);
-#else
-    if( ns > 0 ) {
-        struct timespec wait = {0};
-        wait.tv_sec = ns / 1e9;
-        wait.tv_nsec = ns - wait.tv_sec * 1e9;
-        nanosleep(&wait, NULL);
-#endif
-    } else {
-#if is(win32)
-        Sleep(0); // yield, Sleep(0), SwitchToThread
-#else
-        usleep(0);
-#endif
-    }
-}
-void sleep_us( double us ) {
-    sleep_ns(us * 1e3);
-}
-void sleep_ms( double ms ) {
-    sleep_ns(ms * 1e6);
-}
-void sleep_ss( double ss ) {
-    sleep_ns(ss * 1e9);
-}
-
-// ----------------------------------------------------------------------------
-// timer
-
-struct timer_internal_t {
-    unsigned ms;
-    unsigned (*callback)(unsigned interval, void *arg);
-    void *arg;
-    thread_ptr_t thd;
-};
-
-static int timer_func(void *arg) {
-    struct timer_internal_t *p = (struct timer_internal_t*)arg;
-
-    sleep_ms( p->ms );
-
-    for( ;; ) {
-        unsigned then = time_ms();
-
-            p->ms = p->callback(p->ms, p->arg);
-            if( !p->ms ) break;
-
-        unsigned now = time_ms();
-        unsigned lapse = now - then;
-        int diff = p->ms - lapse;
-        sleep_ms( diff <= 0 ? 0 : diff );
-    }
-
-    thread_exit(0);
-    return 0;
-}
-
-static __thread array(struct timer_internal_t *) timers;
-
-unsigned timer(unsigned ms, unsigned (*callback)(unsigned ms, void *arg), void *arg) {
-    struct timer_internal_t *p = MALLOC( sizeof(struct timer_internal_t) );
-    p->ms = ms;
-    p->callback = callback;
-    p->arg = arg;
-    p->thd = thread_init( timer_func, p, "", 0 );
-
-    array_push(timers, p);
-    return array_count(timers);
-}
-void timer_destroy(unsigned i) {
-    if( i-- ) {
-        thread_join(timers[i]->thd);
-        thread_term(timers[i]->thd);
-        FREE(timers[i]);
-        timers[i] = 0;
-    }
-}
-
 
 // ----------------------------------------------------------------------------
 // argc/v
@@ -1071,3 +839,75 @@ void thread_destroy( void *thd ) {
     thread_term(thd);
 }
 
+void app_hang() {
+    for(;;);
+}
+void app_crash() {
+    int *p = 0;
+    *p = 42;
+}
+void app_beep() {
+    fputc('\x7', stdout);
+}
+
+void app_singleton(const char *guid) {
+    #ifdef _WIN32
+    do_once {
+        char buffer[128];
+        snprintf(buffer, 128, "Global\\{%s}", guid);
+        static HANDLE app_mutex = 0;
+        app_mutex = CreateMutexA(NULL, FALSE, buffer);
+        if( ERROR_ALREADY_EXISTS == GetLastError() ) {
+            exit(-1);
+        }
+    }
+    #endif
+}
+
+static
+bool app_open_folder(const char *file) {
+    char buf[1024];
+#ifdef _WIN32
+    snprintf(buf, sizeof(buf), "start \"\" \"%s\"", file);
+#elif __APPLE__
+    snprintf(buf, sizeof(buf), "%s \"%s\"", is_directory(file) ? "open" : "open --reveal", file);
+#else
+    snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
+#endif
+    return system(buf) == 0;
+}
+
+static
+bool app_open_file(const char *file) {
+    char buf[1024];
+#ifdef _WIN32
+    snprintf(buf, sizeof(buf), "start \"\" \"%s\"", file);
+#elif __APPLE__
+    snprintf(buf, sizeof(buf), "open \"%s\"", file);
+#else
+    snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
+#endif
+    return system(buf) == 0;
+}
+
+static
+bool app_open_url(const char *url) {
+    return app_open_file(url);
+}
+
+bool app_open(const char *link) {
+    if( file_directory(link) ) return app_open_folder(link);
+    if( file_exist(link) ) return app_open_file(link);
+    return app_open_url(link);
+}
+
+// ----------------------------------------------------------------------------
+// tests
+
+static __thread int test_oks, test_errs, test_once;
+static void test_exit(void) { printf("%d/%d tests passed\n", test_oks, test_oks+test_errs); }
+int (test)(const char *file, int line, const char *expr, bool result) {
+    test_once = test_once || !(atexit)(test_exit);
+    test_oks += result, test_errs += !result;
+    return fputc("F."[result], stdout) && (result || fprintf(stderr, "(%s %s:%d)", expr, file, line) );
+}

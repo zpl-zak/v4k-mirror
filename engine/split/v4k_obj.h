@@ -1,131 +1,95 @@
 // -----------------------------------------------------------------------------
-// C object framework (constructors/destructors, methods, rtti, refcounting)
+// semantic versioning in a single byte (octal)
 // - rlyeh, public domain.
 //
-// ## object api (low level)
+// - single octal byte that represents semantic versioning (major.minor.patch).
+// - allowed range [0000..0377] ( <-> [0..255] decimal )
+// - comparison checks only major.minor tuple as per convention.
+
+API int semver( int major, int minor, int patch );
+API int semvercmp( int v1, int v2 );
+
+#define SEMVER(major,minor,patch) (0100 * (major) + 010 * (minor) + (patch))
+#define SEMVERCMP(v1,v2) (((v1) & 0110) - ((v2) & 0110))
+#define SEMVERFMT "%03o"
+
+// -----------------------------------------------------------------------------
+// autorun initializers for C
+// - rlyeh, public domain
 //
-// - [ ] make object from reflected type (factory)
-// - [x] make object (if debug, include callstack as well)
-// - [x] ctor method (optional, ref to constructor)
-// - [x] dtor method (optional, ref to deleter)
-// - [x] zero mem object
-// - [x] object logger
-// - [ ] iterate members in a struct
-//
-// - [x] clone/copy/mutate classes
-// - [x] load/save objects from/to memory/disk
-// - [ ] diff/patch objects
-// - [ ] experimental: support for AoSoA layout (using objcnt, 3bits)
-//
-// ## object decomposition
-//
-//                             <---------|--------->
-//            OBJ-SHADOW (64-bits)       |   OBJ CONTENT (N bytes)
-// +-----+-----+-------------+-----------+-----+-----+-----+-----+--
-// |TYPE |REFS.|   OBJ NAME  |  obj cnt  | ... | ... | ... | ... | .
-// +-----+-----+-------------+-----------+-----+-----+-----+-----+--
-// \-16-bits--/\---45-bits--/\--3-bits--/\-------N-bytes-----------
-//
-// OBJ TYPE+NAME format:
-// - [type] custom tags at 0x0
-// - [1..N] name
-// - [\n]   blank separator
-// - [comments, logger, infos, etc] << obj_printf();
-//
-// ## object limitations
-// - 256 classes max
-// - 256 references max
-// - 8-byte overhead per object
-// - 2 total allocs per object (could be flattened into 1 with some more work)
-//
-// @todo: obj_extend( "class_src", "class_dst" ); call[super(obj)]()
-// @todo: preferred load/save format: [ver:1,user:2,type:1] ([eof|size:7/15/23/31][blob:N])+ [crc:1/2/3/4]
-// @todo: more serious loading/saving spec
+// note: based on code by Joe Lowe (public domain).
+// note: XIU for C initializers, XCU for C++ initializers, XTU for C deinitializers
 
-// object api (heap+rtti)
+#ifdef __cplusplus
+#define AUTORUN \
+    static void AUTORUN_U(f)(void); \
+    static const int AUTORUN_J(AUTORUN_U(f),__1) = (AUTORUN_U(f)(), 1); \
+    static void AUTORUN_U(f)(void)
+#elif _MSC_VER
+#define AUTORUN \
+    static void AUTORUN_U(f)(void); \
+    static int AUTORUN_J(AUTORUN_U(f),__1) (){ AUTORUN_U(f)(); return 0; } \
+    __pragma(section(".CRT$XIU", long, read)) \
+    __declspec(allocate(".CRT$XIU")) \
+    static int(* AUTORUN_J(AUTORUN_U(f),__2) )() = AUTORUN_J(AUTORUN_U(f),__1); \
+    static void AUTORUN_U(f)(void)
+#else
+#define AUTORUN \
+    __attribute__((constructor)) \
+    static void AUTORUN_U(f)(void)
+#endif
 
-API void*       obj_malloc( int sz, ... );
-API void*       obj_calloc( int sz, ... );
-API void        obj_free( void *obj );
+// join + unique macro utils
 
-API bool        obj_typeeq( const void *obj1, const void *obj2 );
-API const char* obj_typeof( const void *obj );
-API unsigned    obj_typeid( const void *obj );
-API unsigned    obj_typeid_from_name( const char *name );
+#define AUTORUN_j(a, b) a##b
+#define AUTORUN_J(a, b) AUTORUN_j(a, b)
+#define AUTORUN_U(x)    AUTORUN_J(x, __LINE__)
 
-// object api (ctor/dtor, refcounting, oop)
+#if 0 // autorun demo
+void byebye(void) { puts("seen after main()"); }
+AUTORUN { puts("seen before main()"); }
+AUTORUN { puts("seen before main() too"); atexit( byebye ); }
+#endif
 
-API void        obj_new( const char *type, ... );
-API void        obj_del( void *obj );
+// -----------------------------------------------------------------------------
+// storage types. refer to vec2i/3i, vec2/3/4 if you plan to do math operations
 
-API void*       obj_ref( void *obj );
-API void*       obj_unref( void *obj );
+typedef struct byte2 { uint8_t x,y; } byte2;
+typedef struct byte3 { uint8_t x,y,z; } byte3;
+typedef struct byte4 { uint8_t x,y,z,w; } byte4;
 
-API void        obj_extend( const char *dstclass, const char *srcclass );
-API void        obj_override( const char *objclass, void (**vtable)(), void(*fn)() );
+typedef struct int2 { int x,y; } int2;
+typedef struct int3 { int x,y,z; } int3;
+typedef struct int4 { int x,y,z,w; } int4;
 
-// object: serialize
+typedef struct uint2 { unsigned int x,y; } uint2;
+typedef struct uint3 { unsigned int x,y,z; } uint3;
+typedef struct uint4 { unsigned int x,y,z,w; } uint4;
 
-API unsigned    obj_load(void *obj, const array(char) buffer);
-API unsigned    obj_load_file(void *obj, FILE *fp);
-API unsigned    obj_load_inplace(void *obj, const void *src, unsigned srclen);
+typedef struct float2 { float x,y; } float2;
+typedef struct float3 { float x,y,z; } float3;
+typedef struct float4 { float x,y,z,w; } float4;
 
-API array(char) obj_save(const void *obj); // empty if error. must array_free() after use
-API unsigned    obj_save_file(FILE *fp, const void *obj);
-API unsigned    obj_save_inplace(void *dst, unsigned cap, const void *obj);
+typedef struct double2 { double x,y; } double2;
+typedef struct double3 { double x,y,z; } double3;
+typedef struct double4 { double x,y,z,w; } double4;
 
-// object: utils
+#define byte2(x,y)       M_CAST(byte2, (uint8_t)(x), (uint8_t)(y) )
+#define byte3(x,y,z)     M_CAST(byte3, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z) )
+#define byte4(x,y,z,w)   M_CAST(byte4, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z), (uint8_t)(w) )
 
-API unsigned    obj_instances( const void *obj );
+#define int2(x,y)        M_CAST(int2, (int)(x), (int)(y) )
+#define int3(x,y,z)      M_CAST(int3, (int)(x), (int)(y), (int)(z) )
+#define int4(x,y,z,w)    M_CAST(int4, (int)(x), (int)(y), (int)(z), (int)(w) )
 
-API void        obj_zero( void *obj );
-API unsigned    obj_sizeof( const void *obj );
+#define uint2(x,y)       M_CAST(uint2, (unsigned)(x), (unsigned)(y) )
+#define uint3(x,y,z)     M_CAST(uint3, (unsigned)(x), (unsigned)(y), (unsigned)(z) )
+#define uint4(x,y,z,w)   M_CAST(uint4, (unsigned)(x), (unsigned)(y), (unsigned)(z), (unsigned)(w) )
 
-API void        obj_hexdump( const void *obj );
-API void        obj_hexdumpf( FILE *out, const void *obj );
+#define float2(x,y)      M_CAST(float2, (float)(x), (float)(y) )
+#define float3(x,y,z)    M_CAST(float3, (float)(x), (float)(y), (float)(z) )
+#define float4(x,y,z,w)  M_CAST(float4, (float)(x), (float)(y), (float)(z), (float)(w) )
 
-API void        obj_printf( void *obj, const char *text );
-API const char* obj_output( const void *obj );
-
-API void *      obj_clone(const void *obj);
-API void *      obj_copy(void **dst, const void *src);
-API void *      obj_mutate(void **dst, const void *src);
-
-// object: method dispatch tables
-
-#define ctor(obj) obj_method0(obj, ctor) // ctor[obj_typeid(obj)](obj)
-#define dtor(obj) obj_method0(obj, dtor) // dtor[obj_typeid(obj)](obj)
-
-API extern void (*ctor[256])(); ///-
-API extern void (*dtor[256])(); ///-
-
-// object: syntax sugars
-
-#define     obj_malloc(sz, ...) obj_initialize((void**)MALLOC(  sizeof(void*)+sz), stringf("\1untyped\n%s\n", "" #__VA_ARGS__))
-#define     obj_calloc(sz, ...) obj_initialize((void**)CALLOC(1,sizeof(void*)+sz), stringf("\1untyped\n%s\n", "" #__VA_ARGS__))
-
-#define     obj_new0(type) obj_new(type, 0)
-#define     obj_new(type, ...) ( \
-                obj_tmpalloc = obj_initialize((void**)CALLOC(1, sizeof(void*)+sizeof(type)), stringf("%c" #type "\n", (char)obj_typeid_from_name(#type))), \
-                (*(type*)obj_tmpalloc = (type){ __VA_ARGS__ }), \
-                ctor(obj_tmpalloc), \
-                (type*)obj_tmpalloc )
-
-#define     obj_override(class, method)    obj_override(#class, (void(**)())method, (void(*)())class##_##method)
-#define     obj_method0(obj, method)       method[obj_typeid(obj)]((obj))
-#define     obj_method(obj, method, ...)   method[obj_typeid(obj)]((obj), __VA_ARGS__)
-
-#define     obj_printf(obj, ...)           obj_printf(obj, va(__VA_ARGS__))
-
-#define     obj_extend(dstclass, srcclass) obj_extend(#dstclass, #srcclass)
-
-// object: implementation details
-
-// https://stackoverflow.com/questions/16198700/using-the-extra-16-bits-in-64-bit-pointers (note: using 19-bits here)
-#define OBJBOX(ptr, payload16) (void*)(((long long unsigned)(payload16) << 48) | (long long unsigned)(ptr))
-#define OBJUNBOX(ptr)          (void*)((long long unsigned)(ptr) & 0x0000FFFFFFFFFFFFull)
-#define OBJPAYLOAD16(ptr)      (((long long unsigned)(ptr)) >> 48)
-#define OBJPAYLOAD3(ptr)       (((long long unsigned)(ptr)) & 7)
-
-API void* obj_initialize( void **ptr, char *type_and_info );
-static __thread void *obj_tmpalloc;
+#define double2(x,y)     M_CAST(double2, (double)(x), (double)(y) )
+#define double3(x,y,z)   M_CAST(double3, (double)(x), (double)(y), (double)(z) )
+#define double4(x,y,z,w) M_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )

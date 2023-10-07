@@ -194,6 +194,7 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     s->window.scrollbar_size = nk_vec2(5,5);
     s->property.rounding = 0;
     s->combo.border = 0;
+    s->combo.button_padding.x = -18;
     s->button.border = 1;
     s->edit.border = 0;
 
@@ -1905,11 +1906,16 @@ int ui_clampf(const char *label, float *v, float minf, float maxf) {
     return prev != v[0];
 }
 
+static bool ui_float_sign = 0;
+
 int ui_float2(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = va("%.2f, %.2f", v[0], v[1]);
+    char *buffer = ui_float_sign ?
+        --ui_float_sign, va("%+.3f %+.3f", v[0], v[1]) :
+        va("%.3f, %.3f", v[0], v[1]);
+
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         float prev0 = v[0]; nk_property_float(ui_ctx, "#X:", -FLT_MAX, &v[0], FLT_MAX, 1,0.5f);
@@ -1924,7 +1930,10 @@ int ui_float3(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = va("%.2f, %.2f, %.2f", v[0], v[1], v[2]);
+    char *buffer = ui_float_sign ?
+        --ui_float_sign, va("%+.2f %+.2f %+.2f", v[0], v[1], v[2]) :
+        va("%.2f, %.2f, %.2f", v[0], v[1], v[2]);
+
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         float prev0 = v[0]; nk_property_float(ui_ctx, "#X:", -FLT_MAX, &v[0], FLT_MAX, 1,0.5f);
@@ -1940,7 +1949,10 @@ int ui_float4(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = va("%.2f, %.2f, %.2f, %.2f", v[0], v[1], v[2], v[3]);
+    char *buffer = ui_float_sign ?
+        --ui_float_sign, va("%+.2f %+.2f %+.2f %+.2f", v[0], v[1], v[2], v[3]) :
+        va("%.2f,%.2f,%.2f,%.2f", v[0], v[1], v[2], v[3]);
+
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         float prev0 = v[0]; nk_property_float(ui_ctx, "#X:", -FLT_MAX, &v[0], FLT_MAX, 1,0.5f);
@@ -1950,10 +1962,12 @@ int ui_float4(const char *label, float *v) {
         nk_combo_end(ui_ctx);
         return prev0 != v[0] || prev1 != v[1] || prev2 != v[2] || prev3 != v[3];
     }
+
     return 0;
 }
 
 int ui_mat33(const char *label, float M[9]) {
+    ui_float_sign = 3;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float3(NULL, M);
@@ -1962,6 +1976,7 @@ int ui_mat33(const char *label, float M[9]) {
     return changed;
 }
 int ui_mat34(const char *label, float M[12]) {
+    ui_float_sign = 3;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float4(NULL, M);
@@ -1970,6 +1985,7 @@ int ui_mat34(const char *label, float M[12]) {
     return changed;
 }
 int ui_mat44(const char *label, float M[16]) {
+    ui_float_sign = 4;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float4(NULL, M);

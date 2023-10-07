@@ -375,6 +375,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     glfwSwapInterval(interval);
 
     const GLFWvidmode *mode = glfwGetVideoMode(monitor ? monitor : glfwGetPrimaryMonitor());
+    PRINTF("Build version: %s\n", BUILD_VERSION);
     PRINTF("Monitor: %s (%dHz, vsync=%d)\n", glfwGetMonitorName(monitor ? monitor : glfwGetPrimaryMonitor()), mode->refreshRate, interval);
     PRINTF("GPU device: %s\n", glGetString(GL_RENDERER));
     PRINTF("GPU driver: %s\n", glGetString(GL_VERSION));
@@ -482,7 +483,11 @@ char* window_stats() {
 
     // @todo: print %used/%avail kib mem, %used/%avail objs as well
     static char buf[256];
-    snprintf(buf, 256, "%s | boot %.2fs | %5.2ffps (%.2fms)%s%s", title, !boot_time ? now : boot_time, fps, (now - prev_frame) * 1000.f, cmdline[0] ? " | ":"", cmdline[0] ? cmdline:"");
+    snprintf(buf, 256, "%s%s%s%s | boot %.2fs | %5.2ffps (%.2fms)%s%s",
+        title, BUILD_VERSION[0] ? " (":"", BUILD_VERSION[0] ? BUILD_VERSION:"", BUILD_VERSION[0] ? ")":"",
+        !boot_time ? now : boot_time,
+        fps, (now - prev_frame) * 1000.f,
+        cmdline[0] ? " | ":"", cmdline[0] ? cmdline:"");
 
     prev_frame = now;
     ++num_frames;
