@@ -905,9 +905,9 @@ bool app_open(const char *link) {
 // tests
 
 static __thread int test_oks, test_errs, test_once;
-static void test_exit(void) { printf("%d/%d tests passed\n", test_oks, test_oks+test_errs); }
+static void test_exit(void) { fprintf(stderr, "%d/%d tests passed\n", test_oks, test_oks+test_errs); }
 int (test)(const char *file, int line, const char *expr, bool result) {
     test_once = test_once || !(atexit)(test_exit);
     test_oks += result, test_errs += !result;
-    return fputc("F."[result], stdout) && (result || fprintf(stderr, "(%s %s:%d)", expr, file, line) );
+    return (result || fprintf(stderr, "(Test `%s` failed %s:%d)\n", expr, file, line) );
 }

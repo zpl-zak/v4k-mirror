@@ -77,6 +77,13 @@ API float*      big32pf(void *n, int sz);
 API uint64_t*   big64p(void *n, int sz);
 API double*     big64pf(void *n, int sz);
 
+#define hton16 big16
+#define ntoh16 big16
+#define hton32 big32
+#define ntoh32 big32
+#define hton64 big64
+#define ntoh64 big64
+
 #define PANIC(...)   PANIC(va(__VA_ARGS__), __FILE__, __LINE__) // die() ?
 API int (PANIC)(const char *error, const char *file, int line);
 

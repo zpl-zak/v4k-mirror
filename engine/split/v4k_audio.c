@@ -1,4 +1,4 @@
-// @fixme: really shutdown audio & related threads before quitting. drwav crashes.
+// @fixme: really shutdown audio & related threads before quitting. ma_dr_wav crashes.
 
 
 #if is(win32) && !is(gcc)
@@ -54,15 +54,15 @@ void midi_send(unsigned midi_msg) {
 #endif
 }
 
-// encapsulate drwav,drmp3,stbvorbis and some buffer with the sts_mixer_stream_t
+// encapsulate ma_dr_wav,ma_dr_mp3,stbvorbis and some buffer with the sts_mixer_stream_t
 enum { UNK, WAV, OGG, MP1, MP3 };
 typedef struct {
     int type;
     union {
-        drwav wav;
+        ma_dr_wav wav;
         stb_vorbis *ogg;
         void *opaque;
-        drmp3           mp3_;
+        ma_dr_mp3           mp3_;
     };
     sts_mixer_stream_t  stream;             // mixer stream
     union {
@@ -100,16 +100,16 @@ static void refill_stream(sts_mixer_sample_t* sample, void* userdata) {
         default:
         break; case WAV: {
             int sl = sample->length / 2; /*sample->channels*/;
-            if( stream->rewind ) stream->rewind = 0, drwav_seek_to_pcm_frame(&stream->wav, 0);
-            if (drwav_read_pcm_frames_s16(&stream->wav, sl, (short*)stream->data) < sl) {
-                drwav_seek_to_pcm_frame(&stream->wav, 0);
+            if( stream->rewind ) stream->rewind = 0, ma_dr_wav_seek_to_pcm_frame(&stream->wav, 0);
+            if (ma_dr_wav_read_pcm_frames_s16(&stream->wav, sl, (short*)stream->data) < sl) {
+                ma_dr_wav_seek_to_pcm_frame(&stream->wav, 0);
             }
         }
         break; case MP3: {
             int sl = sample->length / 2; /*sample->channels*/;
-            if( stream->rewind ) stream->rewind = 0, drmp3_seek_to_pcm_frame(&stream->mp3_, 0);
-            if (drmp3_read_pcm_frames_f32(&stream->mp3_, sl, stream->dataf) < sl) {
-                drmp3_seek_to_pcm_frame(&stream->mp3_, 0);
+            if( stream->rewind ) stream->rewind = 0, ma_dr_mp3_seek_to_pcm_frame(&stream->mp3_, 0);
+            if (ma_dr_mp3_read_pcm_frames_f32(&stream->mp3_, sl, stream->dataf) < sl) {
+                ma_dr_mp3_seek_to_pcm_frame(&stream->mp3_, 0);
             }
         }
         break; case OGG: {
@@ -140,14 +140,14 @@ static bool load_stream(mystream_t* stream, const char *filename) {
         stream->stream.sample.frequency = info.sample_rate;
         stream->stream.sample.audio_format = STS_MIXER_SAMPLE_FORMAT_16;
     }
-    if( stream->type == UNK && drwav_init_memory(&stream->wav, data, datalen, NULL)) {
+    if( stream->type == UNK && ma_dr_wav_init_memory(&stream->wav, data, datalen, NULL)) {
         if( stream->wav.channels != 2 ) { puts("cannot stream wav file. stereo required."); goto end; } // @fixme: upsample
         stream->type = WAV;
         stream->stream.sample.frequency = stream->wav.sampleRate;
         stream->stream.sample.audio_format = STS_MIXER_SAMPLE_FORMAT_16;
     }
-    drmp3_config mp3_cfg = { 2, HZ };
-    if( stream->type == UNK && (drmp3_init_memory(&stream->mp3_, data, datalen, NULL/*&mp3_cfg*/) != 0) ) {
+    ma_dr_mp3_config mp3_cfg = { 2, HZ };
+    if( stream->type == UNK && (ma_dr_mp3_init_memory(&stream->mp3_, data, datalen, NULL/*&mp3_cfg*/) != 0) ) {
         stream->type = MP3;
         stream->stream.sample.frequency = stream->mp3_.sampleRate;
         stream->stream.sample.audio_format = STS_MIXER_SAMPLE_FORMAT_FLOAT;
@@ -175,14 +175,14 @@ static bool load_sample(sts_mixer_sample_t* sample, const char *filename) {
     int error;
     int channels = 0;
 
-    if( !channels ) for( drwav w = {0}, *wav = &w; wav && drwav_init_memory(wav, data, datalen, NULL); wav = 0 ) {
+    if( !channels ) for( ma_dr_wav w = {0}, *wav = &w; wav && ma_dr_wav_init_memory(wav, data, datalen, NULL); wav = 0 ) {
         channels = wav->channels;
         sample->frequency = wav->sampleRate;
         sample->audio_format = STS_MIXER_SAMPLE_FORMAT_16;
         sample->length = wav->totalPCMFrameCount;
         sample->data = REALLOC(0, sample->length * sizeof(short) * channels);
-        drwav_read_pcm_frames_s16(wav, sample->length, (short*)sample->data);
-        drwav_uninit(wav);
+        ma_dr_wav_read_pcm_frames_s16(wav, sample->length, (short*)sample->data);
+        ma_dr_wav_uninit(wav);
     }
     if( !channels ) for( stb_vorbis *ogg = stb_vorbis_open_memory((const unsigned char *)data, datalen, &error, NULL); ogg; ogg = 0 ) {
         stb_vorbis_info info = stb_vorbis_get_info(ogg);
@@ -197,9 +197,9 @@ static bool load_sample(sts_mixer_sample_t* sample, const char *filename) {
         stb_vorbis_decode_memory((const unsigned char *)data, datalen, &channels, &sample_rate, (short **)&buffer);
         sample->data = buffer;
     }
-    drmp3_config mp3_cfg = { 2, 44100 };
-    drmp3_uint64 mp3_fc;
-    if( !channels ) for( short *fbuf = drmp3_open_memory_and_read_pcm_frames_s16(data, datalen, &mp3_cfg, &mp3_fc, NULL); fbuf ; fbuf = 0 ) {
+    ma_dr_mp3_config mp3_cfg = { 2, 44100 };
+    ma_uint64 mp3_fc;
+    if( !channels ) for( short *fbuf = ma_dr_mp3_open_memory_and_read_pcm_frames_s16(data, datalen, &mp3_cfg, &mp3_fc, NULL); fbuf ; fbuf = 0 ) {
         channels = mp3_cfg.channels;
         sample->frequency = mp3_cfg.sampleRate;
         sample->audio_format = STS_MIXER_SAMPLE_FORMAT_16;
@@ -281,8 +281,8 @@ int audio_init( int flags ) {
         ma_backend_oss,
         ma_backend_jack,
         ma_backend_opensl,
-        ma_backend_webaudio,
-        //ma_backend_openal,
+        // ma_backend_webaudio,
+        // ma_backend_openal,
         //ma_backend_sdl,
         ma_backend_null    // Lowest priority.
 #else

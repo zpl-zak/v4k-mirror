@@ -334,26 +334,43 @@ array(uint32_t) string32( const char *utf8 ) {
 // -----------------------------------------------------------------------------
 // quarks
 
-unsigned quark_intern( quarks_db *quarks, const char *string ) {
-    if( !*quarks ) {
-        // copy null string on init
-        array_push(*quarks, '\0');
-    }
+unsigned quark_intern( quarks_db *q, const char *string ) {
     if( string && string[0] ) {
-        int slen = strlen(string)+1;
-        int qlen = array_count(*quarks);
-        array_resize(*quarks, qlen + slen);
-        memcpy( array_back(*quarks) + 1 - slen, string, slen );
-        return qlen;
+        int slen = strlen(string);
+        int qlen = array_count(q->blob);
+        char *found;
+        if( !qlen ) {
+            array_resize(q->blob, slen + 1 );
+            memcpy(found = q->blob, string, slen + 1);
+        } else {
+            found = strstr(q->blob, string);
+            if( !found ) {
+                array_resize(q->blob, qlen - 1 + slen + 1);
+                memcpy(found = q->blob + qlen - 1, string, slen + 1 );
+            }
+        }
+        // already interned? return that instead
+        vec2i offset_len = vec2i(found - q->blob, slen);
+        for( int i = 0; i < array_count(q->entries); ++i ) {
+            if( offset_len.x == q->entries[i].x )
+                if( offset_len.y == q->entries[i].y )
+                    return i+1;
+        }
+        // else cache and return it
+        array_push(q->entries, offset_len);
+        return array_count(q->entries);
     }
     return 0;
 }
-const char *quark_string( quarks_db *quarks, unsigned key ) {
-    assert( *quarks );
-    return *quarks + key;
+const char *quark_string( quarks_db *q, unsigned key ) {
+    if( key && key <= array_count(q->entries) ) {
+        vec2i offset_len = q->entries[key-1];
+        return va("%.*s", offset_len.y, q->blob + offset_len.x);
+    }
+    return "";
 }
 
-static __thread quarks_db qdb = 0;
+static __thread quarks_db qdb;
 unsigned intern( const char *string ) {
     return quark_intern( &qdb, string );
 }
@@ -363,18 +380,29 @@ const char *quark( unsigned key ) {
 
 #if 0
 AUTORUN {
-    assert( !intern(NULL) ); // quark #0, cannot intern null string
-    assert( !intern("") );   // quark #0, ok to intern empty string
-    assert( !quark(0)[0] );  // empty string for quark #0
+    test( !intern(NULL) ); // quark #0, cannot intern null string
+    test( !intern("") );   // quark #0, ok to intern empty string
+    test( !quark(0)[0] );  // empty string for quark #0
 
     unsigned q1 = intern("Hello");  // -> quark #1
-    unsigned q2 = intern("cruel");  // -> quark #2
+    unsigned q2 = intern("happy");  // -> quark #2
     unsigned q3 = intern("world."); // -> quark #3
+    printf("%u %u %u\n", q1, q2, q3);
+
+    test( q1 );
+    test( q2 );
+    test( q3 );
+    test( q1 != q2 );
+    test( q1 != q3 );
+    test( q2 != q3 );
+
+    unsigned q4 = intern("happy");
+    printf("%x vs %x\n", q2, q4);
+    test( q4 );
+    test( q4 == q2 );
 
     char buf[256];
     sprintf(buf, "%s %s %s", quark(q1), quark(q2), quark(q3));
-    assert( !strcmp("Hello cruel world.", buf) );
-
-    assert(~puts("Ok"));
+    test( !strcmp("Hello happy world.", buf) );
 }
 #endif

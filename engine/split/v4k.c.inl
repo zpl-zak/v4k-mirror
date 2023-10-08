@@ -89,17 +89,21 @@
 #include "v4k.h"
 #endif
 
+#if is(win32) // hack to boost exit time. there are no critical systems that need to shutdown properly on Windows,
+#define atexit(...) // however Linux needs proper atexit() to deinitialize 3rd_miniaudio.h; likely OSX as well.
+#endif
+
 #ifndef V4K_3RD
 #define V4K_3RD
 #include "v4k"
 #endif
 
+#define do_threadlock(mutexptr) \
+for( int init_ = !!(mutexptr) || (thread_mutex_init( (mutexptr) = CALLOC(1, sizeof(thread_mutex_t)) ), 1); init_; init_ = 0) \
+for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mutex_unlock( mutexptr ), 0) )
+
 //-----------------------------------------------------------------------------
 // C files
-
-#if is(win32) // hack to boost exit time. there are no critical systems that need to shutdown properly on Windows,
-#define atexit(...) // however Linux needs proper atexit() to deinitialize 3rd_miniaudio.h; likely OSX as well.
-#endif
 
 {{FILE:v4k_ds.c}}
 
@@ -108,6 +112,8 @@
 {{FILE:v4k_compat.c}}
 
 {{FILE:v4k_audio.c}}
+
+{{FILE:v4k_buffer.c}}
 
 {{FILE:v4k_collide.c}}
 
@@ -142,6 +148,8 @@
 {{FILE:v4k_time.c}}
 
 {{FILE:v4k_system.c}}
+
+{{FILE:v4k_id.c}}
 
 {{FILE:v4k_ui.c}}
 

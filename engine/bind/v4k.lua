@@ -1494,6 +1494,7 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_dir(light_t* l, vec3 dir);
+//lcpp INF [0000] vec2i: macro name but used as C declaration in:vec2i* entries;
 //lcpp INF [0000] vec3i: macro name but used as C declaration in:typedef vec3i guid;
 //lcpp INF [0000] test: macro name but used as C declaration in:API int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] test: macro name but used as C declaration in:STATIC int (test)(const char *file, int line, const char *expr, bool result);
@@ -1917,6 +1918,77 @@ AUDIO_MULTIPLE_INSTANCES = 0,
 AUDIO_SINGLE_INSTANCE = 512,
 };
  int audio_queue( const void *samples, int num_samples, int flags );
+enum COMPRESS_FLAGS {
+COMPRESS_RAW     = 0,
+COMPRESS_PPP     = (1<<4),
+COMPRESS_ULZ     = (2<<4),
+COMPRESS_LZ4     = (3<<4),
+COMPRESS_CRUSH   = (4<<4),
+COMPRESS_DEFLATE = (5<<4),
+COMPRESS_LZP1    = (6<<4),
+COMPRESS_LZMA    = (7<<4),
+COMPRESS_BALZ    = (8<<4),
+COMPRESS_LZW3    = (9<<4),
+COMPRESS_LZSS    = (10<<4),
+COMPRESS_BCM     = (11<<4),
+COMPRESS_ZLIB    = (12<<4),
+};
+ unsigned zbounds(unsigned inlen, unsigned flags);
+ unsigned zencode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
+ unsigned zexcess(unsigned flags);
+ unsigned zdecode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
+ unsigned cobs_bounds(unsigned len);
+ unsigned cobs_encode(const void *in, unsigned inlen, void *out, unsigned outlen);
+ unsigned cobs_decode(const void *in, unsigned inlen, void *out, unsigned outlen);
+    uint64_t pack754(long double f, unsigned bits, unsigned expbits);
+ long double unpack754(uint64_t i, unsigned bits, unsigned expbits);
+ int  msgpack(const char *fmt, ... );
+ bool msgunpack(const char *fmt, ... );
+ int msgpack_new(uint8_t *w, size_t l);
+ int msgpack_nil();
+ int msgpack_chr(bool n);
+ int msgpack_uns(uint64_t n);
+ int msgpack_int(int64_t n);
+ int msgpack_str(const char *s);
+ int msgpack_bin(const char *s, size_t n);
+ int msgpack_flt(double g);
+ int msgpack_ext(uint8_t key, void *val, size_t n);
+ int msgpack_arr(uint32_t n);
+ int msgpack_map(uint32_t n);
+ int msgpack_eof();
+ int msgpack_err();
+ bool msgunpack_new( const void *opaque_or_FILE, size_t bytes );
+ bool msgunpack_nil();
+ bool msgunpack_chr(bool *chr);
+ bool msgunpack_uns(uint64_t *uns);
+ bool msgunpack_int(int64_t *sig);
+ bool msgunpack_str(char **str);
+ bool msgunpack_bin(void **bin, uint64_t *len);
+ bool msgunpack_flt(float *flt);
+ bool msgunpack_dbl(double *dbl);
+ bool msgunpack_ext(uint8_t *key, void **val, uint64_t *len);
+ bool msgunpack_arr(uint64_t *len);
+ bool msgunpack_map(uint64_t *len);
+ bool msgunpack_eof();
+ bool msgunpack_err();
+enum {
+ERR,NIL,BOL,UNS,SIG,STR,BIN,FLT,EXT,ARR,MAP
+};
+typedef struct variant {
+union {
+uint8_t     chr;
+uint64_t    uns;
+int64_t     sig;
+uint8_t    *str;
+void       *bin;
+double      flt;
+uint32_t    u32;
+};
+uint64_t sz;
+uint16_t ext;
+uint16_t type;
+} variant;
+ bool msgunpack_var(struct variant *var);
 typedef struct gjk_support {
 int aid, bid;
 vec3 a;
@@ -2049,25 +2121,6 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  char*         xml_blob(char *key);
  void            xml_pop();
  bool data_tests();
-enum COMPRESS_FLAGS {
-COMPRESS_RAW     = 0,
-COMPRESS_PPP     = (1<<4),
-COMPRESS_ULZ     = (2<<4),
-COMPRESS_LZ4     = (3<<4),
-COMPRESS_CRUSH   = (4<<4),
-COMPRESS_DEFLATE = (5<<4),
-COMPRESS_LZP1    = (6<<4),
-COMPRESS_LZMA    = (7<<4),
-COMPRESS_BALZ    = (8<<4),
-COMPRESS_LZW3    = (9<<4),
-COMPRESS_LZSS    = (10<<4),
-COMPRESS_BCM     = (11<<4),
-COMPRESS_ZLIB    = (12<<4),
-};
- unsigned zbounds(unsigned inlen, unsigned flags);
- unsigned zencode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
- unsigned zexcess(unsigned flags);
- unsigned zdecode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
  void* dll(const char *filename, const char *symbol);
  vec3  editor_pick(float mouse_x, float mouse_y);
  char* editor_path(const char *path);
@@ -2165,6 +2218,10 @@ FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
  vec2  font_rect(const char *text);
  void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords);
  vec2  font_highlight(const char *text, const void *colors);
+uintptr_t id_make(void *ptr);
+void *     id_handle(uintptr_t id);
+void       id_dispose(uintptr_t id);
+bool        id_valid(uintptr_t id);
  int         input_use( int controller_id );
  float       input( int vk );
  vec2        input2( int vk );
@@ -2888,7 +2945,10 @@ int u_coefficients_sh;
  uint32_t* string32( const char *utf8 );
 unsigned    intern( const char *string );
 const char *quark( unsigned key );
-typedef char* quarks_db;
+typedef struct quarks_db {
+char* blob;
+vec2i* entries;
+} quarks_db;
 unsigned    quark_intern( quarks_db*, const char *string );
 const char *quark_string( quarks_db*, unsigned key );
  uint64_t    date();

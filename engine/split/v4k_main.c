@@ -64,6 +64,9 @@ void v4k_quit(void) {
 
 void v4k_init() {
     do_once {
+        // abort run if any test suite failed
+        if( test_errs ) exit(-1);
+
         // install signal handlers
         ifdef(debug, trap_install());
 

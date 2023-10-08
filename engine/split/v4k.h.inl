@@ -108,6 +108,8 @@ extern "C" {
 
 {{FILE:v4k_audio.h}}
 
+{{FILE:v4k_buffer.h}}
+
 {{FILE:v4k_collide.h}}
 
 {{FILE:v4k_cooker.h}}
@@ -121,6 +123,8 @@ extern "C" {
 {{FILE:v4k_file.h}}
 
 {{FILE:v4k_font.h}}
+
+{{FILE:v4k_id.h}}
 
 {{FILE:v4k_input.h}}
 

@@ -113,6 +113,7 @@ errno_t fopen_s(
 #undef error
 #undef DEBUG
 #define MA_DEBUG_OUTPUT
+// #define MA_USE_AUDIO_WORKLETS
 {{FILE:3rd_sts_mixer.h}}
 {{FILE:3rd_miniaudio.h}}
 //---
@@ -148,6 +149,9 @@ errno_t fopen_s(
 {{FILE:3rd_gjk.h}}
 {{FILE:3rd_compress.h}}
 {{FILE:3rd_archive.h}}
+#if is(win32)
+#include <mmsystem.h> // timeapi.h
+#endif
 {{FILE:3rd_thread.h}}
 {{FILE:3rd_plmpeg.h}}
 {{FILE:3rd_jo_mpeg.h}}
