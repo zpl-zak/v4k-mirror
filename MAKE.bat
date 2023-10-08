@@ -159,10 +159,17 @@ if "%1"=="push" (
     call make.bat tidy
 
     git status
+    pushd depot
+        git add .
+        git commit -m "asset update"
+    popd
     git add .
     git commit
     if "%2"=="out" (
         git push
+        pushd depot
+            git push
+        popd
     )
     call make.bat vps
 
