@@ -606,7 +606,8 @@ int main(void) {
     // 75% sized, msaa x4 enabled
     window_create(1, 0);
     window_title( "V4K - SPACE pauses simulation" );
-
+    audio_t BGM = audio_stream( "waterworld-map.fur" );
+    audio_play(BGM, 0);
     // fx_load("fx**.fs");
 
     // camera that points to origin

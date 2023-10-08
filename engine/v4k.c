@@ -1262,11 +1262,11 @@ static ma_context context;
 static sts_mixer_t mixer;
 
 // This is the function that's used for sending more data to the device for playback.
-static ma_uint32 audio_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
+static void audio_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
     int len = frameCount;
     sts_mixer_mix_audio(&mixer, pOutput, len / (sizeof(int32_t) / 4));
     (void)pDevice; (void)pInput;
-    return len / (sizeof(int32_t) / 4);
+    // return len / (sizeof(int32_t) / 4);
 }
 
 void audio_drop(void) {
@@ -1294,7 +1294,7 @@ int audio_init( int flags ) {
         ma_backend_oss,
         ma_backend_jack,
         ma_backend_opensl,
-        // ma_backend_webaudio,
+        ma_backend_webaudio,
         //ma_backend_openal,
         //ma_backend_sdl,
         ma_backend_null    // Lowest priority.
