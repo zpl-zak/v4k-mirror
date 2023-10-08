@@ -116,7 +116,7 @@ echo // #define V4K_IMPLEMENTATION early in **one** C file to unroll the >> v4k.
 echo // implementation. The symbol must be defined in a C (not C++^) file>> v4k.h
 echo // ---------------------------------------------------------------- >> v4k.h
 echo #pragma once                                                        >> v4k.h
-type engine\split\3rd_font_md.h                                          >> v4k.h
+type engine\split\3rd_icon_md.h                                          >> v4k.h
 type engine\split\3rd_glad.h                                             >> v4k.h
 type engine\v4k.h                                                        >> v4k.h
 echo #ifdef V4K_IMPLEMENTATION                                           >> v4k.h
