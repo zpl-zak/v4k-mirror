@@ -1,0 +1,3 @@
+[submodule "depot"]
+	path = depot
+	url = git@dev.v4.games:v4games/depot.git
