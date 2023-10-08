@@ -1574,9 +1574,9 @@ pair** sorted;
  char *cc4str(unsigned cc);
  char *cc8str(uint64_t cc);
 enum {
-cc_1 = '1', cc_2, cc_3, cc_4, cc_5, cc_6,cc_7, cc_8, cc_9, cc_0, cc__, cc_ = ' ',
-cc_A = 'A', cc_B, cc_C, cc_D, cc_E, cc_F,cc_G, cc_H, cc_I, cc_J, cc_K,cc_L, cc_M, cc_N, cc_O, cc_P,cc_Q, cc_R, cc_S, cc_T, cc_U,cc_V, cc_W, cc_X, cc_Y, cc_Z,
-cc_a = 'a', cc_b, cc_c, cc_d, cc_e, cc_f,cc_g, cc_h, cc_i, cc_j, cc_k,cc_l, cc_m, cc_n, cc_o, cc_p,cc_q, cc_r, cc_s, cc_t, cc_u,cc_v, cc_w, cc_x, cc_y, cc_z,
+cc__1 = '1', cc__2, cc__3, cc__4, cc__5, cc__6,cc__7, cc__8, cc__9, cc__0, cc___, cc__ = ' ',
+cc__A = 'A', cc__B, cc__C, cc__D, cc__E, cc__F,cc__G, cc__H, cc__I, cc__J, cc__K,cc__L, cc__M, cc__N, cc__O, cc__P,cc__Q, cc__R, cc__S, cc__T, cc__U,cc__V, cc__W, cc__X, cc__Y, cc__Z,
+cc__a = 'a', cc__b, cc__c, cc__d, cc__e, cc__f,cc__g, cc__h, cc__i, cc__j, cc__k,cc__l, cc__m, cc__n, cc__o, cc__p,cc__q, cc__r, cc__s, cc__t, cc__u,cc__v, cc__w, cc__x, cc__y, cc__z,
 };
 typedef union vec2i{ struct { int X,Y; };       struct { int x,y; }; struct { int r,g; }; struct { int w,h; }; struct { int min,max; }; struct { int from,to; }; struct { int src,dst; }; int v2[2]; int array[1]; } vec2i;
 typedef union vec3i{ struct { int X,Y,Z; };     struct { int x,y,z; }; struct { int r,g,b; }; struct { int w,h,d; }; struct { int min,max; }; struct { int from,to,step; }; struct { int src,dst; }; int v3[3]; int array[1]; } vec3i;

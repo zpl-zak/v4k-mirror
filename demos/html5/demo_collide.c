@@ -5,7 +5,6 @@
 
 #include "v4k.h"
 
-// -- demo
 
 int paused;
 camera_t cam;
@@ -58,7 +57,7 @@ void game_loop(void *userdata) {
         view = add2(view, vec2(touch_view.x, -touch_view.y));
 
         // apply inputs
-        camera_move(&cam, move.x,move.y,move.z);
+        camera_moveby(&cam, move);
         camera_fps(&cam, view.x,view.y);
     }
 

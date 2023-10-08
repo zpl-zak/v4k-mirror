@@ -176,4 +176,5 @@ errno_t fopen_s(
 #undef Table
 #undef rehash
 #undef NB
+#undef threadid
 #endif // V4K_3RD

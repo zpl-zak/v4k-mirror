@@ -737,7 +737,7 @@ int window_swap() {
 static
 void (*window_render_callback)(void* loopArg);
 
-static vec2 last_canvas_size;
+static vec2 last_canvas_size = {0};
 
 static
 void window_resize() {
@@ -746,14 +746,13 @@ void window_resize() {
     if (g->flags&WINDOW_FIXED) return;
     EM_ASM(canvas.canResize = 1);
     vec2 size = window_canvas();
-    do_once last_canvas_size = size;
     if (size.x != last_canvas_size.x || size.y != last_canvas_size.y) {
         w = size.x;
         h = size.y;
         g->width  = w;
         g->height = h;
-        glfwSetWindowSize(g->window, w, h);
-        // emscripten_set_canvas_size(w, h);
+        last_canvas_size = vec2(w,h);
+        emscripten_set_canvas_size(w, h);
     }
 #endif /* __EMSCRIPTEN__ */
 }
@@ -791,8 +790,8 @@ void window_loop_exit() {
 
 vec2 window_canvas() {
 #if is(ems)
-    int width = EM_ASM_INT_V(return canvas.width || window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
-    int height = EM_ASM_INT_V(return canvas.height || window.innerHeight || document.documentElement.clientHeight|| document.body.clientHeight);
+    int width = EM_ASM_INT_V(return canvas.width);
+    int height = EM_ASM_INT_V(return canvas.height);
     return vec2(width, height);
 #else
     glfw_init();
