@@ -162,14 +162,14 @@ if "%1"=="push" (
     pushd depot
         git add .
         git commit -m "asset update"
+        if "%2"=="out" (
+            git push
+        )
     popd
     git add .
     git commit
     if "%2"=="out" (
         git push
-        pushd depot
-            git push
-        popd
     )
     call make.bat vps
 
