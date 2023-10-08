@@ -1294,7 +1294,7 @@ int audio_init( int flags ) {
         ma_backend_oss,
         ma_backend_jack,
         ma_backend_opensl,
-        ma_backend_webaudio,
+        // ma_backend_webaudio,
         //ma_backend_openal,
         //ma_backend_sdl,
         ma_backend_null    // Lowest priority.
