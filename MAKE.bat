@@ -165,11 +165,12 @@ if "%1"=="dpush" (
         git add .
         if "%2"=="auto" (
             git commit -m "asset update"
+            git push
         ) else (
             git commit
-        )
-        if "%2"=="out" (
-            git push
+            if not "%2"=="local" (
+                git push
+            )
         )
     popd
 
