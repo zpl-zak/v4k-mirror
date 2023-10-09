@@ -239,10 +239,9 @@ if "%1"=="vps" (
 )
 
 if "%1"=="fwk_sync" (
-    pushd ..\fwk-mirror
-    call MAKE.bat sync
-    popd
+    git submodule update --remote --merge _mirror/
     call MAKE.bat fwk
+    start "" fwk_diff.WinMerge
     exit /b
 )
 
