@@ -16536,7 +16536,6 @@ typedef struct iqm_vertex {
 
 typedef struct iqm_t {
     int nummeshes, numtris, numverts, numjoints, numframes, numanims;
-    GLuint program;
     GLuint vao, ibo, vbo;
     GLuint *textures;
     uint8_t *buf, *meshdata, *animdata;
@@ -16550,7 +16549,6 @@ typedef struct iqm_t {
     vec4 *colormaps;
 } iqm_t;
 
-#define program (q->program)
 #define meshdata (q->meshdata)
 #define animdata (q->animdata)
 #define nummeshes (q->nummeshes)
@@ -17082,7 +17080,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     // }
 
     iqm_t *q = CALLOC(1, sizeof(iqm_t));
-    program = shaderprog;
+    m.program = shaderprog;
 
     int error = 1;
     if( ptr && len ) {
@@ -17125,9 +17123,6 @@ model_t model_from_mem(const void *mem, int len, int flags) {
         m.num_frames = numframes;
         m.iqm = q;
         m.curframe = model_animate(m, 0);
-        #undef program
-        m.program = (q->program);
-        #define program (q->program)
 
         //m.num_textures = nummeshes; // assume 1 texture only per mesh
         #undef textures
@@ -17333,13 +17328,13 @@ void model_draw_call(model_t m) {
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textures[i] );
-        glUniform1i(glGetUniformLocation(program, "fsDiffTex"), 0 /*<-- unit!*/ );
+        glUniform1i(glGetUniformLocation(m.program, "fsDiffTex"), 0 /*<-- unit!*/ );
 
         int loc;
-        if ((loc = glGetUniformLocation(program, "u_textured")) >= 0) {
+        if ((loc = glGetUniformLocation(m.program, "u_textured")) >= 0) {
             bool textured = !!textures[i] && textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
             glUniform1i(loc, textured ? GL_TRUE : GL_FALSE);
-            if ((loc = glGetUniformLocation(program, "u_diffuse")) >= 0) {
+            if ((loc = glGetUniformLocation(m.program, "u_diffuse")) >= 0) {
                 glUniform4f(loc, m.materials[i].layer[0].color.r, m.materials[i].layer[0].color.g, m.materials[i].layer[0].color.b, m.materials[i].layer[0].color.a);
             }
         }
@@ -17371,7 +17366,7 @@ void model_render_instanced(model_t m, mat44 proj, mat44 view, mat44* models, in
         model_set_state(m);
     }
 
-    model_set_uniforms(m, shader > 0 ? shader : program, mv, proj, view, models[0]);
+    model_set_uniforms(m, shader > 0 ? shader : m.program, mv, proj, view, models[0]);
     model_draw_call(m);
 }
 
