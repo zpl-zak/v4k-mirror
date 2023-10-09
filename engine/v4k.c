@@ -10135,7 +10135,7 @@ void printi_( int *m, int ii, int jj ) {
 }
 void print_( float *m, int ii, int jj ) {
     for( int j = 0; j < jj; ++j ) {
-        for( int i = 0; i < ii; ++i ) printf("%8.3f", *m++);
+        for( int i = 0; i < ii; ++i ) printf("%8.3f ", *m++);
         puts("");
     }
 //    puts("---");
@@ -24967,10 +24967,17 @@ char *editor_path(const char *path) {
 vec3 editor_pick(float mouse_x, float mouse_y) {
     // unproject 2d coord as 3d coord
     camera_t *camera = camera_get_active();
-    vec3 out, xyd = vec3(mouse_x,window_height()-mouse_y,1); // usually x:mouse_x,y:window_height()-mouse_y,d:0=znear/1=zfar
-    mat44 mvp, model; identity44(model); multiply44x3(mvp, camera->proj, camera->view, model);
-    bool ok = unproject44(&out, xyd, vec4(0,0,window_width(),window_height()), mvp);
-    return out;
+    float x = (2.0f * mouse_x) / window_width() - 1.0f;
+    float y = 1.0f - (2.0f * mouse_y) / window_height();
+    float z = 1.0f;
+    vec3 ray_nds = vec3(x, y, z);
+    vec4 ray_clip = vec4(ray_nds.x, ray_nds.y, -1.0, 1.0);
+    mat44 inv_proj; invert44(inv_proj, camera->proj);
+    mat44 inv_view; invert44(inv_view, camera->view);
+    vec4 p = transform444(inv_proj, ray_clip);
+    vec4 eye = vec4(p.x, p.y, -1.0, 0.0);
+    vec4 wld = norm4(transform444(inv_view, eye));
+    return vec3(wld.x, wld.y, wld.z);
 }
 
 int editor_ui_bits8(const char *label, uint8_t *enabled) { // @to deprecate

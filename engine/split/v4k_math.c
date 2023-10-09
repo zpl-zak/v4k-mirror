@@ -987,7 +987,7 @@ void printi_( int *m, int ii, int jj ) {
 }
 void print_( float *m, int ii, int jj ) {
     for( int j = 0; j < jj; ++j ) {
-        for( int i = 0; i < ii; ++i ) printf("%8.3f", *m++);
+        for( int i = 0; i < ii; ++i ) printf("%8.3f ", *m++);
         puts("");
     }
 //    puts("---");
