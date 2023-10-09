@@ -55,28 +55,6 @@ API void        trap_on_quit(int signal);   // helper util
 API void        trap_on_abort(int signal);  // helper util
 API void        trap_on_debug(int signal);  // helper util
 
-API uint16_t    lil16(uint16_t n); // swap16 as lil
-API uint32_t    lil32(uint32_t n); // swap32 as lil
-API float       lil32f(float n);   // swap32 as lil
-API uint64_t    lil64(uint64_t n); // swap64 as lil
-API double      lil64f(double n);  // swap64 as lil
-API uint16_t    big16(uint16_t n); // swap16 as big
-API uint32_t    big32(uint32_t n); // swap32 as big
-API float       big32f(float n);   // swap32 as big
-API uint64_t    big64(uint64_t n); // swap64 as big
-API double      big64f(double n);  // swap64 as big
-
-API uint16_t*   lil16p(void *n, int sz);
-API uint32_t*   lil32p(void *n, int sz);
-API float*      lil32pf(void *n, int sz);
-API uint64_t*   lil64p(void *n, int sz);
-API double*     lil64pf(void *n, int sz);
-API uint16_t*   big16p(void *n, int sz);
-API uint32_t*   big32p(void *n, int sz);
-API float*      big32pf(void *n, int sz);
-API uint64_t*   big64p(void *n, int sz);
-API double*     big64pf(void *n, int sz);
-
 #define hton16 big16
 #define ntoh16 big16
 #define hton32 big32

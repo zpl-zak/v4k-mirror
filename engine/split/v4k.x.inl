@@ -112,7 +112,7 @@ errno_t fopen_s(
 {{FILE:3rd_stb_vorbis.h}}
 #undef error
 #undef DEBUG
-#define MA_DEBUG_OUTPUT
+// #define MA_DEBUG_OUTPUT
 // #define MA_USE_AUDIO_WORKLETS
 {{FILE:3rd_sts_mixer.h}}
 {{FILE:3rd_miniaudio.h}}

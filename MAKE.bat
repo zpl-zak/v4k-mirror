@@ -75,14 +75,14 @@ rem generate bindings
 if "%1"=="bind" (
     rem luajit
     tools\luajit tools\luajit_make_bindings.lua > v4k.lua
-    move /y v4k.lua engine\bind
+    move /y v4k.lua bind
 
     exit /b
 )
 
 if "%1"=="lua" (
-    pushd engine\bind
-        luajit "..\..\%2"
+    pushd bind
+        luajit "..\%2"
     popd
     exit /b
 )
@@ -259,7 +259,7 @@ if "%1"=="fwk" (
     xcopy /y "engine\split\3rd_*" "_fwk\engine\split"
     xcopy /y "engine\art\shaders\*" "_fwk\engine\art\shaders"
     xcopy /y "demos" "_fwk\demos"
-    xcopy /y/E "tools "_fwk\tools"
+    rem xcopy /y/E "tools "_fwk\tools"
     for %%f in ("engine\split\v4k*") do (
         set "filename=%%~nf"
         set "newname=fwk!filename:v4k=!%%~xf"
@@ -285,13 +285,13 @@ if "%1"=="fwk" (
     rem     echo Processing: %%f
     rem     tools\fwkren.exe %%f from
     rem )
-    for %%f in (_fwk\tools\editor\*.c) do (
-        set "filename=%%~nxf"
-        echo Processing: %%f
-        tools\fwkren.exe %%f from
-    )
+    rem for %%f in (_fwk\tools\editor\*.c) do (
+    rem     set "filename=%%~nxf"
+    rem     echo Processing: %%f
+    rem     tools\fwkren.exe %%f from
+    rem )
 
-    tools\fwkren.exe tools\cook.ini from
+    rem tools\fwkren.exe tools\cook.ini from
 
     echo All done.
     endlocal
@@ -306,7 +306,7 @@ if "%1"=="back" (
     xcopy /y "_fwk\engine\split\3rd_*" "engine\split"
     xcopy /y "_fwk\engine\art\shaders\*" "engine\art\shaders"
     xcopy /y "_fwk\demos" "demos"
-    xcopy /y/E "_fwk\tools "tools"
+    rem xcopy /y/E "_fwk\tools "tools"
     for %%f in ("_fwk\engine\split\fwk*") do (
         set "filename=%%~nf"
         set "newname=v4k!filename:fwk=!%%~xf"
@@ -332,13 +332,13 @@ if "%1"=="back" (
     rem     echo Processing: %%f
     rem     tools\fwkren.exe %%f to
     rem )
-    for %%f in (tools\editor\*.c) do (
-        set "filename=%%~nxf"
-        echo Processing: %%f
-        tools\fwkren.exe %%f to
-    )
+    rem for %%f in (tools\editor\*.c) do (
+    rem     set "filename=%%~nxf"
+    rem     echo Processing: %%f
+    rem     tools\fwkren.exe %%f to
+    rem )
 
-    tools\fwkren.exe tools\cook.ini to
+    rem tools\fwkren.exe tools\cook.ini to
 
     echo All done.
     endlocal
@@ -352,7 +352,7 @@ rem tidy environment
 if "%1"=="tidy" (
     move /y ??-*.png demos          > nul 2> nul
     move /y ??-*.c demos            > nul 2> nul
-    del engine\bind\v4k.dll         > nul 2> nul
+    del bind\v4k.dll                > nul 2> nul
     del .temp*.*                    > nul 2> nul
     del *.zip                       > nul 2> nul
     del *.mem                       > nul 2> nul
@@ -651,7 +651,7 @@ if "!v4k!"=="yes" (
     if exist !cache!.pdb copy /y !cache!.pdb v4k.pdb 2>nul >nul
 
     if not exist "!cache!" (
-        !echo! v4k          && !cc! engine\v4k.c !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll engine\bind\lua  > nul || set rc=1
+        !echo! v4k          && !cc! engine\v4k.c !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll bind\lua  > nul || set rc=1
         echo. > !cache!
         if exist v4k.o   copy /y v4k.o   !cache!.o   2>nul >nul
         if exist v4k.obj copy /y v4k.obj !cache!.obj 2>nul >nul
@@ -662,7 +662,7 @@ if "!v4k!"=="yes" (
     ) else (
         rem cached. do not compile...
         echo v4k.c ^(cached^)
-        if "!dll!"=="dll" copy /y !cache!.dll engine\bind\v4k.dll > nul || set rc=1
+        if "!dll!"=="dll" copy /y !cache!.dll bind\v4k.dll > nul || set rc=1
     )
 )
 
