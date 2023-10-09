@@ -80,7 +80,7 @@ void v4k_init() {
         tty_init();
 
         // chdir to root (if invoked as tcc -g -run)
-        chdir(app_path());
+        // chdir(app_path());
 
         // skip tcc argvs (if invoked as tcc file.c v4k.c -g -run) (win)
         if( __argc > 1 ) if( strstr(__argv[0], "/tcc") || strstr(__argv[0], "\\tcc") ) {

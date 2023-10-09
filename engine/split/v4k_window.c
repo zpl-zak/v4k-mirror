@@ -876,7 +876,7 @@ void* window_handle() {
 void window_reload() {
     // @todo: save_on_exit();
     fflush(0);
-    chdir(app_path());
+    // chdir(app_path());
     execv(__argv[0], __argv);
     exit(0);
 }
