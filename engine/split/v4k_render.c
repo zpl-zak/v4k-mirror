@@ -81,7 +81,7 @@ GLuint shader_compile( GLenum type, const char *source ) {
 
         // dump log with line numbers
         shader_print( source );
-        PANIC("!ERROR: shader_compile(): %s\n%s\n", type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", buf);
+        PRINTF("!ERROR: shader_compile(): %s\n%s\n", type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", buf);
         return 0;
     }
 
