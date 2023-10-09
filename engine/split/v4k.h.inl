@@ -126,6 +126,8 @@ extern "C" {
 
 {{FILE:v4k_id.h}}
 
+{{FILE:v4k_pack.h}}
+
 {{FILE:v4k_input.h}}
 
 {{FILE:v4k_memory.h}}

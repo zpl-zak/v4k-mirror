@@ -137,6 +137,8 @@ for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mute
 
 {{FILE:v4k_netsync.c}}
 
+{{FILE:v4k_pack.c}}
+
 {{FILE:v4k_render.c}}
 
 {{FILE:v4k_renderdd.c}}

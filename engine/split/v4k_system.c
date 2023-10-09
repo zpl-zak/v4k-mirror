@@ -303,53 +303,6 @@ AUTORUN {
 }
 #endif
 
-// endian ----------------------------------------------------------------------
-
-#if is(cl)
-#include <stdlib.h>
-#define swap16 _byteswap_ushort
-#define swap32 _byteswap_ulong
-#define swap64 _byteswap_uint64
-#elif is(gcc)
-#define swap16 __builtin_bswap16
-#define swap32 __builtin_bswap32
-#define swap64 __builtin_bswap64
-#else
-uint16_t swap16( uint16_t x ) { return (x << 8) | (x >> 8); }
-uint32_t swap32( uint32_t x ) { x = ((x << 8) & 0xff00ff00) | ((x >> 8) & 0x00ff00ff); return (x << 16) | (x >> 16); }
-uint64_t swap64( uint64_t x ) { x = ((x <<  8) & 0xff00ff00ff00ff00ULL) | ((x >>  8) & 0x00ff00ff00ff00ffULL); x = ((x << 16) & 0xffff0000ffff0000ULL) | ((x >> 16) & 0x0000ffff0000ffffULL); return (x << 32) | (x >> 32); }
-#endif
-
-float    swap32f(float n)  { union { float  t; uint32_t i; } conv; conv.t = n; conv.i = swap32(conv.i); return conv.t; }
-double   swap64f(double n) { union { double t; uint64_t i; } conv; conv.t = n; conv.i = swap64(conv.i); return conv.t; }
-
-#define is_big()    ((*(uint16_t *)"\0\1") == 1)
-#define is_little() ((*(uint16_t *)"\0\1") != 1)
-
-uint16_t  lil16(uint16_t n) { return is_big()    ? swap16(n) : n; }
-uint32_t  lil32(uint32_t n) { return is_big()    ? swap32(n) : n; }
-uint64_t  lil64(uint64_t n) { return is_big()    ? swap64(n) : n; }
-uint16_t  big16(uint16_t n) { return is_little() ? swap16(n) : n; }
-uint32_t  big32(uint32_t n) { return is_little() ? swap32(n) : n; }
-uint64_t  big64(uint64_t n) { return is_little() ? swap64(n) : n; }
-
-float     lil32f(float n)  { return is_big()    ? swap32f(n) : n; }
-double    lil64f(double n) { return is_big()    ? swap64f(n) : n; }
-float     big32f(float n)  { return is_little() ? swap32f(n) : n; }
-double    big64f(double n) { return is_little() ? swap64f(n) : n; }
-
-uint16_t* lil16p(void *p, int sz)  { if(is_big()   ) { uint16_t *n = (uint16_t *)p; for(int i = 0; i < sz; ++i) n[i] = swap16(n[i]); } return p; }
-uint16_t* big16p(void *p, int sz)  { if(is_little()) { uint16_t *n = (uint16_t *)p; for(int i = 0; i < sz; ++i) n[i] = swap16(n[i]); } return p; }
-uint32_t* lil32p(void *p, int sz)  { if(is_big()   ) { uint32_t *n = (uint32_t *)p; for(int i = 0; i < sz; ++i) n[i] = swap32(n[i]); } return p; }
-uint32_t* big32p(void *p, int sz)  { if(is_little()) { uint32_t *n = (uint32_t *)p; for(int i = 0; i < sz; ++i) n[i] = swap32(n[i]); } return p; }
-uint64_t* lil64p(void *p, int sz)  { if(is_big()   ) { uint64_t *n = (uint64_t *)p; for(int i = 0; i < sz; ++i) n[i] = swap64(n[i]); } return p; }
-uint64_t* big64p(void *p, int sz)  { if(is_little()) { uint64_t *n = (uint64_t *)p; for(int i = 0; i < sz; ++i) n[i] = swap64(n[i]); } return p; }
-
-float   * lil32pf(void *p, int sz) { if(is_big()   ) { float    *n = (float    *)p; for(int i = 0; i < sz; ++i) n[i] = swap32f(n[i]); } return p; }
-float   * big32pf(void *p, int sz) { if(is_little()) { float    *n = (float    *)p; for(int i = 0; i < sz; ++i) n[i] = swap32f(n[i]); } return p; }
-double  * lil64pf(void *p, int sz) { if(is_big()   ) { double   *n = (double   *)p; for(int i = 0; i < sz; ++i) n[i] = swap64f(n[i]); } return p; }
-double  * big64pf(void *p, int sz) { if(is_little()) { double   *n = (double   *)p; for(int i = 0; i < sz; ++i) n[i] = swap64f(n[i]); } return p; }
-
 // cpu -------------------------------------------------------------------------
 
 #if is(linux)
