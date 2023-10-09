@@ -17,10 +17,12 @@ if "%1"=="help" (
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [html5]                 ; build HTML5 demo
     echo %0 [web]                   ; run Python webserver in html5 dir
-    echo %0 [pull]                  ; pull changes from 'latest' upstream
+    echo %0 [pull]                  ; pull changes from origin
+    echo %0 [push]                  ; prepare for commit, stage changes and commit them
+    echo %0 [dpush]                 ; push depot changes
+    echo %0 [depot]                 ; sync depot changes
     echo %0 [git]                   ; prepare for commit
     echo %0 [vps]                   ; upload the release to VPS
-    echo %0 [push]                  ; prepare for commit, stage changes and commit them
     echo %0 [tidy]                  ; clean up temp files
     echo %0 [bind]                  ; generate lua bindings
     echo %0 [checkmem]              ; check untracked allocators in V4K
@@ -149,9 +151,28 @@ rem move /y 3rd_*.? engine\split\
 )
 
 if "%1"=="pull" (
-    git remote add fwk git@github.com:r-lyeh/FWK.git 2>NUL
-    git fetch fwk
-    git merge -Xrename-threshold=50 --allow-unrelated-histories fwk/main
+    git pull
+    exit /b
+)
+
+if "%1"=="depot" (
+    git submodule update --remote --merge depot/
+    exit /b
+)
+
+if "%1"=="dpush" (
+    pushd depot
+        git add .
+        if "%2"=="auto" (
+            git commit -m "asset update"
+        ) else (
+            git commit
+        )
+        if "%2"=="out" (
+            git push
+        )
+    popd
+
     exit /b
 )
 
@@ -159,16 +180,10 @@ if "%1"=="push" (
     call make.bat tidy
 
     git status
-    pushd depot
-        git add .
-        git commit -m "asset update"
-        if "%2"=="out" (
-            git push
-        )
-    popd
+    call MAKE.bat dpush auto
     git add .
     git commit
-    if "%2"=="out" (
+    if not "%2"=="local" (
         git push
     )
     call make.bat vps
@@ -357,6 +372,8 @@ if "%1"=="tidy" (
     del *.dll                       > nul 2> nul
     del 3rd_*.*                     > nul 2> nul
     del v4k_*.*                     > nul 2> nul
+    del v4k.html                    > nul 2> nul
+    del changelog.txt               > nul 2> nul
 rem del ??-*.*                      > nul 2> nul
     del temp_*.*                    > nul 2> nul
     rd /q /s .vs                    > nul 2> nul
