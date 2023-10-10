@@ -1,6 +1,7 @@
+#define V4K_IMPLEMENTATION
 #define COOK_ON_DEMAND 0
 #define COOK_FROM_TERMINAL 1
-#include "..\engine\v4k.c"
+#include "..\engine\joint\v4k.h"
 
 int main(int argc, const char **argv) {
     double timer = time_ss();
