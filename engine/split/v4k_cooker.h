@@ -26,6 +26,7 @@ API void cook_config( const char *path_to_cook_ini ); // "tools/cook.ini"
 API bool cook_start( const char *path_to_cook_ini, const char *masks, int flags ); // COOK_INI, "**"
 API void cook_stop();
 API void cook_cancel();
+API void cook_disable();
 API int  cook_jobs();     // [0..N]
 API int  cook_progress(); // [0..100]
 

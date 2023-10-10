@@ -2081,6 +2081,7 @@ COOK_DEBUGLOG = 4,
  bool cook_start( const char *path_to_cook_ini, const char *masks, int flags );
  void cook_stop();
  void cook_cancel();
+ void cook_disable();
  int  cook_jobs();
  int  cook_progress();
 typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* arr; } json_t;
