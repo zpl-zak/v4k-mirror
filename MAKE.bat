@@ -174,6 +174,14 @@ if "%1"=="dpush" (
         )
     popd
 
+    if not "%2"=="noroot" (
+        git add depot
+        git commit -m "sync depot"
+        if not "%3"=="local" (
+            git push
+        )
+    )
+
     exit /b
 )
 
