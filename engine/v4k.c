@@ -5187,7 +5187,7 @@ const char** file_list(const char *cwd, const char *masks) {
     }
     array_resize(list, 0);//array_free(list);
 
-    dir *d = dir_open(cwd, "rb");
+    dir *d = dir_open(cwd, strstr(masks,"**") ? "r"  : "");
     if( d ) {
         for( int i = 0; i < dir_count(d); ++i ) {
             if( dir_file(d,i) ) {
@@ -5565,7 +5565,10 @@ void vfs_reload() {
         // if( vfs_mount(va("%s.%02x", app, i)) ) continue;
     } */
     // faster way
-    for( const char **file = file_list("./","*.zip"); *file; ++file) vfs_mount(*file);
+    for( const char **file = file_list("./","*.zip"); *file; ++file) {
+        // PRINTF("VFS mounted: %s\n", *file);
+        vfs_mount(*file);
+    }
 #endif
 
     // vfs_resolve() will use these art_folder locations as hints when cook-on-demand is in progress.
