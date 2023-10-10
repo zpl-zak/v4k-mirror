@@ -12,8 +12,8 @@ if "%1"=="help" (
     echo %0 [docs]                  ; generate tools/docs/docs.html file
     echo %0 [cook]                  ; cook .zipfiles with tools/cook.ini cookbook
     echo %0 [sync]                  ; sync repo to latest
-    echo %0 [fwk]                   ; prepare files for fwk PR
-    echo %0 [fwk_sync]              ; update fwk-mirror fork
+    echo %0 [fwk_prep]              ; prepare files for fwk PR
+    echo %0 [fwk]                   ; update fwk-mirror fork
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [html5]                 ; build HTML5 demo
     echo %0 [web]                   ; run Python webserver in html5 dir
@@ -238,14 +238,16 @@ if "%1"=="vps" (
     exit /b
 )
 
-if "%1"=="fwk_sync" (
-    git submodule update --remote --merge _mirror/
-    call MAKE.bat fwk
+if "%1"=="fwk" (
+    pushd _mirror
+        call MAKE.bat sync
+    popd
+    call MAKE.bat fwk_prep
     start "" fwk_diff.WinMerge
     exit /b
 )
 
-if "%1"=="fwk" (
+if "%1"=="fwk_prep" (
     if not exist "_fwk" mkdir "_fwk"
     if not exist "_fwk\demos" mkdir "_fwk\demos"
     if not exist "_fwk\tools" mkdir "_fwk\tools"
