@@ -23944,6 +23944,12 @@ double window_time() {
 double window_delta() {
     return dt;
 }
+vec2 window_dpi() {
+    float x=0.0f;
+    float y=0.0f;
+    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &x, &y);
+    return vec2(x,y);
+}
 
 double window_fps() {
     return fps;

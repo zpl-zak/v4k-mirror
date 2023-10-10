@@ -1505,6 +1505,9 @@ ffi.cdef([[
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2     window_canvas();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2     window_canvas();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2     window_canvas();
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2     window_dpi();
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2     window_dpi();
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2     window_dpi();
 typedef struct FILE FILE;
 typedef long int ptrdiff_t;
 typedef long unsigned int size_t;
@@ -3190,6 +3193,7 @@ WINDOW_VSYNC_DISABLED =8192,
  uint64_t window_frame();
  int      window_width();
  int      window_height();
+ vec2     window_dpi();
  double   window_time();
  double   window_delta();
  void     window_focus();

@@ -4051,6 +4051,7 @@ API char*    window_stats();
 API uint64_t window_frame();
 API int      window_width();
 API int      window_height();
+API vec2     window_dpi();
 API double   window_time();
 API double   window_delta();
 
