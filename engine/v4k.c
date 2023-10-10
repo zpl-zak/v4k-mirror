@@ -25402,6 +25402,10 @@ void v4k_init() {
             __argc = 0;
         }
 
+        #ifdef COOK_DISABLED
+            cook_disable();
+        #endif
+
         // create or update cook.zip file
         if( /* !COOK_ON_DEMAND && */ file_exist(COOK_INI) && cook_jobs() ) {
             cook_start(COOK_INI, "**", 0|COOK_ASYNC|COOK_CANCELABLE );
