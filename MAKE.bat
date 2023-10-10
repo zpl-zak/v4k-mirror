@@ -740,7 +740,10 @@ if not "!other!"=="" (
 )
 
 if "!run!"=="yes" (
-    for /f "tokens=*" %%a in ("!other!") do set exename=%%~na.exe
+    set exename=hello.exe
+    if "!other!"=="" (
+        for /f "tokens=*" %%a in ("!other!") do set exename=%%~na.exe
+    )
     echo run !exename! !run_args!
     !exename! !run_args! || set rc=1
 )
