@@ -188,6 +188,7 @@ if "%1"=="push" (
         git push
     )
     call make.bat vps
+    call make.bat tidy
 
     exit /b
 )
