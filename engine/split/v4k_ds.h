@@ -115,12 +115,17 @@ static __thread unsigned array_n_;
 
 #define array_copy(t, src) do { /*todo: review old vrealloc call!*/ \
     array_free(t); \
-    (t) = vrealloc( (t), array_count(src) * sizeof(0[t])); \
+    (t) = array_realloc_( (t), array_count(src)); \
     memcpy( (t), src, array_count(src) * sizeof(0[t])); \
 } while(0)
 
-#define array_erase(t, i) do { /*may alter ordering*/ \
-    memcpy( &(t)[i], &(t)[array_count(t) - 1], sizeof(0[t])); \
+#define array_swapback_and_pop(t, i) do { /*may alter ordering*/ \
+    memmove( &(t)[i], &(t)[array_count(t) - 1], sizeof(0[t])); \
+    array_pop(t); \
+} while(0)
+
+#define array_erase(t, i) do { \
+    memmove( &(t)[i], &(t)[i + 1], sizeof(0[t])*(array_count(t) - i - 1)); \
     array_pop(t); \
 } while(0)
 

@@ -16,8 +16,9 @@ vec3 editor_pick(float mouse_x, float mouse_y) {
 #else
     // unproject 2d coord as 3d coord
     camera_t *camera = camera_get_active();
-    float x = (2.0f * mouse_x) / window_width() - 1.0f;
-    float y = 1.0f - (2.0f * mouse_y) / window_height();
+    vec2 dpi = window_dpi();
+    float x = (2.0f * mouse_x) / (dpi.x * window_width()) - 1.0f;
+    float y = 1.0f - (2.0f * mouse_y) / (dpi.y * window_height());
     float z = 1.0f;
     vec3 ray_nds = vec3(x, y, z);
     vec4 ray_clip = vec4(ray_nds.x, ray_nds.y, -1.0, 1.0);
