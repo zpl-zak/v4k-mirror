@@ -823,7 +823,7 @@ bool app_open_folder(const char *file) {
 #ifdef _WIN32
     snprintf(buf, sizeof(buf), "start \"\" \"%s\"", file);
 #elif __APPLE__
-    snprintf(buf, sizeof(buf), "%s \"%s\"", is_directory(file) ? "open" : "open --reveal", file);
+    snprintf(buf, sizeof(buf), "%s \"%s\"", file_directory(file) ? "open" : "open --reveal", file);
 #else
     snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
 #endif

@@ -6,6 +6,14 @@ char *editor_path(const char *path) {
 }
 
 vec3 editor_pick(float mouse_x, float mouse_y) {
+#if 0
+    // unproject 2d coord as 3d coord
+    camera_t *camera = camera_get_active();
+    vec3 out, xyd = vec3(mouse_x,window_height()-mouse_y,1); // usually x:mouse_x,y:window_height()-mouse_y,d:0=znear/1=zfar
+    mat44 mvp, model; identity44(model); multiply44x3(mvp, camera->proj, camera->view, model);
+    bool ok = unproject44(&out, xyd, vec4(0,0,window_width(),window_height()), mvp);
+    return out;
+#else
     // unproject 2d coord as 3d coord
     camera_t *camera = camera_get_active();
     float x = (2.0f * mouse_x) / window_width() - 1.0f;
@@ -19,6 +27,7 @@ vec3 editor_pick(float mouse_x, float mouse_y) {
     vec4 eye = vec4(p.x, p.y, -1.0, 0.0);
     vec4 wld = norm4(transform444(inv_view, eye));
     return vec3(wld.x, wld.y, wld.z);
+#endif
 }
 
 int editor_ui_bits8(const char *label, uint8_t *enabled) { // @to deprecate

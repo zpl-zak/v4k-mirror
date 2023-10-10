@@ -1471,8 +1471,9 @@ int dir_yield(dir *d, const char *pathfile, char *name, int namelen) {
     snprintf(name, namelen, "%s/*", pathfile);
     for( HANDLE h = FindFirstFileA(name, &fdata ); h != INVALID_HANDLE_VALUE; ok = (FindClose( h ), h = INVALID_HANDLE_VALUE, 1)) {
         for( int next = 1; next; next = FindNextFileA(h, &fdata) != 0 ) {
-            if( fdata.cFileName[0] == '.' ) continue;
             int is_dir = (fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0;
+            if( is_dir && fdata.cFileName[0] == '.' ) continue;
+
             snprintf(name, namelen, "%s/%s%s", pathfile, fdata.cFileName, is_dir ? "/" : "");
             struct stat st; if( !is_dir ) if(stat(name, &st) < 0) continue;
             // add
@@ -1487,10 +1488,11 @@ int dir_yield(dir *d, const char *pathfile, char *name, int namelen) {
     snprintf(name, namelen, "%s/", pathfile);
     for( DIR *dir = opendir(name); dir; ok = (closedir(dir), dir = 0, 1)) {
         for( struct dirent *ep; (ep = readdir(dir)) != NULL; ) {
-            if( ep->d_name[0] == '.' ) continue;
             snprintf(name, namelen, "%s/%s", pathfile, ep->d_name);
             struct stat st; if( stat(name, &st) < 0 ) continue;
-            DIR *tmp = opendir(/*ep->d_*/name); int is_dir = !!tmp; if(tmp) closedir(tmp);
+            DIR *tmp = opendir(/*ep->d_*/name); int is_dir = !!tmp; if(tmp) closedir(tmp); // @todo:optimizeme (maybe use stat instead)
+            if( is_dir && ep->d_name[0] == '.' ) continue;
+
             // add
             dir_entry de = { STRDUP(name), is_dir ? 0 : st.st_size, is_dir };
             d->entry = (dir_entry*)REALLOC(d->entry, ++d->count * sizeof(dir_entry));

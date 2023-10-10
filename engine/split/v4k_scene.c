@@ -109,7 +109,7 @@ void camera_fov(camera_t *cam, float fov) {
 
     float DIMETRIC = 30.000f;
     float ISOMETRIC = 35.264f;
-    float aspect = window_width() / ((float)window_height()+!!window_height());
+    float aspect = window_width() / ((float)window_height()+!window_height());
     orthogonal(cam->proj, 45, aspect, -1000, 1000); // why -1000?
     // cam->yaw = 45;
     cam->pitch = -ISOMETRIC;

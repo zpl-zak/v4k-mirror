@@ -4631,7 +4631,6 @@ int cook_jobs() {
     return clampi(num_jobs, 0, cook_disabled?0:max_jobs);
 }
 
-
 void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"bin/" case on Linux.
     COOK_INI = pathfile_to_cook_ini;
     ASSERT( file_exist(COOK_INI) );
@@ -5188,36 +5187,30 @@ const char** file_list(const char *cwd, const char *masks) {
     }
     array_resize(list, 0);//array_free(list);
 
-    for each_substring(masks,";",it) {
-        int recurse = !!strstr(it, "**");
-        #if is(win32)
-        char *glob = va("dir %s/b/o:n \"%s\\%s\" 2> NUL", recurse ? "/s":"", cwd, it);
-        #else // linux, osx
-        char *glob = va("find %s %s -name \"%s\" | sort", cwd, !recurse ? "-maxdepth 1":"-type f", it);
-        #endif
-        for( FILE *in = popen(glob, "r"); in; pclose(in), in = 0) {
-            char buf[1024], *line = buf;
-            while( fgets(buf, sizeof(buf), in) ) {
-                // clean up
-                if( strstr(line, arg0) ) line = buf + larg0;
-                if( !memcmp(line, "./", 2) ) line += 2;
-                int len = strlen(line); while( len > 0 && line[len-1] < 32 ) line[--len] = 0;
-                if( line[0] == '\0' ) continue;
-                // do not insert system folders/files
-                for(int i = 0; i < len; ++i ) if(line[i] == '\\') line[i] = '/';
-                if( line[0] == '.' ) if( !strcmp(line,".git") || !strcmp(line,".vs") || !strcmp(line,".") || !strcmp(line,"..") ) continue;
-                if( strstr(line, "/.") ) continue;
+    dir *d = dir_open(cwd, "rb");
+    if( d ) {
+        for( int i = 0; i < dir_count(d); ++i ) {
+            if( dir_file(d,i) ) {
+                // dir_name() should return full normalized paths "C:/prj/v4k/demos/art/fx/fxBloom.fs". should exclude system dirs as well
+                char *entry = dir_name(d,i);
+                char *fname = file_name(entry);
+
+                int allowed = 0;
+                for each_substring(masks,";",mask) {
+                    allowed |= strmatch(fname, mask);
+                }
+                if( !allowed ) continue;
+
+                // if( strstr(fname, "/.") ) continue; // @fixme: still needed? useful?
+
                 // insert copy
-                #if is(win32)
-                char *copy = STRDUP(line); // full path already provided
-                #else
-                // while(line[0] == '/') ++line;
-                char *copy = STRDUP(va("%s%s", cwd, line)); // need to prepend path
-                #endif
+                char *copy = STRDUP(entry);
                 array_push(list, copy);
             }
         }
+        dir_close(d);
     }
+
     array_push(list, 0); // terminator
     return (const char**)list;
 }
@@ -5754,12 +5747,14 @@ if( found && *found == 0 ) {
     base = file_name(pathfile);
     if(base[0] == '\0') return 0; // it's a dir
     folder = file_path(pathfile);
-        // make folder variable easier to read in logs: /home/rlyeh/prj/v4k/art/demos/audio/coin.wav -> demos/audio/coin.wav 
-        // static int ART_LEN = 0; do_once ART_LEN = strlen(ART);
-        // if( !strncmp(folder, ART, ART_LEN) ) {
-        //     folder += ART_LEN;
-        // }
-        char* pretty_folder = folder && strlen(folder) >= ART_LEN ? folder + ART_LEN : "";
+        // ease folders reading by shortening them: /home/rlyeh/prj/v4k/art/demos/audio/coin.wav -> demos/audio/coin.wav
+        // or C:/prj/v4k/engine/art/fonts/B612-BoldItalic.ttf -> fonts/B612-BoldItalic.ttf
+        static array(char*) art_paths = 0;
+        do_once for each_substring(ART,",",stem) array_push(art_paths, STRDUP(stem));
+        char* pretty_folder = "";
+        if( folder ) for( int i = 0; i < array_count(art_paths); ++i ) {
+            if( strbeg(folder, art_paths[i]) ) { pretty_folder = folder + strlen(art_paths[i]); break; }
+        }
     //}
 
     int size = 0;
@@ -9985,7 +9980,7 @@ bool invert44(mat44 T, const mat44 M) { // !!! ok, i guess
 }
 
 vec4 transform444(const mat44, const vec4);
-bool unproject44(vec3 *out, vec3 xyd, vec4 viewport, mat44 mvp) {
+bool unproject44(vec3 *out, vec3 xyd, vec4 viewport, mat44 mvp) { // @fixme: this function is broken (verified by @zpl-zak)
     // xyd: usually x:mouse_x,y:window_height()-mouse_y,d:0=znear/1=zfar
     // src: https://www.khronos.org/opengl/wiki/GluProject_and_gluUnProject_code
     mat44 inv_mvp;
@@ -18449,7 +18444,7 @@ void camera_fov(camera_t *cam, float fov) {
 
     float DIMETRIC = 30.000f;
     float ISOMETRIC = 35.264f;
-    float aspect = window_width() / ((float)window_height()+!!window_height());
+    float aspect = window_width() / ((float)window_height()+!window_height());
     orthogonal(cam->proj, 45, aspect, -1000, 1000); // why -1000?
     // cam->yaw = 45;
     cam->pitch = -ISOMETRIC;
@@ -20167,7 +20162,7 @@ bool app_open_folder(const char *file) {
 #ifdef _WIN32
     snprintf(buf, sizeof(buf), "start \"\" \"%s\"", file);
 #elif __APPLE__
-    snprintf(buf, sizeof(buf), "%s \"%s\"", is_directory(file) ? "open" : "open --reveal", file);
+    snprintf(buf, sizeof(buf), "%s \"%s\"", file_directory(file) ? "open" : "open --reveal", file);
 #else
     snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
 #endif
@@ -24981,6 +24976,14 @@ char *editor_path(const char *path) {
 }
 
 vec3 editor_pick(float mouse_x, float mouse_y) {
+#if 0
+    // unproject 2d coord as 3d coord
+    camera_t *camera = camera_get_active();
+    vec3 out, xyd = vec3(mouse_x,window_height()-mouse_y,1); // usually x:mouse_x,y:window_height()-mouse_y,d:0=znear/1=zfar
+    mat44 mvp, model; identity44(model); multiply44x3(mvp, camera->proj, camera->view, model);
+    bool ok = unproject44(&out, xyd, vec4(0,0,window_width(),window_height()), mvp);
+    return out;
+#else
     // unproject 2d coord as 3d coord
     camera_t *camera = camera_get_active();
     float x = (2.0f * mouse_x) / window_width() - 1.0f;
@@ -24994,6 +24997,7 @@ vec3 editor_pick(float mouse_x, float mouse_y) {
     vec4 eye = vec4(p.x, p.y, -1.0, 0.0);
     vec4 wld = norm4(transform444(inv_view, eye));
     return vec3(wld.x, wld.y, wld.z);
+#endif
 }
 
 int editor_ui_bits8(const char *label, uint8_t *enabled) { // @to deprecate

@@ -212,36 +212,30 @@ const char** file_list(const char *cwd, const char *masks) {
     }
     array_resize(list, 0);//array_free(list);
 
-    for each_substring(masks,";",it) {
-        int recurse = !!strstr(it, "**");
-        #if is(win32)
-        char *glob = va("dir %s/b/o:n \"%s\\%s\" 2> NUL", recurse ? "/s":"", cwd, it);
-        #else // linux, osx
-        char *glob = va("find %s %s -name \"%s\" | sort", cwd, !recurse ? "-maxdepth 1":"-type f", it);
-        #endif
-        for( FILE *in = popen(glob, "r"); in; pclose(in), in = 0) {
-            char buf[1024], *line = buf;
-            while( fgets(buf, sizeof(buf), in) ) {
-                // clean up
-                if( strstr(line, arg0) ) line = buf + larg0;
-                if( !memcmp(line, "./", 2) ) line += 2;
-                int len = strlen(line); while( len > 0 && line[len-1] < 32 ) line[--len] = 0;
-                if( line[0] == '\0' ) continue;
-                // do not insert system folders/files
-                for(int i = 0; i < len; ++i ) if(line[i] == '\\') line[i] = '/';
-                if( line[0] == '.' ) if( !strcmp(line,".git") || !strcmp(line,".vs") || !strcmp(line,".") || !strcmp(line,"..") ) continue;
-                if( strstr(line, "/.") ) continue;
+    dir *d = dir_open(cwd, "rb");
+    if( d ) {
+        for( int i = 0; i < dir_count(d); ++i ) {
+            if( dir_file(d,i) ) {
+                // dir_name() should return full normalized paths "C:/prj/v4k/demos/art/fx/fxBloom.fs". should exclude system dirs as well
+                char *entry = dir_name(d,i);
+                char *fname = file_name(entry);
+
+                int allowed = 0;
+                for each_substring(masks,";",mask) {
+                    allowed |= strmatch(fname, mask);
+                }
+                if( !allowed ) continue;
+
+                // if( strstr(fname, "/.") ) continue; // @fixme: still needed? useful?
+
                 // insert copy
-                #if is(win32)
-                char *copy = STRDUP(line); // full path already provided
-                #else
-                // while(line[0] == '/') ++line;
-                char *copy = STRDUP(va("%s%s", cwd, line)); // need to prepend path
-                #endif
+                char *copy = STRDUP(entry);
                 array_push(list, copy);
             }
         }
+        dir_close(d);
     }
+
     array_push(list, 0); // terminator
     return (const char**)list;
 }
@@ -778,12 +772,14 @@ if( found && *found == 0 ) {
     base = file_name(pathfile);
     if(base[0] == '\0') return 0; // it's a dir
     folder = file_path(pathfile);
-        // make folder variable easier to read in logs: /home/rlyeh/prj/v4k/art/demos/audio/coin.wav -> demos/audio/coin.wav 
-        // static int ART_LEN = 0; do_once ART_LEN = strlen(ART);
-        // if( !strncmp(folder, ART, ART_LEN) ) {
-        //     folder += ART_LEN;
-        // }
-        char* pretty_folder = folder && strlen(folder) >= ART_LEN ? folder + ART_LEN : "";
+        // ease folders reading by shortening them: /home/rlyeh/prj/v4k/art/demos/audio/coin.wav -> demos/audio/coin.wav
+        // or C:/prj/v4k/engine/art/fonts/B612-BoldItalic.ttf -> fonts/B612-BoldItalic.ttf
+        static array(char*) art_paths = 0;
+        do_once for each_substring(ART,",",stem) array_push(art_paths, STRDUP(stem));
+        char* pretty_folder = "";
+        if( folder ) for( int i = 0; i < array_count(art_paths); ++i ) {
+            if( strbeg(folder, art_paths[i]) ) { pretty_folder = folder + strlen(art_paths[i]); break; }
+        }
     //}
 
     int size = 0;

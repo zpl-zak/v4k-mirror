@@ -821,7 +821,7 @@ bool invert44(mat44 T, const mat44 M) { // !!! ok, i guess
 }
 
 vec4 transform444(const mat44, const vec4);
-bool unproject44(vec3 *out, vec3 xyd, vec4 viewport, mat44 mvp) {
+bool unproject44(vec3 *out, vec3 xyd, vec4 viewport, mat44 mvp) { // @fixme: this function is broken (verified by @zpl-zak)
     // xyd: usually x:mouse_x,y:window_height()-mouse_y,d:0=znear/1=zfar
     // src: https://www.khronos.org/opengl/wiki/GluProject_and_gluUnProject_code
     mat44 inv_mvp;

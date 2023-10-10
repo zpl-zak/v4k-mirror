@@ -817,7 +817,6 @@ int cook_jobs() {
     return clampi(num_jobs, 0, cook_disabled?0:max_jobs);
 }
 
-
 void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"bin/" case on Linux.
     COOK_INI = pathfile_to_cook_ini;
     ASSERT( file_exist(COOK_INI) );

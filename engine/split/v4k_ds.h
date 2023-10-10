@@ -433,7 +433,7 @@ API void  (map_clear)(map* m);
 API char *cc4str(unsigned cc);
 API char *cc8str(uint64_t cc);
 
-enum { ///-
+enum {
 #   define _(a,b,c,d,e) cc__##a, cc__##b, cc__##c, cc__##d, cc__##e
     cc__1 = '1', _(2,3,4,5,6),_(7,8,9,0,_), cc__ = ' ',
     cc__A = 'A', _(B,C,D,E,F),_(G,H,I,J,K),_(L,M,N,O,P),_(Q,R,S,T,U),_(V,W,X,Y,Z),
