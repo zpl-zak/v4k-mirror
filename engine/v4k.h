@@ -2129,32 +2129,31 @@ API int is_little();
 API uint16_t swap16( uint16_t x );
 API uint32_t swap32( uint32_t x );
 API uint64_t swap64( uint64_t x );
-
 API float    swap32f(float n);
 API double   swap64f(double n);
 
-API uint16_t  lil16(uint16_t n);
-API uint32_t  lil32(uint32_t n);
-API uint64_t  lil64(uint64_t n);
-API uint16_t  big16(uint16_t n);
-API uint32_t  big32(uint32_t n);
-API uint64_t  big64(uint64_t n);
+API uint16_t    lil16(uint16_t n); // swap16 as lil
+API uint32_t    lil32(uint32_t n); // swap32 as lil
+API uint64_t    lil64(uint64_t n); // swap64 as lil
+API float       lil32f(float n);   // swap32 as lil
+API double      lil64f(double n);  // swap64 as lil
 
-API float     lil32f(float n);
-API double    lil64f(double n);
-API float     big32f(float n);
-API double    big64f(double n);
+API uint16_t    big16(uint16_t n); // swap16 as big
+API uint32_t    big32(uint32_t n); // swap32 as big
+API uint64_t    big64(uint64_t n); // swap64 as big
+API float       big32f(float n);   // swap32 as big
+API double      big64f(double n);  // swap64 as big
 
 API uint16_t* lil16p(void *p, int sz);
-API uint16_t* big16p(void *p, int sz);
 API uint32_t* lil32p(void *p, int sz);
-API uint32_t* big32p(void *p, int sz);
 API uint64_t* lil64p(void *p, int sz);
-API uint64_t* big64p(void *p, int sz);
-
 API float   * lil32pf(void *p, int sz);
-API float   * big32pf(void *p, int sz);
 API double  * lil64pf(void *p, int sz);
+
+API uint16_t*   big16p(void *p, int sz);
+API uint32_t*   big32p(void *p, int sz);
+API uint64_t*   big64p(void *p, int sz);
+API float   *   big32pf(void *p, int sz);
 API double  * big64pf(void *p, int sz);
 
 #if is(cl)
@@ -3858,13 +3857,6 @@ API void        trap_on_ignore(int signal); // helper util
 API void        trap_on_quit(int signal);   // helper util
 API void        trap_on_abort(int signal);  // helper util
 API void        trap_on_debug(int signal);  // helper util
-
-#define hton16 big16
-#define ntoh16 big16
-#define hton32 big32
-#define ntoh32 big32
-#define hton64 big64
-#define ntoh64 big64
 
 #define PANIC(...)   PANIC(va(__VA_ARGS__), __FILE__, __LINE__) // die() ?
 API int (PANIC)(const char *error, const char *file, int line);

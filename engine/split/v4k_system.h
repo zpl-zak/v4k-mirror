@@ -55,13 +55,6 @@ API void        trap_on_quit(int signal);   // helper util
 API void        trap_on_abort(int signal);  // helper util
 API void        trap_on_debug(int signal);  // helper util
 
-#define hton16 big16
-#define ntoh16 big16
-#define hton32 big32
-#define ntoh32 big32
-#define hton64 big64
-#define ntoh64 big64
-
 #define PANIC(...)   PANIC(va(__VA_ARGS__), __FILE__, __LINE__) // die() ?
 API int (PANIC)(const char *error, const char *file, int line);
 

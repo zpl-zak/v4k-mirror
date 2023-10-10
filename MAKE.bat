@@ -695,7 +695,6 @@ for %%f in ("workbench\plugins\*.c") do (
 rem demos
 if "!demos!"=="yes" (
 !echo! 00-ui             && !cc! !o! 00-ui.exe         demos\00-ui.c              !import! !args! || set rc=1
-!echo! 00-loop           && !cc! !o! 00-loop.exe       demos\00-loop.c            !import! !args! || set rc=1
 !echo! 00-script         && !cc! !o! 00-script.exe     demos\00-script.c          !import! !args! || set rc=1
 !echo! 00-hello          && !cc! !o! 00-hello.exe      demos\00-hello.c           !import! !args! || set rc=1
 !echo! 01-sprite         && !cc! !o! 01-sprite.exe     demos\01-sprite.c          !import! !args! || set rc=1
@@ -721,7 +720,11 @@ if "!demos!"=="yes" (
 rem lab
 if "!lab!"=="yes" (
     for %%f in ("demos\99-*") do (
-        !echo! %%~nf         && !cc! !o! %%~nf.exe         demos\%%~nf.c            !import! !args! || set rc=1
+        set limport=!import!
+        >nul find "V4K_IMPLEMENTATION" demos\%%~nf.c && (
+          set limport=
+        )
+        !echo! %%~nf         && !cc! !o! %%~nf.exe         demos\%%~nf.c            !limport! !args! || set rc=1
     )
 )
 
