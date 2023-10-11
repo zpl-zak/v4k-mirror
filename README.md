@@ -78,7 +78,7 @@ echo win/mingw         && gcc   hello.c -lws2_32 -lwinmm -ldbghelp -lole32 -luse
 echo win/clang         && clang hello.c -lws2_32 -lwinmm -ldbghelp -lole32 -luser32 -lgdi32 -lcomdlg32
 echo linux             && cc  hello.c -lm -ldl -lpthread -lX11
 echo linux/tcc         && tcc hello.c -lm -ldl -lpthread -lX11 -D__STDC_NO_VLA__
-echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -framework audiotoolbox -framework coreaudio
+echo osx               && cc -ObjC hello.c -framework cocoa -framework iokit -framework audiotoolbox
 ```
 
 ## Cook
