@@ -175,12 +175,14 @@ if "%1"=="dpush" (
     popd
 
     if not "%2"=="noroot" (
+        git stash
         git add depot
         git commit -m "sync depot"
         if not "%3"=="local" (
             git pull
             git push
         )
+        git stash pop
     )
 
     exit /b
