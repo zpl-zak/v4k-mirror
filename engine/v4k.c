@@ -1322,6 +1322,7 @@ int audio_init( int flags ) {
         ma_backend_dsound,
         ma_backend_winmm,
         ma_backend_pulseaudio,
+        ma_backend_coreaudio,
         ma_backend_alsa,
         ma_backend_oss,
         ma_backend_jack,
