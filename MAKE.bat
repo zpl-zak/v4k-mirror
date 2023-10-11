@@ -178,6 +178,7 @@ if "%1"=="dpush" (
         git add depot
         git commit -m "sync depot"
         if not "%3"=="local" (
+            git pull
             git push
         )
     )
