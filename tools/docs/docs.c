@@ -898,6 +898,7 @@ int main(int argc, char **argv) {
         char *chg = file_read("changelog.txt");
         strrepl(&chg, "\r\n", "\n");
         for each_substring(chg, "\n", it) {
+            if (strstr(it, "sync depot")) continue;
             // printf("<details><summary>%s</summary></details>\n", it);
             printf("* %s\n", it);
         }
