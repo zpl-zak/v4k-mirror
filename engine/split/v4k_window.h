@@ -45,7 +45,6 @@ API char*    window_stats();
 API uint64_t window_frame();
 API int      window_width();
 API int      window_height();
-API vec2     window_dpi();
 API double   window_time();
 API double   window_delta();
 
@@ -78,6 +77,8 @@ API void     window_fps_unlock();
 
 API void     window_screenshot(const char* outfile_png); // , bool record_cursor
 API int      window_record(const char *outfile_mp4); // , bool record_cursor
+
+API vec2     window_dpi();
 
 enum CURSOR_SHAPES {
     CURSOR_NONE,

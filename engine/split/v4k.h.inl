@@ -140,6 +140,8 @@ extern "C" {
 
 {{FILE:v4k_profile.h}}
 
+{{FILE:v4k_reflect.h}}
+
 {{FILE:v4k_render.h}}
 
 {{FILE:v4k_renderdd.h}}

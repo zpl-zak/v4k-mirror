@@ -200,17 +200,16 @@ char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensio
     }
     return va("%s", buffer);
 }
-const char** file_list(const char *cwd, const char *masks) {
-    ASSERT(strend(cwd, "/"), "Error: dirs like '%s' must end with slash", cwd);
-
-    static __thread array(char*) list = 0;
-    const char *arg0 = cwd; // app_path();
-    int larg0 = strlen(arg0);
+const char** file_list(const char *cwds, const char *masks) {
+    static __thread array(char*) list = 0; // @fixme: should we add 16 slots in here similar to what we do in va() ?
 
     for( int i = 0; i < array_count(list); ++i ) {
         FREE(list[i]);
     }
     array_resize(list, 0);//array_free(list);
+
+    for each_substring(cwds,";",cwd) {
+        ASSERT(strend(cwd, "/"), "Error: dirs like '%s' must end with slash", cwd);
 
     dir *d = dir_open(cwd, strstr(masks,"**") ? "r"  : "");
     if( d ) {
@@ -234,6 +233,7 @@ const char** file_list(const char *cwd, const char *masks) {
             }
         }
         dir_close(d);
+    }
     }
 
     array_push(list, 0); // terminator
@@ -590,10 +590,7 @@ void vfs_reload() {
         // if( vfs_mount(va("%s.%02x", app, i)) ) continue;
     } */
     // faster way
-    for( const char **file = file_list("./","*.zip"); *file; ++file) {
-        // PRINTF("VFS mounted: %s\n", *file);
-        vfs_mount(*file);
-    }
+    for( const char **file = file_list("./","*.zip"); *file; ++file) vfs_mount(*file);
 #endif
 
     // vfs_resolve() will use these art_folder locations as hints when cook-on-demand is in progress.

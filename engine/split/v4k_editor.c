@@ -15,8 +15,8 @@ vec3 editor_pick(float mouse_x, float mouse_y) {
     return out;
 #else
     // unproject 2d coord as 3d coord
+    vec2 dpi = ifdef(osx, window_dpi(), vec2(1,1));
     camera_t *camera = camera_get_active();
-    vec2 dpi = window_dpi();
     float x = (2.0f * mouse_x) / (dpi.x * window_width()) - 1.0f;
     float y = 1.0f - (2.0f * mouse_y) / (dpi.y * window_height());
     float z = 1.0f;

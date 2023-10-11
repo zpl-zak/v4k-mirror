@@ -2431,6 +2431,27 @@ struct profile_t { double stat; int32_t cost, avg; };
 typedef struct { map base; struct { pair p; char * key; struct profile_t val; } tmp, *ptr; struct profile_t* tmpval;          int (*typed_cmp)(char *, char *); uint64_t (*typed_hash)(char *); } * profiler_t;
 extern  profiler_t profiler;
 extern  int profiler_enabled;
+typedef struct reflected_t {
+unsigned id, objtype;
+unsigned sz;
+const char *name;
+const char *info;
+void *addr;
+unsigned parent;
+const char *type;
+} reflected_t;
+ unsigned           enum_find(const char *E);
+ void *             function_find(const char *F);
+ reflected_t        member_find(const char *T, const char *M);
+ void *             member_findptr(void *obj, const char *T, const char *M);
+ reflected_t* members_find(const char *T);
+ void               type_inscribe(const char *TY,unsigned TYid,unsigned TYsz,const char *infos);
+ void               enum_inscribe(const char *E,unsigned Eid,unsigned Eval,const char *infos);
+ void               struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,unsigned OBJTYPEid, const char *infos);
+ void               member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type);
+ void               function_inscribe(const char *F,unsigned Fid,void *func,const char *infos);
+ void               reflected_printf(reflected_t *r);
+ void               reflected_printf_all();
 typedef unsigned handle;
  unsigned rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a );
  unsigned bgra( uint8_t b, uint8_t g, uint8_t r, uint8_t a );
@@ -3193,7 +3214,6 @@ WINDOW_VSYNC_DISABLED =8192,
  uint64_t window_frame();
  int      window_width();
  int      window_height();
- vec2     window_dpi();
  double   window_time();
  double   window_delta();
  void     window_focus();
@@ -3219,6 +3239,7 @@ WINDOW_VSYNC_DISABLED =8192,
  void     window_fps_unlock();
  void     window_screenshot(const char* outfile_png);
  int      window_record(const char *outfile_mp4);
+ vec2     window_dpi();
 enum CURSOR_SHAPES {
 CURSOR_NONE,
 CURSOR_HW_ARROW,

@@ -120,7 +120,7 @@ static __thread unsigned array_n_;
 } while(0)
 
 #define array_swapback_and_pop(t, i) do { /*may alter ordering*/ \
-    memmove( &(t)[i], &(t)[array_count(t) - 1], sizeof(0[t])); \
+    memcpy( &(t)[i], &(t)[array_count(t) - 1], sizeof(0[t])); \
     array_pop(t); \
 } while(0)
 

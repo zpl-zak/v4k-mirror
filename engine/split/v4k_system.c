@@ -709,18 +709,14 @@ void die(const char *message) {
 // ----------------------------------------------------------------------------
 // logger
 
-unsigned determine_color_from_text(const char *text) {
-    /**/ if( strstri(text, "fail") || strstri(text, "error") ) return RED;
-    else if( strstri(text, "warn") || strstri(text, "not found") ) return YELLOW;
-    return 0;
-}
-
 //static int __thread _thread_id;
 //#define PRINTF(...)      (printf("%03d %07.3fs|%-16s|", (((unsigned)(uintptr_t)&_thread_id)>>8) % 1000, time_ss(), __FUNCTION__), printf(__VA_ARGS__), printf("%s", 1[#__VA_ARGS__] == '!' ? callstack(+48) : "")) // verbose logger
 
 int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function) {
     double secs = time_ss();
-    uint32_t color = /*errno ? RED :*/ determine_color_from_text(text); // errno = 0;
+    uint32_t color = 0;
+    /**/ if( strstri(text, "fail") || strstri(text, "error") ) color = RED;
+    else if( strstri(text, "warn") || strstri(text, "not found") ) color = YELLOW;
     #if is(cl)
     char *slash = strrchr(file, '\\'); if(slash) file = slash + 1;
     #endif
@@ -862,5 +858,5 @@ static void test_exit(void) { fprintf(stderr, "%d/%d tests passed\n", test_oks, 
 int (test)(const char *file, int line, const char *expr, bool result) {
     test_once = test_once || !(atexit)(test_exit);
     test_oks += result, test_errs += !result;
-    return (result || fprintf(stderr, "(Test `%s` failed %s:%d)\n", expr, file, line) );
+    return (result || (tty_color(RED), fprintf(stderr, "(Test `%s` failed %s:%d)\n", expr, file, line), tty_color(0), 0) );
 }

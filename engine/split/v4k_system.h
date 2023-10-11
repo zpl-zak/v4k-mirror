@@ -63,4 +63,12 @@ API int (PRINTF)(const char *text, const char *stack, const char *file, int line
 
 #define test(expr) test(__FILE__,__LINE__,#expr,!!(expr))
 API int (test)(const char *file, int line, const char *expr, bool result);
-// AUTORUN { test(1<2); }
+
+#if ENABLE_TESTS
+#define AUTOTEST AUTORUN
+#else
+#define AUTOTEST static void concat(concat(concat(disabled_test_, __LINE__), _), __COUNTER__)()
+#endif
+
+// AUTOTEST { test(1<2); }
+

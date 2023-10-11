@@ -100,6 +100,7 @@ errno_t fopen_s(
 );
 #endif
 
+
 //---
 {{FILE:3rd_glfw3.h}}
 #undef timeGetTime
@@ -112,8 +113,6 @@ errno_t fopen_s(
 {{FILE:3rd_stb_vorbis.h}}
 #undef error
 #undef DEBUG
-// #define MA_DEBUG_OUTPUT
-// #define MA_USE_AUDIO_WORKLETS
 {{FILE:3rd_sts_mixer.h}}
 {{FILE:3rd_miniaudio.h}}
 //---
@@ -138,7 +137,7 @@ errno_t fopen_s(
 {{FILE:3rd_nuklear_glfw_gl3.h}}
 {{FILE:3rd_nuklear_filebrowser.h}}
 //---
-#ifdef WITH_ASSIMP
+#ifdef ENABLE_ASSIMP
 //{{FILE/*:*/3rd_assimp.h}}
 //#include "3rd_assimp/cimport.h"
 //#include "3rd_assimp/scene.h"
@@ -169,17 +168,17 @@ errno_t fopen_s(
 {{FILE:3rd_xml.h}}
 #undef g
 {{FILE:3rd_polychop.h}}
-#define SQLITE_OMIT_LOAD_EXTENSION
-#define SQLITE_CORE 1
-#define SQLITE_DEBUG 1
-#define Token SQToken
-#define Table SQTable
-#define rehash sqlite3__rehash
-#undef NB
-{{FILE:3rd_sqlite3.c}}
-#undef Token
-#undef Table
-#undef rehash
-#undef NB
-#undef threadid
+// #define SQLITE_OMIT_LOAD_EXTENSION
+// #define SQLITE_CORE 1
+// #define SQLITE_DEBUG 1
+// #define Token SQToken
+// #define Table SQTable
+// #define rehash sqlite3__rehash
+// #undef NB
+//{{FILE/*:*/3rd_sqlite3.c}}
+// #undef Token
+// #undef Table
+// #undef rehash
+// #undef NB
+// #undef threadid
 #endif // V4K_3RD

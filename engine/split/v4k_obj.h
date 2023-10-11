@@ -14,44 +14,6 @@ API int semvercmp( int v1, int v2 );
 #define SEMVERFMT "%03o"
 
 // -----------------------------------------------------------------------------
-// autorun initializers for C
-// - rlyeh, public domain
-//
-// note: based on code by Joe Lowe (public domain).
-// note: XIU for C initializers, XCU for C++ initializers, XTU for C deinitializers
-
-#ifdef __cplusplus
-#define AUTORUN \
-    static void AUTORUN_U(f)(void); \
-    static const int AUTORUN_J(AUTORUN_U(f),__1) = (AUTORUN_U(f)(), 1); \
-    static void AUTORUN_U(f)(void)
-#elif _MSC_VER
-#define AUTORUN \
-    static void AUTORUN_U(f)(void); \
-    static int AUTORUN_J(AUTORUN_U(f),__1) (){ AUTORUN_U(f)(); return 0; } \
-    __pragma(section(".CRT$XIU", long, read)) \
-    __declspec(allocate(".CRT$XIU")) \
-    static int(* AUTORUN_J(AUTORUN_U(f),__2) )() = AUTORUN_J(AUTORUN_U(f),__1); \
-    static void AUTORUN_U(f)(void)
-#else
-#define AUTORUN \
-    __attribute__((constructor)) \
-    static void AUTORUN_U(f)(void)
-#endif
-
-// join + unique macro utils
-
-#define AUTORUN_j(a, b) a##b
-#define AUTORUN_J(a, b) AUTORUN_j(a, b)
-#define AUTORUN_U(x)    AUTORUN_J(x, __LINE__)
-
-#if 0 // autorun demo
-void byebye(void) { puts("seen after main()"); }
-AUTORUN { puts("seen before main()"); }
-AUTORUN { puts("seen before main() too"); atexit( byebye ); }
-#endif
-
-// -----------------------------------------------------------------------------
 // storage types. refer to vec2i/3i, vec2/3/4 if you plan to do math operations
 
 typedef struct byte2 { uint8_t x,y; } byte2;

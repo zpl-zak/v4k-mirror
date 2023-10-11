@@ -25,6 +25,10 @@
 #define ENABLE_LINUX_CALLSTACKS 0 ///+
 #endif
 
+#ifndef ENABLE_TESTS
+#define ENABLE_TESTS            0 // ifdef(debug, 1, 0) ///+
+#endif
+
 // -----------------------------------------------------------------------------
 // if/n/def hell
 
@@ -116,7 +120,6 @@
 
 // -----------------------------------------------------------------------------
 // new C keywords
-// @todo: autorun (needed?)
 
 #define countof(x)       (int)(sizeof (x) / sizeof 0[x])
 
@@ -126,13 +129,13 @@
 #define macro(name)      concat(name, __LINE__)
 #define defer(begin,end) for(int macro(i) = ((begin), 0); !macro(i); macro(i) = ((end), 1))
 #define scope(end)       defer((void)0, end)
-#define benchmark        for(double macro(t) = -time_ss(); macro(t) < 0; printf("%.2fs (" FILELINE ")\n", macro(t)+=time_ss()))
+#define benchmark        for(double macro(i) = 1, macro(t) = -time_ss(); macro(i); macro(t)+=time_ss(), macro(i)=0, printf("%.4fs %2.f%% (" FILELINE ")\n", macro(t), macro(t)*100/0.0166667 ))
 #define do_once          static int macro(once) = 0; for(;!macro(once);macro(once)=1)
 
 #if is(cl)
 #define __thread         __declspec(thread)
 #elif is(tcc) && is(win32)
-#define __thread         __declspec(thread) // compiles fine, but does not work apparently
+#define __thread         __declspec(thread) // compiles fine apparently, but does not work
 #elif is(tcc)
 #define __thread
 #endif
@@ -183,6 +186,44 @@
 // usage: #define vec2(...) C_CAST(vec2, __VA_ARGS__)
 // typedef union vec2 { float X,Y; }; vec2 a = {0,1}, b = vec2(0,1);
 #define C_CAST(type, ...)  ( ifdef(c,(type),type) { __VA_ARGS__ } )
+
+// -----------------------------------------------------------------------------
+// autorun initializers for C
+// - rlyeh, public domain
+//
+// note: based on code by Joe Lowe (public domain).
+// note: XIU for C initializers, XCU for C++ initializers, XTU for C deinitializers
+
+#ifdef __cplusplus
+#define AUTORUN \
+    static void AUTORUN_U(f)(void); \
+    static const int AUTORUN_J(AUTORUN_U(f),__1) = (AUTORUN_U(f)(), 1); \
+    static void AUTORUN_U(f)(void)
+#elif defined _MSC_VER && !defined(__clang__) // cl, but not clang-cl
+#define AUTORUN \
+    static void AUTORUN_U(f)(void); \
+    static int AUTORUN_J(AUTORUN_U(f),__1) (){ AUTORUN_U(f)(); return 0; } \
+    __pragma(section(".CRT$XIU", long, read)) \
+    __declspec(allocate(".CRT$XIU")) \
+    static int(* AUTORUN_J(AUTORUN_U(f),__2) )() = AUTORUN_J(AUTORUN_U(f),__1); \
+    static void AUTORUN_U(f)(void)
+#else // gcc,tcc,clang,clang-cl...
+#define AUTORUN \
+    __attribute__((constructor)) \
+    static void AUTORUN_U(f)(void)
+#endif
+
+// join + unique macro utils
+
+#define AUTORUN_j(a, b) a##b
+#define AUTORUN_J(a, b) AUTORUN_j(a, b)
+#define AUTORUN_U(x)    AUTORUN_J(x, __LINE__)
+
+#if 0 // autorun demo
+void byebye(void) { puts("seen after main()"); }
+AUTORUN { puts("seen before main()"); }
+AUTORUN { puts("seen before main() too"); atexit( byebye ); }
+#endif
 
 // -----------------------------------------------------------------------------
 // build info
