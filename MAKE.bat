@@ -749,6 +749,12 @@ if "!hello!"=="yes" (
 rem user-defined apps
 if not "!other!"=="" (
     if "!vis!"=="yes" echo !cc! !other! !import! !args!
+    rem if "!cc!"=="cl" (
+    rem     if "!build!"=="rel" (
+    rem         set "import=!import! engine\v4k_win32_rel_glue.c"
+    rem         set "args=!args! /SUBSYSTEM:WINDOWS"
+    rem     )
+    rem )
     !echo! !other! && !cc! !other! !import! !args! || set rc=1
 )
 
