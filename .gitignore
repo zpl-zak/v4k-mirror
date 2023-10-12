@@ -2,6 +2,9 @@
 __pycache__ 
 .vs
 _deploy
+tools/steamcmd
+!tools/steamcmd/steamcmd.exe
+_builder_output
 emsdk
 demos/html5/*.data 
 demos/html5/*.js
