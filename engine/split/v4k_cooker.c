@@ -623,14 +623,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
             char *out = 0; const char *sep = "";
             const char *v4k_title = getenv("V4K_TITLE");
             for each_substring(ART, ",", t) {
-                char *tt = t;
-                if (v4k_title && strlen(v4k_title) > 0) {
-                    const char *symbols[] = { "{{V4K_TITLE}}", getenv("V4K_TITLE") };
-                    tt = (char *)strlerp(1, symbols, t);
-                } else if (strstri(tt, "{{V4K_TITLE}}")) {
-                    continue;
-                }
-                char *tmp = file_pathabs(va("%s%s", HOME, tt)) + ART_LEN;
+                char *tmp = file_pathabs(va("%s%s", HOME, t)) + ART_LEN;
                 PRINTF("ART mount+=%s\n", tmp);
                 for(int i = 0; tmp[i]; ++i) if(tmp[i]=='\\') tmp[i] = '/';
                 strcatf(&out, "%s%s%s", sep, tmp, strendi(tmp, "/") ? "" : "/");
