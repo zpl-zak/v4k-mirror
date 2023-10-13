@@ -160,6 +160,13 @@ if "%1"=="depot" (
     exit /b
 )
 
+if "%1"=="dstat" (
+    pushd depot
+        git status
+    popd
+    exit /b
+)
+
 if "%1"=="dpush" (
     pushd depot
         git add .
