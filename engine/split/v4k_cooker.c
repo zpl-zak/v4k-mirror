@@ -800,6 +800,7 @@ int cook_jobs() {
     int num_jobs = optioni("--cook-jobs", maxf(1.15,app_cores()) * 1.75), max_jobs = countof(jobs);
     ifdef(ems, num_jobs = 0);
     ifdef(retail, num_jobs = 0);
+    ifdef(nocook, num_jobs = 0);
     return clampi(num_jobs, 0, max_jobs);
 }
 

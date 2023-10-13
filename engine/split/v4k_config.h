@@ -30,7 +30,11 @@
 #endif
 
 #ifndef ENABLE_RETAIL
-#define ENABLE_RETAIL           0
+#define ENABLE_RETAIL           0 // ifdef(retail, 1, 0) ///+
+#endif
+
+#ifndef COOK_DISABLED
+#define COOK_DISABLED           0 // ifdef(nocook, 1, 0) ///+
 #endif
 
 // -----------------------------------------------------------------------------
@@ -126,6 +130,12 @@
 #define ifdef_retail                   ifdef_true
 #else
 #define ifdef_retail                   ifdef_false
+#endif
+
+#if COOK_DISABLED
+#define ifdef_nocook                   ifdef_true
+#else
+#define ifdef_nocook                   ifdef_false
 #endif
 
 // -----------------------------------------------------------------------------
