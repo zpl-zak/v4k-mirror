@@ -385,10 +385,17 @@ float audio_volume_master(float gain) {
         mixer.gain = volume_master;
     return sqrt( volume_master );
 }
+int audio_mute(int mute) {
+    static bool muted = 0; do_once muted = flag("--mute") || flag("--muted");
+    if( mute >= 0 && mute <= 1 ) muted = mute;
+    return muted;
+}
+int audio_muted() {
+    return audio_mute(-1);
+}
 
 int audio_play_gain_pitch_pan( audio_t a, int flags, float gain, float pitch, float pan ) {
-    static bool muted = 0; do_once muted = flag("--mute") || flag("--muted");
-    if(muted) return 1;
+    if(audio_muted()) return 1;
 
     if( flags & AUDIO_IGNORE_MIXER_GAIN ) {
         // do nothing, gain used as-is

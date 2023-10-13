@@ -31,6 +31,7 @@
 typedef struct zip zip;
 
 zip* zip_open(const char *file, const char *mode /*r,w,a*/);
+zip* zip_open_handle(FILE*fp, const char *mode /*r,w,a*/);
 
     // only for (w)rite or (a)ppend mode
     bool zip_append_file(zip*, const char *entryname, const char *comment, FILE *in, unsigned compress_level);
@@ -246,7 +247,7 @@ int jzReadEndRecord(FILE *fp, JZEndRecord *endRecord) {
 
 // Read ZIP file global directory. Will move within file. Returns Z_OK, or error code
 // Callback is called for each record, until callback returns zero
-int jzReadCentralDirectory(FILE *fp, JZEndRecord *endRecord, JZRecordCallback callback, void *user_data) {
+int jzReadCentralDirectory(FILE *fp, JZEndRecord *endRecord, JZRecordCallback callback, void *user_data, void *user_data2) {
     JZGlobalFileHeader fileHeader;
 
     if(fseek(fp, endRecord->centralDirectoryOffset, SEEK_SET)) {
@@ -260,6 +261,8 @@ int jzReadCentralDirectory(FILE *fp, JZEndRecord *endRecord, JZRecordCallback ca
         if(fread(&fileHeader, 1, sizeof(JZGlobalFileHeader), fp) < sizeof(JZGlobalFileHeader)) {
             return ERR(JZ_ERRNO, "Couldn't read file header #%d!", i);
         }
+
+        fileHeader.relativeOffsetOflocalHeader += (uintptr_t)user_data2;
 
         JZGlobalFileHeader *g = &fileHeader, copy = *g;
         FPRINTF(stdout, "\tsignature: %u %#x\n", g->signature, g->signature); // 0x02014B50
@@ -753,11 +756,7 @@ common:;
 
 // zip common
 
-zip* zip_open(const char *file, const char *mode /*r,w,a*/) {
-    struct stat buffer;
-    int exists = (stat(file, &buffer) == 0);
-    if( mode[0] == 'a' && !exists ) mode = "wb";
-    FILE *fp = fopen(file, mode[0] == 'w' ? "wb" : mode[0] == 'a' ? "a+b" : "rb");
+zip* zip_open_handle(FILE *fp, const char *mode) {
     if( !fp ) return ERR(NULL, "cannot open file for %s mode", mode);
     zip zero = {0}, *z = (zip*)REALLOC(0, sizeof(zip));
     if( !z ) return fclose(fp), ERR(NULL, "out of mem"); else *z = zero;
@@ -768,12 +767,17 @@ zip* zip_open(const char *file, const char *mode /*r,w,a*/) {
     if( mode[0] == 'r' || mode[0] == 'a' ) {
         z->in = fp;
 
+        unsigned long long seekcur = ftell(z->in);
+
         JZEndRecord jzEndRecord = {0};
         if(jzReadEndRecord(fp, &jzEndRecord) != JZ_OK) {
             REALLOC(z, 0);
             return fclose(fp), ERR(NULL, "Couldn't read ZIP file end record.");
         }
-        if(jzReadCentralDirectory(fp, &jzEndRecord, zip__callback, z) != JZ_OK) {
+
+        jzEndRecord.centralDirectoryOffset += seekcur;
+
+        if(jzReadCentralDirectory(fp, &jzEndRecord, zip__callback, z, (void*)(uintptr_t)seekcur ) != JZ_OK) {
             REALLOC(z, 0);
             return fclose(fp), ERR(NULL, "Couldn't read ZIP file central directory.");
         }
@@ -799,6 +803,14 @@ zip* zip_open(const char *file, const char *mode /*r,w,a*/) {
     }
     REALLOC(z, 0);
     return fclose(fp), ERR(NULL, "Unknown open mode %s", mode);
+}
+
+zip* zip_open(const char *file, const char *mode /*r,w,a*/) {
+    struct stat buffer;
+    int exists = (stat(file, &buffer) == 0);
+    if( mode[0] == 'a' && !exists ) mode = "wb";
+    FILE *fp = fopen(file, mode[0] == 'w' ? "wb" : mode[0] == 'a' ? "a+b" : "rb");
+    return zip_open_handle(fp, mode);
 }
 
 void zip_close(zip* z) {
@@ -980,8 +992,7 @@ tar *tar_open(const char *filename, const char *mode) {
 
     *t = zero;
     t->in = in;
-    tar__parse(in, tar__push_entry, t);
-    return t;
+    return tar__parse(in, tar__push_entry, t) ? t : NULL;
 }
 
 int tar_find(tar *t, const char *entryname) {

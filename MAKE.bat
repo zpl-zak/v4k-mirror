@@ -19,8 +19,10 @@ if "%1"=="help" (
     echo %0 [web]                   ; run Python webserver in html5 dir
     echo %0 [pull]                  ; pull changes from origin
     echo %0 [push]                  ; prepare for commit, stage changes and commit them
+    echo %0 [dstat]                 ; show depot changes
     echo %0 [dpush]                 ; push depot changes
     echo %0 [depot]                 ; sync depot changes
+    echo %0 [fuse]                  ; fuse all binaries and cooked zipfiles found together
     echo %0 [git]                   ; prepare for commit
     echo %0 [vps]                   ; upload the release to VPS
     echo %0 [tidy]                  ; clean up temp files
@@ -138,7 +140,7 @@ if "%1"=="git" (
     rem call make.bat docs
 
     call make.bat amalgamation
-    call make.bat split
+    rem call make.bat split
 
 rem rd /q /s engine\split
 rem md engine\split
@@ -224,6 +226,17 @@ if "%1"=="split" (
 )
 if "%1"=="join" (
     call tools\join
+    exit /b
+)
+
+rem fuse binaries and zipfiles
+if "%1"=="fuse" (
+    setlocal enableDelayedExpansion
+    if "%2"=="cook" (
+        del *.zip 2> nul 1> nul & tools\cook --cook-jobs=1
+    )
+    for %%i in (*.exe) do set "var=%%i" && if not "!var:~0,6!"=="fused_" ( copy /y !var! fused_!var! 2>nul 1>nul & tools\ark fused_!var! *.zip )
+    endlocal
     exit /b
 )
 

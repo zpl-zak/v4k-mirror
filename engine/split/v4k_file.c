@@ -257,7 +257,7 @@ bool file_delete(const char *pathfile) {
 }
 bool file_copy(const char *src, const char *dst) {
     int ok = 0, BUFSIZE = 1 << 20; // 1 MiB
-    static __thread char *buffer = 0; do_once buffer = REALLOC(0, BUFSIZE);
+    static __thread char *buffer = 0; do_once buffer = REALLOC(0, BUFSIZE); // @leak
     for( FILE *in = fopen(src, "rb"); in; fclose(in), in = 0) {
         for( FILE *out = fopen(dst, "wb"); out; fclose(out), out = 0, ok = 1) {
             for( int n; !!(n = fread( buffer, 1, BUFSIZE, in )); ){
@@ -582,6 +582,8 @@ void vfs_reload() {
 #if defined(EMSCRIPTEN)
     vfs_mount("index.zip");
 #else
+    // mount fused executables
+    vfs_mount(va("%s%s%s", app_path(), app_name(), ifdef(win32, ".exe", "")));
     /* // old way
     for( int i = 0; i < JOBS_MAX; ++i) {
         if( vfs_mount(va(".art[%02x].zip", i)) ) continue;
@@ -601,6 +603,34 @@ void vfs_reload() {
     }
 }
 
+
+
+#define ARK1         'ArK\x1'
+#define ARK1_PADDING (512 - 40) // 472
+#define ARK_PRINTF(f,...) 0 // printf(f,__VA_ARGS__)
+#define ARK_SWAP32(x) (x)
+#define ARK_SWAP64(x) (x)
+#define ARK_REALLOC   REALLOC
+static uint64_t   ark_fget64( FILE *in ) { uint64_t v; fread( &v, 1, 8, in ); return ARK_SWAP64(v); }
+void ark_list( const char *infile, zip **z ) {
+    for( FILE *in = fopen(infile, "rb"); in; fclose(in), in = 0 )
+    while(!feof(in)) {
+        if( 0 != (ftell(in) % ARK1_PADDING) ) fseek(in, ARK1_PADDING - (ftell(in) % ARK1_PADDING), SEEK_CUR);
+        ARK_PRINTF("Reading at #%d\n", (int)ftell(in));
+        uint64_t mark = ark_fget64(in);
+        if( mark != ARK1 ) continue;
+        uint64_t stamp = ark_fget64(in);
+        uint64_t datalen = ark_fget64(in);
+        uint64_t datahash = ark_fget64(in);
+        uint64_t namelen = ark_fget64(in);
+
+        *z = zip_open_handle(in, "rb");
+        return;
+    }
+}
+
+
+
 static
 bool vfs_mount_(const char *path, array(struct vfs_entry) *entries) {
     zip *z = NULL; tar *t = NULL; pak *p = NULL; dir *d = NULL;
@@ -610,6 +640,7 @@ bool vfs_mount_(const char *path, array(struct vfs_entry) *entries) {
     if( !is_folder ) z = zip_open(path, "rb");
     if( !is_folder && !z ) t = tar_open(path, "rb");
     if( !is_folder && !z && !t ) p = pak_open(path, "rb");
+    if( !is_folder && !z && !t && !p ) ark_list(path, &z); // last resort. try as .ark
     if( !is_folder && !z && !t && !p ) return 0;
 
     // normalize input -> "././" to ""
@@ -794,9 +825,9 @@ if( found && *found == 0 ) {
     const char *lookup_id = /*file_normalize_with_folder*/(pathfile);
 
     // search (last item)
-    static char last_item[256] = { 0 };
-    static void *last_ptr = 0;
-    static int   last_size = 0;
+    static __thread char  last_item[256] = { 0 };
+    static __thread void *last_ptr = 0;
+    static __thread int   last_size = 0;
     if( !strcmpi(lookup_id, last_item)) {
         ptr = last_ptr;
         size = last_size;
@@ -953,6 +984,10 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
     if( !MAX_CACHED_FILES ) return 0;
     if( !ptr || !size ) return 0;
 
+    // keep cached files within limits
+    static thread_mutex_t mutex, *init = 0; if(!init) thread_mutex_init(init = &mutex);
+    thread_mutex_lock(&mutex);
+
     // append to cache
     archive_dir zero = {0}, *old = dir_cache;
     *(dir_cache = REALLOC(0, sizeof(archive_dir))) = zero;
@@ -962,7 +997,8 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
     dir_cache->data = REALLOC(0, size+1);
     memcpy(dir_cache->data, ptr, size); size[(char*)dir_cache->data] = 0; // copy+terminator
 
-    // keep cached files within limits
+        void *found = 0;
+
     static int added = 0;
     if( added < MAX_CACHED_FILES ) {
         ++added;
@@ -971,15 +1007,18 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
         for( archive_dir *prev = dir_cache, *dir = prev; dir ; prev = dir, dir = dir->next ) {
             if( !dir->next ) {
                 prev->next = 0; // break link
-                void *data = dir->data;
+                    found = dir->data;
                 dir->path = REALLOC(dir->path, 0);
                 dir->data = REALLOC(dir->data, 0);
                 dir = REALLOC(dir, 0);
-                return data;
+                    break;
             }
         }
     }
-    return 0;
+
+    thread_mutex_unlock(&mutex);
+
+    return found;
 }
 
 // ----------------------------------------------------------------------------

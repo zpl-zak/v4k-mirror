@@ -9,6 +9,11 @@
 API vec3  editor_pick(float mouse_x, float mouse_y);
 API char* editor_path(const char *path);
 
+API float* editor_getf(const char *key);
+API int*   editor_geti(const char *key);
+API char** editor_gets(const char *key);
+API int    editor_send(const char *cmd, const char *optional_value);
+
 // open file dialog
 
 API char* dialog_load();

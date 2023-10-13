@@ -8,8 +8,8 @@ static map(unsigned, reflected_t) reflects;
 static map(unsigned, array(reflected_t)) members;
 
 void reflected_printf(reflected_t *r) {
-    printf("id:%u objtype:%u sz:%u name:%s info:%s addr:%p parent:%u type:%s",
-        r->id, r->objtype, r->sz, r->name ? r->name : "", r->info ? r->info : "", r->addr, r->parent, r->type ? r->type : "");
+    printf("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s",
+        r->name ? r->name : "", r->info ? r->info : "", r->id, r->objtype, r->sz, r->addr, r->parent, r->type ? r->type : "");
 }
 void reflected_printf_all() {
     for each_map_ptr(reflects, unsigned, k, reflected_t, p) {

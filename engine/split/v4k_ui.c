@@ -1401,11 +1401,12 @@ int ui_collapse_end() {
 
 
 int ui_contextual() {
-    struct nk_rect bounds = nk_widget_bounds(ui_ctx);
+    struct nk_rect bounds = nk_widget_bounds(ui_ctx); // = nk_window_get_bounds(ui_ctx);
     bounds.y -= 25;
     return ui_popups() ? 0 : nk_contextual_begin(ui_ctx, 0, nk_vec2(150, 300), bounds);
 }
-int ui_contextual_end() {
+int ui_contextual_end(int close) {
+    if(close) nk_contextual_close(ui_ctx);
     nk_contextual_end(ui_ctx);
     return 1;
 }
@@ -1416,7 +1417,7 @@ int ui_submenu(const char *options) {
         for( int i = 0; i < array_count(tokens) ; ++i ) {
             if( ui_button_transparent(tokens[i]) ) choice = i + 1;
         }
-        ui_contextual_end();
+        ui_contextual_end(0);
     }
     return choice;
 }
@@ -1550,8 +1551,10 @@ int ui_label(const char *text) {
 int ui_label2(const char *label, const char *text_) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
 
-    int align1 = label[0] == '>' ? (label++, NK_TEXT_RIGHT) : label[0] == '=' ? (label++, NK_TEXT_CENTERED) : label[0] == '<' ? (label++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
-    int align2 = text_[0] == '>' ? (text_++, NK_TEXT_RIGHT) : text_[0] == '=' ? (text_++, NK_TEXT_CENTERED) : text_[0] == '<' ? (text_++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
+    int align1 = NK_TEXT_LEFT;
+    int align2 = NK_TEXT_LEFT;
+    if( label ) align1 = label[0] == '>' ? (label++, NK_TEXT_RIGHT) : label[0] == '=' ? (label++, NK_TEXT_CENTERED) : label[0] == '<' ? (label++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
+    if( text_ ) align2 = text_[0] == '>' ? (text_++, NK_TEXT_RIGHT) : text_[0] == '=' ? (text_++, NK_TEXT_CENTERED) : text_[0] == '<' ? (text_++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
     ui_label_(label, align1);
 
 const struct nk_input *input = &ui_ctx->input;

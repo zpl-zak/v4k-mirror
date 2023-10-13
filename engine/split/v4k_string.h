@@ -21,9 +21,10 @@ char* strtok_s(char* str,const char* delimiters,char** context); // tcc misses t
 
 #if 1
 #define each_substring(str, delims, keyname) \
-    ( int len_ = strlen(str) + 1; len_; len_ = 0 ) \
-    for( char buf_[1024], *ptr_ = len_ < 1024 ? buf_ : REALLOC(0, len_), *lit_ = (char*)(str), *_bak = (snprintf(ptr_, len_, "%s", lit_), ptr_); _bak; _bak = 0, (ptr_ == buf_ ? 0 : REALLOC(ptr_, 0)) ) \
-    for( char *next_token = 0, *keyname = strtok_r(_bak, delims, &next_token); keyname; keyname = strtok_r(NULL, delims, &next_token) )
+    ( char *str_ = (char*)(str); str_; str_ = 0 ) \
+    for( int len_ = strlen(str_) + 1, heap_ = len_ < 1024; len_ > 1; len_ = 0 ) \
+    for( char *ptr_ = (heap_ ? REALLOC(0, len_) : ALLOCA(len_)), *cpy_ = (snprintf(ptr_, len_, "%s", str_), ptr_); ptr_; (heap_ ? REALLOC(ptr_, 0) : 0), ptr_ = 0 ) \
+    for( char *next_token = 0, *keyname = strtok_r(cpy_, delims, &next_token); keyname; keyname = strtok_r(NULL, delims, &next_token) )
 #else
 #define each_substring(str, delims, keyname) \
     ( char** tokens_ = strsplit((str), (delims)), *keyname = 0; tokens_; tokens_ = 0) \

@@ -1902,6 +1902,8 @@ typedef struct audio_handle* audio_t;
  float   audio_volume_clip(float gain);
  float   audio_volume_stream(float gain);
  float   audio_volume_master(float gain);
+ int     audio_mute(int mute);
+ int     audio_muted();
  int ui_audio();
 enum AUDIO_FLAGS {
 AUDIO_1CH = 0,
@@ -2103,6 +2105,10 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  void* dll(const char *filename, const char *symbol);
  vec3  editor_pick(float mouse_x, float mouse_y);
  char* editor_path(const char *path);
+ float* editor_getf(const char *key);
+ int*   editor_geti(const char *key);
+ char** editor_gets(const char *key);
+ int    editor_send(const char *cmd, const char *optional_value);
  char* dialog_load();
  char* dialog_save();
  int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
@@ -3069,6 +3075,8 @@ typedef vec3i guid;
  void        app_crash();
  void        app_singleton(const char *guid);
  bool        app_open(const char *folder_file_or_url);
+ const char* app_loadfile();
+ const char* app_savefile();
  char*       callstack( int traces );
  int         callstackf( FILE *fp, int traces );
  void        die(const char *message);
@@ -3140,7 +3148,7 @@ PANEL_OPEN = 1,
  int    ui_label2_toolbar(const char *label, const char *icons);
  int    ui_slider(const char *label, float *value);
  int    ui_slider2(const char *label, float *value, const char *caption);
- int   ui_contextual_end();
+ int   ui_contextual_end(int close);
  int   ui_collapse_clicked();
  int   ui_collapse_end();
  int  ui_panel_end();

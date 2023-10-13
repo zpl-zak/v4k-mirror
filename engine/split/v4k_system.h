@@ -38,6 +38,10 @@ API void        app_crash();
 API void        app_singleton(const char *guid);
 API bool        app_open(const char *folder_file_or_url);
 
+API const char* app_loadfile();
+API const char* app_savefile();
+
+
 API char*       callstack( int traces ); // write callstack into a temporary string. <0 traces to invert order. do not free().
 API int         callstackf( FILE *fp, int traces ); // write callstack to file. <0 traces to invert order.
 

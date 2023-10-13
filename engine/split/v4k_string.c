@@ -8,16 +8,26 @@ char* tempvl(const char *fmt, va_list vl) {
 
     int reqlen = sz;
 #if 0
+    int heap = 0;
     enum { STACK_ALLOC = 16384 };
     static __thread char buf[STACK_ALLOC];
 #else
-    enum { STACK_ALLOC = 128*1024 };
+    int heap = 1;
+    static __thread int STACK_ALLOC = 128*1024;
     static __thread char *buf = 0; if(!buf) buf = REALLOC(0, STACK_ALLOC); // @leak
 #endif
-    static __thread int cur = 0, len = STACK_ALLOC - 1; //printf("string stack %d/%d\n", cur, STACK_ALLOC);
+    static __thread int cur = 0; //printf("string stack %d/%d\n", cur, STACK_ALLOC);
 
-    assert(reqlen < STACK_ALLOC && "no stack enough, increase STACK_ALLOC variable above");
-    char* ptr = buf + (cur *= (cur+reqlen) < len, (cur += reqlen) - reqlen);
+    if( reqlen >= STACK_ALLOC ) {
+        tty_color(RED);
+        printf("no stack enough, increase STACK_ALLOC variable above (reqlen:%d) (fmt: %s)\n", reqlen, fmt);
+        tty_color(0);
+        //assert(reqlen < STACK_ALLOC);
+        STACK_ALLOC = reqlen * 2;
+        buf = REALLOC(0, STACK_ALLOC);
+    }
+
+    char* ptr = buf + (cur *= (cur+reqlen) < (STACK_ALLOC - 1), (cur += reqlen) - reqlen);
 
     /*stbsp_*/vsnprintf( ptr, sz, fmt, vl );
     return (char *)ptr;

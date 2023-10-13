@@ -61,7 +61,7 @@
 // ### editor (v4)
 // Bring in remote datas into the editor.
 // Go social & marketplace. Allow others to expand, share, publish, subscribe, discuss their sub-editors within a small community.
-// I really like the way the way OpenFrameworks.cc does their addons, and I think we should do same: just discover and monitor github repos, and list everything on a website (v4k- prefix?).
+// I really like the way the way OpenFrameworks.cc does their addons, and I think we should do same: just discover and monitor github repos, and list everything on a website (fwk- prefix?).
 // Wishlist for a github-based community flow: discovery, transparent installs, publish on github, star there, watch commits & releases, track issues+discussions, etc
 //
 // We should have a generic, extensible, script/plugin-driven, working editor at this point (hopefully) that does not require maintenance.
@@ -153,7 +153,7 @@
 // -     ecs: sys are modules, ecs: char *messaging, ecs: filesystem (e/dir,c/files,s/dll)
 // -     world: streaming, migration
 
-#include "v4k.h"
+#include "fwk.h"
 
 // #include "labs.vm/ecs.c"
 
@@ -839,10 +839,10 @@ void editor_obj_render_max_properties(void *obj, const char *mask) { // headless
 // main editor interface
 
 void editor_render_menubar() {
-    int alts = input(KEY_LALT) || input(KEY_RALT); // @todo: move to v4k.c
-    int ctrls = input(KEY_LCTRL) || input(KEY_RCTRL); // @todo: move to v4k.c
-    int shifts = input(KEY_LSHIFT) || input(KEY_RSHIFT); // @todo: move to v4k.c
-    int mods = alts || ctrls || shifts; // @todo: move to v4k.c
+    int alts = input(KEY_LALT) || input(KEY_RALT); // @todo: move to fwk.c
+    int ctrls = input(KEY_LCTRL) || input(KEY_RCTRL); // @todo: move to fwk.c
+    int shifts = input(KEY_LSHIFT) || input(KEY_RSHIFT); // @todo: move to fwk.c
+    int mods = alts || ctrls || shifts; // @todo: move to fwk.c
     if( input_down(KEY_F5) )  editor_key = key_reload;
     if( input_down(KEY_F11) ) editor_key = key_fullscreen;
     if( input_down(KEY_PAUSE) ) editor_key = key_pause;
@@ -1046,7 +1046,7 @@ void editor_obj_render_properties_recursively(void *obj, const char *mask) {
             if( ui_button_transparent("<Cut"  ) ) do_context_obj = obj, do_context_cmd = cc3(c,u,t);
             if( ui_button_transparent("<Copy" ) ) do_context_obj = obj, do_context_cmd = cc4(c,o,p,y);
             if( ui_button_transparent("<Paste") ) do_context_obj = obj, do_context_cmd = cc5(p,a,s,t,e);
-            ui_contextual_end();
+            ui_contextual_end(0);
         }
 
         for( int i = 0; i < num_subobjects; ++i ) {
@@ -1067,7 +1067,7 @@ void editor_obj_render_properties_recursively(void *obj, const char *mask) {
         if( ui_button_transparent("<Cut"  ) ) do_context_obj = obj, do_context_cmd = cc3(c,u,t);
         if( ui_button_transparent("<Copy" ) ) do_context_obj = obj, do_context_cmd = cc4(c,o,p,y);
         if( ui_button_transparent("<Paste") ) do_context_obj = obj, do_context_cmd = cc5(p,a,s,t,e);
-        ui_contextual_end();
+        ui_contextual_end(0);
     }
 
     if( clicked_or_toggled & 1 ) {

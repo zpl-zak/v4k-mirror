@@ -1,4 +1,4 @@
-#include "v4k.h"
+#include "fwk.h"
 #include "oscedit.h"
 
 // game

@@ -1,5 +1,5 @@
-#define V4K_C
-#include "v4k.h"
+#define FWK_C
+#include "fwk.h"
 
 bool parse_struct(const char *line) {
     return strstr(line, "s""truct ");

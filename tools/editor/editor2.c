@@ -13,7 +13,7 @@
 - [ ] Editor: GUI pass: timeline and data tracks, node graphs. <!-- worthy: will be reused into materials, animgraphs and blueprints -->
 */
 
-#include "v4k.c"
+#include "fwk.c"
 #include "editor2.h" // old editor interface
 
 #define ui_push_hspace(px) \
@@ -28,8 +28,6 @@
 
 // ----------------------------------------------------------------------------------------
 
-#include "labs.meta/meta_reflect.c"
-
 int *meta_changed(void *value) {
     static map(void*,int) changes = 0;
     do_once map_init_ptr(changes);
@@ -37,20 +35,20 @@ int *meta_changed(void *value) {
     return map_find_or_add(changes, value, 0);
 }
 
-void reflect_ui( const reflect *r, void *value, void *userdata ) {
+void reflect_ui( const char *type, const char *name, const char *info, void *value ) {
     ui_label_icon_highlight = *meta_changed(value); // @hack: remove ui_label_icon_highlight hack
-    char *title = va(ICON_MD_UNDO "%s", r->info);
+    char *title = va(ICON_MD_UNDO "%s", info);
 
     int changed = 0;
-    /**/ if( !strcmp(r->type, "int") )               changed = ui_int(title, (int*)value);
-    else if( !strcmp(r->type, "char") && r->is_ptr ) changed = ui_buffer(title, (char*)value, strlen((char*)value)+1);
-    else if( !strcmp(r->type, "string") )            changed = ui_string(title, (char**)value);
-    else if( !strcmp(r->type, "float") )             changed = ui_float(title, (float*)value);
-    else if( !strcmp(r->type, "double") )            changed = ui_double(title, (double*)value);
-    else if( !strcmp(r->type, "unsigned") )          changed = ui_unsigned(title, (unsigned*)value);
-    else if( !strcmp(r->type, "color") )             changed = ui_color4(va("%s #%02X%02X%02X%02X", title, (int)(0[(float*)value]),(int)(1[(float*)value]),(int)(2[(float*)value]),(int)(3[(float*)value])), (float*)value);
+    /**/ if( !strcmp(type, "int") )               changed = ui_int(title, (int*)value);
+    else if( !strcmp(type, "char*") )             changed = ui_buffer(title, (char*)value, strlen((char*)value)+1);
+    else if( !strcmp(type, "string") )            changed = ui_string(title, (char**)value);
+    else if( !strcmp(type, "float") )             changed = ui_float(title, (float*)value);
+    else if( !strcmp(type, "double") )            changed = ui_double(title, (double*)value);
+    else if( !strcmp(type, "unsigned") )          changed = ui_unsigned(title, (unsigned*)value);
+    else if( !strcmp(type, "color") )             changed = ui_color4(va("%s #%02X%02X%02X%02X", title, (int)(0[(float*)value]),(int)(1[(float*)value]),(int)(2[(float*)value]),(int)(3[(float*)value])), (float*)value);
     // else if( !strcmp(type, "vec3") ) ; // not supported. decays to 3 floats
-    else ui_label2(title, va("(%s)%s", r->type, r->name));
+    else ui_label2(title, va("(%s)%s", type, name));
 
     if( changed ) {
         *meta_changed(value) = 1;
@@ -62,7 +60,7 @@ void reflect_ui( const reflect *r, void *value, void *userdata ) {
 }
 bool reflect_parse(void *obj, const char *type, const char *val) {
     /**/ if( !strcmp(type, "int") )      *((int*)obj) = eval(val);
-//  else if( !strcmp(r->type, "char") && r->is_ptr ) ; // @fixme: not supported, unless we do strncpy() or similar.
+//  else if( !strcmp(type, "char*") ) ; // @fixme: not supported, unless we do strncpy() or similar.
     else if( !strcmp(type, "string") )   *((char**)obj) = stringf("%s", val);
     else if( !strcmp(type, "float") )    *((float*)obj) = eval(val); // = v[0] == '~' ? (float)~atoi(val+1) : atof(val); // = atof(val);
     else if( !strcmp(type, "double") )   *((double*)obj) = eval(val); // = v[0] == '~' ? (float)~atoi(val+1) : atof(val); // = atof(val);
@@ -71,42 +69,6 @@ bool reflect_parse(void *obj, const char *type, const char *val) {
     else if( !strcmp(type, "vec3") )     sscanf(val, "%f %f %f", ((float*)obj)+0, ((float*)obj)+1, ((float*)obj)+2);
     else return 0;
     return 1;    
-}
-
-// ----------------------------------------------------------------------------------------
-
-typedef void(*obj_ctor)(void*);
-static map(char*, obj_ctor) obj_ctors;
-
-#define STRUCT_CTOR(type, ctor) STRUCT_CTOR(#type, (obj_ctor)ctor)
-void (STRUCT_CTOR)( const char *type, obj_ctor ctor ) {
-    do_once map_init_str(obj_ctors);
-    map_find_or_add(obj_ctors, STRDUP(type), ctor);
-}
-
-bool obj_make(void *obj, const char *ini_data) { // initialize object from ini datas
-    char *hint = 0;
-
-    for( ini_t read = ini_from_mem(ini_data); !!read; map_free(read), read = 0) {
-        for each_map(read, char*, k, char*, v) {
-            array(char*) tokens = strsplit(k, ".");
-            if( array_count(tokens) != 2 ) continue;
-
-            const char *type = 0;
-            void *found = reflect_field( tokens[0], obj, tokens[1], &type );
-            if( !found ) continue;
-
-            if( reflect_parse(found, type, v) ) {
-                hint = tokens[0];                
-            }
-        }
-
-        // constructor (post-init call)
-        obj_ctor *ctor = map_find(obj_ctors, hint);
-        if( ctor ) (*ctor)( obj );
-    }
-
-    return hint != 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -223,9 +185,9 @@ void node_edit(node *n, node *root) {
     if( ui_collapse(va("%s %s (%u)", n->down ? ICON_MD_SOURCE : ICON_MD_FOLDER, node_name(n), node_children(n)), va("%p%p",root,n->v.ptr)) ) { // @fixme v.ptr
         if( n->down ) node_edit(n->down,root);
 
-        if( reflect_has_fields( node_type(n), n->v.ptr ) ) {
+        if( 1 ) { // reflect_has_fields( node_type(n), n->v.ptr ) ) {
             for ui_push_hspace( 4 ) {
-                #define ICON_DOT ICON_CANCEL // ICON_MD_WIFI_1_BAR // ICON_MD_RADIO_BUTTON_UNCHECKED // ICON_MD_LENS_BLUR
+                #define ICON_DOT " · " // ICON_CANCEL // ICON_MD_WIFI_1_BAR // ICON_MD_RADIO_BUTTON_UNCHECKED // ICON_MD_LENS_BLUR
                 static int flags[4] = {0};
                 char *toolbar = va("%s%s%s%s",
                     flags[3] ? ICON_MD_STAR : ICON_MD_STAR_OUTLINE, // ICON_MD_BOOKMARK : ICON_MD_BOOKMARK_BORDER, // flags[3] == 0 ? ICON_MD_STAR_OUTLINE : flags[3] == 1 ? ICON_MD_STAR_HALF : ICON_MD_STAR,
@@ -239,7 +201,10 @@ void node_edit(node *n, node *root) {
 
                 int choice = ui_label2_toolbar(section, toolbar);
                 if( choice ) flags[ choice - 1 ] = (flags[ choice - 1 ] + 1 ) % ( choice == 4 ? 2/*3*/ : 2);
-                reflect_iterate_fields( node_type(n), n->v.ptr, reflect_ui, NULL ); // @fixme v.ptr
+
+                for each_member( node_type(n), R ) {
+                    reflect_ui(R->type, R->name, R->info, n->v.ptr); // @fixme v.ptr
+                }
             }
         }
 
@@ -269,7 +234,7 @@ void editor_reset() {
 }
 void editor_frame() {
     editor_init(); // old editor interface
-    editor_tick(); // old editor interface
+    editor_tick_(); // old editor interface
     editor_menubar(); // old editor interface
 
     if( input_down(KEY_F5) ) {
@@ -422,42 +387,42 @@ int main() {
     STRUCT( my_sprite, vec3, position, "Position" );
     STRUCT( my_sprite, float, tilt, "Tilt degrees" );
     STRUCT( my_sprite, color, tint, "Tint color" );
-    STRUCT_CTOR( my_sprite, my_sprite_ctor );
 
     PRINTF("pod:%d, var:%d, node:%d warn\n", (int)sizeof(pod), (int)sizeof(var), (int)sizeof(node));
-    PRINTF("reflected:%d bytes vs real:%d bytes warn\n", reflect_sizeof("my_sprite"), (int)sizeof(my_sprite));
+//  PRINTF("reflected:%d bytes vs real:%d bytes warn\n", reflect_sizeof("my_sprite"), (int)sizeof(my_sprite));
 
     // cook_config("../../tools/cook.ini");
     window_create(0.80, 0);
 
-    struct my_sprite spr1 = {0}, spr2 = {0}, spr3 = {0};
-        obj_make(&spr1,
-            "[my_sprite]\n"
-            "filename=cat.png\n"
-            "position=5 2 100\n"
-            "tilt=45 + 45 -90\n"
-            "tint=255 255 0\n"
-        );
-        obj_make(&spr2,
-            "[my_sprite]\n"
-            "filename=cat.png\n"
-            "position=1 2 100\n"
-            "tilt=45 + 45 -90\n"
-            "tint=255 0 0\n"
-        );
-        obj_make(&spr3,
-            "[my_sprite]\n"
-            "filename=cat.png\n"
-            "position=1 2 100\n"
-            "tilt=45\n"
-            "tint=0 0 255\n"
-        );
+    struct my_sprite
+        spr1 = {
+            .filename="cat.png",
+            .position = vec3(5, 2, 100),
+            .tilt=45 + 45 -90,
+            .tint=vec4(255, 255, 0, 255)
+        },
+        spr2 = {
+            .filename="cat.png",
+            .position = vec3(1, 2, 100),
+            .tilt=45 + 45 -90,
+            .tint=vec4(255, 0, 0, 255)
+        },
+        spr3 = {
+            .filename="cat.png",
+            .position = vec3(1, 2, 100),
+            .tilt=45,
+            .tint=vec4(0, 0, 255, 255)
+        };
+
+    my_sprite_ctor(&spr1);
+    my_sprite_ctor(&spr2);
+    my_sprite_ctor(&spr3);
+
     int hero1 = editor_spawn("/hero1", "my_sprite", &spr1);
     int hero2 = editor_spawn("/hero2", "my_sprite", &spr2);
     int hero3 = editor_spawn("/hero1/heroB", "my_sprite", &spr3);
 
     camera_t cam = camera();
-    camera_enable(&cam);
 
     while( window_swap() ) {
         editor_frame();

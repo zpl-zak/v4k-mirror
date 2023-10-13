@@ -1,6 +1,61 @@
 // editing:
 // nope > functions: add/rem property
 
+#define ICON_PLAY   ICON_MD_PLAY_ARROW
+#define ICON_PAUSE  ICON_MD_PAUSE
+#define ICON_STOP   ICON_MD_STOP
+#define ICON_CANCEL ICON_MD_CLOSE
+
+#define ICON_WARNING      ICON_MD_WARNING
+#define ICON_BROWSER      ICON_MD_FOLDER_SPECIAL
+#define ICON_OUTLINER     ICON_MD_VIEW_IN_AR
+#define ICON_BUILD        ICON_MD_BUILD
+#define ICON_SCREENSHOT   ICON_MD_PHOTO_CAMERA
+#define ICON_CAMERA_ON    ICON_MD_VIDEOCAM
+#define ICON_CAMERA_OFF   ICON_MD_VIDEOCAM_OFF
+#define ICON_GAMEPAD_ON   ICON_MD_VIDEOGAME_ASSET
+#define ICON_GAMEPAD_OFF  ICON_MD_VIDEOGAME_ASSET_OFF
+#define ICON_AUDIO_ON     ICON_MD_VOLUME_UP
+#define ICON_AUDIO_OFF    ICON_MD_VOLUME_OFF
+#define ICON_WINDOWED     ICON_MD_FULLSCREEN_EXIT
+#define ICON_FULLSCREEN   ICON_MD_FULLSCREEN
+#define ICON_LIGHTS_ON    ICON_MD_LIGHTBULB
+#define ICON_LIGHTS_OFF   ICON_MD_LIGHTBULB_OUTLINE
+#define ICON_RENDER_BASIC ICON_MD_IMAGE_SEARCH
+#define ICON_RENDER_FULL  ICON_MD_INSERT_PHOTO
+
+#define ICON_SIGNAL     ICON_MD_SIGNAL_CELLULAR_ALT
+#define ICON_DISK       ICON_MD_STORAGE
+#define ICON_RATE       ICON_MD_SPEED
+
+#define ICON_CLOCK      ICON_MD_TODAY
+#define ICON_CHRONO     ICON_MD_TIMELAPSE
+
+#define ICON_SETTINGS   ICON_MD_SETTINGS
+#define ICON_LANGUAGE   ICON_MD_G_TRANSLATE
+#define ICON_PERSONA    ICON_MD_FACE
+#define ICON_SOCIAL     ICON_MD_MESSAGE
+#define ICON_GAME       ICON_MD_ROCKET_LAUNCH
+#define ICON_KEYBOARD   ICON_MD_KEYBOARD
+#define ICON_MOUSE      ICON_MD_MOUSE
+#define ICON_GAMEPAD    ICON_MD_GAMEPAD
+#define ICON_MONITOR    ICON_MD_MONITOR
+#define ICON_WIFI       ICON_MD_WIFI
+#define ICON_BUDGET     ICON_MD_SAVINGS
+#define ICON_NEW_FOLDER ICON_MD_CREATE_NEW_FOLDER
+#define ICON_PLUGIN     ICON_MD_EXTENSION
+#define ICON_RESTART    ICON_MD_REPLAY
+#define ICON_QUIT       ICON_MD_CLOSE
+
+#define ICON_POWER            ICON_MD_BOLT // ICON_MD_POWER
+#define ICON_BATTERY_CHARGING ICON_MD_BATTERY_CHARGING_FULL
+#define ICON_BATTERY_LEVELS \
+        ICON_MD_BATTERY_ALERT, \
+        ICON_MD_BATTERY_0_BAR,ICON_MD_BATTERY_1_BAR, \
+        ICON_MD_BATTERY_2_BAR,ICON_MD_BATTERY_3_BAR, \
+        ICON_MD_BATTERY_4_BAR,ICON_MD_BATTERY_5_BAR, \
+        ICON_MD_BATTERY_6_BAR,ICON_MD_BATTERY_FULL
+
 char *editor_path(const char *path) {
     return va("%s/%s", EDITOR, path);
 }
@@ -63,6 +118,75 @@ int editor_ui_bits8(const char *label, uint8_t *enabled) { // @to deprecate
 
     nk_layout_row_end(ui_ctx);
     return clicked | (copy ^ *enabled);
+}
+
+
+
+typedef union editor_var {
+    int i;
+    float f;
+    char *s;
+} editor_var;
+static map(char*,editor_var) editor_vars;
+float *editor_getf(const char *key) {
+    if(!editor_vars) map_init_str(editor_vars);
+    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+    return &found->f;
+}
+int *editor_geti(const char *key) {
+    if(!editor_vars) map_init_str(editor_vars);
+    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+    return &found->i;
+}
+char **editor_gets(const char *key) {
+    if(!editor_vars) map_init_str(editor_vars);
+    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+    if(!found->s) found->s = stringf("%s","");
+    return &found->s;
+}
+
+int editor_send(const char *cmd, const char *optional_value) {
+    unsigned *gamepads = editor_geti("gamepads"); // 0 off, mask gamepad1(1), gamepad2(2), gamepad3(4), gamepad4(8)...
+    unsigned *renders = editor_geti("renders"); // 0 off, mask: 1=lit, 2=ddraw, 3=whiteboxes
+    float *speed = editor_getf("speed"); // <0 num of frames to advance, 0 paused, [0..1] slomo, 1 play regular speed, >1 fast-forward (x2/x4/x8)
+    unsigned *powersave = editor_geti("powersave");
+
+    char *name;
+    /**/ if( !strcmp(cmd, "key_quit" ))       record_stop(), exit(0);
+    else if( !strcmp(cmd, "key_stop" ))       window_pause(1);
+    else if( !strcmp(cmd, "key_mute" ))       audio_volume_master( 1 ^ !!audio_volume_master(-1) );
+    else if( !strcmp(cmd, "key_pause" ))      window_pause( window_has_pause() ^ 1 );
+    else if( !strcmp(cmd, "key_reload" ))     window_reload();
+    else if( !strcmp(cmd, "key_battery" ))    *powersave = optional_value ? !!atoi(optional_value) : *powersave ^ 1;
+    else if( !strcmp(cmd, "key_browser" ))    ui_show("File Browser", ui_visible("File Browser") ^ true);
+    else if( !strcmp(cmd, "key_outliner" ))   ui_show("Outliner", ui_visible("Outliner") ^ true);
+    else if( !strcmp(cmd, "key_record" ))     if(record_active()) record_stop(); else
+                                              name = file_counter(va("%s.mp4",app_name())), window_record(name),     ui_notify(va("Video capturing: %s", name), date_string());
+    else if( !strcmp(cmd, "key_screenshot" )) name = file_counter(va("%s.png",app_name())), window_screenshot(name), ui_notify(va("Screenshot: %s", name), date_string());
+    else if( !strcmp(cmd, "key_profiler" ))   ui_show("Profiler", profiler_enable(ui_visible("Profiler") ^ true));
+    else if( !strcmp(cmd, "key_fullscreen" )) record_stop(), window_fullscreen( window_has_fullscreen() ^ 1 ); // framebuffer resizing corrupts video stream, so stop any recording beforehand
+    else if( !strcmp(cmd, "key_gamepad" ))    *gamepads = (*gamepads & ~1u) | ((*gamepads & 1) ^ 1);
+    else if( !strcmp(cmd, "key_lit" ))        *renders = (*renders & ~1u) | ((*renders & 1) ^ 1);
+    else if( !strcmp(cmd, "key_ddraw" ))      *renders = (*renders & ~2u) | ((*renders & 2) ^ 2);
+    else alert(va("editor could not handle `%s` command.", cmd));
+
+    return 0;
+}
+
+int editor_tick() {
+    enum { editor_hz = 60 };
+    enum { editor_hz_mid = 18 };
+    enum { editor_hz_low = 5 };
+    if( *editor_geti("powersave") ) {
+        // adaptive framerate
+        int app_on_background = !window_has_focus();
+        int hz = app_on_background ? editor_hz_low : editor_hz_mid;
+        window_fps_lock( hz < 5 ? 5 : hz );
+    } else {
+        // window_fps_lock( editor_hz );
+    }
+
+    return 0;
 }
 
 static int gizmo__mode;
@@ -174,26 +298,6 @@ int gizmo(vec3 *pos, vec3 *rot, vec3 *sca) {
     ddraw_color_pop();
 
     return modified;
-}
-
-char* dialog_load() {
-    const char *windowTitle = NULL;
-    const char *defaultPathFile = NULL;
-    const char *filterHints = NULL; // "image files"
-    const char *filters[] = { "*.*" };
-    int allowMultipleSelections = 0;
-
-    tinyfd_assumeGraphicDisplay = 1;
-    return tinyfd_openFileDialog( windowTitle, defaultPathFile, countof(filters), filters, filterHints, allowMultipleSelections );
-}
-char* dialog_save() {
-    const char *windowTitle = NULL;
-    const char *defaultPathFile = NULL;
-    const char *filterHints = NULL; // "image files"
-    const char *filters[] = { "*.*" };
-
-    tinyfd_assumeGraphicDisplay = 1;
-    return tinyfd_saveFileDialog( windowTitle, defaultPathFile, countof(filters), filters, filterHints );
 }
 
 // -- localization kit

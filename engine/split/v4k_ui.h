@@ -60,7 +60,7 @@ API int    ui_label2_float(const char *label, float value);
 API int    ui_label2_toolbar(const char *label, const char *icons);
 API int    ui_slider(const char *label, float *value);
 API int    ui_slider2(const char *label, float *value, const char *caption);
-API int   ui_contextual_end();
+API int   ui_contextual_end(int close);
 API int   ui_collapse_clicked();
 API int   ui_collapse_end();
 API int  ui_panel_end();

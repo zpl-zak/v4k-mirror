@@ -850,6 +850,26 @@ bool app_open(const char *link) {
     return app_open_url(link);
 }
 
+const char* app_loadfile() {
+    const char *windowTitle = NULL;
+    const char *defaultPathFile = NULL;
+    const char *filterHints = NULL; // "image files"
+    const char *filters[] = { "*.*" };
+    int allowMultipleSelections = 0;
+
+    tinyfd_assumeGraphicDisplay = 1;
+    return tinyfd_openFileDialog( windowTitle, defaultPathFile, countof(filters), filters, filterHints, allowMultipleSelections );
+}
+const char* app_savefile() {
+    const char *windowTitle = NULL;
+    const char *defaultPathFile = NULL;
+    const char *filterHints = NULL; // "image files"
+    const char *filters[] = { "*.*" };
+
+    tinyfd_assumeGraphicDisplay = 1;
+    return tinyfd_saveFileDialog( windowTitle, defaultPathFile, countof(filters), filters, filterHints );
+}
+
 // ----------------------------------------------------------------------------
 // tests
 

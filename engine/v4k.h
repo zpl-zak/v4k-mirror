@@ -1359,9 +1359,12 @@ API int     audio_play_gain_pitch( audio_t a, int flags, float gain, float pitch
 API int     audio_play_gain_pitch_pan( audio_t a, int flags, float gain, float pitch, float pan/*0*/ );
 API int     audio_stop( audio_t a );
 
-API float   audio_volume_clip(float gain);   // set     fx volume if gain is in [0..1] range. return current     fx volume in any case
-API float   audio_volume_stream(float gain); // set    bgm volume if gain is in [0..1] range. return current    bgm volume in any case
-API float   audio_volume_master(float gain); // set master volume if gain is in [0..1] range. return current master volume in any case
+API float   audio_volume_clip(float gain);   // set     fx volume if gain is in [0..1] range. returns current     fx volume in any case
+API float   audio_volume_stream(float gain); // set    bgm volume if gain is in [0..1] range. returns current    bgm volume in any case
+API float   audio_volume_master(float gain); // set master volume if gain is in [0..1] range. returns current master volume in any case
+
+API int     audio_mute(int mute);
+API int     audio_muted();
 
 API int ui_audio();
 
@@ -1749,6 +1752,11 @@ API void* dll(const char *filename, const char *symbol);
 //API bool  editor_active();
 API vec3  editor_pick(float mouse_x, float mouse_y);
 API char* editor_path(const char *path);
+
+API float* editor_getf(const char *key);
+API int*   editor_geti(const char *key);
+API char** editor_gets(const char *key);
+API int    editor_send(const char *cmd, const char *optional_value);
 
 // open file dialog
 
@@ -2587,7 +2595,9 @@ extern API int profiler_enabled; ///-
 // @todo: nested structs? pointers in members?
 // @todo: declare TYPEDEF(vec3, float[3]), TYPEDEF(mat4, vec4[4]/*float[16]*/)
 
+#ifndef ifdef_objapi
 #define ifdef_objapi(T,...) __VA_ARGS__
+#endif
 
 typedef struct reflected_t {
     unsigned id, objtype;
@@ -3586,9 +3596,10 @@ char* strtok_s(char* str,const char* delimiters,char** context); // tcc misses t
 
 #if 1
 #define each_substring(str, delims, keyname) \
-    ( int len_ = strlen(str) + 1; len_; len_ = 0 ) \
-    for( char buf_[1024], *ptr_ = len_ < 1024 ? buf_ : REALLOC(0, len_), *lit_ = (char*)(str), *_bak = (snprintf(ptr_, len_, "%s", lit_), ptr_); _bak; _bak = 0, (ptr_ == buf_ ? 0 : REALLOC(ptr_, 0)) ) \
-    for( char *next_token = 0, *keyname = strtok_r(_bak, delims, &next_token); keyname; keyname = strtok_r(NULL, delims, &next_token) )
+    ( char *str_ = (char*)(str); str_; str_ = 0 ) \
+    for( int len_ = strlen(str_) + 1, heap_ = len_ < 1024; len_ > 1; len_ = 0 ) \
+    for( char *ptr_ = (heap_ ? REALLOC(0, len_) : ALLOCA(len_)), *cpy_ = (snprintf(ptr_, len_, "%s", str_), ptr_); ptr_; (heap_ ? REALLOC(ptr_, 0) : 0), ptr_ = 0 ) \
+    for( char *next_token = 0, *keyname = strtok_r(cpy_, delims, &next_token); keyname; keyname = strtok_r(NULL, delims, &next_token) )
 #else
 #define each_substring(str, delims, keyname) \
     ( char** tokens_ = strsplit((str), (delims)), *keyname = 0; tokens_; tokens_ = 0) \
@@ -3743,6 +3754,10 @@ API void        app_crash();
 API void        app_singleton(const char *guid);
 API bool        app_open(const char *folder_file_or_url);
 
+API const char* app_loadfile();
+API const char* app_savefile();
+
+
 API char*       callstack( int traces ); // write callstack into a temporary string. <0 traces to invert order. do not free().
 API int         callstackf( FILE *fp, int traces ); // write callstack to file. <0 traces to invert order.
 
@@ -3842,7 +3857,7 @@ API int    ui_label2_float(const char *label, float value);
 API int    ui_label2_toolbar(const char *label, const char *icons);
 API int    ui_slider(const char *label, float *value);
 API int    ui_slider2(const char *label, float *value, const char *caption);
-API int   ui_contextual_end();
+API int   ui_contextual_end(int close);
 API int   ui_collapse_clicked();
 API int   ui_collapse_end();
 API int  ui_panel_end();

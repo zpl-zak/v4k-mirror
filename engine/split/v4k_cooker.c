@@ -364,7 +364,7 @@ array(struct fs) zipscan_filter(int threadid, int numthreads) {
 
         // skip if list item does not belong to this thread bucket
         uint64_t hash = hash_str(fname);
-        unsigned bucket = (hash >> 32) % numthreads;
+        unsigned bucket = (hash /*>> 32*/) % numthreads;
         if(bucket != threadid) continue;
 
         array_push(fs, fs_now[i]);
@@ -621,10 +621,8 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
             char *s = strchr( ART, ';' );  if(s) *s = 0;
             char *w = strchr( ART, ' ' );  if(w) *w = 0;
             char *out = 0; const char *sep = "";
-            const char *v4k_title = getenv("V4K_TITLE");
             for each_substring(ART, ",", t) {
                 char *tmp = file_pathabs(va("%s%s", HOME, t)) + ART_LEN;
-                PRINTF("ART mount+=%s\n", tmp);
                 for(int i = 0; tmp[i]; ++i) if(tmp[i]=='\\') tmp[i] = '/';
                 strcatf(&out, "%s%s%s", sep, tmp, strendi(tmp, "/") ? "" : "/");
                 assert( out[strlen(out) - 1] == '/' );

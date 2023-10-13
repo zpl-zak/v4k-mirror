@@ -525,16 +525,26 @@ char* tempvl(const char *fmt, va_list vl) {
 
     int reqlen = sz;
 #if 0
+    int heap = 0;
     enum { STACK_ALLOC = 16384 };
     static __thread char buf[STACK_ALLOC];
 #else
-    enum { STACK_ALLOC = 128*1024 };
+    int heap = 1;
+    static __thread int STACK_ALLOC = 128*1024;
     static __thread char *buf = 0; if(!buf) buf = REALLOC(0, STACK_ALLOC); // @leak
 #endif
-    static __thread int cur = 0, len = STACK_ALLOC - 1; //printf("string stack %d/%d\n", cur, STACK_ALLOC);
+    static __thread int cur = 0; //printf("string stack %d/%d\n", cur, STACK_ALLOC);
 
-    assert(reqlen < STACK_ALLOC && "no stack enough, increase STACK_ALLOC variable above");
-    char* ptr = buf + (cur *= (cur+reqlen) < len, (cur += reqlen) - reqlen);
+    if( reqlen >= STACK_ALLOC ) {
+        tty_color(RED);
+        printf("no stack enough, increase STACK_ALLOC variable above (reqlen:%d) (fmt: %s)\n", reqlen, fmt);
+        tty_color(0);
+        //assert(reqlen < STACK_ALLOC);
+        STACK_ALLOC = reqlen * 2;
+        buf = REALLOC(0, STACK_ALLOC);
+    }
+
+    char* ptr = buf + (cur *= (cur+reqlen) < (STACK_ALLOC - 1), (cur += reqlen) - reqlen);
 
     /*stbsp_*/vsnprintf( ptr, sz, fmt, vl );
     return (char *)ptr;
@@ -1430,10 +1440,17 @@ float audio_volume_master(float gain) {
         mixer.gain = volume_master;
     return sqrt( volume_master );
 }
+int audio_mute(int mute) {
+    static bool muted = 0; do_once muted = flag("--mute") || flag("--muted");
+    if( mute >= 0 && mute <= 1 ) muted = mute;
+    return muted;
+}
+int audio_muted() {
+    return audio_mute(-1);
+}
 
 int audio_play_gain_pitch_pan( audio_t a, int flags, float gain, float pitch, float pan ) {
-    static bool muted = 0; do_once muted = flag("--mute") || flag("--muted");
-    if(muted) return 1;
+    if(audio_muted()) return 1;
 
     if( flags & AUDIO_IGNORE_MIXER_GAIN ) {
         // do nothing, gain used as-is
@@ -4179,7 +4196,7 @@ array(struct fs) zipscan_filter(int threadid, int numthreads) {
 
         // skip if list item does not belong to this thread bucket
         uint64_t hash = hash_str(fname);
-        unsigned bucket = (hash >> 32) % numthreads;
+        unsigned bucket = (hash /*>> 32*/) % numthreads;
         if(bucket != threadid) continue;
 
         array_push(fs, fs_now[i]);
@@ -4436,10 +4453,8 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
             char *s = strchr( ART, ';' );  if(s) *s = 0;
             char *w = strchr( ART, ' ' );  if(w) *w = 0;
             char *out = 0; const char *sep = "";
-            const char *v4k_title = getenv("V4K_TITLE");
             for each_substring(ART, ",", t) {
                 char *tmp = file_pathabs(va("%s%s", HOME, t)) + ART_LEN;
-                PRINTF("ART mount+=%s\n", tmp);
                 for(int i = 0; tmp[i]; ++i) if(tmp[i]=='\\') tmp[i] = '/';
                 strcatf(&out, "%s%s%s", sep, tmp, strendi(tmp, "/") ? "" : "/");
                 assert( out[strlen(out) - 1] == '/' );
@@ -5226,7 +5241,7 @@ bool file_delete(const char *pathfile) {
 }
 bool file_copy(const char *src, const char *dst) {
     int ok = 0, BUFSIZE = 1 << 20; // 1 MiB
-    static __thread char *buffer = 0; do_once buffer = REALLOC(0, BUFSIZE);
+    static __thread char *buffer = 0; do_once buffer = REALLOC(0, BUFSIZE); // @leak
     for( FILE *in = fopen(src, "rb"); in; fclose(in), in = 0) {
         for( FILE *out = fopen(dst, "wb"); out; fclose(out), out = 0, ok = 1) {
             for( int n; !!(n = fread( buffer, 1, BUFSIZE, in )); ){
@@ -5551,6 +5566,8 @@ void vfs_reload() {
 #if defined(EMSCRIPTEN)
     vfs_mount("index.zip");
 #else
+    // mount fused executables
+    vfs_mount(va("%s%s%s", app_path(), app_name(), ifdef(win32, ".exe", "")));
     /* // old way
     for( int i = 0; i < JOBS_MAX; ++i) {
         if( vfs_mount(va(".art[%02x].zip", i)) ) continue;
@@ -5570,6 +5587,34 @@ void vfs_reload() {
     }
 }
 
+
+
+#define ARK1         'ArK\x1'
+#define ARK1_PADDING (512 - 40) // 472
+#define ARK_PRINTF(f,...) 0 // printf(f,__VA_ARGS__)
+#define ARK_SWAP32(x) (x)
+#define ARK_SWAP64(x) (x)
+#define ARK_REALLOC   REALLOC
+static uint64_t   ark_fget64( FILE *in ) { uint64_t v; fread( &v, 1, 8, in ); return ARK_SWAP64(v); }
+void ark_list( const char *infile, zip **z ) {
+    for( FILE *in = fopen(infile, "rb"); in; fclose(in), in = 0 )
+    while(!feof(in)) {
+        if( 0 != (ftell(in) % ARK1_PADDING) ) fseek(in, ARK1_PADDING - (ftell(in) % ARK1_PADDING), SEEK_CUR);
+        ARK_PRINTF("Reading at #%d\n", (int)ftell(in));
+        uint64_t mark = ark_fget64(in);
+        if( mark != ARK1 ) continue;
+        uint64_t stamp = ark_fget64(in);
+        uint64_t datalen = ark_fget64(in);
+        uint64_t datahash = ark_fget64(in);
+        uint64_t namelen = ark_fget64(in);
+
+        *z = zip_open_handle(in, "rb");
+        return;
+    }
+}
+
+
+
 static
 bool vfs_mount_(const char *path, array(struct vfs_entry) *entries) {
     zip *z = NULL; tar *t = NULL; pak *p = NULL; dir *d = NULL;
@@ -5579,6 +5624,7 @@ bool vfs_mount_(const char *path, array(struct vfs_entry) *entries) {
     if( !is_folder ) z = zip_open(path, "rb");
     if( !is_folder && !z ) t = tar_open(path, "rb");
     if( !is_folder && !z && !t ) p = pak_open(path, "rb");
+    if( !is_folder && !z && !t && !p ) ark_list(path, &z); // last resort. try as .ark
     if( !is_folder && !z && !t && !p ) return 0;
 
     // normalize input -> "././" to ""
@@ -5763,9 +5809,9 @@ if( found && *found == 0 ) {
     const char *lookup_id = /*file_normalize_with_folder*/(pathfile);
 
     // search (last item)
-    static char last_item[256] = { 0 };
-    static void *last_ptr = 0;
-    static int   last_size = 0;
+    static __thread char  last_item[256] = { 0 };
+    static __thread void *last_ptr = 0;
+    static __thread int   last_size = 0;
     if( !strcmpi(lookup_id, last_item)) {
         ptr = last_ptr;
         size = last_size;
@@ -5922,6 +5968,10 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
     if( !MAX_CACHED_FILES ) return 0;
     if( !ptr || !size ) return 0;
 
+    // keep cached files within limits
+    static thread_mutex_t mutex, *init = 0; if(!init) thread_mutex_init(init = &mutex);
+    thread_mutex_lock(&mutex);
+
     // append to cache
     archive_dir zero = {0}, *old = dir_cache;
     *(dir_cache = REALLOC(0, sizeof(archive_dir))) = zero;
@@ -5931,7 +5981,8 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
     dir_cache->data = REALLOC(0, size+1);
     memcpy(dir_cache->data, ptr, size); size[(char*)dir_cache->data] = 0; // copy+terminator
 
-    // keep cached files within limits
+        void *found = 0;
+
     static int added = 0;
     if( added < MAX_CACHED_FILES ) {
         ++added;
@@ -5940,15 +5991,18 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
         for( archive_dir *prev = dir_cache, *dir = prev; dir ; prev = dir, dir = dir->next ) {
             if( !dir->next ) {
                 prev->next = 0; // break link
-                void *data = dir->data;
+                    found = dir->data;
                 dir->path = REALLOC(dir->path, 0);
                 dir->data = REALLOC(dir->data, 0);
                 dir = REALLOC(dir, 0);
-                return data;
+                    break;
             }
         }
     }
-    return 0;
+
+    thread_mutex_unlock(&mutex);
+
+    return found;
 }
 
 // ----------------------------------------------------------------------------
@@ -12721,8 +12775,8 @@ static map(unsigned, reflected_t) reflects;
 static map(unsigned, array(reflected_t)) members;
 
 void reflected_printf(reflected_t *r) {
-    printf("id:%u objtype:%u sz:%u name:%s info:%s addr:%p parent:%u type:%s",
-        r->id, r->objtype, r->sz, r->name ? r->name : "", r->info ? r->info : "", r->addr, r->parent, r->type ? r->type : "");
+    printf("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s",
+        r->name ? r->name : "", r->info ? r->info : "", r->id, r->objtype, r->sz, r->addr, r->parent, r->type ? r->type : "");
 }
 void reflected_printf_all() {
     for each_map_ptr(reflects, unsigned, k, reflected_t, p) {
@@ -20295,6 +20349,26 @@ bool app_open(const char *link) {
     return app_open_url(link);
 }
 
+const char* app_loadfile() {
+    const char *windowTitle = NULL;
+    const char *defaultPathFile = NULL;
+    const char *filterHints = NULL; // "image files"
+    const char *filters[] = { "*.*" };
+    int allowMultipleSelections = 0;
+
+    tinyfd_assumeGraphicDisplay = 1;
+    return tinyfd_openFileDialog( windowTitle, defaultPathFile, countof(filters), filters, filterHints, allowMultipleSelections );
+}
+const char* app_savefile() {
+    const char *windowTitle = NULL;
+    const char *defaultPathFile = NULL;
+    const char *filterHints = NULL; // "image files"
+    const char *filters[] = { "*.*" };
+
+    tinyfd_assumeGraphicDisplay = 1;
+    return tinyfd_saveFileDialog( windowTitle, defaultPathFile, countof(filters), filters, filterHints );
+}
+
 // ----------------------------------------------------------------------------
 // tests
 
@@ -21881,11 +21955,12 @@ int ui_collapse_end() {
 
 
 int ui_contextual() {
-    struct nk_rect bounds = nk_widget_bounds(ui_ctx);
+    struct nk_rect bounds = nk_widget_bounds(ui_ctx); // = nk_window_get_bounds(ui_ctx);
     bounds.y -= 25;
     return ui_popups() ? 0 : nk_contextual_begin(ui_ctx, 0, nk_vec2(150, 300), bounds);
 }
-int ui_contextual_end() {
+int ui_contextual_end(int close) {
+    if(close) nk_contextual_close(ui_ctx);
     nk_contextual_end(ui_ctx);
     return 1;
 }
@@ -21896,7 +21971,7 @@ int ui_submenu(const char *options) {
         for( int i = 0; i < array_count(tokens) ; ++i ) {
             if( ui_button_transparent(tokens[i]) ) choice = i + 1;
         }
-        ui_contextual_end();
+        ui_contextual_end(0);
     }
     return choice;
 }
@@ -22030,8 +22105,10 @@ int ui_label(const char *text) {
 int ui_label2(const char *label, const char *text_) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
 
-    int align1 = label[0] == '>' ? (label++, NK_TEXT_RIGHT) : label[0] == '=' ? (label++, NK_TEXT_CENTERED) : label[0] == '<' ? (label++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
-    int align2 = text_[0] == '>' ? (text_++, NK_TEXT_RIGHT) : text_[0] == '=' ? (text_++, NK_TEXT_CENTERED) : text_[0] == '<' ? (text_++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
+    int align1 = NK_TEXT_LEFT;
+    int align2 = NK_TEXT_LEFT;
+    if( label ) align1 = label[0] == '>' ? (label++, NK_TEXT_RIGHT) : label[0] == '=' ? (label++, NK_TEXT_CENTERED) : label[0] == '<' ? (label++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
+    if( text_ ) align2 = text_[0] == '>' ? (text_++, NK_TEXT_RIGHT) : text_[0] == '=' ? (text_++, NK_TEXT_CENTERED) : text_[0] == '<' ? (text_++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
     ui_label_(label, align1);
 
 const struct nk_input *input = &ui_ctx->input;
@@ -23766,12 +23843,38 @@ int window_frame_begin() {
     if( may_render_stats ) {
         if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
 
-#if 1
-            static char *filter = 0;
+            static int time_factor = 0;
+            static int playing = 0;
+            static int paused = 0;
+            int advance_frame = 0;
+
             static int do_filter = 0;
+            static int do_profile = 0;
+            static int do_extra = 0;
+
+            char *EDITOR_TOOLBAR_ICONS = va("%s;%s;%s;%s;%s;%s;%s;%s",
+                do_filter ? ICON_MD_CLOSE : ICON_MD_SEARCH,
+                ICON_MD_PLAY_ARROW,
+                paused ? ICON_MD_SKIP_NEXT : ICON_MD_PAUSE,
+                ICON_MD_FAST_FORWARD,
+                ICON_MD_STOP,
+                ICON_MD_REPLAY,
+                ICON_MD_FACE,
+                ICON_MD_MENU
+            );
+
             if( input_down(KEY_F) ) if( input(KEY_LCTRL) || input(KEY_RCTRL) ) do_filter ^= 1;
-            int choice = ui_toolbar(ICON_MD_SEARCH ";");
-            if( choice == 1 ) do_filter = 1;
+            int choice = ui_toolbar(EDITOR_TOOLBAR_ICONS);
+            if( choice == 1 ) do_filter ^= 1, do_profile = 0, do_extra = 0;
+            if( choice == 2 ) playing = 1, paused = 0;
+            if( choice == 3 ) advance_frame = !!paused, paused = 1;
+            if( choice == 4 ) paused = 0, time_factor = (++time_factor) % 4;
+            if( choice == 5 ) playing = 0, paused = 0, advance_frame = 0, time_factor = 0;
+            if( choice == 6 ) window_reload();
+            if( choice == 7 ) do_filter = 0, do_profile ^= 1, do_extra = 0;
+            if( choice == 8 ) do_filter = 0, do_profile = 0, do_extra ^= 1;
+
+            static char *filter = 0;
             if( do_filter ) {
                 ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &filter);
                 if( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 ) { // if clicked on CANCEL icon (1st icon)
@@ -23781,13 +23884,44 @@ int window_frame_begin() {
                 if( filter ) filter[0] = '\0';
             }
             char *filter_mask = filter && filter[0] ? va("*%s*", filter) : "*";
-#endif
+
+            static char *username = 0;
+            static char *userpass = 0;
+            if( do_profile ) {
+                ui_string(ICON_MD_FACE " Username", &username);
+                ui_string(ICON_MD_FACE " Password", &userpass);
+            }
+
+            if( do_extra ) {
+                int choice2 = ui_label2_toolbar(NULL,
+                    ICON_MD_VIEW_IN_AR
+                    ICON_MD_MESSAGE
+                    ICON_MD_TIPS_AND_UPDATES ICON_MD_LIGHTBULB ICON_MD_LIGHTBULB_OUTLINE
+                    ICON_MD_IMAGE_SEARCH ICON_MD_INSERT_PHOTO
+                    ICON_MD_VIDEOGAME_ASSET ICON_MD_VIDEOGAME_ASSET_OFF
+
+                    ICON_MD_VOLUME_UP ICON_MD_VOLUME_OFF // audio_volume_master(-1) > 0
+
+                    ICON_MD_TROUBLESHOOT ICON_MD_SCHEMA ICON_MD_MENU
+                );
+            }
 
             int open = 0, clicked_or_toggled = 0;
 
             #define ui_collapse_filtered(lbl,id) (strmatchi(lbl,filter_mask) && ui_collapse(lbl,id))
 
-            for( int p = (open = ui_collapse_filtered(ICON_MD_FOLDER_SPECIAL " Art", "Debug.Art")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            #define EDITOR_UI_COLLAPSE(f,...) \
+            for( int macro(p) = (open = ui_collapse_filtered(f,__VA_ARGS__)), macro(dummy) = (clicked_or_toggled = ui_collapse_clicked()); macro(p); ui_collapse_end(), macro(p) = 0)
+
+
+            EDITOR_UI_COLLAPSE(ICON_MD_BUG_REPORT " Bugs 0", "Debug.Bugs") {
+                // @todo. parse /bugs.ini, includes saved screenshots & videos.
+                // @todo. screenshot include parseable level, position screen markers (same info as /bugs.ini)
+            }
+
+
+            // Art and bookmarks
+            EDITOR_UI_COLLAPSE(ICON_MD_FOLDER_SPECIAL " Art", "Debug.Art") {
                 bool inlined = true;
                 const char *file = 0;
                 if( ui_browse(&file, &inlined) ) {
@@ -23795,47 +23929,78 @@ int window_frame_begin() {
                     app_exec(va("%s %s%s%s", ifdef(win32, "start \"\"", ifdef(osx, "open", "xdg-open")), sep, file, sep));
                 }
             }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_ROCKET_LAUNCH " AI", "Debug.AI")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            EDITOR_UI_COLLAPSE(ICON_MD_BOOKMARK " Bookmarks", "Debug.Bookmarks") { /* @todo */ }
+
+
+            // E,C,S,W
+            EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Scene", "Debug.Scene") {
+                EDITOR_UI_COLLAPSE(ICON_MD_BUBBLE_CHART/*ICON_MD_SCATTER_PLOT*/ " Entities", "Debug.Entities") { /* @todo */ }
+                EDITOR_UI_COLLAPSE(ICON_MD_TUNE " Components", "Debug.Components") { /* @todo */ }
+                EDITOR_UI_COLLAPSE(ICON_MD_PRECISION_MANUFACTURING " Systems", "Debug.Systems") { /* @todo */ }
+                EDITOR_UI_COLLAPSE(ICON_MD_PUBLIC " Levels", "Debug.Levels") {
+                    //node_edit(editor.edit.down,&editor.edit);
+            }
+
+                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Init", "Debug.HierarchyInit") { /* @todo */ }
+                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Draw", "Debug.HierarchyDraw") { /* @todo */ }
+                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Tick", "Debug.HierarchyTick") { /* @todo */ }
+                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Edit", "Debug.HierarchyEdit") { /* @todo */ }
+                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Quit", "Debug.HierarchyQuit") { /* @todo */ }
+
+                // node_edit(&editor.init,&editor.init);
+                // node_edit(&editor.draw,&editor.draw);
+                // node_edit(&editor.tick,&editor.tick);
+                // node_edit(&editor.edit,&editor.edit);
+                // node_edit(&editor.quit,&editor.quit);
+            }
+
+            EDITOR_UI_COLLAPSE(ICON_MD_ROCKET_LAUNCH " AI", "Debug.AI") {
                 // @todo
             }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_VOLUME_UP " Audio", "Debug.Audio")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            EDITOR_UI_COLLAPSE(ICON_MD_VOLUME_UP " Audio", "Debug.Audio") {
                 ui_audio();
             }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_VIDEOCAM " Camera", "Debug.Camera")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            EDITOR_UI_COLLAPSE(ICON_MD_VIDEOCAM " Camera", "Debug.Camera") {
                 ui_camera( camera_get_active() );
             }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_BUILD " Cook", "Debug.Cook")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-                // @todo
+            EDITOR_UI_COLLAPSE(ICON_MD_MONITOR " Display", "Debug.Display") {
+                // @todo: fps lock, fps target, aspect ratio, fullscreen
+                char *text = va("%s;%s;%s",
+                    window_has_fullscreen() ? ICON_MD_FULLSCREEN_EXIT : ICON_MD_FULLSCREEN,
+                    ICON_MD_PHOTO_CAMERA,
+                    record_active() ? ICON_MD_VIDEOCAM_OFF : ICON_MD_VIDEOCAM
+                );
+
+                int choice = ui_toolbar(text);
+                if( choice == 1 ) editor_send("key_fullscreen",0);
+                if( choice == 2 ) editor_send("key_screenshot",0);
+                if( choice == 3 ) editor_send("key_record",0);
             }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_SIGNAL_CELLULAR_ALT " Network", "Debug.Network")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-                // @todo
-            }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-                // @todo
-            }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_MOVIE " FXs", "Debug.FXs")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-    ui_fxs();
-            }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_SPEED " Profiler", "Debug.Profiler")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-                ui_profiler();
-            }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_STAR_HALF " Shaders", "Debug.Shaders")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
-                ui_shaders();
-            }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            EDITOR_UI_COLLAPSE(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard") {
                 ui_keyboard();
             }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_MOUSE " Mouse", "Debug.Mouse")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            EDITOR_UI_COLLAPSE(ICON_MD_MOUSE " Mouse", "Debug.Mouse") {
                 ui_mouse();
             }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_GAMEPAD " Gamepads", "Debug.Gamepads")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+            EDITOR_UI_COLLAPSE(ICON_MD_GAMEPAD " Gamepads", "Debug.Gamepads") {
                 for( int q = 0; q < 4; ++q ) {
                     for( int r = (open = ui_collapse(va("Gamepad #%d",q+1), va("Debug.Gamepads%d",q))), dummy = (clicked_or_toggled = ui_collapse_clicked()); r; ui_collapse_end(), r = 0) {
                         ui_gamepad(q);
             }
             }
             }
-            for( int p = (open = ui_collapse_filtered(ICON_MD_VIEW_QUILT " UI", "Debug.UI")), dummy = (clicked_or_toggled = ui_collapse_clicked()); p; ui_collapse_end(), p = 0) {
+
+
+            EDITOR_UI_COLLAPSE(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts") {
+                // @todo
+            }
+            EDITOR_UI_COLLAPSE(ICON_MD_STAR_HALF " Shaders", "Debug.Shaders") {
+                ui_shaders();
+            }
+            EDITOR_UI_COLLAPSE(ICON_MD_MOVIE " FXs", "Debug.FXs") {
+                ui_fxs();
+            }
+            EDITOR_UI_COLLAPSE(ICON_MD_VIEW_QUILT " UI", "Debug.UI") {
                 int choice = ui_toolbar(ICON_MD_RECYCLING " Reset layout;" ICON_MD_SAVE_AS " Save layout");
                 if( choice == 1 ) ui_layout_all_reset("*");
                 if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
@@ -23848,8 +24013,61 @@ int window_frame_begin() {
                 }
             }
 
+
+            EDITOR_UI_COLLAPSE(ICON_MD_SAVINGS " Budgets", "Debug.Budgets") {
+                // @todo. // mem,fps,gfx,net,hdd,... also logging
+            }
+            EDITOR_UI_COLLAPSE(ICON_MD_WIFI/*ICON_MD_SIGNAL_CELLULAR_ALT*/ " Network 0/0 KiB", "Debug.Network") {
+                // @todo
+                // SIGNAL_CELLULAR_1_BAR SIGNAL_CELLULAR_2_BAR
+            }
+            EDITOR_UI_COLLAPSE(va(ICON_MD_SPEED " Profiler %5.2f/%d", window_fps(), (int)window_fps_target()), "Debug.Profiler") {
+                ui_profiler();
+            }
+            EDITOR_UI_COLLAPSE(va(ICON_MD_STORAGE " Storage %s", xstats()), "Debug.Storage") {
+                // @todo
+            }
+
+
+
+            // logic: either plug icon (power saving off) or one of the following ones (power saving on):
+            //        if 0% batt (no batt): battery alert
+            //        if discharging:       battery levels [alert,0..6,full]
+            //        if charging:          battery charging
+            int battery_read = app_battery();
+            int battery_level = abs(battery_read);
+            int battery_discharging = battery_read < 0 && battery_level < 100;
+            const char *power_icon_label = ICON_MD_POWER " Power";
+            if( battery_level ) {
+                const char *battery_levels[9] = { // @todo: remap [7%..100%] -> [0..1] ?
+                    ICON_MD_BATTERY_ALERT,ICON_MD_BATTERY_0_BAR,ICON_MD_BATTERY_1_BAR,
+                    ICON_MD_BATTERY_2_BAR,ICON_MD_BATTERY_3_BAR,ICON_MD_BATTERY_4_BAR,
+                    ICON_MD_BATTERY_5_BAR,ICON_MD_BATTERY_6_BAR,ICON_MD_BATTERY_FULL,
+                };
+                power_icon_label = (const char*)va("%s Power %d%%",
+                    battery_discharging ? battery_levels[(int)((9-1)*clampf(battery_level/100.f,0,1))] : ICON_MD_BATTERY_CHARGING_FULL,
+                    battery_level);
+            }
+
+            EDITOR_UI_COLLAPSE(power_icon_label, "Debug.Power") {
+                int choice = ui_toolbar( ICON_MD_POWER ";" ICON_MD_BOLT );
+                if( choice == 1 ) editor_send("key_battery","0");
+                if( choice == 2 ) editor_send("key_battery","1");
+            }
+
+
+            EDITOR_UI_COLLAPSE(ICON_MD_EXTENSION " Plugins", "Debug.Plugins") {
+                // @todo. include VCS
+                EDITOR_UI_COLLAPSE(ICON_MD_BUILD " Cook", "Debug.Cook") {
+                    // @todo
+                }
+            }
+
             (has_menu ? ui_window_end : ui_panel_end)();
         }
+
+        API int editor_tick();
+        editor_tick();
     }
  
 #if 0 // deprecated
@@ -25250,6 +25468,61 @@ int ui_bt(bt_t *b) {
 // editing:
 // nope > functions: add/rem property
 
+#define ICON_PLAY   ICON_MD_PLAY_ARROW
+#define ICON_PAUSE  ICON_MD_PAUSE
+#define ICON_STOP   ICON_MD_STOP
+#define ICON_CANCEL ICON_MD_CLOSE
+
+#define ICON_WARNING      ICON_MD_WARNING
+#define ICON_BROWSER      ICON_MD_FOLDER_SPECIAL
+#define ICON_OUTLINER     ICON_MD_VIEW_IN_AR
+#define ICON_BUILD        ICON_MD_BUILD
+#define ICON_SCREENSHOT   ICON_MD_PHOTO_CAMERA
+#define ICON_CAMERA_ON    ICON_MD_VIDEOCAM
+#define ICON_CAMERA_OFF   ICON_MD_VIDEOCAM_OFF
+#define ICON_GAMEPAD_ON   ICON_MD_VIDEOGAME_ASSET
+#define ICON_GAMEPAD_OFF  ICON_MD_VIDEOGAME_ASSET_OFF
+#define ICON_AUDIO_ON     ICON_MD_VOLUME_UP
+#define ICON_AUDIO_OFF    ICON_MD_VOLUME_OFF
+#define ICON_WINDOWED     ICON_MD_FULLSCREEN_EXIT
+#define ICON_FULLSCREEN   ICON_MD_FULLSCREEN
+#define ICON_LIGHTS_ON    ICON_MD_LIGHTBULB
+#define ICON_LIGHTS_OFF   ICON_MD_LIGHTBULB_OUTLINE
+#define ICON_RENDER_BASIC ICON_MD_IMAGE_SEARCH
+#define ICON_RENDER_FULL  ICON_MD_INSERT_PHOTO
+
+#define ICON_SIGNAL     ICON_MD_SIGNAL_CELLULAR_ALT
+#define ICON_DISK       ICON_MD_STORAGE
+#define ICON_RATE       ICON_MD_SPEED
+
+#define ICON_CLOCK      ICON_MD_TODAY
+#define ICON_CHRONO     ICON_MD_TIMELAPSE
+
+#define ICON_SETTINGS   ICON_MD_SETTINGS
+#define ICON_LANGUAGE   ICON_MD_G_TRANSLATE
+#define ICON_PERSONA    ICON_MD_FACE
+#define ICON_SOCIAL     ICON_MD_MESSAGE
+#define ICON_GAME       ICON_MD_ROCKET_LAUNCH
+#define ICON_KEYBOARD   ICON_MD_KEYBOARD
+#define ICON_MOUSE      ICON_MD_MOUSE
+#define ICON_GAMEPAD    ICON_MD_GAMEPAD
+#define ICON_MONITOR    ICON_MD_MONITOR
+#define ICON_WIFI       ICON_MD_WIFI
+#define ICON_BUDGET     ICON_MD_SAVINGS
+#define ICON_NEW_FOLDER ICON_MD_CREATE_NEW_FOLDER
+#define ICON_PLUGIN     ICON_MD_EXTENSION
+#define ICON_RESTART    ICON_MD_REPLAY
+#define ICON_QUIT       ICON_MD_CLOSE
+
+#define ICON_POWER            ICON_MD_BOLT // ICON_MD_POWER
+#define ICON_BATTERY_CHARGING ICON_MD_BATTERY_CHARGING_FULL
+#define ICON_BATTERY_LEVELS \
+        ICON_MD_BATTERY_ALERT, \
+        ICON_MD_BATTERY_0_BAR,ICON_MD_BATTERY_1_BAR, \
+        ICON_MD_BATTERY_2_BAR,ICON_MD_BATTERY_3_BAR, \
+        ICON_MD_BATTERY_4_BAR,ICON_MD_BATTERY_5_BAR, \
+        ICON_MD_BATTERY_6_BAR,ICON_MD_BATTERY_FULL
+
 char *editor_path(const char *path) {
     return va("%s/%s", EDITOR, path);
 }
@@ -25312,6 +25585,75 @@ int editor_ui_bits8(const char *label, uint8_t *enabled) { // @to deprecate
 
     nk_layout_row_end(ui_ctx);
     return clicked | (copy ^ *enabled);
+}
+
+
+
+typedef union editor_var {
+    int i;
+    float f;
+    char *s;
+} editor_var;
+static map(char*,editor_var) editor_vars;
+float *editor_getf(const char *key) {
+    if(!editor_vars) map_init_str(editor_vars);
+    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+    return &found->f;
+}
+int *editor_geti(const char *key) {
+    if(!editor_vars) map_init_str(editor_vars);
+    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+    return &found->i;
+}
+char **editor_gets(const char *key) {
+    if(!editor_vars) map_init_str(editor_vars);
+    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+    if(!found->s) found->s = stringf("%s","");
+    return &found->s;
+}
+
+int editor_send(const char *cmd, const char *optional_value) {
+    unsigned *gamepads = editor_geti("gamepads"); // 0 off, mask gamepad1(1), gamepad2(2), gamepad3(4), gamepad4(8)...
+    unsigned *renders = editor_geti("renders"); // 0 off, mask: 1=lit, 2=ddraw, 3=whiteboxes
+    float *speed = editor_getf("speed"); // <0 num of frames to advance, 0 paused, [0..1] slomo, 1 play regular speed, >1 fast-forward (x2/x4/x8)
+    unsigned *powersave = editor_geti("powersave");
+
+    char *name;
+    /**/ if( !strcmp(cmd, "key_quit" ))       record_stop(), exit(0);
+    else if( !strcmp(cmd, "key_stop" ))       window_pause(1);
+    else if( !strcmp(cmd, "key_mute" ))       audio_volume_master( 1 ^ !!audio_volume_master(-1) );
+    else if( !strcmp(cmd, "key_pause" ))      window_pause( window_has_pause() ^ 1 );
+    else if( !strcmp(cmd, "key_reload" ))     window_reload();
+    else if( !strcmp(cmd, "key_battery" ))    *powersave = optional_value ? !!atoi(optional_value) : *powersave ^ 1;
+    else if( !strcmp(cmd, "key_browser" ))    ui_show("File Browser", ui_visible("File Browser") ^ true);
+    else if( !strcmp(cmd, "key_outliner" ))   ui_show("Outliner", ui_visible("Outliner") ^ true);
+    else if( !strcmp(cmd, "key_record" ))     if(record_active()) record_stop(); else
+                                              name = file_counter(va("%s.mp4",app_name())), window_record(name),     ui_notify(va("Video capturing: %s", name), date_string());
+    else if( !strcmp(cmd, "key_screenshot" )) name = file_counter(va("%s.png",app_name())), window_screenshot(name), ui_notify(va("Screenshot: %s", name), date_string());
+    else if( !strcmp(cmd, "key_profiler" ))   ui_show("Profiler", profiler_enable(ui_visible("Profiler") ^ true));
+    else if( !strcmp(cmd, "key_fullscreen" )) record_stop(), window_fullscreen( window_has_fullscreen() ^ 1 ); // framebuffer resizing corrupts video stream, so stop any recording beforehand
+    else if( !strcmp(cmd, "key_gamepad" ))    *gamepads = (*gamepads & ~1u) | ((*gamepads & 1) ^ 1);
+    else if( !strcmp(cmd, "key_lit" ))        *renders = (*renders & ~1u) | ((*renders & 1) ^ 1);
+    else if( !strcmp(cmd, "key_ddraw" ))      *renders = (*renders & ~2u) | ((*renders & 2) ^ 2);
+    else alert(va("editor could not handle `%s` command.", cmd));
+
+    return 0;
+}
+
+int editor_tick() {
+    enum { editor_hz = 60 };
+    enum { editor_hz_mid = 18 };
+    enum { editor_hz_low = 5 };
+    if( *editor_geti("powersave") ) {
+        // adaptive framerate
+        int app_on_background = !window_has_focus();
+        int hz = app_on_background ? editor_hz_low : editor_hz_mid;
+        window_fps_lock( hz < 5 ? 5 : hz );
+    } else {
+        // window_fps_lock( editor_hz );
+    }
+
+    return 0;
 }
 
 static int gizmo__mode;
@@ -25423,26 +25765,6 @@ int gizmo(vec3 *pos, vec3 *rot, vec3 *sca) {
     ddraw_color_pop();
 
     return modified;
-}
-
-char* dialog_load() {
-    const char *windowTitle = NULL;
-    const char *defaultPathFile = NULL;
-    const char *filterHints = NULL; // "image files"
-    const char *filters[] = { "*.*" };
-    int allowMultipleSelections = 0;
-
-    tinyfd_assumeGraphicDisplay = 1;
-    return tinyfd_openFileDialog( windowTitle, defaultPathFile, countof(filters), filters, filterHints, allowMultipleSelections );
-}
-char* dialog_save() {
-    const char *windowTitle = NULL;
-    const char *defaultPathFile = NULL;
-    const char *filterHints = NULL; // "image files"
-    const char *filters[] = { "*.*" };
-
-    tinyfd_assumeGraphicDisplay = 1;
-    return tinyfd_saveFileDialog( windowTitle, defaultPathFile, countof(filters), filters, filterHints );
 }
 
 // -- localization kit
@@ -25618,18 +25940,20 @@ static void v4k_pre_init() {
     // window_swap();
 }
 static void v4k_post_init(float refresh_rate) {
+    int i;
+
     // cook cleanup
     cook_stop();
 
     vfs_reload();
 
+    // init subsystems that depend on cooked assets now. ui_init() is special case and needs to be safely in single thread
+    ui_init();
+
     // init more subsystems; beware of VFS mounting, as some of these may need cooked assets at this point
-    int i;
-#if 1 // #ifdef PARALLEL_INIT
     #pragma omp parallel for
-#endif
     for( i = 0; i <= 3; ++i) {
-        /**/ if( i == 0 ) ui_init(), scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        /**/ if( i == 0 ) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         else if( i == 1 ) audio_init(0); // initialize audio after cooking // reasoning for this: do not launch audio threads while cooks are in progress, so there is more cpu for cooking actually
         else if( i == 2 ) script_init(), kit_init(), midi_init();
         else if( i == 3 ) input_init(), network_init();

@@ -102,12 +102,12 @@ void editor_init() {
         map_init_ptr(editor_dicts);
         set_init_ptr(editor_world);
         set_init_ptr(editor_selection);
-        profile_enable( false );
+        profiler_enable( false );
         window_pause( true );
     }
 }
 
-void editor_tick() {
+void editor_tick_() {
     // timing
     editor_dt = window_delta() * !window_has_pause(); if(editor_dt > 1/60.f) editor_dt = 1/60.f;
 }
@@ -155,10 +155,10 @@ enum editor_keys {
 void editor_menubar() {
     do_once editor_init();
 
-    int alts = input(KEY_LALT) || input(KEY_RALT); // @todo: move to v4k.c
-    int ctrls = input(KEY_LCTRL) || input(KEY_RCTRL); // @todo: move to v4k.c
-    int shifts = input(KEY_LSHIFT) || input(KEY_RSHIFT); // @todo: move to v4k.c
-    int mods = alts || ctrls || shifts; // @todo: move to v4k.c
+    int alts = input(KEY_LALT) || input(KEY_RALT); // @todo: move to fwk.c
+    int ctrls = input(KEY_LCTRL) || input(KEY_RCTRL); // @todo: move to fwk.c
+    int shifts = input(KEY_LSHIFT) || input(KEY_RSHIFT); // @todo: move to fwk.c
+    int mods = alts || ctrls || shifts; // @todo: move to fwk.c
     if( input_down(KEY_F5) )  editor_key = key_reload;
     if( input_down(KEY_F11) ) editor_key = key_fullscreen;
     if( input_down(KEY_PAUSE) ) editor_key = key_pause;
@@ -332,7 +332,7 @@ void editor_menubar() {
         break; case key_outliner:   ui_show("Outliner", ui_visible("Outliner") ^ true);
         break; case key_recording:  name = file_counter(va("%s.mp4",app_name())), window_record(name),     ui_notify(va("Video capturing: %s", name), date_string());
         break; case key_screenshot: name = file_counter(va("%s.png",app_name())), window_screenshot(name), ui_notify(va("Screenshot: %s", name), date_string());
-        break; case key_profiler:   ui_show("Profiler", profile_enable(ui_visible("Profiler") ^ true));
+        break; case key_profiler:   ui_show("Profiler", profiler_enable(ui_visible("Profiler") ^ true));
         break; case key_fullscreen: record_stop(), window_fullscreen( window_has_fullscreen() ^ 1 ); // framebuffer resizing corrupts video stream, so stop any recording beforehand
         break; case key_gamepad:    editor_gamepad ^= 1;
         break; case key_lit:        editor_lit ^= 1;

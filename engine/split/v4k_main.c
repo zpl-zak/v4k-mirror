@@ -19,18 +19,20 @@ static void v4k_pre_init() {
     // window_swap();
 }
 static void v4k_post_init(float refresh_rate) {
+    int i;
+
     // cook cleanup
     cook_stop();
 
     vfs_reload();
 
+    // init subsystems that depend on cooked assets now. ui_init() is special case and needs to be safely in single thread
+    ui_init();
+
     // init more subsystems; beware of VFS mounting, as some of these may need cooked assets at this point
-    int i;
-#if 1 // #ifdef PARALLEL_INIT
     #pragma omp parallel for
-#endif
     for( i = 0; i <= 3; ++i) {
-        /**/ if( i == 0 ) ui_init(), scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        /**/ if( i == 0 ) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         else if( i == 1 ) audio_init(0); // initialize audio after cooking // reasoning for this: do not launch audio threads while cooks are in progress, so there is more cpu for cooking actually
         else if( i == 2 ) script_init(), kit_init(), midi_init();
         else if( i == 3 ) input_init(), network_init();

@@ -4,7 +4,9 @@
 // @todo: nested structs? pointers in members?
 // @todo: declare TYPEDEF(vec3, float[3]), TYPEDEF(mat4, vec4[4]/*float[16]*/)
 
+#ifndef ifdef_objapi
 #define ifdef_objapi(T,...) __VA_ARGS__
+#endif
 
 typedef struct reflected_t {
     unsigned id, objtype;

@@ -1,7 +1,7 @@
 // networked gui demo
 // - rlyeh, public domain
 
-#include "v4k.h"
+#include "fwk.h"
 
 #define OSCPACK_C
 #define OSCRECV_C
@@ -46,7 +46,6 @@ int main() {
 
     // camera
     camera_t cam = camera();
-    cam.speed = 0.2f;
 
     // demo loop
     while (window_swap())
@@ -61,7 +60,7 @@ int main() {
         if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
         vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
         vec3 wasdecq = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-(input(KEY_C)||input(KEY_Q)),input(KEY_W)-input(KEY_S)), cam.speed);
-        camera_move(&cam, wasdecq.x,wasdecq.y,wasdecq.z);
+        camera_moveby(&cam, wasdecq);
         camera_fps(&cam, mouse.x,mouse.y);
 
         // queue model scale bounces
