@@ -126,5 +126,12 @@ const struct in6_addr in6addr_any; // = IN6ADDR_ANY_INIT;
 //static const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
 #endif
 
-// @fixme crashes right now
-// ifdef(retail, AUTORUN { fclose(stderr); fclose(stdout); } )
+ifdef(retail, AUTORUN {
+    fclose(stderr);
+    fclose(stdout);
+
+    const char* null_stream = ifdef(win32, "nul:", "/dev/null");
+
+    if (!freopen(null_stream, "a", stdout)) PANIC("cannot recreate standard streams");
+    if (!freopen(null_stream, "a", stderr)) PANIC("cannot recreate standard streams");
+} )
