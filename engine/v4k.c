@@ -26051,4 +26051,5 @@ const struct in6_addr in6addr_any; // = IN6ADDR_ANY_INIT;
 //static const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
 #endif
 
+ifdef(retail, AUTORUN { fclose(stderr); fclose(stdout); } )
 #line 0
