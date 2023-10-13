@@ -796,16 +796,10 @@ void cook_cancel() {
     if( cook_cancelable ) cook_cancelling = true;
 }
 
-static bool cook_disabled=0;
-
-void cook_disable() {
-    cook_disabled=1;
-}
-
 int cook_jobs() {
     int num_jobs = optioni("--cook-jobs", maxf(1.15,app_cores()) * 1.75), max_jobs = countof(jobs);
     ifdef(ems, num_jobs = 0);
-    return clampi(num_jobs, 0, cook_disabled?0:max_jobs);
+    return clampi(num_jobs, 0, max_jobs);
 }
 
 void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"bin/" case on Linux.

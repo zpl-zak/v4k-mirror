@@ -446,7 +446,9 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
             // set black screen
             glNewFrame();
             window_swap();
+#if !ENABLE_RETAIL
             window_title("");
+#endif
         }
 
     if(cook_cancelling) cook_stop(), exit(-1);
@@ -513,6 +515,7 @@ int window_frame_begin() {
 
     glNewFrame();
 
+#if !ENABLE_RETAIL
     ui_create();
 
     bool may_render_stats = 1;
@@ -762,6 +765,7 @@ int window_frame_begin() {
         API int editor_tick();
         editor_tick();
     }
+#endif // ENABLE_RETAIL
  
 #if 0 // deprecated
     // run user-defined hooks
@@ -774,6 +778,7 @@ int window_frame_begin() {
     dt = now - t;
     t = now;
 
+#if !ENABLE_RETAIL
     char *st = window_stats();
     static double timer = 0;
     timer += window_delta();
@@ -781,6 +786,9 @@ int window_frame_begin() {
         glfwSetWindowTitle(window, st);
         timer = 0;
     }
+#else
+        glfwSetWindowTitle(window, title);
+#endif
 
     void input_update();
     input_update();

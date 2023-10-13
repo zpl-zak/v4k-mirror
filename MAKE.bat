@@ -554,10 +554,10 @@ if "!cc!"=="cl" (
     )
 
     if "!build!"=="rel" (
-        set args=/nologo /Zi /MT /openmp /DNDEBUG !args!        /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
+        set args=/nologo /Zi /MT /openmp /DNDEBUG=2 !args!        /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
     )
     if "!build!"=="dev" (
-        set args=/nologo /Zi /MT /openmp /DEBUG   !args! && REM /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2
+        set args=/nologo /Zi /MT /openmp /DNDEBUG   !args! && REM /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2
     )
     if "!build!"=="dbg" (
         set args=/nologo /Zi /MT         /DEBUG   !args!        /Od  /fsanitize=address               
@@ -582,10 +582,10 @@ if "!cc!"=="cl" (
     set warnings=!warnings_v4kc! !warnings_demos!
 
     if "!build!"=="rel" (
-        set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG !args!        /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
+        set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG=2 !args!        /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
     )
     if "!build!"=="dev" (
-        set args=!warnings! /nologo /Zi /MT /openmp /DEBUG   !args! && REM /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
+        set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG   !args! && REM /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
     )
     if "!build!"=="dbg" (
         set args=!warnings! /nologo /Zi /MT         /DEBUG   !args!        /Od  /fsanitize=address
@@ -605,10 +605,10 @@ if "!cc!"=="cl" (
     )
 
     if "!build!"=="rel" (
-        set args=-O3 -DNDEBUG !args!
+        set args=-O3 -DNDEBUG=2 !args!
     )
     if "!build!"=="dev" (
-        set args=-O2 -g !args!
+        set args=-O2 -g -DNDEBUG !args!
     )
     if "!build!"=="dbg" (
         set args=-O0 -g !args!
@@ -633,10 +633,10 @@ if "!cc!"=="cl" (
 
     if "!build!"=="rel" (
         rem @todo see: https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
-        set args=-O3 -DNDEBUG !args!
+        set args=-O3 -DNDEBUG=2 !args!
     )
     if "!build!"=="dev" (
-        set args=-g -O1 !args!
+        set args=-g -O1 -DNDEBUG !args!
     )
     if "!build!"=="dbg" (
         set args=-g -O0 !args!

@@ -4628,16 +4628,10 @@ void cook_cancel() {
     if( cook_cancelable ) cook_cancelling = true;
 }
 
-static bool cook_disabled=0;
-
-void cook_disable() {
-    cook_disabled=1;
-}
-
 int cook_jobs() {
     int num_jobs = optioni("--cook-jobs", maxf(1.15,app_cores()) * 1.75), max_jobs = countof(jobs);
     ifdef(ems, num_jobs = 0);
-    return clampi(num_jobs, 0, cook_disabled?0:max_jobs);
+    return clampi(num_jobs, 0, max_jobs);
 }
 
 void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"bin/" case on Linux.
@@ -23753,7 +23747,9 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
             // set black screen
             glNewFrame();
             window_swap();
+#if !ENABLE_RETAIL
             window_title("");
+#endif
         }
 
     if(cook_cancelling) cook_stop(), exit(-1);
@@ -23820,6 +23816,7 @@ int window_frame_begin() {
 
     glNewFrame();
 
+#if !ENABLE_RETAIL
     ui_create();
 
     bool may_render_stats = 1;
@@ -24069,6 +24066,7 @@ int window_frame_begin() {
         API int editor_tick();
         editor_tick();
     }
+#endif // ENABLE_RETAIL
  
 #if 0 // deprecated
     // run user-defined hooks
@@ -24081,6 +24079,7 @@ int window_frame_begin() {
     dt = now - t;
     t = now;
 
+#if !ENABLE_RETAIL
     char *st = window_stats();
     static double timer = 0;
     timer += window_delta();
@@ -24088,6 +24087,9 @@ int window_frame_begin() {
         glfwSetWindowTitle(window, st);
         timer = 0;
     }
+#else
+        glfwSetWindowTitle(window, title);
+#endif
 
     void input_update();
     input_update();
@@ -25960,7 +25962,6 @@ static void v4k_post_init(float refresh_rate) {
         else if( i == 3 ) input_init(), network_init();
     }
 
-    // @todo
     const char *appname = app_name();
     window_icon(va("%s.png", appname));
     window_icon(va("%s.ico", appname));
@@ -26012,14 +26013,12 @@ void v4k_init() {
             __argc = 0;
         }
 
-        #if defined(COOK_DISABLED) || ENABLE_RETAIL 
-            cook_disable();
-        #endif
-
+#if !ENABLE_RETAIL
         // create or update cook.zip file
         if( /* !COOK_ON_DEMAND && */ file_exist(COOK_INI) && cook_jobs() ) {
             cook_start(COOK_INI, "**", 0|COOK_ASYNC|COOK_CANCELABLE );
         }
+#endif
 
         atexit(v4k_quit);
     }

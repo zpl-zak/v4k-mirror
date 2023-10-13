@@ -39,7 +39,6 @@ static void v4k_post_init(float refresh_rate) {
         else if( i == 3 ) input_init(), network_init();
     }
 
-    // @todo
     const char *appname = app_name();
     window_icon(va("%s.png", appname));
     window_icon(va("%s.ico", appname));
@@ -91,14 +90,12 @@ void v4k_init() {
             __argc = 0;
         }
 
-        #if defined(COOK_DISABLED) || ENABLE_RETAIL 
-            cook_disable();
-        #endif
-
+#if !ENABLE_RETAIL
         // create or update cook.zip file
         if( /* !COOK_ON_DEMAND && */ file_exist(COOK_INI) && cook_jobs() ) {
             cook_start(COOK_INI, "**", 0|COOK_ASYNC|COOK_CANCELABLE );
         }
+#endif
 
         atexit(v4k_quit);
     }
