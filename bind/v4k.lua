@@ -1496,9 +1496,6 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:vec2i* entries;
 //lcpp INF [0000] vec3i: macro name but used as C declaration in:typedef vec3i guid;
-//lcpp INF [0000] test: macro name but used as C declaration in:API int (test)(const char *file, int line, const char *expr, bool result);
-//lcpp INF [0000] test: macro name but used as C declaration in:STATIC int (test)(const char *file, int line, const char *expr, bool result);
-//lcpp INF [0000] test: macro name but used as C declaration in: int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 ui_get_dims();
@@ -3091,8 +3088,6 @@ typedef vec3i guid;
  void        trap_on_abort(int signal);
  void        trap_on_debug(int signal);
  int (PANIC)(const char *error, const char *file, int line);
- int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
- int (test)(const char *file, int line, const char *expr, bool result);
 enum PANEL_FLAGS {
 PANEL_OPEN = 1,
 };
