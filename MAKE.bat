@@ -201,7 +201,9 @@ if "%1"=="push" (
     call make.bat tidy
 
     git status
-    call MAKE.bat dpush auto
+    if not "%2"=="dp" (
+        call MAKE.bat dpush auto
+    )
     git add .
     git commit
     if not "%2"=="local" (
