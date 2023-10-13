@@ -95,7 +95,7 @@ extern "C" {
 //-----------------------------------------------------------------------------
 // Headers
 
-#line 1 "v4k_config.h"
+#line 1 "engine/split/v4k_config.h"
 // -----------------------------------------------------------------------------
 // config directives
 
@@ -125,6 +125,10 @@ extern "C" {
 
 #ifndef ENABLE_TESTS
 #define ENABLE_TESTS            0 // ifdef(debug, 1, 0) ///+
+#endif
+
+#ifndef ENABLE_RETAIL
+#define ENABLE_RETAIL           0
 #endif
 
 // -----------------------------------------------------------------------------
@@ -429,7 +433,7 @@ typedef char bool;
 #endif
 #line 0
 
-#line 1 "v4k_ds.h"
+#line 1 "engine/split/v4k_ds.h"
 // data structures and utils: array, set, map, hash, sort.
 // - rlyeh, public domain
 
@@ -893,7 +897,7 @@ enum {
 
 #line 0
 
-#line 1 "v4k_math.h"
+#line 1 "engine/split/v4k_math.h"
 // -----------------------------------------------------------------------------
 // math framework: rand, ease, vec2, vec3, vec4, quat, mat2, mat33, mat34, mat4
 // - rlyeh, public domain
@@ -1253,7 +1257,7 @@ API void swapf4(vec4 *a, vec4 *b);
 #line 0
 
 
-#line 1 "v4k_ai.h"
+#line 1 "engine/split/v4k_ai.h"
 typedef enum SWARM_DISTANCE {
     SWARM_DISTANCE_LINEAR,
     SWARM_DISTANCE_INVERSE_LINEAR,
@@ -1306,7 +1310,7 @@ API int     ui_swarm(swarm_t *self);
 API int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
 #line 0
 
-#line 1 "v4k_bt.h"
+#line 1 "engine/split/v4k_bt.h"
 // Behavior trees: decision planning and decision making.
 // Supersedes finite state-machines (FSM) and hierarchical finite state-machines (HFSM).
 // - rlyeh, public domain.
@@ -1332,7 +1336,7 @@ API char   *bt_funcname(bt_func fn);
 API int ui_bt(bt_t *b);
 #line 0
 
-#line 1 "v4k_audio.h"
+#line 1 "engine/split/v4k_audio.h"
 // -----------------------------------------------------------------------------
 // audio framework
 // - rlyeh, public domain
@@ -1393,7 +1397,7 @@ enum AUDIO_FLAGS {
 API int audio_queue( const void *samples, int num_samples, int flags );
 #line 0
 
-#line 1 "v4k_buffer.h"
+#line 1 "engine/split/v4k_buffer.h"
 // ----------------------------------------------------------------------------
 // compression api
 
@@ -1491,7 +1495,7 @@ API uint64_t crc64(uint64_t h, const void *ptr, uint64_t len);
 API void entropy( void *buf, unsigned n );
 #line 0
 
-#line 1 "v4k_collide.h"
+#line 1 "engine/split/v4k_collide.h"
 // -----------------------------------------------------------------------------
 // original code by @vurtun (PD) and @barerose (CC0).
 // [src] https://gist.github.com/vurtun/95f088e4889da2474ad1ce82d7911fee
@@ -1652,7 +1656,7 @@ API poly    diamond(vec3 from, vec3 to, float size); // poly_free() required
 API void    collide_demo(); // debug draw collisions
 #line 0
 
-#line 1 "v4k_cooker.h"
+#line 1 "engine/split/v4k_cooker.h"
 // -----------------------------------------------------------------------------
 // asset pipeline framework
 // - rlyeh, public domain.
@@ -1687,7 +1691,7 @@ API int  cook_progress(); // [0..100]
 
 #line 0
 
-#line 1 "v4k_data.h"
+#line 1 "engine/split/v4k_data.h"
 // -----------------------------------------------------------------------------
 // data framework (json5, xml, compression) @todo:kvdb
 // - rlyeh, public domain
@@ -1726,7 +1730,7 @@ API void            xml_pop();
 API bool data_tests();
 #line 0
 
-#line 1 "v4k_dll.h"
+#line 1 "engine/split/v4k_dll.h"
 // dll utils
 // - rlyeh, public domain
 
@@ -1741,7 +1745,7 @@ API bool data_tests();
 API void* dll(const char *filename, const char *symbol);
 #line 0
 
-#line 1 "v4k_editor.h"
+#line 1 "engine/split/v4k_editor.h"
 // -----------------------------------------------------------------------------
 // in-game editor
 // - rlyeh, public domain.
@@ -1786,7 +1790,7 @@ API char* kit_translate2( const char *id, const char *langcode_iso639_1 ); // pe
 API void  kit_dump_state( FILE *fp );
 #line 0
 
-#line 1 "v4k_file.h"
+#line 1 "engine/split/v4k_file.h"
 // -----------------------------------------------------------------------------
 // files, cache and virtual filesystem (registered directories and/or compressed zip archives).
 // - rlyeh, public domain.
@@ -1886,7 +1890,7 @@ API void         ini_destroy(ini_t);
 API bool         ini_write(const char *filename, const char *section, const char *key, const char *value);
 #line 0
 
-#line 1 "v4k_font.h"
+#line 1 "engine/split/v4k_font.h"
 // -----------------------------------------------------------------------------
 // font framework
 // - rlyeh, public domain
@@ -1978,7 +1982,7 @@ API void* font_colorize(const char *text, const char *comma_types, const char *c
 API vec2  font_highlight(const char *text, const void *colors);
 #line 0
 
-#line 1 "v4k_id.h"
+#line 1 "engine/split/v4k_id.h"
 // -----------------------------------------------------------------------------
 // factory of handle ids, based on code by randy gaul (PD/Zlib licensed)
 // - rlyeh, public domain
@@ -2007,7 +2011,7 @@ bool        id_valid(uintptr_t id);
 #define ID_DATA_BITS (64-ID_COUNT_BITS)
 #line 0
 
-#line 1 "v4k_pack.h"
+#line 1 "engine/split/v4k_pack.h"
 // ----------------------------------------------------------------------------
 // endianness
 
@@ -2198,7 +2202,7 @@ API int loadf(FILE *file, const char *format, ...);
 API int loadb(const unsigned char *buf, const char *format, ...);
 #line 0
 
-#line 1 "v4k_input.h"
+#line 1 "engine/split/v4k_input.h"
 // -----------------------------------------------------------------------------
 // input framework
 // - rlyeh, public domain
@@ -2318,7 +2322,7 @@ enum INPUT_ENUMS {
 };
 #line 0
 
-#line 1 "v4k_memory.h"
+#line 1 "engine/split/v4k_memory.h"
 // -----------------------------------------------------------------------------
 // memory framework
 // - rlyeh, public domain
@@ -2358,7 +2362,7 @@ static FORCE_INLINE void *(CALLOC_)(size_t m, size_t n) { return n *= m, memset(
 static FORCE_INLINE char *(STRDUP_)(const char *s) { size_t n = strlen(s)+1; return ((char*)memcpy(REALLOC(0,n), s, n)); } ///-
 #line 0
 
-#line 1 "v4k_network.h"
+#line 1 "engine/split/v4k_network.h"
 // -----------------------------------------------------------------------------
 // network framework
 // - rlyeh, public domain
@@ -2410,7 +2414,7 @@ API int   tcp_debug(int); // toggle traffic monitoring on/off for given socket
 //API int   tcp_crypt(int,uint64_t);               // set shared secret
 #line 0
 
-#line 1 "v4k_netsync.h"
+#line 1 "engine/split/v4k_netsync.h"
 // high-level, socket-less networking api. inspired by Quake, MPI and RenderBuckets theories.
 // - rlyeh, public domain
 //
@@ -2496,7 +2500,7 @@ API int64_t  client_join(const char *ip, int port);
 #define LOCALHOST_IPV6 "::1"
 #line 0
 
-#line 1 "v4k_obj.h"
+#line 1 "engine/split/v4k_obj.h"
 // -----------------------------------------------------------------------------
 // semantic versioning in a single byte (octal)
 // - rlyeh, public domain.
@@ -2556,7 +2560,7 @@ typedef struct double4 { double x,y,z,w; } double4;
 #define double4(x,y,z,w) M_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )
 #line 0
 
-#line 1 "v4k_profile.h"
+#line 1 "engine/split/v4k_profile.h"
 // -----------------------------------------------------------------------------
 // profiler & stats (@fixme: threadsafe)
 
@@ -2588,7 +2592,7 @@ extern API int profiler_enabled; ///-
 #endif
 #line 0
 
-#line 1 "v4k_reflect.h"
+#line 1 "engine/split/v4k_reflect.h"
 // C reflection: enums, functions, structs, members and anotations.
 // - rlyeh, public domain
 //
@@ -2650,7 +2654,7 @@ API void               reflected_printf(reflected_t *r);
 API void               reflected_printf_all();
 #line 0
 
-#line 1 "v4k_render.h"
+#line 1 "engine/split/v4k_render.h"
 // -----------------------------------------------------------------------------
 // naive rendering framework
 // - rlyeh, public domain
@@ -3352,7 +3356,7 @@ API void*    screenshot(int components); // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 API void*    screenshot_async(int components); // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 #line 0
 
-#line 1 "v4k_renderdd.h"
+#line 1 "engine/split/v4k_renderdd.h"
 // -----------------------------------------------------------------------------
 // debugdraw framework
 // - rlyeh, public domain.
@@ -3419,7 +3423,7 @@ API void ddraw_flush();
 API void ddraw_flush_projview(mat44 proj, mat44 view);
 #line 0
 
-#line 1 "v4k_scene.h"
+#line 1 "engine/split/v4k_scene.h"
 // -----------------------------------------------------------------------------
 // scene framework
 // - rlyeh, public domain
@@ -3556,7 +3560,7 @@ API unsigned  scene_count_light();
 API light_t*  scene_index_light(unsigned index);
 #line 0
 
-#line 1 "v4k_script.h"
+#line 1 "engine/split/v4k_script.h"
 // -----------------------------------------------------------------------------
 // script framework
 // - rlyeh, public domain
@@ -3572,7 +3576,7 @@ API void script_call(const char *lua_function);
 API bool script_tests();
 #line 0
 
-#line 1 "v4k_string.h"
+#line 1 "engine/split/v4k_string.h"
 // string framework
 // - rlyeh, public domain
 
@@ -3666,7 +3670,7 @@ unsigned    quark_intern( quarks_db*, const char *string );
 const char *quark_string( quarks_db*, unsigned key );
 #line 0
 
-#line 1 "v4k_time.h"
+#line 1 "engine/split/v4k_time.h"
 // -----------------------------------------------------------------------------
 // time framework utils
 // - rlyeh, public domain.
@@ -3713,7 +3717,7 @@ AUTORUN {
 */
 #line 0
 
-#line 1 "v4k_system.h"
+#line 1 "engine/split/v4k_system.h"
 // -----------------------------------------------------------------------------
 // system framework utils
 // - rlyeh, public domain.
@@ -3794,7 +3798,7 @@ API int (test)(const char *file, int line, const char *expr, bool result);
 
 #line 0
 
-#line 1 "v4k_ui.h"
+#line 1 "engine/split/v4k_ui.h"
 // -----------------------------------------------------------------------------
 // immediate ui framework
 // - rlyeh, public domain
@@ -3884,7 +3888,7 @@ API int ui_active(); // ui_is_active()?
 API int ui_demo(int do_windows);
 #line 0
 
-#line 1 "v4k_video.h"
+#line 1 "engine/split/v4k_video.h"
 // -----------------------------------------------------------------------------
 // video decoder (mpeg)
 // - rlyeh, public domain
@@ -3927,7 +3931,7 @@ API bool        record_active();
 API void       record_stop(void);
 #line 0
 
-#line 1 "v4k_window.h"
+#line 1 "engine/split/v4k_window.h"
 // -----------------------------------------------------------------------------
 // window framework
 // - rlyeh, public domain

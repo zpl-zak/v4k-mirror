@@ -105,7 +105,7 @@ for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mute
 //-----------------------------------------------------------------------------
 // C files
 
-#line 1 "v4k_ds.c"
+#line 1 "engine/split/v4k_ds.c"
 
 // -----------------------------------------------------------------------------
 // sort/less
@@ -514,7 +514,7 @@ char *cc8str(uint64_t x) {
 
 #line 0
 
-#line 1 "v4k_string.c"
+#line 1 "engine/split/v4k_string.c"
 #include <stdarg.h>
 
 char* tempvl(const char *fmt, va_list vl) {
@@ -935,7 +935,7 @@ AUTORUN {
 #endif
 #line 0
 
-#line 1 "v4k_compat.c"
+#line 1 "engine/split/v4k_compat.c"
 //-----------------------------------------------------------------------------
 // compat (unix & stdio.h)
 
@@ -1052,7 +1052,7 @@ static void v4k_pre_init();
 static void v4k_post_init(float);
 #line 0
 
-#line 1 "v4k_audio.c"
+#line 1 "engine/split/v4k_audio.c"
 // @fixme: really shutdown audio & related threads before quitting. ma_dr_wav crashes.
 
 
@@ -1645,7 +1645,7 @@ int ui_audio() {
 }
 #line 0
 
-#line 1 "v4k_buffer.c"
+#line 1 "engine/split/v4k_buffer.c"
 // ----------------------------------------------------------------------------
 // compression api
 
@@ -2401,7 +2401,7 @@ AUTORUN {
 #endif
 #line 0
 
-#line 1 "v4k_collide.c"
+#line 1 "engine/split/v4k_collide.c"
 /* poly */
 poly poly_alloc(int cnt) {
     poly p = {0};
@@ -3829,7 +3829,7 @@ void collide_demo() { // debug draw collisions // @fixme: fix leaks: poly_free()
 }
 #line 0
 
-#line 1 "v4k_cooker.c"
+#line 1 "engine/split/v4k_cooker.c"
 // data pipeline
 // - rlyeh, public domain.
 // ----------------------------------------------------------------------------
@@ -4646,7 +4646,7 @@ void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"
 }
 #line 0
 
-#line 1 "v4k_data.c"
+#line 1 "engine/split/v4k_data.c"
 
 static
 array(char) base64__decode(const char *in_, unsigned inlen) {
@@ -4949,7 +4949,7 @@ bool data_tests() {
 }
 #line 0
 
-#line 1 "v4k_dll.c"
+#line 1 "engine/split/v4k_dll.c"
 #if is(win32)
 #   include <winsock2.h>
 #   define dlopen(name,mode)    (void*)( (name) ? LoadLibraryA(name) : GetModuleHandle(NULL))
@@ -4981,7 +4981,7 @@ int main() { int (*adder)() = dll("demo.dll", "add2"); printf("%d\n", adder(2,3)
 #endif
 #line 0
 
-#line 1 "v4k_file.c"
+#line 1 "engine/split/v4k_file.c"
 // -----------------------------------------------------------------------------
 // file
 
@@ -6121,7 +6121,7 @@ bool ini_write(const char *filename, const char *section, const char *key, const
 
 #line 0
 
-#line 1 "v4k_font.c"
+#line 1 "engine/split/v4k_font.c"
 // font framework. original code by Vassvik (UNLICENSED)
 // - rlyeh, public domain.
 //
@@ -8471,7 +8471,7 @@ vec2 font_rect(const char *str) {
 }
 #line 0
 
-#line 1 "v4k_input.c"
+#line 1 "engine/split/v4k_input.c"
 // input framework
 // - rlyeh, public domain
 //
@@ -9204,7 +9204,7 @@ int ui_gamepads() {
 }
 #line 0
 
-#line 1 "v4k_math.c"
+#line 1 "engine/split/v4k_math.c"
 // -----------------------------------------------------------------------------
 // math framework: rand, ease, vec2, vec3, vec4, quat, mat2, mat33, mat34, mat4
 // - rlyeh, public domain
@@ -10210,7 +10210,7 @@ void print34( float *m ) { print_(m,3,4); }
 void print44( float *m ) { print_(m,4,4); }
 #line 0
 
-#line 1 "v4k_memory.c"
+#line 1 "engine/split/v4k_memory.c"
 size_t dlmalloc_usable_size(void*); // __ANDROID_API__
 
 #if is(bsd) || is(osx) // bsd or osx
@@ -10308,7 +10308,7 @@ void* forget( void *ptr ) {
 }
 #line 0
 
-#line 1 "v4k_network.c"
+#line 1 "engine/split/v4k_network.c"
 
 #if is(tcc) && is(win32) // @fixme: https lib is broken with tcc. replaced with InternetReadFile() api for now
 
@@ -10618,7 +10618,7 @@ static void network_init() {
 }
 #line 0
 
-#line 1 "v4k_netsync.c"
+#line 1 "engine/split/v4k_netsync.c"
 typedef void* (*rpc_function)();
 
 typedef struct rpc_call {
@@ -11304,7 +11304,7 @@ void network_rpc_send(unsigned id, const char *cmdline) {
 }
 #line 0
 
-#line 1 "v4k_pack.c"
+#line 1 "engine/split/v4k_pack.c"
 // endianness -----------------------------------------------------------------
 // - rlyeh, public domain
 
@@ -12764,7 +12764,7 @@ AUTORUN {
 #endif
 #line 0
 
-#line 1 "v4k_reflect.c"
+#line 1 "engine/split/v4k_reflect.c"
 // C reflection: enums, functions, structs, members and anotations.
 // - rlyeh, public domain
 //
@@ -12876,7 +12876,7 @@ AUTOTEST {
 }
 #line 0
 
-#line 1 "v4k_render.c"
+#line 1 "engine/split/v4k_render.c"
 // -----------------------------------------------------------------------------
 // opengl
 
@@ -17644,7 +17644,7 @@ anims_t animations(const char *pathfile, int flags) {
 }
 #line 0
 
-#line 1 "v4k_renderdd.c"
+#line 1 "engine/split/v4k_renderdd.c"
 static const char *dd_vs = "//" FILELINE "\n"
     "in vec3 att_position;\n"
     "uniform mat4 u_MVP;\n"
@@ -18492,7 +18492,7 @@ void ddraw_demo() {
 }
 #line 0
 
-#line 1 "v4k_scene.c"
+#line 1 "engine/split/v4k_scene.c"
 //
 // @todo: remove explicit GL code from here
 
@@ -19064,7 +19064,7 @@ void scene_render(int flags) {
 }
 #line 0
 
-#line 1 "v4k_script.c"
+#line 1 "engine/split/v4k_script.c"
 typedef lua_State lua;
 
 // the Lua interpreter
@@ -19245,7 +19245,7 @@ bool script_tests() {
 #undef XMACRO
 #line 0
 
-#line 1 "v4k_time.c"
+#line 1 "engine/split/v4k_time.c"
 // ----------------------------------------------------------------------------
 // time
 
@@ -19496,7 +19496,7 @@ guid guid_create() {
 }
 #line 0
 
-#line 1 "v4k_system.c"
+#line 1 "engine/split/v4k_system.c"
 #if (is(tcc) && is(linux)) || (is(gcc) && !is(mingw)) // || is(clang)
 int __argc; char **__argv;
 #if !is(ems)
@@ -20381,7 +20381,7 @@ int (test)(const char *file, int line, const char *expr, bool result) {
 }
 #line 0
 
-#line 1 "v4k_id.c"
+#line 1 "engine/split/v4k_id.c"
 // -----------------------------------------------------------------------------
 // factory of handle ids, based on code by randy gaul (PD/Zlib licensed)
 // - rlyeh, public domain
@@ -20551,7 +20551,7 @@ bool id_valid(uintptr_t id) {
 }
 #line 0
 
-#line 1 "v4k_ui.c"
+#line 1 "engine/split/v4k_ui.c"
 
 #ifndef UI_ICONS_SMALL
 //#define UI_ICONS_SMALL 1
@@ -23016,7 +23016,7 @@ int ui_demo(int do_windows) {
 }
 #line 0
 
-#line 1 "v4k_profile.c"
+#line 1 "engine/split/v4k_profile.c"
 #if ENABLE_PROFILER
 profiler_t profiler;
 int profiler_enabled = 1;
@@ -23072,7 +23072,7 @@ void (ui_profiler)() {
 #endif
 #line 0
 
-#line 1 "v4k_video.c"
+#line 1 "engine/split/v4k_video.c"
 // tip: convert video to x265/mp4. note: higher crf to increase compression (default crf is 28)
 // ffmpeg -i {{infile}} -c:v libx265 -crf 24 -c:a copy {{outfile}}
 
@@ -23304,7 +23304,7 @@ void record_frame() {
 }
 #line 0
 
-#line 1 "v4k_window.c"
+#line 1 "engine/split/v4k_window.c"
 //-----------------------------------------------------------------------------
 // fps locking
 
@@ -24290,9 +24290,9 @@ void window_color(unsigned color) {
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }
 void window_icon(const char *file_icon) {
-    unsigned len = file_size(file_icon); // len = len ? len : vfs_size(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
+    unsigned len = file_size(file_icon); len = len ? len : vfs_size(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
     if( len ) {
-        void *data = file_read(file_icon); // data = data ? data : vfs_read(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
+        void *data = file_read(file_icon); data = data ? data : vfs_read(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
         if( data ) {
             image_t img = image_from_mem(data, len, IMAGE_RGBA);
             if( img.w && img.h && img.pixels ) {
@@ -24577,7 +24577,7 @@ int window_has_maximize() {
 
 #line 0
 
-#line 1 "v4k_obj.c"
+#line 1 "engine/split/v4k_obj.c"
 // -----------------------------------------------------------------------------
 // semantic versioning in a single byte (octal)
 // - rlyeh, public domain.
@@ -24624,7 +24624,7 @@ AUTORUN {
 #endif
 #line 0
 
-#line 1 "v4k_ai.c"
+#line 1 "engine/split/v4k_ai.c"
 // AI framework
 // - rlyeh, public domain.
 //
@@ -25200,7 +25200,7 @@ int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i 
 }
 #line 0
 
-#line 1 "v4k_bt.c"
+#line 1 "engine/split/v4k_bt.c"
 // Behavior trees: decision planning and decision making.
 // Supersedes finite state-machines (FSM) and hierarchical finite state-machines (HFSM).
 // - rlyeh, public domain.
@@ -25464,7 +25464,7 @@ int ui_bt(bt_t *b) {
 }
 #line 0
 
-#line 1 "v4k_editor.c"
+#line 1 "engine/split/v4k_editor.c"
 // editing:
 // nope > functions: add/rem property
 
@@ -25918,13 +25918,14 @@ int main() {
 
 // editor is last in place, so it can use all internals from above headers
 
-#line 1 "v4k_main.c"
+#line 1 "engine/split/v4k_main.c"
 // ----------------------------------------------------------------------------
 
 static void v4k_pre_init() {
     const char *appname = app_name();
-    window_icon(va("%s.png", appname));
-    ifdef(win32,window_icon(va("%s.ico", appname)));
+    const char *appdir = app_path();
+    window_icon(va("%s/%s.png", appdir, appname));
+    ifdef(win32,window_icon(va("%s/%s.ico", appdir, appname)));
 
     glfwPollEvents();
 
@@ -25960,8 +25961,9 @@ static void v4k_post_init(float refresh_rate) {
     }
 
     // @todo
-    // window_icon(vfs_file(va("%s.png", app)));
-    // window_icon(vfs_file(va("%s.ico", app)));
+    const char *appname = app_name();
+    window_icon(va("%s.png", appname));
+    window_icon(va("%s.ico", appname));
 
     // display window
     glfwShowWindow(window);
@@ -26010,7 +26012,7 @@ void v4k_init() {
             __argc = 0;
         }
 
-        #ifdef COOK_DISABLED
+        #if defined(COOK_DISABLED) || ENABLE_RETAIL 
             cook_disable();
         #endif
 

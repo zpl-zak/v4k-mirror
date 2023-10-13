@@ -2,8 +2,9 @@
 
 static void v4k_pre_init() {
     const char *appname = app_name();
-    window_icon(va("%s.png", appname));
-    ifdef(win32,window_icon(va("%s.ico", appname)));
+    const char *appdir = app_path();
+    window_icon(va("%s/%s.png", appdir, appname));
+    ifdef(win32,window_icon(va("%s/%s.ico", appdir, appname)));
 
     glfwPollEvents();
 
@@ -39,8 +40,9 @@ static void v4k_post_init(float refresh_rate) {
     }
 
     // @todo
-    // window_icon(vfs_file(va("%s.png", app)));
-    // window_icon(vfs_file(va("%s.ico", app)));
+    const char *appname = app_name();
+    window_icon(va("%s.png", appname));
+    window_icon(va("%s.ico", appname));
 
     // display window
     glfwShowWindow(window);
@@ -89,7 +91,7 @@ void v4k_init() {
             __argc = 0;
         }
 
-        #ifdef COOK_DISABLED
+        #if defined(COOK_DISABLED) || ENABLE_RETAIL 
             cook_disable();
         #endif
 

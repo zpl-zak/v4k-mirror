@@ -29,6 +29,10 @@
 #define ENABLE_TESTS            0 // ifdef(debug, 1, 0) ///+
 #endif
 
+#ifndef ENABLE_RETAIL
+#define ENABLE_RETAIL           0
+#endif
+
 // -----------------------------------------------------------------------------
 // if/n/def hell
 
