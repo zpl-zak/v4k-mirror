@@ -991,9 +991,9 @@ void window_color(unsigned color) {
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }
 void window_icon(const char *file_icon) {
-    unsigned len = file_size(file_icon); len = len ? len : vfs_size(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
+    unsigned len = file_size(file_icon); len = len ? len : vfs_size(file_icon);
     if( len ) {
-        void *data = file_read(file_icon); data = data ? data : vfs_read(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
+        void *data = file_read(file_icon); data = data ? data : vfs_read(file_icon);
         if( data ) {
             image_t img = image_from_mem(data, len, IMAGE_RGBA);
             if( img.w && img.h && img.pixels ) {

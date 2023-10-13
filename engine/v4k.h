@@ -220,6 +220,12 @@ extern "C" {
 #define ifdef_32                       ifdef_true
 #endif
 
+#ifdef ENABLE_RETAIL
+#define ifdef_retail                   ifdef_true
+#else
+#define ifdef_retail                   ifdef_false
+#endif
+
 // -----------------------------------------------------------------------------
 // new C keywords
 

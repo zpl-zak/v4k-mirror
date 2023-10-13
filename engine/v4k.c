@@ -4631,6 +4631,7 @@ void cook_cancel() {
 int cook_jobs() {
     int num_jobs = optioni("--cook-jobs", maxf(1.15,app_cores()) * 1.75), max_jobs = countof(jobs);
     ifdef(ems, num_jobs = 0);
+    ifdef(retail, num_jobs = 0);
     return clampi(num_jobs, 0, max_jobs);
 }
 
@@ -24292,9 +24293,9 @@ void window_color(unsigned color) {
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }
 void window_icon(const char *file_icon) {
-    unsigned len = file_size(file_icon); len = len ? len : vfs_size(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
+    unsigned len = file_size(file_icon); len = len ? len : vfs_size(file_icon);
     if( len ) {
-        void *data = file_read(file_icon); data = data ? data : vfs_read(file_icon); // @fixme: reenable this to allow icons to be put in cooked .zipfiles
+        void *data = file_read(file_icon); data = data ? data : vfs_read(file_icon);
         if( data ) {
             image_t img = image_from_mem(data, len, IMAGE_RGBA);
             if( img.w && img.h && img.pixels ) {
@@ -26013,12 +26014,10 @@ void v4k_init() {
             __argc = 0;
         }
 
-#if !ENABLE_RETAIL
         // create or update cook.zip file
         if( /* !COOK_ON_DEMAND && */ file_exist(COOK_INI) && cook_jobs() ) {
             cook_start(COOK_INI, "**", 0|COOK_ASYNC|COOK_CANCELABLE );
         }
-#endif
 
         atexit(v4k_quit);
     }
