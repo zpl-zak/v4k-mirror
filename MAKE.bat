@@ -244,12 +244,14 @@ if "%1"=="fuse" (
 
 rem check memory api calls
 if "%1"=="checkmem" (
-    findstr /RNC:"[^_xv]realloc[(]"  engine\v4k.c engine\split\v4k*
-    findstr /RNC:"[^_xv]xrealloc[(]" engine\v4k.c engine\split\v4k*
-    findstr /RNC:"[^_xv]malloc[(]"   engine\v4k.c engine\split\v4k*
-    findstr /RNC:"[^_xv]free[(]"     engine\v4k.c engine\split\v4k*
-    findstr /RNC:"[^_xv]calloc[(]"   engine\v4k.c engine\split\v4k*
-    findstr /RNC:"[^_xv]strdup[(]"   engine\v4k.c engine\split\v4k*
+    findstr /RNC:"[^_xv]realloc[(]"  engine\split\v4k*
+    findstr /RNC:"[^_xv]REALLOC[(]"  engine\split\v4k*
+    findstr /RNC:"[^_xv]MALLOC[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]xrealloc[(]" engine\split\v4k*
+    findstr /RNC:"[^_xv]malloc[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]free[(]"     engine\split\v4k*
+    findstr /RNC:"[^_xv]calloc[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]strdup[(]"   engine\split\v4k*
     exit /b
 )
 
