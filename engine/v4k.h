@@ -124,7 +124,7 @@ extern "C" {
 #endif
 
 #ifndef ENABLE_AUTOTESTS
-#define ENABLE_AUTOTESTS        ifdef(debug, 1, 0) ///+
+#define ENABLE_AUTOTESTS        ifdef(debug, ifndef(ems, 1, 0), 0) ///+
 #endif
 
 #ifndef ENABLE_RETAIL

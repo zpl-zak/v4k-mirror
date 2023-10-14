@@ -1044,10 +1044,11 @@ int window_record(const char *outfile_mp4) {
 }
 
 vec2 window_dpi() {
-    float x=0.0f;
-    float y=0.0f;
-    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &x, &y);
-    return vec2(x,y);
+    vec2 dpi = vec2(1,1);
+#ifndef __EMSCRIPTEN__
+    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &dpi.x, &dpi.y);
+#endif
+    return dpi;
 }
 
 // -----------------------------------------------------------------------------
