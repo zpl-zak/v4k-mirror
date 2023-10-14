@@ -59,14 +59,14 @@ API void        trap_on_quit(int signal);   // helper util
 API void        trap_on_abort(int signal);  // helper util
 API void        trap_on_debug(int signal);  // helper util
 
-#define PANIC(...)   PANIC(va(__VA_ARGS__), __FILE__, __LINE__) // die() ?
+#define PANIC(...)   PANIC(va(__VA_ARGS__), strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__) // die() ?
 API int (PANIC)(const char *error, const char *file, int line);
 
 #if !ENABLE_RETAIL
-#define PRINTF(...)  PRINTF(va(__VA_ARGS__), 1[#__VA_ARGS__] == '!' ? callstack(+48) : "", __FILE__, __LINE__, __FUNCTION__)
+#define PRINTF(...)  PRINTF(va(__VA_ARGS__), 1[#__VA_ARGS__] == '!' ? callstack(+48) : "", strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__, __FUNCTION__)
 API int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
 
-#define test(expr) test(__FILE__,__LINE__,#expr,!!(expr))
+#define test(expr) test(strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__,__LINE__,#expr,!!(expr))
 API int (test)(const char *file, int line, const char *expr, bool result);
 #else
 #define PRINTF(...)

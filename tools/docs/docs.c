@@ -806,6 +806,7 @@ int main(int argc, char **argv) {
                 // remove quotes if present
                 char *p = &newfile[ newfile[0] == '\"' ];
                 if(strrchr(p, '\"')) *strrchr(p, '\"') = 0;
+                if(strrchr(p, '/')) p = strrchr(p, '/')+5;
                 // store
                 section = STRDUP(p);
             }
