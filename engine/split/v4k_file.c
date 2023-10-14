@@ -600,6 +600,7 @@ void vfs_reload() {
     // vfs_resolve() will use these art_folder locations as hints when cook-on-demand is in progress.
     // cook-on-demand will not be able to resolve a virtual pathfile if there are no cooked assets on disk,
     // unless there is a record of what's actually on disk somewhere, and that's where the hints belong to.
+    if( COOK_ON_DEMAND )
     for each_substring(ART,",",art_folder) {
         vfs_mount_hints(art_folder);
     }
@@ -635,6 +636,8 @@ void ark_list( const char *infile, zip **z ) {
 
 static
 bool vfs_mount_(const char *path, array(struct vfs_entry) *entries) {
+    const char *path_bak = path;
+
     zip *z = NULL; tar *t = NULL; pak *p = NULL; dir *d = NULL;
     int is_folder = ('/' == path[strlen(path)-1]);
     if( is_folder ) d = dir_open(path, "rb");
@@ -678,6 +681,8 @@ bool vfs_mount_(const char *path, array(struct vfs_entry) *entries) {
             // append to list
             array_push(*entries, (struct vfs_entry){filename, fileid, filesize});
         }
+
+        PRINTF("Mounted VFS volume '%s' (%u entries)\n", path_bak, fn_count[dir->type](dir->archive) );
     }
 
     return 1;

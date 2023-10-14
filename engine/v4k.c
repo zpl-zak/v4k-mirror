@@ -5586,6 +5586,7 @@ void vfs_reload() {
     // vfs_resolve() will use these art_folder locations as hints when cook-on-demand is in progress.
     // cook-on-demand will not be able to resolve a virtual pathfile if there are no cooked assets on disk,
     // unless there is a record of what's actually on disk somewhere, and that's where the hints belong to.
+    if( COOK_ON_DEMAND )
     for each_substring(ART,",",art_folder) {
         vfs_mount_hints(art_folder);
     }
@@ -5621,6 +5622,8 @@ void ark_list( const char *infile, zip **z ) {
 
 static
 bool vfs_mount_(const char *path, array(struct vfs_entry) *entries) {
+    const char *path_bak = path;
+
     zip *z = NULL; tar *t = NULL; pak *p = NULL; dir *d = NULL;
     int is_folder = ('/' == path[strlen(path)-1]);
     if( is_folder ) d = dir_open(path, "rb");
@@ -5664,6 +5667,8 @@ bool vfs_mount_(const char *path, array(struct vfs_entry) *entries) {
             // append to list
             array_push(*entries, (struct vfs_entry){filename, fileid, filesize});
         }
+
+        PRINTF("Mounted VFS volume '%s' (%u entries)\n", path_bak, fn_count[dir->type](dir->archive) );
     }
 
     return 1;
@@ -16116,21 +16121,21 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     passfx *p = &fx->pass[ slot & 63 ];
     p->name = STRDUP(name);
 
-    const char *vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
-
-    // patch fragment
-    char *fs2 = (char*)CALLOC(1, 128*1024);
-    strcat(fs2, vfs_read("shaders/fs_2_4_preamble.glsl"));
-
-    if( strstr(fs, "mainImage") ) {
-        strcat(fs2, vfs_read("shaders/fs_main_shadertoy.glsl") );
+    // preload stuff
+    static const char *vs = 0;
+    static const char *preamble = 0;
+    static const char *shadertoy = 0;
+    static char *fs2 = 0;
+    do_once {
+        vs = STRDUP(vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl"));
+        preamble = STRDUP(vfs_read("shaders/fs_2_4_preamble.glsl"));
+        shadertoy = STRDUP(vfs_read("shaders/fs_main_shadertoy.glsl"));
+        fs2 = (char*)CALLOC(1, 128*1024);
     }
-
-    strcat(fs2, fs);
+    // patch fragment
+    snprintf(fs2, 128*1024, "%s%s%s", preamble, strstr(fs, "mainImage") ? shadertoy : "", fs );
 
     p->program = shader(vs, fs2, "vtexcoord", "fragColor" , NULL);
-
-    FREE(fs2);
 
     glUseProgram(p->program); // needed?
 
@@ -25978,8 +25983,8 @@ static void v4k_post_init(float refresh_rate) {
     for( i = 0; i <= 2; ++i ) {
         if(i == 0) ui_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         if(i == 0) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        if(i == 0) window_icon(va("%s.png", app_name()));
         if(i == 1) input_init();
-        if(i == 2) window_icon(va("%s.png", app_name()));
     }
 
     // display window

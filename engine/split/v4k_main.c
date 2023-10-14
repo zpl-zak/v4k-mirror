@@ -32,8 +32,8 @@ static void v4k_post_init(float refresh_rate) {
     for( i = 0; i <= 2; ++i ) {
         if(i == 0) ui_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         if(i == 0) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        if(i == 0) window_icon(va("%s.png", app_name()));
         if(i == 1) input_init();
-        if(i == 2) window_icon(va("%s.png", app_name()));
     }
 
     // display window

@@ -3228,21 +3228,21 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     passfx *p = &fx->pass[ slot & 63 ];
     p->name = STRDUP(name);
 
-    const char *vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
-
-    // patch fragment
-    char *fs2 = (char*)CALLOC(1, 128*1024);
-    strcat(fs2, vfs_read("shaders/fs_2_4_preamble.glsl"));
-
-    if( strstr(fs, "mainImage") ) {
-        strcat(fs2, vfs_read("shaders/fs_main_shadertoy.glsl") );
+    // preload stuff
+    static const char *vs = 0;
+    static const char *preamble = 0;
+    static const char *shadertoy = 0;
+    static char *fs2 = 0;
+    do_once {
+        vs = STRDUP(vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl"));
+        preamble = STRDUP(vfs_read("shaders/fs_2_4_preamble.glsl"));
+        shadertoy = STRDUP(vfs_read("shaders/fs_main_shadertoy.glsl"));
+        fs2 = (char*)CALLOC(1, 128*1024);
     }
-
-    strcat(fs2, fs);
+    // patch fragment
+    snprintf(fs2, 128*1024, "%s%s%s", preamble, strstr(fs, "mainImage") ? shadertoy : "", fs );
 
     p->program = shader(vs, fs2, "vtexcoord", "fragColor" , NULL);
-
-    FREE(fs2);
 
     glUseProgram(p->program); // needed?
 

@@ -25,7 +25,7 @@
 //
 // Where, each archive-entry is {
 //      [zero] 472-byte aligned zero padding
-//      [mark] 64-bit magic id 'Ark\x1' (if \1krA is found, swap endianness)
+//      [mark] 64-bit magic id 'ArK1' (if 1KrA is found, swap endianness)
 //      [time] 64-bit time stamp in seconds (unix epoch)
 //      [dlen] 64-bit data length
 //      [hash] 64-bit data hash
@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ARK1         'ArK\x1'
+#define ARK1         'ArK1'
 #define ARK1_PADDING (512 - 40) // 472
 
 #ifndef ARK_PRINTF
