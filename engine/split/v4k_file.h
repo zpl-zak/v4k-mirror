@@ -10,7 +10,7 @@
 
 // physical filesystem. files
 
-API const char** file_list(const char *path, const char *masks); // **.png;*.c
+API array(char*) file_list( const char *pathmasks ); // folder/*.ico;**.png;*.c
 API bool         file_write( const char *file, const void *ptr, int len );
 API bool         file_append( const char *file, const void *ptr, int len );
 API char *       file_read(const char *filename);

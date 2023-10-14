@@ -25,8 +25,8 @@
 #define ENABLE_LINUX_CALLSTACKS 0 ///+
 #endif
 
-#ifndef ENABLE_TESTS
-#define ENABLE_TESTS            0 // ifdef(debug, 1, 0) ///+
+#ifndef ENABLE_AUTOTESTS
+#define ENABLE_AUTOTESTS        ifdef(debug, 1, 0) ///+
 #endif
 
 #ifndef ENABLE_RETAIL
@@ -117,15 +117,6 @@
 #define ifdef_release                  ifdef_false
 #endif
 
-#include <stdint.h>
-#if (defined INTPTR_MAX && INTPTR_MAX == INT64_MAX) || defined(_M_X64) || defined(__amd64__) || defined(__x86_64__) || defined(__ppc64__) || __WORDSIZE == 64
-#define ifdef_64                       ifdef_true
-#define ifdef_32                       ifdef_false
-#else
-#define ifdef_64                       ifdef_false
-#define ifdef_32                       ifdef_true
-#endif
-
 #if ENABLE_RETAIL
 #define ifdef_retail                   ifdef_true
 #else
@@ -136,6 +127,37 @@
 #define ifdef_nocook                   ifdef_true
 #else
 #define ifdef_nocook                   ifdef_false
+#endif
+
+#if   defined NDEBUG && NDEBUG >= 3 // we use NDEBUG=[0,1,2,3] to signal the compiler optimization flags O0,O1,O2,O3
+#define ifdef_O3                       ifdef_true
+#define ifdef_O2                       ifdef_false
+#define ifdef_O1                       ifdef_false
+#define ifdef_O0                       ifdef_false
+#elif defined NDEBUG && NDEBUG >= 2
+#define ifdef_O3                       ifdef_false
+#define ifdef_O2                       ifdef_true
+#define ifdef_O1                       ifdef_false
+#define ifdef_O0                       ifdef_false
+#elif defined NDEBUG && NDEBUG >= 1
+#define ifdef_O3                       ifdef_false
+#define ifdef_O2                       ifdef_false
+#define ifdef_O1                       ifdef_true
+#define ifdef_O0                       ifdef_false
+#else
+#define ifdef_O3                       ifdef_false
+#define ifdef_O2                       ifdef_false
+#define ifdef_O1                       ifdef_false
+#define ifdef_O0                       ifdef_true
+#endif
+
+#include <stdint.h>
+#if (defined INTPTR_MAX && INTPTR_MAX == INT64_MAX) || defined(_M_X64) || defined(__amd64__) || defined(__x86_64__) || defined(__ppc64__) || __WORDSIZE == 64
+#define ifdef_64                       ifdef_true
+#define ifdef_32                       ifdef_false
+#else
+#define ifdef_64                       ifdef_false
+#define ifdef_32                       ifdef_true
 #endif
 
 // -----------------------------------------------------------------------------
@@ -166,8 +188,13 @@
 //-----------------------------------------------------------------------------
 // new C macros
 
+#if ENABLE_RETAIL
+#define ASSERT(expr, ...)          (void)0
+#define ASSERT_ONCE(expr, ...)     (void)0
+#else
 #define ASSERT(expr, ...)          do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
 #define ASSERT_ONCE(expr, ...)     do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; static int seen = 0; if(!seen) seen = 1, breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
+#endif
 #define STATIC_ASSERT(EXPR)        typedef struct { unsigned macro(static_assert_on_line_) : !!(EXPR); } macro(static_assert_on_line_)
 
 #define FILELINE                   __FILE__ ":" STRINGIZE(__LINE__)

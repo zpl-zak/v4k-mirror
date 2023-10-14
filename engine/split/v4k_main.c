@@ -1,47 +1,40 @@
 // ----------------------------------------------------------------------------
 
 static void v4k_pre_init() {
-    const char *appname = app_name();
-    const char *appdir = app_path();
-    window_icon(va("%s/%s.png", appdir, appname));
-    ifdef(win32,window_icon(va("%s/%s.ico", appdir, appname)));
+    window_icon(va("%s%s.png", app_path(), app_name()));
 
     glfwPollEvents();
 
     int i;
     #pragma omp parallel for
-    for( i = 0; i <= 3; ++i) {
+    for( i = 0; i <= 6; ++i) {
         /**/ if( i == 0 ) ddraw_init();// init this on thread#0 since it will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         else if( i == 1 ) sprite_init();
         else if( i == 2 ) profiler_init();
         else if( i == 3 ) storage_mount("save/"), storage_read(), touch_init(); // for ems
+        else if( i == 4 ) audio_init(0);
+        else if( i == 5 ) script_init(), kit_init(), midi_init();
+        else if( i == 6 ) network_init();
     }
 
     // window_swap();
 }
 static void v4k_post_init(float refresh_rate) {
-    int i;
-
     // cook cleanup
     cook_stop();
 
     vfs_reload();
 
-    // init subsystems that depend on cooked assets now. ui_init() is special case and needs to be safely in single thread
-    ui_init();
+    // init subsystems that depend on cooked assets now
 
-    // init more subsystems; beware of VFS mounting, as some of these may need cooked assets at this point
+    int i;
     #pragma omp parallel for
-    for( i = 0; i <= 3; ++i) {
-        /**/ if( i == 0 ) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
-        else if( i == 1 ) audio_init(0); // initialize audio after cooking // reasoning for this: do not launch audio threads while cooks are in progress, so there is more cpu for cooking actually
-        else if( i == 2 ) script_init(), kit_init(), midi_init();
-        else if( i == 3 ) input_init(), network_init();
+    for( i = 0; i <= 2; ++i ) {
+        if(i == 0) ui_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        if(i == 0) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        if(i == 1) input_init();
+        if(i == 2) window_icon(va("%s.png", app_name()));
     }
-
-    const char *appname = app_name();
-    window_icon(va("%s.png", appname));
-    window_icon(va("%s.ico", appname));
 
     // display window
     glfwShowWindow(window);

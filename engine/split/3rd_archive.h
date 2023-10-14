@@ -594,10 +594,10 @@ bool zip_append_file_timeinfo(zip *z, const char *entryname, const char *comment
     // Read whole file and and use compress(). Simple but won't handle GB files well.
     unsigned dataSize = e->header.uncompressedSize, compSize = BOUNDS(e->header.uncompressedSize, compress_level);
 
-    comp = REALLOC(0, compSize);
+    comp = REALLOC(comp, compSize);
     if(comp == NULL) goto cant_compress;
 
-    data = REALLOC(0, dataSize + 8); // small excess as some compressors are really wild when reading from buffers (lz4x)
+    data = REALLOC(data, dataSize + 8); // small excess as some compressors are really wild when reading from buffers (lz4x)
     if(data == NULL) goto cant_compress; else memset((char*)data + dataSize, 0, 8);
 
     fseek(in, 0, SEEK_SET); // rewind
@@ -705,10 +705,10 @@ bool zip_append_mem_timeinfo(zip *z, const char *entryname, const char *comment,
     // Read whole file and and use compress(). Simple but won't handle GB files well.
     unsigned dataSize = e->header.uncompressedSize, compSize = BOUNDS(e->header.uncompressedSize, compress_level);
 
-    comp = REALLOC(0, compSize);
+    comp = REALLOC(comp, compSize);
     if(comp == NULL) goto cant_compress;
 
-    data = REALLOC(0, dataSize + 8); // small excess as some compressors are really wild when reading from buffers (lz4x)
+    data = REALLOC(data, dataSize + 8); // small excess as some compressors are really wild when reading from buffers (lz4x)
     if(data == NULL) goto cant_compress; else memset((char*)data + dataSize, 0, 8);
 
     size_t bytes = inlen;
@@ -756,30 +756,46 @@ common:;
 
 // zip common
 
+#if 1
+#       define zip_lockfile(f)   (void)(f)
+#       define zip_unlockfile(f) (void)(f)
+#else
+#   if (defined(__TINYC__) && defined(_WIN32))
+#       define zip_lockfile(f)   (void)(f)
+#       define zip_unlockfile(f) (void)(f)
+#   elif defined _MSC_VER
+#       define zip_lockfile(f)   _lock_file(f)
+#       define zip_unlockfile(f) _unlock_file(f)
+#   else
+#       define zip_lockfile(f)   flockfile(f)
+#       define zip_unlockfile(f) funlockfile(f)
+#   endif
+#endif
+
 zip* zip_open_handle(FILE *fp, const char *mode) {
     if( !fp ) return ERR(NULL, "cannot open file for %s mode", mode);
     zip zero = {0}, *z = (zip*)REALLOC(0, sizeof(zip));
-    if( !z ) return fclose(fp), ERR(NULL, "out of mem"); else *z = zero;
+    if( !z ) return ERR(NULL, "out of mem"); else *z = zero;
     if( mode[0] == 'w' ) {
-        z->out = fp;
+        zip_lockfile(z->out = fp);
         return z;
     }
     if( mode[0] == 'r' || mode[0] == 'a' ) {
-        z->in = fp;
+        zip_lockfile(z->in = fp);
 
         unsigned long long seekcur = ftell(z->in);
 
         JZEndRecord jzEndRecord = {0};
         if(jzReadEndRecord(fp, &jzEndRecord) != JZ_OK) {
             REALLOC(z, 0);
-            return fclose(fp), ERR(NULL, "Couldn't read ZIP file end record.");
+            return ERR(NULL, "Couldn't read ZIP file end record.");
         }
 
         jzEndRecord.centralDirectoryOffset += seekcur;
 
         if(jzReadCentralDirectory(fp, &jzEndRecord, zip__callback, z, (void*)(uintptr_t)seekcur ) != JZ_OK) {
             REALLOC(z, 0);
-            return fclose(fp), ERR(NULL, "Couldn't read ZIP file central directory.");
+            return ERR(NULL, "Couldn't read ZIP file central directory.");
         }
         if( mode[0] == 'a' ) {
 
@@ -796,13 +812,13 @@ zip* zip_open_handle(FILE *fp, const char *mode) {
                 fseek( fp, 0L, SEEK_END );
             }
 
+            z->out = z->in;
             z->in = NULL;
-            z->out = fp;
         }
         return z;
     }
     REALLOC(z, 0);
-    return fclose(fp), ERR(NULL, "Unknown open mode %s", mode);
+    return ERR(NULL, "Unknown open mode %s", mode);
 }
 
 zip* zip_open(const char *file, const char *mode /*r,w,a*/) {
@@ -810,7 +826,11 @@ zip* zip_open(const char *file, const char *mode /*r,w,a*/) {
     int exists = (stat(file, &buffer) == 0);
     if( mode[0] == 'a' && !exists ) mode = "wb";
     FILE *fp = fopen(file, mode[0] == 'w' ? "wb" : mode[0] == 'a' ? "a+b" : "rb");
-    return zip_open_handle(fp, mode);
+    if (!fp) return NULL;
+    if (mode[0] == 'a') fseek(fp, 0L, SEEK_SET);
+    zip *z = zip_open_handle(fp, mode);
+    if (!z) return fclose(fp), NULL;
+    return z;
 }
 
 void zip_close(zip* z) {
@@ -838,8 +858,8 @@ void zip_close(zip* z) {
         // flush end record
         fwrite(&end, 1, sizeof(end), z->out);
     }
-    if( z->out ) fclose(z->out);
-    if( z->in ) fclose(z->in);
+    if( z->out ) zip_unlockfile(z->out), fclose(z->out);
+    if( z->in ) zip_unlockfile(z->in), fclose(z->in);
     // clean up
     for(unsigned i = 0; i < z->count; ++i ) {
         REALLOC(z->entries[i].filename, 0);

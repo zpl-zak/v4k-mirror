@@ -990,11 +990,16 @@ void window_color(unsigned color) {
     unsigned a = (color >> 24) & 255;
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }
+static int has_icon;
+int window_has_icon() {
+    return has_icon;
+}
 void window_icon(const char *file_icon) {
-    unsigned len = file_size(file_icon); len = len ? len : vfs_size(file_icon);
-    if( len ) {
-        void *data = file_read(file_icon); data = data ? data : vfs_read(file_icon);
-        if( data ) {
+    int len = 0;
+    void *data = vfs_load(file_icon, &len);
+    if( !data ) data = file_read(file_icon), len = file_size(file_icon);
+
+    if( data && len ) {
             image_t img = image_from_mem(data, len, IMAGE_RGBA);
             if( img.w && img.h && img.pixels ) {
                 GLFWimage images[1];
@@ -1002,11 +1007,11 @@ void window_icon(const char *file_icon) {
                 images[0].height = img.h;
                 images[0].pixels = img.pixels;
                 glfwSetWindowIcon(window, 1, images);
+            has_icon = 1;
                 return;
             }
         }
-    }
-#if is(win32)
+#if 0 // is(win32)
     HANDLE hIcon = LoadImageA(0, file_icon, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE);
     if( hIcon ) {
         HWND hWnd = glfwGetWin32Window(window);
@@ -1014,6 +1019,7 @@ void window_icon(const char *file_icon) {
         SendMessage(hWnd, WM_SETICON, ICON_BIG,   (LPARAM)hIcon);
         SendMessage(GetWindow(hWnd, GW_OWNER), WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
         SendMessage(GetWindow(hWnd, GW_OWNER), WM_SETICON, ICON_BIG,   (LPARAM)hIcon);
+        has_icon = 1;
         return;
     }
 #endif

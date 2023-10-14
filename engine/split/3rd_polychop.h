@@ -12,7 +12,7 @@
 
 static inline void array_find_and_remove(array(int) arr, int v) {
     for( int i = 0, end = array_count(arr); i < end; i++ )
-        if( arr[i] == v ) { array_erase(arr, i); --end; break; }
+        if( arr[i] == v ) { array_erase_fast(arr, i); --end; break; }
 }
 
 #include <assert.h>
@@ -126,7 +126,7 @@ static void RemoveIfNonNeighbor_(struct mesh *M, struct vertex *v, int id) {
                     return;
             }
             // remove from neighbors
-            array_erase(v->neighbor, i);
+            array_erase_fast(v->neighbor, i);
             return;
         }
     }
@@ -289,7 +289,7 @@ static void Collapse(struct mesh *M, int uid, int vid) {
     }
 
     array(int) tmp = 0;
-    
+
     // make tmp a Array of all the neighbors of u
     for (int i = 0; i<array_count(u->neighbor); i++) {
         array_push(tmp, u->neighbor[i]);
@@ -309,7 +309,7 @@ static void Collapse(struct mesh *M, int uid, int vid) {
     for (int i = 0; i<array_count(tmp); i++) {
         ComputeEdgeCostAtVertex(M, Vertex(M, tmp[i]));
     }
-    
+
     array_free(tmp);
 }
 

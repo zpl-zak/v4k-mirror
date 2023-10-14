@@ -36,7 +36,6 @@ API void     window_loop(void (*function)(void* loopArg), void* loopArg ); // ru
 API void     window_loop_exit(); // exit from main loop function (emscripten only)
 
 API void     window_title(const char *title);
-API void     window_icon(const char *file_icon);
 API void     window_color(unsigned color);
 API vec2     window_canvas();
 API void*    window_handle();
@@ -65,6 +64,8 @@ API void     window_maximize(int enabled);
 API int      window_has_maximize();
 API void     window_transparent(int enabled);
 API int      window_has_transparent();
+API void     window_icon(const char *file_icon);
+API int      window_has_icon();
 
 API double   window_aspect();
 API void     window_aspect_lock(unsigned numer, unsigned denom);

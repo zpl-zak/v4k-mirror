@@ -79,7 +79,8 @@ bool file_append(const char *name, const void *ptr, int len) {
     }
     return ok;
 }
-static bool file_stat(const char *fname, struct stat *st) {
+static // not exposed
+bool file_stat(const char *fname, struct stat *st) {
     // remove ending slashes. win32+tcc does not like them.
     int l = strlen(fname), m = l;
     while( l && (fname[l-1] == '/' || fname[l-1] == '\\') ) --l;
@@ -200,7 +201,7 @@ char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensio
     }
     return va("%s", buffer);
 }
-const char** file_list(const char *cwds, const char *masks) {
+array(char*) file_list(const char *pathmasks) {
     static __thread array(char*) list = 0; // @fixme: should we add 16 slots in here similar to what we do in va() ?
 
     for( int i = 0; i < array_count(list); ++i ) {
@@ -208,7 +209,16 @@ const char** file_list(const char *cwds, const char *masks) {
     }
     array_resize(list, 0);//array_free(list);
 
-    for each_substring(cwds,";",cwd) {
+    for each_substring(pathmasks,";",pathmask) {
+        char *cwd = 0, *masks = 0;
+            char *slash = strrchr(pathmask, '/');
+            if( !slash ) cwd = "./", masks = pathmask;
+            else {
+                masks = va("%s", slash+1);
+                cwd = pathmask, slash[1] = '\0';
+            }
+            if( !masks[0] ) masks = "*";
+
         ASSERT(strend(cwd, "/"), "Error: dirs like '%s' must end with slash", cwd);
 
     dir *d = dir_open(cwd, strstr(masks,"**") ? "r"  : "");
@@ -236,8 +246,7 @@ const char** file_list(const char *cwds, const char *masks) {
     }
     }
 
-    array_push(list, 0); // terminator
-    return (const char**)list;
+    return list;
 }
 
 bool file_move(const char *src, const char *dst) {
@@ -584,15 +593,8 @@ void vfs_reload() {
 #else
     // mount fused executables
     vfs_mount(va("%s%s%s", app_path(), app_name(), ifdef(win32, ".exe", "")));
-    /* // old way
-    for( int i = 0; i < JOBS_MAX; ++i) {
-        if( vfs_mount(va(".art[%02x].zip", i)) ) continue;
-        if( vfs_mount(va("%s[%02x].zip", app, i)) ) continue;
-        if( vfs_mount(va("%s%02x.zip", app, i)) ) continue;
-        // if( vfs_mount(va("%s.%02x", app, i)) ) continue;
-    } */
-    // faster way
-    for( const char **file = file_list("./","*.zip"); *file; ++file) vfs_mount(*file);
+    // mount all zipfiles
+    for each_array( file_list("*.zip"), char*, file ) vfs_mount(file);
 #endif
 
     // vfs_resolve() will use these art_folder locations as hints when cook-on-demand is in progress.
@@ -605,7 +607,7 @@ void vfs_reload() {
 
 
 
-#define ARK1         'ArK\x1'
+#define ARK1         0x41724B31 // 'ArK1' in le, 0x314B7241 41 72 4B 31 otherwise
 #define ARK1_PADDING (512 - 40) // 472
 #define ARK_PRINTF(f,...) 0 // printf(f,__VA_ARGS__)
 #define ARK_SWAP32(x) (x)
@@ -697,9 +699,9 @@ const char** vfs_list(const char *masks) {
 
     for each_substring(masks,";",it) {
         if( COOK_ON_DEMAND ) // edge case: any game using only vfs api + cook-on-demand flag will never find any file
-        for(const char **items = file_list("./", it); *items; items++) {
+        for each_array(file_list(it), char*, item) {
             // insert copy
-            char *copy = STRDUP(*items);
+            char *copy = STRDUP(item);
             array_push(list, copy);
         }
 
@@ -805,8 +807,8 @@ if( found && *found == 0 ) {
     folder = file_path(pathfile);
         // ease folders reading by shortening them: /home/rlyeh/prj/v4k/art/demos/audio/coin.wav -> demos/audio/coin.wav
         // or C:/prj/v4k/engine/art/fonts/B612-BoldItalic.ttf -> fonts/B612-BoldItalic.ttf
-        static array(char*) art_paths = 0;
-        do_once for each_substring(ART,",",stem) array_push(art_paths, STRDUP(stem));
+        static __thread array(char*) art_paths = 0;
+        if(!art_paths) for each_substring(ART,",",stem) array_push(art_paths, STRDUP(stem));
         char* pretty_folder = "";
         if( folder ) for( int i = 0; i < array_count(art_paths); ++i ) {
             if( strbeg(folder, art_paths[i]) ) { pretty_folder = folder + strlen(art_paths[i]); break; }
@@ -857,7 +859,7 @@ if( found && *found == 0 ) {
 // this block saves some boot time (editor --cook-on-demand: boot 1.50s -> 0.90s)
 #if 1 // EXPERIMENTAL_DONT_COOK_NON_EXISTING_ASSETS
             static set(char*) disk = 0;
-            if(!disk) { set_init_str(disk); for each_substring(ART,",",art_folder) for( const char **list = file_list(art_folder,"**"); *list; ++list) set_insert(disk, STRDUP(*list)); }
+            if(!disk) { set_init_str(disk); for each_substring(ART,",",art_folder) for each_array(file_list(va("%s**", art_folder)), char*, item) set_insert(disk, STRDUP(item)); } // art_folder ends with '/'
             int found = !!set_find(disk, (char*)pathfile);
             if( found )
 #endif
@@ -970,23 +972,28 @@ const char *vfs_extract(const char *pathfile) { // extract a vfs file into the l
 // -----------------------------------------------------------------------------
 // cache
 
+static thread_mutex_t cache_mutex; AUTORUN{ thread_mutex_init(&cache_mutex); }
+
 void* cache_lookup(const char *pathfile, int *size) { // find key->value
     if( !MAX_CACHED_FILES ) return 0;
+    void* data = 0;
+    thread_mutex_lock(&cache_mutex);
     for(archive_dir *dir = dir_cache; dir; dir = dir->next) {
         if( !strcmp(dir->path, pathfile) ) {
             if(size) *size = dir->size;
-            return dir->data;
+            data = dir->data;
+            break;
         }
     }
-    return 0;
+    thread_mutex_unlock(&cache_mutex);
+    return data;
 }
 void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/value; return LRU or NULL
     if( !MAX_CACHED_FILES ) return 0;
     if( !ptr || !size ) return 0;
 
     // keep cached files within limits
-    static thread_mutex_t mutex, *init = 0; if(!init) thread_mutex_init(init = &mutex);
-    thread_mutex_lock(&mutex);
+    thread_mutex_lock(&cache_mutex);
 
     // append to cache
     archive_dir zero = {0}, *old = dir_cache;
@@ -1016,7 +1023,7 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
         }
     }
 
-    thread_mutex_unlock(&mutex);
+    thread_mutex_unlock(&cache_mutex);
 
     return found;
 }

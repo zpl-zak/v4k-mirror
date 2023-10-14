@@ -104,9 +104,10 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
 
     const char *glsl_version = ifdef(ems, "300 es", "150");
 
-    vs = vs[0] == '#' && vs[1] == 'v' ? vs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, vs ? vs : "");
-    fs = fs[0] == '#' && fs[1] == 'v' ? fs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, fs ? fs : "");
-    if (gs) gs = gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, gs ? gs : "");
+    if(gs)
+    gs = gs && gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, gs ? gs : "");
+    vs = vs && vs[0] == '#' && vs[1] == 'v' ? vs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, vs ? vs : "");
+    fs = fs && fs[0] == '#' && fs[1] == 'v' ? fs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, fs ? fs : "");
 
 #if is(ems)
     {

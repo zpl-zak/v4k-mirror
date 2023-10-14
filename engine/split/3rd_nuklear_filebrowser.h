@@ -117,8 +117,8 @@ static void browser_reload_directory_content(struct browser *browser, const char
 
     BROWSER_PRINTF("searching at %s\n", path);
 
-    const char **list = file_list(path, "*");
-    for( int i = 0; list[i]; ++i ) {
+    array(char*) list = file_list(path);
+    for( int i = 0, end = array_count(list); i < end; ++i ) {
 
         char *absolute = file_pathabs(ifndef(win32, list[i], va("%s/%s", path, list[i]))); // ../dir/./file.ext -> c:/prj/dir/file.ext
         BROWSER_PRINTF("%s->%s %d->", list[i], absolute, file_directory(absolute) );

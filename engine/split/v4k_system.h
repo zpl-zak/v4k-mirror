@@ -62,18 +62,13 @@ API void        trap_on_debug(int signal);  // helper util
 #define PANIC(...)   PANIC(va(__VA_ARGS__), strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__) // die() ?
 API int (PANIC)(const char *error, const char *file, int line);
 
-#if !ENABLE_RETAIL
 #define PRINTF(...)  PRINTF(va(__VA_ARGS__), 1[#__VA_ARGS__] == '!' ? callstack(+48) : "", strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__, __FUNCTION__)
 API int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
 
 #define test(expr) test(strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__,__LINE__,#expr,!!(expr))
 API int (test)(const char *file, int line, const char *expr, bool result);
-#else
-#define PRINTF(...)
-#define test(expr)
-#endif
 
-#if ENABLE_TESTS
+#if ENABLE_AUTOTESTS
 #define AUTOTEST AUTORUN
 #else
 #define AUTOTEST static void concat(concat(concat(disabled_test_, __LINE__), _), __COUNTER__)()
@@ -81,3 +76,9 @@ API int (test)(const char *file, int line, const char *expr, bool result);
 
 // AUTOTEST { test(1<2); }
 
+#if ENABLE_RETAIL
+#undef  PRINTF
+#define PRINTF(...) 0
+#undef  test
+#define test(expr)  0
+#endif

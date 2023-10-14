@@ -395,6 +395,7 @@ if "%1"=="tidy" (
     del *.zip                       > nul 2> nul
     del *.mem                       > nul 2> nul
     del *.exp                       > nul 2> nul
+    del *.exe.manifest              > nul 2> nul
     del tools\*.exp                 > nul 2> nul
     del *.lib                       > nul 2> nul
     del *.exe                       > nul 2> nul

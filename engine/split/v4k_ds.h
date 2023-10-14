@@ -90,14 +90,16 @@ static __thread unsigned array_n_;
     } while(0)
 
 #define array_foreach(t,val_t,v) for each_array(t,val_t,v)
-#define each_array(t,val_t,v) \
-    ( int __it = 0, __end = array_count(t); __it < __end; ++__it ) \
-        for( val_t v = __it[t], *on__ = &v; on__; on__ = 0 )
+#define each_array(a,val_t,v) \
+    ( array(val_t) a_ = (a); a_; a_ = 0 ) \
+    for( int i_ = 0, e_ = array_count(a_); i_ < e_; ++i_ ) \
+        for( val_t v = i_[a_], *v_ = (void*)(uintptr_t)&v; v_; v_ = 0 )
 
 #define array_foreach_ptr(t,val_t,v) for each_array_ptr(t,val_t,v)
-#define each_array_ptr(t,val_t,v) \
-    ( int __it = 0, __end = array_count(t); __it < __end; ++__it ) \
-        for( val_t *v = (val_t*)&__it[t]; v; v = 0 )
+#define each_array_ptr(a,val_t,v) \
+    ( array(val_t) a_ = (a); a_; a_ = 0 ) \
+    for( int i_ = 0, e_ = array_count(a_); i_ < e_; ++i_ ) \
+        for( val_t *v = (val_t*)&i_[a_]; v; v = 0 )
 
 #define array_search(t, key, cmpfn) /* requires sorted array beforehand */ \
     bsearch(&key, t, array_count(t), sizeof(t[0]), cmpfn )
@@ -113,13 +115,13 @@ static __thread unsigned array_n_;
     } \
 } while(0)
 
-#define array_copy(t, src) do { /*todo: review old vrealloc call!*/ \
+#define array_copy(t, src) do { \
     array_free(t); \
     (t) = array_realloc_( (t), array_count(src)); \
     memcpy( (t), src, array_count(src) * sizeof(0[t])); \
 } while(0)
 
-#define array_swapback_and_pop(t, i) do { /*may alter ordering*/ \
+#define array_erase_fast(t, i) do { /*may alter ordering*/ \
     memcpy( &(t)[i], &(t)[array_count(t) - 1], sizeof(0[t])); \
     array_pop(t); \
 } while(0)

@@ -13,3 +13,4 @@ demos/ports/*/*.exe
 demos/ports/doom/.doomrc 
 *.sublime-workspace
 engine/v4k.html
+*.exe.manifest

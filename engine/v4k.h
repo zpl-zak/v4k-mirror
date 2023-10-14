@@ -123,8 +123,8 @@ extern "C" {
 #define ENABLE_LINUX_CALLSTACKS 0 ///+
 #endif
 
-#ifndef ENABLE_TESTS
-#define ENABLE_TESTS            0 // ifdef(debug, 1, 0) ///+
+#ifndef ENABLE_AUTOTESTS
+#define ENABLE_AUTOTESTS        ifdef(debug, 1, 0) ///+
 #endif
 
 #ifndef ENABLE_RETAIL
@@ -215,15 +215,6 @@ extern "C" {
 #define ifdef_release                  ifdef_false
 #endif
 
-#include <stdint.h>
-#if (defined INTPTR_MAX && INTPTR_MAX == INT64_MAX) || defined(_M_X64) || defined(__amd64__) || defined(__x86_64__) || defined(__ppc64__) || __WORDSIZE == 64
-#define ifdef_64                       ifdef_true
-#define ifdef_32                       ifdef_false
-#else
-#define ifdef_64                       ifdef_false
-#define ifdef_32                       ifdef_true
-#endif
-
 #if ENABLE_RETAIL
 #define ifdef_retail                   ifdef_true
 #else
@@ -234,6 +225,37 @@ extern "C" {
 #define ifdef_nocook                   ifdef_true
 #else
 #define ifdef_nocook                   ifdef_false
+#endif
+
+#if   defined NDEBUG && NDEBUG >= 3 // we use NDEBUG=[0,1,2,3] to signal the compiler optimization flags O0,O1,O2,O3
+#define ifdef_O3                       ifdef_true
+#define ifdef_O2                       ifdef_false
+#define ifdef_O1                       ifdef_false
+#define ifdef_O0                       ifdef_false
+#elif defined NDEBUG && NDEBUG >= 2
+#define ifdef_O3                       ifdef_false
+#define ifdef_O2                       ifdef_true
+#define ifdef_O1                       ifdef_false
+#define ifdef_O0                       ifdef_false
+#elif defined NDEBUG && NDEBUG >= 1
+#define ifdef_O3                       ifdef_false
+#define ifdef_O2                       ifdef_false
+#define ifdef_O1                       ifdef_true
+#define ifdef_O0                       ifdef_false
+#else
+#define ifdef_O3                       ifdef_false
+#define ifdef_O2                       ifdef_false
+#define ifdef_O1                       ifdef_false
+#define ifdef_O0                       ifdef_true
+#endif
+
+#include <stdint.h>
+#if (defined INTPTR_MAX && INTPTR_MAX == INT64_MAX) || defined(_M_X64) || defined(__amd64__) || defined(__x86_64__) || defined(__ppc64__) || __WORDSIZE == 64
+#define ifdef_64                       ifdef_true
+#define ifdef_32                       ifdef_false
+#else
+#define ifdef_64                       ifdef_false
+#define ifdef_32                       ifdef_true
 #endif
 
 // -----------------------------------------------------------------------------
@@ -264,8 +286,13 @@ extern "C" {
 //-----------------------------------------------------------------------------
 // new C macros
 
+#if ENABLE_RETAIL
+#define ASSERT(expr, ...)          (void)0
+#define ASSERT_ONCE(expr, ...)     (void)0
+#else
 #define ASSERT(expr, ...)          do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
 #define ASSERT_ONCE(expr, ...)     do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; static int seen = 0; if(!seen) seen = 1, breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
+#endif
 #define STATIC_ASSERT(EXPR)        typedef struct { unsigned macro(static_assert_on_line_) : !!(EXPR); } macro(static_assert_on_line_)
 
 #define FILELINE                   __FILE__ ":" STRINGIZE(__LINE__)
@@ -542,14 +569,16 @@ static __thread unsigned array_n_;
     } while(0)
 
 #define array_foreach(t,val_t,v) for each_array(t,val_t,v)
-#define each_array(t,val_t,v) \
-    ( int __it = 0, __end = array_count(t); __it < __end; ++__it ) \
-        for( val_t v = __it[t], *on__ = &v; on__; on__ = 0 )
+#define each_array(a,val_t,v) \
+    ( array(val_t) a_ = (a); a_; a_ = 0 ) \
+    for( int i_ = 0, e_ = array_count(a_); i_ < e_; ++i_ ) \
+        for( val_t v = i_[a_], *v_ = (void*)(uintptr_t)&v; v_; v_ = 0 )
 
 #define array_foreach_ptr(t,val_t,v) for each_array_ptr(t,val_t,v)
-#define each_array_ptr(t,val_t,v) \
-    ( int __it = 0, __end = array_count(t); __it < __end; ++__it ) \
-        for( val_t *v = (val_t*)&__it[t]; v; v = 0 )
+#define each_array_ptr(a,val_t,v) \
+    ( array(val_t) a_ = (a); a_; a_ = 0 ) \
+    for( int i_ = 0, e_ = array_count(a_); i_ < e_; ++i_ ) \
+        for( val_t *v = (val_t*)&i_[a_]; v; v = 0 )
 
 #define array_search(t, key, cmpfn) /* requires sorted array beforehand */ \
     bsearch(&key, t, array_count(t), sizeof(t[0]), cmpfn )
@@ -565,13 +594,13 @@ static __thread unsigned array_n_;
     } \
 } while(0)
 
-#define array_copy(t, src) do { /*todo: review old vrealloc call!*/ \
+#define array_copy(t, src) do { \
     array_free(t); \
     (t) = array_realloc_( (t), array_count(src)); \
     memcpy( (t), src, array_count(src) * sizeof(0[t])); \
 } while(0)
 
-#define array_swapback_and_pop(t, i) do { /*may alter ordering*/ \
+#define array_erase_fast(t, i) do { /*may alter ordering*/ \
     memcpy( &(t)[i], &(t)[array_count(t) - 1], sizeof(0[t])); \
     array_pop(t); \
 } while(0)
@@ -1817,7 +1846,7 @@ API void  kit_dump_state( FILE *fp );
 
 // physical filesystem. files
 
-API const char** file_list(const char *path, const char *masks); // **.png;*.c
+API array(char*) file_list( const char *pathmasks ); // folder/*.ico;**.png;*.c
 API bool         file_write( const char *file, const void *ptr, int len );
 API bool         file_append( const char *file, const void *ptr, int len );
 API char *       file_read(const char *filename);
@@ -3796,18 +3825,13 @@ API void        trap_on_debug(int signal);  // helper util
 #define PANIC(...)   PANIC(va(__VA_ARGS__), strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__) // die() ?
 API int (PANIC)(const char *error, const char *file, int line);
 
-#if !ENABLE_RETAIL
 #define PRINTF(...)  PRINTF(va(__VA_ARGS__), 1[#__VA_ARGS__] == '!' ? callstack(+48) : "", strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__, __FUNCTION__)
 API int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
 
 #define test(expr) test(strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__,__LINE__,#expr,!!(expr))
 API int (test)(const char *file, int line, const char *expr, bool result);
-#else
-#define PRINTF(...)
-#define test(expr)
-#endif
 
-#if ENABLE_TESTS
+#if ENABLE_AUTOTESTS
 #define AUTOTEST AUTORUN
 #else
 #define AUTOTEST static void concat(concat(concat(disabled_test_, __LINE__), _), __COUNTER__)()
@@ -3815,6 +3839,12 @@ API int (test)(const char *file, int line, const char *expr, bool result);
 
 // AUTOTEST { test(1<2); }
 
+#if ENABLE_RETAIL
+#undef  PRINTF
+#define PRINTF(...) 0
+#undef  test
+#define test(expr)  0
+#endif
 #line 0
 
 #line 1 "engine/split/v4k_ui.h"
@@ -3989,7 +4019,6 @@ API void     window_loop(void (*function)(void* loopArg), void* loopArg ); // ru
 API void     window_loop_exit(); // exit from main loop function (emscripten only)
 
 API void     window_title(const char *title);
-API void     window_icon(const char *file_icon);
 API void     window_color(unsigned color);
 API vec2     window_canvas();
 API void*    window_handle();
@@ -4018,6 +4047,8 @@ API void     window_maximize(int enabled);
 API int      window_has_maximize();
 API void     window_transparent(int enabled);
 API int      window_has_transparent();
+API void     window_icon(const char *file_icon);
+API int      window_has_icon();
 
 API double   window_aspect();
 API void     window_aspect_lock(unsigned numer, unsigned denom);

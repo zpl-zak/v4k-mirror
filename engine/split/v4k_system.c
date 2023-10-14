@@ -18,9 +18,10 @@ const char *app_path() { // @fixme: should return absolute path always. see tcc 
         strcat(buffer, "..\\..\\");
     }
 #else // #elif is(linux)
-    char path[21] = {0};
+    char path[32] = {0};
     sprintf(path, "/proc/%d/exe", getpid());
     readlink(path, buffer, sizeof(buffer));
+    if(strrchr(buffer,'/')) 1[strrchr(buffer,'/')] = '\0';
 #endif
     return buffer;
 }
@@ -723,15 +724,15 @@ int (PRINTF)(const char *text, const char *stack, const char *file, int line, co
     char *location = va("|%s|%s:%d", /*errno?strerror(errno):*/function, file, line);
     int cols = tty_cols() + 1 - (int)strlen(location);
 
-static thread_mutex_t lock, *init = 0; if(!init) thread_mutex_init(init = &lock);
-thread_mutex_lock( &lock );
+    flockfile(stdout);
 
     tty_color(color);
     printf("\r%*.s%s", cols, "", location);
     printf("\r%07.3fs|%s%s", secs, text, stack);
     tty_color(0);
 
-thread_mutex_unlock( &lock );
+    funlockfile(stdout);
+
     return 1;
 }
 

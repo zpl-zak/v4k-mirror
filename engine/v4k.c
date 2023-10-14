@@ -969,6 +969,8 @@ const struct in6_addr in6addr_loopback;   /* ::1 */
 #define chdir         ifdef(cl, _chdir, chdir)
 #if is(cl) || is(tcc)
 #define ftruncate     _chsize_s
+#define flockfile     ifdef(cl,_lock_file,(void))
+#define funlockfile   ifdef(cl,_unlock_file,(void))
 #endif
 #else // gcc
 //#include <alloca.h> // mingw64 does not have it
@@ -1331,8 +1333,8 @@ int audio_init( int flags ) {
         ma_backend_wasapi, // Higest priority.
         ma_backend_dsound,
         ma_backend_winmm,
-        ma_backend_pulseaudio,
         ma_backend_coreaudio,
+        ma_backend_pulseaudio,
         ma_backend_alsa,
         ma_backend_oss,
         ma_backend_jack,
@@ -4230,7 +4232,7 @@ int zipscan_diff( zip* old, array(struct fs) now ) {
             uint64_t oldstamp = atoi64(zip_modt(old,found)+20); // format is "YYYY/MM/DD hh:mm:ss", then +20 chars later a hidden epoch timestamp in base10 can be found
             int64_t diffstamp = oldstamp < now[i].stamp ? now[i].stamp - oldstamp : oldstamp - now[i].stamp;
             if( oldsize != now[i].bytes || diffstamp > 1 ) { // @fixme: should use hash instead. hashof(tool) ^ hashof(args used) ^ hashof(rawsize) ^ hashof(rawdate)
-                printf("%s:\t%u vs %u, %llu vs %llu\n", now[i].fname, (unsigned)oldsize,(unsigned)now[i].bytes, oldstamp,now[i].stamp);
+                printf("%s:\t%u vs %u, %llu vs %llu\n", now[i].fname, (unsigned)oldsize,(unsigned)now[i].bytes, (long long unsigned)oldstamp, (long long unsigned)now[i].stamp);
                 array_push(changed, STRDUP(now[i].fname));
                 array_push(uncooked, STRDUP(now[i].fname));
             }
@@ -4526,8 +4528,8 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
     // scan disk: all subfolders in ART (comma-separated)
     static array(char *) list = 0; // @leak
     for each_substring(ART, ",", art_folder) {
-        const char **glob = file_list(art_folder, "**");
-        for( unsigned i = 0; glob[i]; ++i ) {
+        array(char *) glob = file_list(va("%s**",art_folder)); // art_folder ends with '/'
+        for( unsigned i = 0, end = array_count(glob); i < end; ++i ) {
             const char *fname = glob[i];
             if( !strmatchi(fname, masks)) continue;
 
@@ -4547,8 +4549,13 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
                 if( !memcmp(header, "\x64\x86", 2) ) continue;
                 if( !memcmp(header, "\x00\x00", 2) ) continue;
             }
-            // exclude vc/gcc files
-            if( strend(fname, ".a") || strend(fname, ".pdb") || strend(fname, ".lib") || strend(fname, ".ilk") || strend(fname, ".exp") ) {
+
+            char *dot = strrchr(fname, '.');
+            if( dot ) {
+                char extdot[32];
+                snprintf(extdot, 32, "%s.", dot); // .png -> .png.
+                // exclude vc/gcc/clang files
+                if( strstr(fname, ".a.o.pdb.lib.ilk.exp.dSYM.") ) // must end with dot
                 continue;
             }
 
@@ -4609,8 +4616,7 @@ void cook_stop() {
         if(jobs[i].self) thread_join(jobs[i].self);
     }
     // remove all temporary outfiles
-    const char **temps = file_list("./", "temp_*");
-    for( int i = 0; temps[i]; ++i ) unlink(temps[i]);
+    for each_array(file_list("temp_*"), char*, tempfile) unlink(tempfile);
 }
 
 int cook_progress() {
@@ -5059,7 +5065,8 @@ bool file_append(const char *name, const void *ptr, int len) {
     }
     return ok;
 }
-static bool file_stat(const char *fname, struct stat *st) {
+static // not exposed
+bool file_stat(const char *fname, struct stat *st) {
     // remove ending slashes. win32+tcc does not like them.
     int l = strlen(fname), m = l;
     while( l && (fname[l-1] == '/' || fname[l-1] == '\\') ) --l;
@@ -5180,7 +5187,7 @@ char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensio
     }
     return va("%s", buffer);
 }
-const char** file_list(const char *cwds, const char *masks) {
+array(char*) file_list(const char *pathmasks) {
     static __thread array(char*) list = 0; // @fixme: should we add 16 slots in here similar to what we do in va() ?
 
     for( int i = 0; i < array_count(list); ++i ) {
@@ -5188,7 +5195,16 @@ const char** file_list(const char *cwds, const char *masks) {
     }
     array_resize(list, 0);//array_free(list);
 
-    for each_substring(cwds,";",cwd) {
+    for each_substring(pathmasks,";",pathmask) {
+        char *cwd = 0, *masks = 0;
+            char *slash = strrchr(pathmask, '/');
+            if( !slash ) cwd = "./", masks = pathmask;
+            else {
+                masks = va("%s", slash+1);
+                cwd = pathmask, slash[1] = '\0';
+            }
+            if( !masks[0] ) masks = "*";
+
         ASSERT(strend(cwd, "/"), "Error: dirs like '%s' must end with slash", cwd);
 
     dir *d = dir_open(cwd, strstr(masks,"**") ? "r"  : "");
@@ -5216,8 +5232,7 @@ const char** file_list(const char *cwds, const char *masks) {
     }
     }
 
-    array_push(list, 0); // terminator
-    return (const char**)list;
+    return list;
 }
 
 bool file_move(const char *src, const char *dst) {
@@ -5564,15 +5579,8 @@ void vfs_reload() {
 #else
     // mount fused executables
     vfs_mount(va("%s%s%s", app_path(), app_name(), ifdef(win32, ".exe", "")));
-    /* // old way
-    for( int i = 0; i < JOBS_MAX; ++i) {
-        if( vfs_mount(va(".art[%02x].zip", i)) ) continue;
-        if( vfs_mount(va("%s[%02x].zip", app, i)) ) continue;
-        if( vfs_mount(va("%s%02x.zip", app, i)) ) continue;
-        // if( vfs_mount(va("%s.%02x", app, i)) ) continue;
-    } */
-    // faster way
-    for( const char **file = file_list("./","*.zip"); *file; ++file) vfs_mount(*file);
+    // mount all zipfiles
+    for each_array( file_list("*.zip"), char*, file ) vfs_mount(file);
 #endif
 
     // vfs_resolve() will use these art_folder locations as hints when cook-on-demand is in progress.
@@ -5585,7 +5593,7 @@ void vfs_reload() {
 
 
 
-#define ARK1         'ArK\x1'
+#define ARK1         0x41724B31 // 'ArK1' in le, 0x314B7241 41 72 4B 31 otherwise
 #define ARK1_PADDING (512 - 40) // 472
 #define ARK_PRINTF(f,...) 0 // printf(f,__VA_ARGS__)
 #define ARK_SWAP32(x) (x)
@@ -5677,9 +5685,9 @@ const char** vfs_list(const char *masks) {
 
     for each_substring(masks,";",it) {
         if( COOK_ON_DEMAND ) // edge case: any game using only vfs api + cook-on-demand flag will never find any file
-        for(const char **items = file_list("./", it); *items; items++) {
+        for each_array(file_list(it), char*, item) {
             // insert copy
-            char *copy = STRDUP(*items);
+            char *copy = STRDUP(item);
             array_push(list, copy);
         }
 
@@ -5785,8 +5793,8 @@ if( found && *found == 0 ) {
     folder = file_path(pathfile);
         // ease folders reading by shortening them: /home/rlyeh/prj/v4k/art/demos/audio/coin.wav -> demos/audio/coin.wav
         // or C:/prj/v4k/engine/art/fonts/B612-BoldItalic.ttf -> fonts/B612-BoldItalic.ttf
-        static array(char*) art_paths = 0;
-        do_once for each_substring(ART,",",stem) array_push(art_paths, STRDUP(stem));
+        static __thread array(char*) art_paths = 0;
+        if(!art_paths) for each_substring(ART,",",stem) array_push(art_paths, STRDUP(stem));
         char* pretty_folder = "";
         if( folder ) for( int i = 0; i < array_count(art_paths); ++i ) {
             if( strbeg(folder, art_paths[i]) ) { pretty_folder = folder + strlen(art_paths[i]); break; }
@@ -5837,7 +5845,7 @@ if( found && *found == 0 ) {
 // this block saves some boot time (editor --cook-on-demand: boot 1.50s -> 0.90s)
 #if 1 // EXPERIMENTAL_DONT_COOK_NON_EXISTING_ASSETS
             static set(char*) disk = 0;
-            if(!disk) { set_init_str(disk); for each_substring(ART,",",art_folder) for( const char **list = file_list(art_folder,"**"); *list; ++list) set_insert(disk, STRDUP(*list)); }
+            if(!disk) { set_init_str(disk); for each_substring(ART,",",art_folder) for each_array(file_list(va("%s**", art_folder)), char*, item) set_insert(disk, STRDUP(item)); } // art_folder ends with '/'
             int found = !!set_find(disk, (char*)pathfile);
             if( found )
 #endif
@@ -5950,23 +5958,28 @@ const char *vfs_extract(const char *pathfile) { // extract a vfs file into the l
 // -----------------------------------------------------------------------------
 // cache
 
+static thread_mutex_t cache_mutex; AUTORUN{ thread_mutex_init(&cache_mutex); }
+
 void* cache_lookup(const char *pathfile, int *size) { // find key->value
     if( !MAX_CACHED_FILES ) return 0;
+    void* data = 0;
+    thread_mutex_lock(&cache_mutex);
     for(archive_dir *dir = dir_cache; dir; dir = dir->next) {
         if( !strcmp(dir->path, pathfile) ) {
             if(size) *size = dir->size;
-            return dir->data;
+            data = dir->data;
+            break;
         }
     }
-    return 0;
+    thread_mutex_unlock(&cache_mutex);
+    return data;
 }
 void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/value; return LRU or NULL
     if( !MAX_CACHED_FILES ) return 0;
     if( !ptr || !size ) return 0;
 
     // keep cached files within limits
-    static thread_mutex_t mutex, *init = 0; if(!init) thread_mutex_init(init = &mutex);
-    thread_mutex_lock(&mutex);
+    thread_mutex_lock(&cache_mutex);
 
     // append to cache
     archive_dir zero = {0}, *old = dir_cache;
@@ -5996,7 +6009,7 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
         }
     }
 
-    thread_mutex_unlock(&mutex);
+    thread_mutex_unlock(&cache_mutex);
 
     return found;
 }
@@ -10922,7 +10935,7 @@ void network_create(unsigned max_clients, const char *ip, const char *port_, uns
             network_put(NETWORK_RANK, -1); /* unassigned until we connect successfully */
             int64_t socket = client_join(ip, port);
             if( socket >= 0 ) {
-                PRINTF("Client connected, id %lld\n", socket);
+                PRINTF("Client connected, id %d\n", (int)socket);
                 network_put(NETWORK_LIVE, 1);
                 network_put(NETWORK_RANK, socket);
             } else {
@@ -10939,7 +10952,7 @@ void network_create(unsigned max_clients, const char *ip, const char *port_, uns
         network_put(NETWORK_RANK, -1); /* unassigned until we connect successfully */
         int64_t socket = client_join(ip, port);
         if( socket > 0 ) {
-            PRINTF("Client connected, id %lld\n", socket);
+            PRINTF("Client connected, id %d\n", (int)socket);
             network_put(NETWORK_LIVE, 1);
             network_put(NETWORK_RANK, socket);
         } else {
@@ -10950,7 +10963,7 @@ void network_create(unsigned max_clients, const char *ip, const char *port_, uns
         }
     }
 
-    PRINTF("Network rank:%lld ip:%s port:%lld\n", network_get(NETWORK_RANK), ip, network_get(NETWORK_PORT));
+    PRINTF("Network rank:%u ip:%s port:%d\n", (unsigned)network_get(NETWORK_RANK), ip, (int)network_get(NETWORK_PORT));
 }
 
 int64_t network_put(uint64_t key, int64_t value) {
@@ -11083,8 +11096,8 @@ char** server_poll(unsigned timeout_ms) {
                 *(uint32_t*)&init_msg[0] = MSG_INIT;
                 *(int64_t*)&init_msg[4] = client_id;
                 server_send_bin(client_id, init_msg, 12);
-                PRINTF("Client rank %lld for peer ::%s:%u\n", client_id, ip, event.peer->address.port);
-                msg = va( "%d new client rank:%lld from ::%s:%u", 0, client_id, ip, event.peer->address.port );
+                PRINTF("Client rank %u for peer ::%s:%u\n", (unsigned)client_id, ip, event.peer->address.port);
+                msg = va( "%d new client rank:%u from ::%s:%u", 0, (unsigned)client_id, ip, event.peer->address.port );
                 event.peer->data = (void*)client_id;
                 break;
 
@@ -11140,7 +11153,7 @@ char** server_poll(unsigned timeout_ms) {
                     msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
-                    msg = va("%d unk msg len:%u from rank:%lld ::%s:%u", -1, sz, (uint64_t)event.peer->data, ip, event.peer->address.port); /* @TODO: hexdump? */
+                    msg = va("%d unk msg len:%u from rank:%u ::%s:%u", -1, sz, (unsigned)(uintptr_t)event.peer->data, ip, event.peer->address.port); /* @TODO: hexdump? */
                     break;
                 }
                 /* Clean up the packet now that we're done using it. */
@@ -11148,7 +11161,7 @@ char** server_poll(unsigned timeout_ms) {
             } break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
-                msg = va( "%d disconnect rank:%lld", 0, (uint64_t)event.peer->data);
+                msg = va( "%d disconnect rank:%u", 0, (unsigned)(uintptr_t)event.peer->data);
                 /* Reset the peer's client information. */
                 FREE(event.peer->data);
                 event.peer->data = NULL;
@@ -11157,7 +11170,7 @@ char** server_poll(unsigned timeout_ms) {
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                msg = va( "%d timeout rank:%lld", 0, (uint64_t)event.peer->data);
+                msg = va( "%d timeout rank:%u", 0, (unsigned)(uintptr_t)event.peer->data);
                 FREE(event.peer->data);
                 event.peer->data = NULL;
                 server_drop_client_peer(event.peer);
@@ -12865,10 +12878,10 @@ AUTOTEST {
 
     // iterate reflected struct
     for each_member("MyVec4", R) {
-        printf("+%s MyVec4.%s // %s\n", R->type, R->name, R->info);
+        // printf("+%s MyVec4.%s // %s\n", R->type, R->name, R->info);
     }
 
-    reflected_printf_all();
+    // reflected_printf_all();
 }
 #line 0
 
@@ -12979,9 +12992,10 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
 
     const char *glsl_version = ifdef(ems, "300 es", "150");
 
-    vs = vs[0] == '#' && vs[1] == 'v' ? vs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, vs ? vs : "");
-    fs = fs[0] == '#' && fs[1] == 'v' ? fs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, fs ? fs : "");
-    if (gs) gs = gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, gs ? gs : "");
+    if(gs)
+    gs = gs && gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, gs ? gs : "");
+    vs = vs && vs[0] == '#' && vs[1] == 'v' ? vs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, vs ? vs : "");
+    fs = fs && fs[0] == '#' && fs[1] == 'v' ? fs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, fs ? fs : "");
 
 #if is(ems)
     {
@@ -19513,9 +19527,10 @@ const char *app_path() { // @fixme: should return absolute path always. see tcc 
         strcat(buffer, "..\\..\\");
     }
 #else // #elif is(linux)
-    char path[21] = {0};
+    char path[32] = {0};
     sprintf(path, "/proc/%d/exe", getpid());
     readlink(path, buffer, sizeof(buffer));
+    if(strrchr(buffer,'/')) 1[strrchr(buffer,'/')] = '\0';
 #endif
     return buffer;
 }
@@ -20218,15 +20233,15 @@ int (PRINTF)(const char *text, const char *stack, const char *file, int line, co
     char *location = va("|%s|%s:%d", /*errno?strerror(errno):*/function, file, line);
     int cols = tty_cols() + 1 - (int)strlen(location);
 
-static thread_mutex_t lock, *init = 0; if(!init) thread_mutex_init(init = &lock);
-thread_mutex_lock( &lock );
+    flockfile(stdout);
 
     tty_color(color);
     printf("\r%*.s%s", cols, "", location);
     printf("\r%07.3fs|%s%s", secs, text, stack);
     tty_color(0);
 
-thread_mutex_unlock( &lock );
+    funlockfile(stdout);
+
     return 1;
 }
 
@@ -20614,20 +20629,20 @@ static void nk_config_custom_fonts() {
     nk_glfw3_font_stash_begin(&nk_glfw, &atlas); // nk_sdl_font_stash_begin(&atlas);
 
         // Default font(#1)...
-
-        for( char *data = vfs_read(UI_FONT_REGULAR); data; data = 0 ) {
+        int datalen = 0;
+        for( char *data = vfs_load(UI_FONT_REGULAR, &datalen); data; data = 0 ) {
             float font_size = UI_FONT_REGULAR_SIZE;
                 struct nk_font_config cfg = nk_font_config(font_size);
                 cfg.oversample_v = 2;
                 cfg.pixel_snap = 0;
             // win32: struct nk_font *arial = nk_font_atlas_add_from_file(atlas, va("%s/fonts/arial.ttf",getenv("windir")), font_size, &cfg); font = arial ? arial : font;
             // struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "nuklear/extra_font/DroidSans.ttf", font_size, &cfg); font = droid ? droid : font;
-            struct nk_font *regular = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_REGULAR), font_size, &cfg); font = regular ? regular : font;
+            struct nk_font *regular = nk_font_atlas_add_from_memory(atlas, data, datalen, font_size, &cfg); font = regular ? regular : font;
         }
 
         // ...with icons embedded on it.
 
-        for( char *data = vfs_read(UI_FONT_ICONS); data; data = 0 ) {
+        for( char *data = vfs_load(UI_FONT_ICONS, &datalen); data; data = 0 ) {
             static const nk_rune icon_range[] = {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0};
 
             struct nk_font_config cfg = nk_font_config(UI_ICON_FONTSIZE);
@@ -20643,12 +20658,12 @@ static void nk_config_custom_fonts() {
             cfg.oversample_v = 1;
             cfg.pixel_snap = 1;
 
-            struct nk_font *icons = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_ICONS), UI_ICON_FONTSIZE, &cfg);
+            struct nk_font *icons = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_ICON_FONTSIZE, &cfg);
         }
 
         // Monospaced font. Used in terminals or consoles.
 
-        for( char *data = vfs_read(UI_FONT_TERMINAL); data; data = 0 ) {
+        for( char *data = vfs_load(UI_FONT_TERMINAL, &datalen); data; data = 0 ) {
             const float font_size = UI_FONT_REGULAR_SIZE; 
             static const nk_rune icon_range[] = {32, 127, 0};
 
@@ -20660,13 +20675,13 @@ static void nk_config_custom_fonts() {
             cfg.pixel_snap = 1;
 
             // struct nk_font *proggy = nk_font_atlas_add_default(atlas, font_size, &cfg);
-            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_TERMINAL), font_size, &cfg);
+            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, font_size, &cfg);
         }
 
         // Extra optional fonts from here...
 
-        for( char *data = vfs_read(UI_FONT_HEADING); data; data = 0 ) {
-            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_HEADING), UI_FONT_HEADING_SIZE, 0); // font = bold ? bold : font;
+        for( char *data = vfs_load(UI_FONT_HEADING, &datalen); data; data = 0 ) {
+            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_FONT_HEADING_SIZE, 0); // font = bold ? bold : font;
         }
 
     nk_glfw3_font_stash_end(&nk_glfw); // nk_sdl_font_stash_end();
@@ -24293,11 +24308,16 @@ void window_color(unsigned color) {
     unsigned a = (color >> 24) & 255;
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }
+static int has_icon;
+int window_has_icon() {
+    return has_icon;
+}
 void window_icon(const char *file_icon) {
-    unsigned len = file_size(file_icon); len = len ? len : vfs_size(file_icon);
-    if( len ) {
-        void *data = file_read(file_icon); data = data ? data : vfs_read(file_icon);
-        if( data ) {
+    int len = 0;
+    void *data = vfs_load(file_icon, &len);
+    if( !data ) data = file_read(file_icon), len = file_size(file_icon);
+
+    if( data && len ) {
             image_t img = image_from_mem(data, len, IMAGE_RGBA);
             if( img.w && img.h && img.pixels ) {
                 GLFWimage images[1];
@@ -24305,11 +24325,11 @@ void window_icon(const char *file_icon) {
                 images[0].height = img.h;
                 images[0].pixels = img.pixels;
                 glfwSetWindowIcon(window, 1, images);
+            has_icon = 1;
                 return;
             }
         }
-    }
-#if is(win32)
+#if 0 // is(win32)
     HANDLE hIcon = LoadImageA(0, file_icon, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE);
     if( hIcon ) {
         HWND hWnd = glfwGetWin32Window(window);
@@ -24317,6 +24337,7 @@ void window_icon(const char *file_icon) {
         SendMessage(hWnd, WM_SETICON, ICON_BIG,   (LPARAM)hIcon);
         SendMessage(GetWindow(hWnd, GW_OWNER), WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
         SendMessage(GetWindow(hWnd, GW_OWNER), WM_SETICON, ICON_BIG,   (LPARAM)hIcon);
+        has_icon = 1;
         return;
     }
 #endif
@@ -24682,7 +24703,7 @@ vec3 get_voxel_for_boid(float perception_radius, const boid_t *b) { // quantize 
 
 static
 void check_voxel_for_boids(float perception_radius, float blindspot_angledeg_compare_value, array(boid_t*) voxel_cached, array(nearby_boid_t) *result, const vec3 voxelPos, const boid_t *b) {
-    for each_array_ptr(voxel_cached, const boid_t*, test) {
+    for each_array_ptr(voxel_cached, boid_t*, test) {
         vec3 p1 = b->position;
         vec3 p2 = (*test)->position;
         vec3 vec = sub3(p2, p1);
@@ -24695,7 +24716,7 @@ void check_voxel_for_boids(float perception_radius, float blindspot_angledeg_com
             compare_value = dot3(neg3(b->velocity), vec) / (l1 * l2);
         }
 
-        if ((&b) != test && distance <= perception_radius && (blindspot_angledeg_compare_value > compare_value || len3(b->velocity) == 0)) {
+        if (b != (*test) && distance <= perception_radius && (blindspot_angledeg_compare_value > compare_value || len3(b->velocity) == 0)) {
             nearby_boid_t nb;
             nb.boid = (boid_t*)*test;
             nb.distance = distance;
@@ -25258,7 +25279,7 @@ int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i 
 // [ ]     CompareKeys(keyVar1, operator < <= > >= == !=, keyVar2)
 // [ ]     SetTags(names=blank,cooldownTime=inf,bIsCooldownAdditive=false)
 // [ ]     HasTags(names=blank,bAllRequired=true)
-// [ ]     PushToStack(keyVar,itemObj): creates a new stack if one doesn’t exist, and stores it in the passed variable name, and then pushes ‘item’ object onto it.
+// [ ]     PushToStack(keyVar,itemObj): creates a new stack if one doesn't exist, and stores it in the passed variable name, and then pushes 'item' object onto it.
 // [ ]     PopFromStack(keyVar,itemVar): pop pops an item off the stack, and stores it in the itemVar variable, failing if the stack is already empty.
 // [ ]     IsEmptyStack(keyVar): checks if the stack passed is empty and returns success if it is, and failure if its not.
 // [ ] Communication Node: This is a type of action node that allows an AI agent to communicate with other agents or entities in the game world. The node takes an input specifying the message to be communicated and the recipient(s) of the message (wildmask,l/p/f/g prefixes). The node then sends the message to the designated recipient(s) and returns success when the communication is completed. This node can be useful for implementing behaviors that require the AI agent to coordinate with other agents or to convey information to the player. It could use a radius argument to specify the maximum allowed distance for the recipients.
@@ -25926,47 +25947,40 @@ int main() {
 // ----------------------------------------------------------------------------
 
 static void v4k_pre_init() {
-    const char *appname = app_name();
-    const char *appdir = app_path();
-    window_icon(va("%s/%s.png", appdir, appname));
-    ifdef(win32,window_icon(va("%s/%s.ico", appdir, appname)));
+    window_icon(va("%s%s.png", app_path(), app_name()));
 
     glfwPollEvents();
 
     int i;
     #pragma omp parallel for
-    for( i = 0; i <= 3; ++i) {
+    for( i = 0; i <= 6; ++i) {
         /**/ if( i == 0 ) ddraw_init();// init this on thread#0 since it will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         else if( i == 1 ) sprite_init();
         else if( i == 2 ) profiler_init();
         else if( i == 3 ) storage_mount("save/"), storage_read(), touch_init(); // for ems
+        else if( i == 4 ) audio_init(0);
+        else if( i == 5 ) script_init(), kit_init(), midi_init();
+        else if( i == 6 ) network_init();
     }
 
     // window_swap();
 }
 static void v4k_post_init(float refresh_rate) {
-    int i;
-
     // cook cleanup
     cook_stop();
 
     vfs_reload();
 
-    // init subsystems that depend on cooked assets now. ui_init() is special case and needs to be safely in single thread
-    ui_init();
+    // init subsystems that depend on cooked assets now
 
-    // init more subsystems; beware of VFS mounting, as some of these may need cooked assets at this point
+    int i;
     #pragma omp parallel for
-    for( i = 0; i <= 3; ++i) {
-        /**/ if( i == 0 ) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
-        else if( i == 1 ) audio_init(0); // initialize audio after cooking // reasoning for this: do not launch audio threads while cooks are in progress, so there is more cpu for cooking actually
-        else if( i == 2 ) script_init(), kit_init(), midi_init();
-        else if( i == 3 ) input_init(), network_init();
+    for( i = 0; i <= 2; ++i ) {
+        if(i == 0) ui_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        if(i == 0) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        if(i == 1) input_init();
+        if(i == 2) window_icon(va("%s.png", app_name()));
     }
-
-    const char *appname = app_name();
-    window_icon(va("%s.png", appname));
-    window_icon(va("%s.ico", appname));
 
     // display window
     glfwShowWindow(window);

@@ -102,8 +102,8 @@ AUTOTEST {
 
     // iterate reflected struct
     for each_member("MyVec4", R) {
-        printf("+%s MyVec4.%s // %s\n", R->type, R->name, R->info);
+        // printf("+%s MyVec4.%s // %s\n", R->type, R->name, R->info);
     }
 
-    reflected_printf_all();
+    // reflected_printf_all();
 }

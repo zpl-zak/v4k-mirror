@@ -64,20 +64,20 @@ static void nk_config_custom_fonts() {
     nk_glfw3_font_stash_begin(&nk_glfw, &atlas); // nk_sdl_font_stash_begin(&atlas);
 
         // Default font(#1)...
-
-        for( char *data = vfs_read(UI_FONT_REGULAR); data; data = 0 ) {
+        int datalen = 0;
+        for( char *data = vfs_load(UI_FONT_REGULAR, &datalen); data; data = 0 ) {
             float font_size = UI_FONT_REGULAR_SIZE;
                 struct nk_font_config cfg = nk_font_config(font_size);
                 cfg.oversample_v = 2;
                 cfg.pixel_snap = 0;
             // win32: struct nk_font *arial = nk_font_atlas_add_from_file(atlas, va("%s/fonts/arial.ttf",getenv("windir")), font_size, &cfg); font = arial ? arial : font;
             // struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "nuklear/extra_font/DroidSans.ttf", font_size, &cfg); font = droid ? droid : font;
-            struct nk_font *regular = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_REGULAR), font_size, &cfg); font = regular ? regular : font;
+            struct nk_font *regular = nk_font_atlas_add_from_memory(atlas, data, datalen, font_size, &cfg); font = regular ? regular : font;
         }
 
         // ...with icons embedded on it.
 
-        for( char *data = vfs_read(UI_FONT_ICONS); data; data = 0 ) {
+        for( char *data = vfs_load(UI_FONT_ICONS, &datalen); data; data = 0 ) {
             static const nk_rune icon_range[] = {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0};
 
             struct nk_font_config cfg = nk_font_config(UI_ICON_FONTSIZE);
@@ -93,12 +93,12 @@ static void nk_config_custom_fonts() {
             cfg.oversample_v = 1;
             cfg.pixel_snap = 1;
 
-            struct nk_font *icons = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_ICONS), UI_ICON_FONTSIZE, &cfg);
+            struct nk_font *icons = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_ICON_FONTSIZE, &cfg);
         }
 
         // Monospaced font. Used in terminals or consoles.
 
-        for( char *data = vfs_read(UI_FONT_TERMINAL); data; data = 0 ) {
+        for( char *data = vfs_load(UI_FONT_TERMINAL, &datalen); data; data = 0 ) {
             const float font_size = UI_FONT_REGULAR_SIZE; 
             static const nk_rune icon_range[] = {32, 127, 0};
 
@@ -110,13 +110,13 @@ static void nk_config_custom_fonts() {
             cfg.pixel_snap = 1;
 
             // struct nk_font *proggy = nk_font_atlas_add_default(atlas, font_size, &cfg);
-            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_TERMINAL), font_size, &cfg);
+            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, font_size, &cfg);
         }
 
         // Extra optional fonts from here...
 
-        for( char *data = vfs_read(UI_FONT_HEADING); data; data = 0 ) {
-            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, vfs_size(UI_FONT_HEADING), UI_FONT_HEADING_SIZE, 0); // font = bold ? bold : font;
+        for( char *data = vfs_load(UI_FONT_HEADING, &datalen); data; data = 0 ) {
+            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_FONT_HEADING_SIZE, 0); // font = bold ? bold : font;
         }
 
     nk_glfw3_font_stash_end(&nk_glfw); // nk_sdl_font_stash_end();

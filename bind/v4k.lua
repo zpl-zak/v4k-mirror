@@ -1496,6 +1496,9 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:vec2i* entries;
 //lcpp INF [0000] vec3i: macro name but used as C declaration in:typedef vec3i guid;
+//lcpp INF [0000] test: macro name but used as C declaration in:API int (test)(const char *file, int line, const char *expr, bool result);
+//lcpp INF [0000] test: macro name but used as C declaration in:STATIC int (test)(const char *file, int line, const char *expr, bool result);
+//lcpp INF [0000] test: macro name but used as C declaration in: int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 ui_get_dims();
@@ -2120,7 +2123,7 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  char* kit_translate( const char *id );
  char* kit_translate2( const char *id, const char *langcode_iso639_1 );
  void  kit_dump_state( FILE *fp );
- const char** file_list(const char *path, const char *masks);
+ char** file_list( const char *pathmasks );
  bool         file_write( const char *file, const void *ptr, int len );
  bool         file_append( const char *file, const void *ptr, int len );
  char *       file_read(const char *filename);
@@ -3088,6 +3091,8 @@ typedef vec3i guid;
  void        trap_on_abort(int signal);
  void        trap_on_debug(int signal);
  int (PANIC)(const char *error, const char *file, int line);
+ int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
+ int (test)(const char *file, int line, const char *expr, bool result);
 enum PANEL_FLAGS {
 PANEL_OPEN = 1,
 };
@@ -3208,7 +3213,6 @@ WINDOW_VSYNC_DISABLED =8192,
  void     window_loop(void (*function)(void* loopArg), void* loopArg );
  void     window_loop_exit();
  void     window_title(const char *title);
- void     window_icon(const char *file_icon);
  void     window_color(unsigned color);
  vec2     window_canvas();
  void*    window_handle();
@@ -3232,6 +3236,8 @@ WINDOW_VSYNC_DISABLED =8192,
  int      window_has_maximize();
  void     window_transparent(int enabled);
  int      window_has_transparent();
+ void     window_icon(const char *file_icon);
+ int      window_has_icon();
  double   window_aspect();
  void     window_aspect_lock(unsigned numer, unsigned denom);
  void     window_aspect_unlock();
