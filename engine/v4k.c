@@ -490,28 +490,6 @@ void (set_free)(set* m) {
     set zero = {0};
     *m = zero;
 }
-
-char *cc4str(unsigned x) {
-    static __thread char type[4+1] = {0};
-    type[3] = (x >> 24ULL) & 255;
-    type[2] = (x >> 16ULL) & 255;
-    type[1] = (x >>  8ULL) & 255;
-    type[0] = (x >>  0ULL) & 255;
-    return type;
-}
-char *cc8str(uint64_t x) {
-    static __thread char type[8+1] = {0};
-    type[7] = (x >> 56ULL) & 255;
-    type[6] = (x >> 48ULL) & 255;
-    type[5] = (x >> 40ULL) & 255;
-    type[4] = (x >> 32ULL) & 255;
-    type[3] = (x >> 24ULL) & 255;
-    type[2] = (x >> 16ULL) & 255;
-    type[1] = (x >>  8ULL) & 255;
-    type[0] = (x >>  0ULL) & 255;
-    return type;
-}
-
 #line 0
 
 #line 1 "engine/split/v4k_string.c"
@@ -4646,6 +4624,11 @@ void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"
     COOK_INI = pathfile_to_cook_ini;
     ASSERT( file_exist(COOK_INI) );
 }
+
+bool have_tools() {
+    static bool found; do_once found = file_exist(COOK_INI);
+    return ifdef(retail, false, found);
+}
 #line 0
 
 #line 1 "engine/split/v4k_data.c"
@@ -5188,12 +5171,12 @@ char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensio
     return va("%s", buffer);
 }
 array(char*) file_list(const char *pathmasks) {
-    static __thread array(char*) list = 0; // @fixme: should we add 16 slots in here similar to what we do in va() ?
+    static __thread array(char*) list = 0; // @fixme: add 16 slots
 
     for( int i = 0; i < array_count(list); ++i ) {
         FREE(list[i]);
     }
-    array_resize(list, 0);//array_free(list);
+    array_resize(list, 0);
 
     for each_substring(pathmasks,";",pathmask) {
         char *cwd = 0, *masks = 0;
@@ -5232,6 +5215,7 @@ array(char*) file_list(const char *pathmasks) {
     }
     }
 
+    array_sort(list, strcmp);
     return list;
 }
 
@@ -5562,8 +5546,8 @@ struct vfs_entry {
     const char *id;
     unsigned size;
 };
-array(struct vfs_entry) vfs_hints;   // mounted raw assets
-array(struct vfs_entry) vfs_entries; // mounted cooked assets
+static array(struct vfs_entry) vfs_hints;   // mounted raw assets
+static array(struct vfs_entry) vfs_entries; // mounted cooked assets
 
 static bool vfs_mount_hints(const char *path);
 static
@@ -5680,13 +5664,13 @@ bool vfs_mount_hints(const char *path) {
 bool vfs_mount(const char *path) {
     return vfs_mount_(path, &vfs_entries);
 }
-const char** vfs_list(const char *masks) {
-    static __thread array(char*) list = 0;
+array(char*) vfs_list(const char *masks) {
+    static __thread array(char*) list = 0; // @fixme: add 16 slots
 
     for( int i = 0; i < array_count(list); ++i ) {
         FREE(list[i]);
     }
-    array_free(list);
+    array_resize(list, 0);
 
     for each_substring(masks,";",it) {
         if( COOK_ON_DEMAND ) // edge case: any game using only vfs api + cook-on-demand flag will never find any file
@@ -5712,8 +5696,7 @@ const char** vfs_list(const char *masks) {
     array_sort(list, strcmp);
     array_unique(list, strcmp_qsort);
 
-    array_push(list, 0); // terminator
-    return (const char**)list;
+    return list;
 }
 
 static
@@ -5898,8 +5881,7 @@ if( found && *found == 0 ) {
     // yet another last resort: redirect vfs_load() calls to file_load()
     // (for environments without tools or cooked assets)
     if(!ptr) {
-        static bool have_tools; do_once have_tools = file_exist(COOK_INI);
-        if( !have_tools ) {
+        if( !have_tools() ) {
             ptr = file_load(pathfile, size_out);
         }
     }
@@ -9230,54 +9212,6 @@ int ui_gamepads() {
 #include <stdint.h>
 #include <stdbool.h>
 
-vec2 atof2(const char *s) {
-    vec2 v = {0};
-    sscanf(s, "%f,%f", &v.x, &v.y);
-    return v;
-}
-vec3 atof3(const char *s) {
-    vec3 v = {0};
-    sscanf(s, "%f,%f,%f", &v.x, &v.y, &v.z);
-    return v;
-}
-vec4 atof4(const char *s) {
-    vec4 v = {0};
-    sscanf(s, "%f,%f,%f,%f", &v.x, &v.y, &v.z, &v.w);
-    return v;
-}
-
-char* ftoa(float f) {
-    return va("%f", f);
-}
-char* ftoa2(vec2 v) {
-    return va("%f,%f", v.x, v.y);
-}
-char* ftoa3(vec3 v) {
-    return va("%f,%f,%f", v.x, v.y, v.z);
-}
-char* ftoa4(vec4 v) {
-    return va("%f,%f,%f,%f", v.x, v.y, v.z, v.w);
-}
-
-void swapf(float *a, float *b) {
-    float t = *a; *a = *b; *b = *a;
-}
-void swapf2(vec2 *a, vec2 *b) {
-    float x = a->x; a->x = b->x; b->x = a->x;
-    float y = a->y; a->y = b->y; b->y = a->y;
-}
-void swapf3(vec3 *a, vec3 *b) {
-    float x = a->x; a->x = b->x; b->x = a->x;
-    float y = a->y; a->y = b->y; b->y = a->y;
-    float z = a->z; a->z = b->z; b->z = a->z;
-}
-void swapf4(vec4 *a, vec4 *b) {
-    float x = a->x; a->x = b->x; b->x = a->x;
-    float y = a->y; a->y = b->y; b->y = a->y;
-    float z = a->z; a->z = b->z; b->z = a->z;
-    float w = a->w; a->w = b->w; b->w = a->w;
-}
-
 static uint64_t rand_xoro256(uint64_t x256_s[4]) { // xoshiro256+ 1.0 by David Blackman and Sebastiano Vigna (PD)
     const uint64_t result = x256_s[0] + x256_s[3];
     const uint64_t t = x256_s[1] << 17;
@@ -10420,19 +10354,6 @@ int portname( const char *service_name, unsigned retries ) {
     return ((hash & 0xFFF) * 677 / 100 + 5001);
 }
 
-static
-void netdump( const void *ptr, int len ) {
-    char hexbuf[256] = {0}, strbuf[256] = {0}, *data = (char*)ptr, width = 16;
-    for( int jt = 0; jt < len; jt += width ) {
-        char *hex = hexbuf, *str = strbuf;
-        for( int it = jt, next = it + width; it < len && it < next; ++it, ++data ) {
-            hex += sprintf( hex, "%02x ", (unsigned char)*data);
-            str += sprintf( str, "%c", *data >= 32 && *data != '\\' ? *data : '.');
-        }
-        printf("%06x %-*s%s\n", jt, width*3, hexbuf, strbuf);
-    }
-}
-
 // -----------------------------------------------------------------------------
 
 #define UDP_DEBUG 0
@@ -10477,7 +10398,7 @@ int udp_send( int fd, const void *buf, int len ) { // returns bytes sent, or -1 
         int rc2 = swrapAddressInfo(&sa, host, 128, serv, 128 );
         if( rc2 != 0 ) PANIC("swrapAddressInfo error");
         printf("udp_send: %d bytes to %s:%s : %.*s\n", rc, host, serv, rc, buf );
-        netdump(buf, rc);
+        hexdump(buf, rc);
     }
 #endif
     return rc;
@@ -10531,7 +10452,7 @@ int udp_recv( int fd, void *buf, int len ) { // <0 error, 0 orderly shutdown, >0
     int rc2 = swrapAddressInfo(&sa, host, 128, serv, 128 );
     if( rc2 != 0 ) PANIC("swrapAddressInfo error");
     printf("udp_recv: %d bytes from %s:%s : %.*s\n", rc, host, serv, rc, buf );
-    netdump(buf, rc);
+    hexdump(buf, rc);
 #endif
 
     return rc;
@@ -10575,7 +10496,7 @@ int tcp_send(int fd, const void *buf, int len) {
 #if TCP_DEBUG
     if( set_find(tcp_set, fd) ) {
         printf("send -> %11d (status: %d) %s:%s\n", len, rc, tcp_host(fd), tcp_port(fd));
-        if( rc > 0 ) netdump(buf, rc);
+        if( rc > 0 ) hexdump(buf, rc);
     }
 #endif
     return rc;
@@ -10585,7 +10506,7 @@ int tcp_recv(int fd, void *buf, int len) {
 #if TCP_DEBUG
     if( rc != 0 && set_find(tcp_set, fd) ) {
         printf("recv <- %11d (status: %d) %s:%s\n", len, rc, tcp_host(fd), tcp_port(fd));
-        if( rc > 0 ) netdump(buf, rc);
+        if( rc > 0 ) hexdump(buf, rc);
     }
 #endif
     return rc;
@@ -11319,17 +11240,67 @@ void network_rpc_send(unsigned id, const char *cmdline) {
 #line 0
 
 #line 1 "engine/split/v4k_pack.c"
+// -----------------------------------------------------------------------------
+// compile-time fourcc, eightcc
+
+char *cc4str(unsigned x) {
+    static __thread char type[4+1] = {0};
+    type[3] = (x >> 24ULL) & 255;
+    type[2] = (x >> 16ULL) & 255;
+    type[1] = (x >>  8ULL) & 255;
+    type[0] = (x >>  0ULL) & 255;
+    return type;
+}
+char *cc8str(uint64_t x) {
+    static __thread char type[8+1] = {0};
+    type[7] = (x >> 56ULL) & 255;
+    type[6] = (x >> 48ULL) & 255;
+    type[5] = (x >> 40ULL) & 255;
+    type[4] = (x >> 32ULL) & 255;
+    type[3] = (x >> 24ULL) & 255;
+    type[2] = (x >> 16ULL) & 255;
+    type[1] = (x >>  8ULL) & 255;
+    type[0] = (x >>  0ULL) & 255;
+    return type;
+}
+
+// ----------------------------------------------------------------------------
+// float conversion (text)
+
+vec2 atof2(const char *s) {
+    vec2 v = {0};
+    sscanf(s, "%f,%f", &v.x, &v.y);
+    return v;
+}
+vec3 atof3(const char *s) {
+    vec3 v = {0};
+    sscanf(s, "%f,%f,%f", &v.x, &v.y, &v.z);
+    return v;
+}
+vec4 atof4(const char *s) {
+    vec4 v = {0};
+    sscanf(s, "%f,%f,%f,%f", &v.x, &v.y, &v.z, &v.w);
+    return v;
+}
+
+char* ftoa(float f) {
+    return va("%f", f);
+}
+char* ftoa2(vec2 v) {
+    return va("%f,%f", v.x, v.y);
+}
+char* ftoa3(vec3 v) {
+    return va("%f,%f,%f", v.x, v.y, v.z);
+}
+char* ftoa4(vec4 v) {
+    return va("%f,%f,%f,%f", v.x, v.y, v.z, v.w);
+}
+
 // endianness -----------------------------------------------------------------
 // - rlyeh, public domain
 
-#if !is(cl) && !is(gcc)
-uint16_t (swap16)( uint16_t x ) { return (x << 8) | (x >> 8); }
-uint32_t (swap32)( uint32_t x ) { x = ((x << 8) & 0xff00ff00) | ((x >> 8) & 0x00ff00ff); return (x << 16) | (x >> 16); }
-uint64_t (swap64)( uint64_t x ) { x = ((x <<  8) & 0xff00ff00ff00ff00ULL) | ((x >>  8) & 0x00ff00ff00ff00ffULL); x = ((x << 16) & 0xffff0000ffff0000ULL) | ((x >> 16) & 0x0000ffff0000ffffULL); return (x << 32) | (x >> 32); }
-#endif
-
-float    swap32f(float n)  { union { float  t; uint32_t i; } conv; conv.t = n; conv.i = swap32(conv.i); return conv.t; }
-double   swap64f(double n) { union { double t; uint64_t i; } conv; conv.t = n; conv.i = swap64(conv.i); return conv.t; }
+int is_big() { return IS_BIG; }
+int is_little() { return IS_LITTLE; }
 
 uint16_t  lil16(uint16_t n) { return IS_BIG     ? swap16(n) : n; }
 uint32_t  lil32(uint32_t n) { return IS_BIG     ? swap32(n) : n; }
@@ -11355,8 +11326,33 @@ float   * big32pf(void *p, int sz) { if(IS_LITTLE ) { float    *n = (float    *)
 double  * lil64pf(void *p, int sz) { if(IS_BIG    ) { double   *n = (double   *)p; for(int i = 0; i < sz; ++i) n[i] = swap64f(n[i]); } return p; }
 double  * big64pf(void *p, int sz) { if(IS_LITTLE ) { double   *n = (double   *)p; for(int i = 0; i < sz; ++i) n[i] = swap64f(n[i]); } return p; }
 
-int is_big() { return IS_BIG; }
-int is_little() { return IS_LITTLE; }
+#if !is(cl) && !is(gcc)
+uint16_t (swap16)( uint16_t x ) { return (x << 8) | (x >> 8); }
+uint32_t (swap32)( uint32_t x ) { x = ((x << 8) & 0xff00ff00) | ((x >> 8) & 0x00ff00ff); return (x << 16) | (x >> 16); }
+uint64_t (swap64)( uint64_t x ) { x = ((x <<  8) & 0xff00ff00ff00ff00ULL) | ((x >>  8) & 0x00ff00ff00ff00ffULL); x = ((x << 16) & 0xffff0000ffff0000ULL) | ((x >> 16) & 0x0000ffff0000ffffULL); return (x << 32) | (x >> 32); }
+#endif
+
+float    swap32f(float n)  { union { float  t; uint32_t i; } conv; conv.t = n; conv.i = swap32(conv.i); return conv.t; }
+double   swap64f(double n) { union { double t; uint64_t i; } conv; conv.t = n; conv.i = swap64(conv.i); return conv.t; }
+
+void swapf(float *a, float *b) {
+    float t = *a; *a = *b; *b = *a;
+}
+void swapf2(vec2 *a, vec2 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+}
+void swapf3(vec3 *a, vec3 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+    float z = a->z; a->z = b->z; b->z = a->z;
+}
+void swapf4(vec4 *a, vec4 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+    float z = a->z; a->z = b->z; b->z = a->z;
+    float w = a->w; a->w = b->w; b->w = a->w;
+}
 
 // half packing -----------------------------------------------------------------
 // from GingerBill's gbmath.h (public domain)
@@ -12785,15 +12781,15 @@ AUTORUN {
 // @todo: nested structs? pointers in members?
 // @todo: declare TYPEDEF(vec3, float[3]), TYPEDEF(mat4, vec4[4]/*float[16]*/)
 
-static map(unsigned, reflected_t) reflects;
-static map(unsigned, array(reflected_t)) members;
+static map(unsigned, reflect_t) reflects;
+static map(unsigned, array(reflect_t)) members;
 
-void reflected_printf(reflected_t *r) {
+void reflected_printf(reflect_t *r) {
     printf("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s",
         r->name ? r->name : "", r->info ? r->info : "", r->id, r->objtype, r->sz, r->addr, r->parent, r->type ? r->type : "");
 }
 void reflected_printf_all() {
-    for each_map_ptr(reflects, unsigned, k, reflected_t, p) {
+    for each_map_ptr(reflects, unsigned, k, reflect_t, p) {
         reflected_printf(p);
         puts("");
     }
@@ -12801,42 +12797,42 @@ void reflected_printf_all() {
 
 void type_inscribe(const char *TY,unsigned TYid,unsigned TYsz,const char *infos) {
     if(!reflects) map_init_int(reflects);
-    map_find_or_add(reflects, TYid, ((reflected_t){TYid, 0, TYsz, TY, infos}));
+    map_find_or_add(reflects, TYid, ((reflect_t){TYid, 0, TYsz, TY, infos}));
 }
 void enum_inscribe(const char *E,unsigned Eid,unsigned Eval,const char *infos) {
     if(!reflects) map_init_int(reflects);
-    map_find_or_add(reflects, Eid, ((reflected_t){Eid,0, Eval, E,infos}));
+    map_find_or_add(reflects, Eid, ((reflect_t){Eid,0, Eval, E,infos}));
 }
 unsigned enum_find(const char *E) {
     return map_find(reflects, intern(E))->sz;
 }
 void function_inscribe(const char *F,unsigned Fid,void *func,const char *infos) {
     if(!reflects) map_init_int(reflects);
-    map_find_or_add(reflects, Fid, ((reflected_t){Fid,0, 0, F,infos, func}));
-    reflected_t *found = map_find(reflects,Fid);
+    map_find_or_add(reflects, Fid, ((reflect_t){Fid,0, 0, F,infos, func}));
+    reflect_t *found = map_find(reflects,Fid);
 }
 void *function_find(const char *F) {
     return map_find(reflects, intern(F))->addr;
 }
 void struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,unsigned OBJTYPEid, const char *infos) {
     if(!reflects) map_init_int(reflects);
-    map_find_or_add(reflects, Tid, ((reflected_t){Tid, OBJTYPEid, Tsz, T, infos}));
+    map_find_or_add(reflects, Tid, ((reflect_t){Tid, OBJTYPEid, Tsz, T, infos}));
 }
 void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type) {
     if(!reflects) map_init_int(reflects);
-    map_find_or_add(reflects, (Mid<<16)|Tid, ((reflected_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
+    map_find_or_add(reflects, (Mid<<16)|Tid, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
     // add member separately as well
     if(!members) map_init_int(members);
-    array(reflected_t) *found = map_find_or_add(members, Tid, 0);
-    array_push(*found, ((reflected_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
+    array(reflect_t) *found = map_find_or_add(members, Tid, 0);
+    array_push(*found, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
 }
-reflected_t member_find(const char *T, const char *M) {
+reflect_t member_find(const char *T, const char *M) {
     return *map_find(reflects, (intern(M)<<16)|intern(T));
 }
 void *member_findptr(void *obj, const char *T, const char *M) {
     return (char*)obj + member_find(T,M).sz;
 }
-array(reflected_t) members_find(const char *T) {
+array(reflect_t) members_find(const char *T) {
     return *map_find(members, intern(T));
 }
 
@@ -15558,7 +15554,7 @@ skybox_t skybox(const char *asset, int flags) {
     // sky cubemap & SH
     if( asset ) {
         int is_panorama = vfs_size( asset );
-        if( is_panorama ) {
+        if( is_panorama ) { // is file
             stbi_hdr_to_ldr_gamma(1.2f);
             image_t panorama = image( asset, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
@@ -15575,7 +15571,7 @@ skybox_t skybox(const char *asset, int flags) {
             for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
         }
     } else {
-        // set up mie defaults
+        // set up mie defaults // @fixme: use shader params instead
         shader_bind(sky.program);
         shader_vec3("uSunPos", vec3( 0, 0.1, -1 ));
         shader_vec3("uRayOrigin", vec3(0.0, 6372000.0, 0.0));
@@ -16339,9 +16335,9 @@ int fx_load_from_mem(const char *nameid, const char *content) {
 }
 int fx_load(const char *filemask) {
     static set(char*) added = 0; do_once set_init_str(added);
-    for(const char **list = vfs_list(filemask); *list; list++) {
-        if( set_find(added, (char*)*list) ) continue;
-        char *name = STRDUP(*list); // @leak
+    for each_array( vfs_list(filemask), char*, list ) {
+        if( set_find(added, list) ) continue;
+        char *name = STRDUP(list); // @leak
         set_insert(added, name);
         (void)postfx_load_from_mem(&fx, file_name(name), vfs_read(name));
     }
@@ -16401,7 +16397,8 @@ static void brdf_load() {
     brdf = texture_compressed( filename,
         TEXTURE_CLAMP | TEXTURE_NEAREST | TEXTURE_RG | TEXTURE_FLOAT | TEXTURE_SRGB
     );
-    ASSERT(brdf.id != texture_checker().id, "!Couldn't load BRDF lookup table '%s'!", filename );
+    unsigned texchecker = texture_checker().id;
+    ASSERT(brdf.id != texchecker, "!Couldn't load BRDF lookup table '%s'!", filename );
 }
 
 texture_t brdf_lut() {
@@ -16569,8 +16566,9 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
             return s;
         }
 
-        float mx = input(MOUSE_X), my = input(MOUSE_Y);
-        if(input(MOUSE_L)) s->clickx = mx, s->clicky = my;
+        if(input_down(MOUSE_L) || input_down(MOUSE_R) ) s->mouse.z = input(MOUSE_X), s->mouse.w = -(window_height() - input(MOUSE_Y));
+        if(input(MOUSE_L) || input(MOUSE_R)) s->mouse.x = input(MOUSE_X), s->mouse.y = (window_height() - input(MOUSE_Y));
+        vec4 m = mul4(s->mouse, vec4(1,1,1-2*(!input(MOUSE_L) && !input(MOUSE_R)),1-2*(input_down(MOUSE_L) || input_down(MOUSE_R))));
 
         time_t tmsec = time(0);
         struct tm *tm = localtime(&tmsec);
@@ -16581,7 +16579,7 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
         glUniform1f(s->uniforms[iGlobalFrame], s->frame++);
         glUniform1f(s->uniforms[iGlobalDelta], delta / 1000.f );
         glUniform2f(s->uniforms[iResolution], s->dims.x ? s->dims.x : window_width(), s->dims.y ? s->dims.y : window_height());
-        if (!(s->flags&SHADERTOY_IGNORE_MOUSE)) glUniform4f(s->uniforms[iMouse], mx, my, s->clickx, s->clicky );
+        if (!(s->flags&SHADERTOY_IGNORE_MOUSE)) glUniform4f(s->uniforms[iMouse], m.x,m.y,m.z,m.w );
 
         glUniform1i(s->uniforms[iFrame], (int)window_frame());
         glUniform1f(s->uniforms[iTime], time_ss());
@@ -20117,13 +20115,13 @@ void tty_attach() {
     //   "following calls are the closest i'm aware you can get to /SUBSYSTEM:CONSOLE in a gui program 
     //   while cleanly handling existing consoles (cmd.exe), pipes (ninja) and no console (VS/RemedyBG; double-clicking the game)"
     do_once {
-        if( !AttachConsole(ATTACH_PARENT_PROCESS) && GetLastError() != ERROR_ACCESS_DENIED ) ASSERT( AllocConsole() );
+        if( !AttachConsole(ATTACH_PARENT_PROCESS) && GetLastError() != ERROR_ACCESS_DENIED ) { bool ok = !!AllocConsole(); ASSERT( ok ); }
         printf("\n"); // print >= 1 byte to distinguish empty stdout from a redirected stdout (fgetpos() position <= 0)
         fpos_t pos = 0;
         if( fgetpos(stdout, &pos) != 0 || pos <= 0 ) {
-            ASSERT(freopen("CONIN$" , "r", stdin ));
-            ASSERT(freopen("CONOUT$", "w", stderr));
-            ASSERT(freopen("CONOUT$", "w", stdout));
+            bool ok1 = !!freopen("CONIN$" , "r", stdin ); ASSERT( ok1 );
+            bool ok2 = !!freopen("CONOUT$", "w", stderr); ASSERT( ok2 );
+            bool ok3 = !!freopen("CONOUT$", "w", stdout); ASSERT( ok3 );
         }
     }
 #endif
@@ -20327,6 +20325,10 @@ void app_singleton(const char *guid) {
     }
     #endif
 }
+
+#ifdef APP_SINGLETON_GUID
+AUTORUN { app_singleton(APP_SINGLETON_GUID); }
+#endif
 
 static
 bool app_open_folder(const char *file) {
@@ -23728,7 +23730,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
         // display a progress bar meanwhile cook is working in the background
         // Sleep(500);
         if( !COOK_ON_DEMAND )
-        if( file_exist(COOK_INI) && cook_jobs() )
+        if( have_tools() && cook_jobs() )
         while( cook_progress() < 100 ) {
             for( int frames = 0; frames < 2/*10*/ && window_swap(); frames += cook_progress() >= 100 ) {
                 window_title(va("%s %.2d%%", cook_cancelling ? "Aborting" : "Cooking assets", cook_progress()));
@@ -23817,7 +23819,7 @@ char* window_stats() {
     prev_frame = now;
     ++num_frames;
 
-    return buf + 3 * (buf[0] == ' ');
+    return buf + strspn(buf, " ");
 }
 
 int window_frame_begin() {
@@ -23825,7 +23827,7 @@ int window_frame_begin() {
 
     // we cannot simply terminate threads on some OSes. also, aborted cook jobs could leave temporary files on disc.
     // so let's try to be polite: we will be disabling any window closing briefly until all cook is either done or canceled.
-    static bool has_cook; do_once has_cook = !COOK_ON_DEMAND && file_exist(COOK_INI) && cook_jobs();
+    static bool has_cook; do_once has_cook = !COOK_ON_DEMAND && have_tools() && cook_jobs();
     if( has_cook ) {
         has_cook = cook_progress() < 100;
         if( glfwWindowShouldClose(g->window) ) cook_cancel();
@@ -23838,28 +23840,23 @@ int window_frame_begin() {
 
     glNewFrame();
 
-#if !ENABLE_RETAIL
     ui_create();
 
-    bool may_render_stats = 1;
+#if !ENABLE_RETAIL
+    bool has_menu = 0; // ui_has_menubar();
+    bool may_render_debug_panel = 1;
 
-    int has_menu = ui_has_menubar();
-    if( !has_menu ) {
-        static int cook_on_demand; do_once cook_on_demand = COOK_ON_DEMAND;
-        if( !cook_on_demand ) {
+    if( have_tools() ) {
+        static int cook_has_progressbar; do_once cook_has_progressbar = !COOK_ON_DEMAND;
+        if( cook_has_progressbar) {
             // render profiler, unless we are in the cook progress screen
             static unsigned frames = 0; if(frames <= 0) frames += cook_progress() >= 100;
-            may_render_stats = (frames > 0);
+            may_render_debug_panel = (frames > 0);
         }
     }
 
-    // @transparent
-    static bool has_transparent_attrib = 0; ifndef(ems, do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
-    if( has_transparent_attrib ) may_render_stats = 0;
-    // @transparent
-
     // generate Debug panel contents
-    if( may_render_stats ) {
+    if( may_render_debug_panel ) {
         if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
 
             static int time_factor = 0;
@@ -25959,14 +25956,11 @@ static void v4k_pre_init() {
 
     int i;
     #pragma omp parallel for
-    for( i = 0; i <= 6; ++i) {
+    for( i = 0; i <= 3; ++i) {
         /**/ if( i == 0 ) ddraw_init();// init this on thread#0 since it will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         else if( i == 1 ) sprite_init();
         else if( i == 2 ) profiler_init();
         else if( i == 3 ) storage_mount("save/"), storage_read(), touch_init(); // for ems
-        else if( i == 4 ) audio_init(0);
-        else if( i == 5 ) script_init(), kit_init(), midi_init();
-        else if( i == 6 ) network_init();
     }
 
     // window_swap();
@@ -25981,11 +25975,14 @@ static void v4k_post_init(float refresh_rate) {
 
     int i;
     #pragma omp parallel for
-    for( i = 0; i <= 2; ++i ) {
-        if(i == 0) ui_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+    for( i = 0; i <= 3; ++i ) {
         if(i == 0) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
-        if(i == 0) window_icon(va("%s.png", app_name()));
-        if(i == 1) input_init();
+        if(i == 0) ui_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        if(i == 0) window_icon(va("%s.png", app_name())); // init on thread #0, because of glfw
+        if(i == 0) input_init(); // init on thread #0, because of glfw
+        if(i == 1) audio_init(0);
+        if(i == 2) script_init(), kit_init(), midi_init();
+        if(i == 3) network_init();
     }
 
     // display window
@@ -26036,7 +26033,7 @@ void v4k_init() {
         }
 
         // create or update cook.zip file
-        if( /* !COOK_ON_DEMAND && */ file_exist(COOK_INI) && cook_jobs() ) {
+        if( /* !COOK_ON_DEMAND && */ have_tools() && cook_jobs() ) {
             cook_start(COOK_INI, "**", 0|COOK_ASYNC|COOK_CANCELABLE );
         }
 

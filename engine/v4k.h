@@ -912,34 +912,6 @@ API int   (map_count)(map *m);
 API void  (map_gc)(map *m); // only if using MAP_DONT_ERASE
 API bool  (map_sort)(map* m);
 API void  (map_clear)(map* m);
-
-// -----------------------------------------------------------------------------
-// compile-time fourcc, eightcc
-
-API char *cc4str(unsigned cc);
-API char *cc8str(uint64_t cc);
-
-enum {
-#   define _(a,b,c,d,e) cc__##a, cc__##b, cc__##c, cc__##d, cc__##e
-    cc__1 = '1', _(2,3,4,5,6),_(7,8,9,0,_), cc__ = ' ',
-    cc__A = 'A', _(B,C,D,E,F),_(G,H,I,J,K),_(L,M,N,O,P),_(Q,R,S,T,U),_(V,W,X,Y,Z),
-    cc__a = 'a', _(b,c,d,e,f),_(g,h,i,j,k),_(l,m,n,o,p),_(q,r,s,t,u),_(v,w,x,y,z),
-#   undef _
-};
-
-#ifdef BIG
-#define cc4(a,b,c,d) ((uint32_t)(cc__##a<<24) | (cc__##b<<16) | (cc__##c<<8) | (cc__##d<<0))
-#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(a,b,c,d) << 32ULL) | cc4(e,f,g,h))
-#else
-#define cc4(a,b,c,d) ((uint32_t)(cc__##d<<24) | (cc__##c<<16) | (cc__##b<<8) | (cc__##a<<0))
-#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(e,f,g,h) << 32ULL) | cc4(a,b,c,d))
-#endif
-
-#define cc3(a,b,c) cc4(,a,b,c)
-#define cc5(a,b,c,d,e) cc6(,a,b,c,d,e)
-#define cc6(a,b,c,d,e,f) cc7(,a,b,c,d,e,f)
-#define cc7(a,b,c,d,e,f,g) cc8(,a,b,c,d,e,f,g)
-
 #line 0
 
 #line 1 "engine/split/v4k_math.h"
@@ -1284,21 +1256,6 @@ API void printq( quat q );
 API void print33( float *m );
 API void print34( float *m );
 API void print44( float *m );
-
-API vec2 atof2(const char *s);
-API vec3 atof3(const char *s);
-API vec4 atof4(const char *s);
-
-API char* ftoa(float f);
-API char* ftoa2(vec2 v);
-API char* ftoa3(vec3 v);
-API char* ftoa4(vec4 v);
-
-API void swapf(float *a, float *b);
-API void swapf2(vec2 *a, vec2 *b);
-API void swapf3(vec3 *a, vec3 *b);
-API void swapf4(vec4 *a, vec4 *b);
-
 #line 0
 
 #line 1 "engine/split/v4k_ai.h"
@@ -1732,6 +1689,8 @@ API void cook_cancel();
 API int  cook_jobs();     // [0..N]
 API int  cook_progress(); // [0..100]
 
+// utils
+API bool have_tools();
 #line 0
 
 #line 1 "engine/split/v4k_data.h"
@@ -1898,7 +1857,7 @@ API void         storage_flush();
 // virtual filesystem
 
 API bool         vfs_mount(const char *mount_point);
-API const char** vfs_list(const char *masks); // **.png;*.c
+API array(char*) vfs_list(const char *masks); // **.png;*.c
 
 API char *       vfs_read(const char *pathfile);
 API char *       vfs_load(const char *pathfile, int *size);
@@ -2055,6 +2014,45 @@ bool        id_valid(uintptr_t id);
 #line 0
 
 #line 1 "engine/split/v4k_pack.h"
+// -----------------------------------------------------------------------------
+// compile-time fourcc, eightcc
+
+API char *cc4str(unsigned cc);
+API char *cc8str(uint64_t cc);
+
+enum {
+#   define _(a,b,c,d,e) cc__##a, cc__##b, cc__##c, cc__##d, cc__##e
+    cc__1 = '1', _(2,3,4,5,6),_(7,8,9,0,_), cc__ = ' ',
+    cc__A = 'A', _(B,C,D,E,F),_(G,H,I,J,K),_(L,M,N,O,P),_(Q,R,S,T,U),_(V,W,X,Y,Z),
+    cc__a = 'a', _(b,c,d,e,f),_(g,h,i,j,k),_(l,m,n,o,p),_(q,r,s,t,u),_(v,w,x,y,z),
+#   undef _
+};
+
+#ifdef BIG
+#define cc4(a,b,c,d) ((uint32_t)(cc__##a<<24) | (cc__##b<<16) | (cc__##c<<8) | (cc__##d<<0))
+#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(a,b,c,d) << 32ULL) | cc4(e,f,g,h))
+#else
+#define cc4(a,b,c,d) ((uint32_t)(cc__##d<<24) | (cc__##c<<16) | (cc__##b<<8) | (cc__##a<<0))
+#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(e,f,g,h) << 32ULL) | cc4(a,b,c,d))
+#endif
+
+#define cc3(a,b,c) cc4(,a,b,c)
+#define cc5(a,b,c,d,e) cc6(,a,b,c,d,e)
+#define cc6(a,b,c,d,e,f) cc7(,a,b,c,d,e,f)
+#define cc7(a,b,c,d,e,f,g) cc8(,a,b,c,d,e,f,g)
+
+// ----------------------------------------------------------------------------
+// float conversion (text)
+
+API vec2 atof2(const char *s);
+API vec3 atof3(const char *s);
+API vec4 atof4(const char *s);
+
+API char* ftoa(float f);
+API char* ftoa2(vec2 v);
+API char* ftoa3(vec3 v);
+API char* ftoa4(vec4 v);
+
 // ----------------------------------------------------------------------------
 // endianness
 
@@ -2066,6 +2064,10 @@ API uint32_t swap32( uint32_t x );
 API uint64_t swap64( uint64_t x );
 API float    swap32f(float n);
 API double   swap64f(double n);
+API void        swapf(float *a, float *b);
+API void        swapf2(vec2 *a, vec2 *b);
+API void        swapf3(vec3 *a, vec3 *b);
+API void        swapf4(vec4 *a, vec4 *b);
 
 API uint16_t    lil16(uint16_t n); // swap16 as lil
 API uint32_t    lil32(uint32_t n); // swap32 as lil
@@ -2646,7 +2648,7 @@ extern API int profiler_enabled; ///-
 #define ifdef_objapi(T,...) __VA_ARGS__
 #endif
 
-typedef struct reflected_t {
+typedef struct reflect_t {
     unsigned id, objtype;
     unsigned sz;
     const char *name;
@@ -2654,7 +2656,7 @@ typedef struct reflected_t {
     void *addr;
     unsigned parent;
     const char *type;
-} reflected_t;
+} reflect_t;
 
 // inscribe api
 
@@ -2674,16 +2676,16 @@ typedef struct reflected_t {
 API unsigned           enum_find(const char *E);
 API void *             function_find(const char *F);
 
-API reflected_t        member_find(const char *T, const char *M); /// find specific member
+API reflect_t          member_find(const char *T, const char *M); /// find specific member
 API void *             member_findptr(void *obj, const char *T, const char *M);
-API array(reflected_t) members_find(const char *T);
+API array(reflect_t)   members_find(const char *T);
 
 // iterate members in a struct
 
 #define each_member(T,R) \
-    (array(reflected_t)*found_ = map_find(members, intern(T)); found_; found_ = 0) \
+    (array(reflect_t)*found_ = map_find(members, intern(T)); found_; found_ = 0) \
         for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
-            for(reflected_t *R = (*found_)+it_; R; R = 0 )
+            for(reflect_t *R = (*found_)+it_; R; R = 0 )
 
 // private api, still exposed
 
@@ -2693,7 +2695,7 @@ API void               struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,u
 API void               member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type);
 API void               function_inscribe(const char *F,unsigned Fid,void *func,const char *infos);
 
-API void               reflected_printf(reflected_t *r);
+API void               reflected_printf(reflect_t *r);
 API void               reflected_printf_all();
 #line 0
 
@@ -3235,11 +3237,11 @@ typedef struct shadertoy_t {
     int uniforms[32];
     int texture_channels[4];
     int frame;
-    float clickx, clicky;
     uint64_t t;
     texture_t tx;
     vec2i dims;
     int flags;
+    vec4 mouse;
 } shadertoy_t;
 
 API shadertoy_t  shadertoy( const char *shaderfile, unsigned flags );
