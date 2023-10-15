@@ -812,3 +812,8 @@ void cook_config( const char *pathfile_to_cook_ini ) { // @todo: test run-from-"
     COOK_INI = pathfile_to_cook_ini;
     ASSERT( file_exist(COOK_INI) );
 }
+
+bool have_tools() {
+    static bool found; do_once found = file_exist(COOK_INI);
+    return ifdef(retail, false, found);
+}

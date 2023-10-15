@@ -405,7 +405,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
         // display a progress bar meanwhile cook is working in the background
         // Sleep(500);
         if( !COOK_ON_DEMAND )
-        if( file_exist(COOK_INI) && cook_jobs() )
+        if( have_tools() && cook_jobs() )
         while( cook_progress() < 100 ) {
             for( int frames = 0; frames < 2/*10*/ && window_swap(); frames += cook_progress() >= 100 ) {
                 window_title(va("%s %.2d%%", cook_cancelling ? "Aborting" : "Cooking assets", cook_progress()));
@@ -494,7 +494,7 @@ char* window_stats() {
     prev_frame = now;
     ++num_frames;
 
-    return buf + 3 * (buf[0] == ' ');
+    return buf + strspn(buf, " ");
 }
 
 int window_frame_begin() {
@@ -502,7 +502,7 @@ int window_frame_begin() {
 
     // we cannot simply terminate threads on some OSes. also, aborted cook jobs could leave temporary files on disc.
     // so let's try to be polite: we will be disabling any window closing briefly until all cook is either done or canceled.
-    static bool has_cook; do_once has_cook = !COOK_ON_DEMAND && file_exist(COOK_INI) && cook_jobs();
+    static bool has_cook; do_once has_cook = !COOK_ON_DEMAND && have_tools() && cook_jobs();
     if( has_cook ) {
         has_cook = cook_progress() < 100;
         if( glfwWindowShouldClose(g->window) ) cook_cancel();
@@ -515,28 +515,23 @@ int window_frame_begin() {
 
     glNewFrame();
 
-#if !ENABLE_RETAIL
     ui_create();
 
-    bool may_render_stats = 1;
+#if !ENABLE_RETAIL
+    bool has_menu = 0; // ui_has_menubar();
+    bool may_render_debug_panel = 1;
 
-    int has_menu = ui_has_menubar();
-    if( !has_menu ) {
-        static int cook_on_demand; do_once cook_on_demand = COOK_ON_DEMAND;
-        if( !cook_on_demand ) {
+    if( have_tools() ) {
+        static int cook_has_progressbar; do_once cook_has_progressbar = !COOK_ON_DEMAND;
+        if( cook_has_progressbar) {
             // render profiler, unless we are in the cook progress screen
             static unsigned frames = 0; if(frames <= 0) frames += cook_progress() >= 100;
-            may_render_stats = (frames > 0);
+            may_render_debug_panel = (frames > 0);
         }
     }
 
-    // @transparent
-    static bool has_transparent_attrib = 0; ifndef(ems, do_once has_transparent_attrib = glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE);
-    if( has_transparent_attrib ) may_render_stats = 0;
-    // @transparent
-
     // generate Debug panel contents
-    if( may_render_stats ) {
+    if( may_render_debug_panel ) {
         if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
 
             static int time_factor = 0;

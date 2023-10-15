@@ -7,14 +7,11 @@ static void v4k_pre_init() {
 
     int i;
     #pragma omp parallel for
-    for( i = 0; i <= 6; ++i) {
+    for( i = 0; i <= 3; ++i) {
         /**/ if( i == 0 ) ddraw_init();// init this on thread#0 since it will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
         else if( i == 1 ) sprite_init();
         else if( i == 2 ) profiler_init();
         else if( i == 3 ) storage_mount("save/"), storage_read(), touch_init(); // for ems
-        else if( i == 4 ) audio_init(0);
-        else if( i == 5 ) script_init(), kit_init(), midi_init();
-        else if( i == 6 ) network_init();
     }
 
     // window_swap();
@@ -29,11 +26,14 @@ static void v4k_post_init(float refresh_rate) {
 
     int i;
     #pragma omp parallel for
-    for( i = 0; i <= 2; ++i ) {
-        if(i == 0) ui_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+    for( i = 0; i <= 3; ++i ) {
         if(i == 0) scene_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
-        if(i == 0) window_icon(va("%s.png", app_name()));
-        if(i == 1) input_init();
+        if(i == 0) ui_init(); // init these on thread #0, since both will be compiling shaders, and shaders need to be compiled from the very same thread than glfwMakeContextCurrent() was set up
+        if(i == 0) window_icon(va("%s.png", app_name())); // init on thread #0, because of glfw
+        if(i == 0) input_init(); // init on thread #0, because of glfw
+        if(i == 1) audio_init(0);
+        if(i == 2) script_init(), kit_init(), midi_init();
+        if(i == 3) network_init();
     }
 
     // display window
@@ -84,7 +84,7 @@ void v4k_init() {
         }
 
         // create or update cook.zip file
-        if( /* !COOK_ON_DEMAND && */ file_exist(COOK_INI) && cook_jobs() ) {
+        if( /* !COOK_ON_DEMAND && */ have_tools() && cook_jobs() ) {
             cook_start(COOK_INI, "**", 0|COOK_ASYNC|COOK_CANCELABLE );
         }
 

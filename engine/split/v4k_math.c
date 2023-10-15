@@ -9,54 +9,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-vec2 atof2(const char *s) {
-    vec2 v = {0};
-    sscanf(s, "%f,%f", &v.x, &v.y);
-    return v;
-}
-vec3 atof3(const char *s) {
-    vec3 v = {0};
-    sscanf(s, "%f,%f,%f", &v.x, &v.y, &v.z);
-    return v;
-}
-vec4 atof4(const char *s) {
-    vec4 v = {0};
-    sscanf(s, "%f,%f,%f,%f", &v.x, &v.y, &v.z, &v.w);
-    return v;
-}
-
-char* ftoa(float f) {
-    return va("%f", f);
-}
-char* ftoa2(vec2 v) {
-    return va("%f,%f", v.x, v.y);
-}
-char* ftoa3(vec3 v) {
-    return va("%f,%f,%f", v.x, v.y, v.z);
-}
-char* ftoa4(vec4 v) {
-    return va("%f,%f,%f,%f", v.x, v.y, v.z, v.w);
-}
-
-void swapf(float *a, float *b) {
-    float t = *a; *a = *b; *b = *a;
-}
-void swapf2(vec2 *a, vec2 *b) {
-    float x = a->x; a->x = b->x; b->x = a->x;
-    float y = a->y; a->y = b->y; b->y = a->y;
-}
-void swapf3(vec3 *a, vec3 *b) {
-    float x = a->x; a->x = b->x; b->x = a->x;
-    float y = a->y; a->y = b->y; b->y = a->y;
-    float z = a->z; a->z = b->z; b->z = a->z;
-}
-void swapf4(vec4 *a, vec4 *b) {
-    float x = a->x; a->x = b->x; b->x = a->x;
-    float y = a->y; a->y = b->y; b->y = a->y;
-    float z = a->z; a->z = b->z; b->z = a->z;
-    float w = a->w; a->w = b->w; b->w = a->w;
-}
-
 static uint64_t rand_xoro256(uint64_t x256_s[4]) { // xoshiro256+ 1.0 by David Blackman and Sebastiano Vigna (PD)
     const uint64_t result = x256_s[0] + x256_s[3];
     const uint64_t t = x256_s[1] << 17;

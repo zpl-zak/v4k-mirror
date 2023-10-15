@@ -62,7 +62,7 @@ API void         storage_flush();
 // virtual filesystem
 
 API bool         vfs_mount(const char *mount_point);
-API const char** vfs_list(const char *masks); // **.png;*.c
+API array(char*) vfs_list(const char *masks); // **.png;*.c
 
 API char *       vfs_read(const char *pathfile);
 API char *       vfs_load(const char *pathfile, int *size);

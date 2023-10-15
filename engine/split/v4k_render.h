@@ -535,11 +535,11 @@ typedef struct shadertoy_t {
     int uniforms[32];
     int texture_channels[4];
     int frame;
-    float clickx, clicky;
     uint64_t t;
     texture_t tx;
     vec2i dims;
     int flags;
+    vec4 mouse;
 } shadertoy_t;
 
 API shadertoy_t  shadertoy( const char *shaderfile, unsigned flags );

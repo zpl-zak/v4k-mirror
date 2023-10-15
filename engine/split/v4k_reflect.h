@@ -8,7 +8,7 @@
 #define ifdef_objapi(T,...) __VA_ARGS__
 #endif
 
-typedef struct reflected_t {
+typedef struct reflect_t {
     unsigned id, objtype;
     unsigned sz;
     const char *name;
@@ -16,7 +16,7 @@ typedef struct reflected_t {
     void *addr;
     unsigned parent;
     const char *type;
-} reflected_t;
+} reflect_t;
 
 // inscribe api
 
@@ -36,16 +36,16 @@ typedef struct reflected_t {
 API unsigned           enum_find(const char *E);
 API void *             function_find(const char *F);
 
-API reflected_t        member_find(const char *T, const char *M); /// find specific member
+API reflect_t          member_find(const char *T, const char *M); /// find specific member
 API void *             member_findptr(void *obj, const char *T, const char *M);
-API array(reflected_t) members_find(const char *T);
+API array(reflect_t)   members_find(const char *T);
 
 // iterate members in a struct
 
 #define each_member(T,R) \
-    (array(reflected_t)*found_ = map_find(members, intern(T)); found_; found_ = 0) \
+    (array(reflect_t)*found_ = map_find(members, intern(T)); found_; found_ = 0) \
         for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
-            for(reflected_t *R = (*found_)+it_; R; R = 0 )
+            for(reflect_t *R = (*found_)+it_; R; R = 0 )
 
 // private api, still exposed
 
@@ -55,5 +55,5 @@ API void               struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,u
 API void               member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type);
 API void               function_inscribe(const char *F,unsigned Fid,void *func,const char *infos);
 
-API void               reflected_printf(reflected_t *r);
+API void               reflected_printf(reflect_t *r);
 API void               reflected_printf_all();

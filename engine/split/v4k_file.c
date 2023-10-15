@@ -202,12 +202,12 @@ char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensio
     return va("%s", buffer);
 }
 array(char*) file_list(const char *pathmasks) {
-    static __thread array(char*) list = 0; // @fixme: should we add 16 slots in here similar to what we do in va() ?
+    static __thread array(char*) list = 0; // @fixme: add 16 slots
 
     for( int i = 0; i < array_count(list); ++i ) {
         FREE(list[i]);
     }
-    array_resize(list, 0);//array_free(list);
+    array_resize(list, 0);
 
     for each_substring(pathmasks,";",pathmask) {
         char *cwd = 0, *masks = 0;
@@ -246,6 +246,7 @@ array(char*) file_list(const char *pathmasks) {
     }
     }
 
+    array_sort(list, strcmp);
     return list;
 }
 
@@ -576,8 +577,8 @@ struct vfs_entry {
     const char *id;
     unsigned size;
 };
-array(struct vfs_entry) vfs_hints;   // mounted raw assets
-array(struct vfs_entry) vfs_entries; // mounted cooked assets
+static array(struct vfs_entry) vfs_hints;   // mounted raw assets
+static array(struct vfs_entry) vfs_entries; // mounted cooked assets
 
 static bool vfs_mount_hints(const char *path);
 static
@@ -694,13 +695,13 @@ bool vfs_mount_hints(const char *path) {
 bool vfs_mount(const char *path) {
     return vfs_mount_(path, &vfs_entries);
 }
-const char** vfs_list(const char *masks) {
-    static __thread array(char*) list = 0;
+array(char*) vfs_list(const char *masks) {
+    static __thread array(char*) list = 0; // @fixme: add 16 slots
 
     for( int i = 0; i < array_count(list); ++i ) {
         FREE(list[i]);
     }
-    array_free(list);
+    array_resize(list, 0);
 
     for each_substring(masks,";",it) {
         if( COOK_ON_DEMAND ) // edge case: any game using only vfs api + cook-on-demand flag will never find any file
@@ -726,8 +727,7 @@ const char** vfs_list(const char *masks) {
     array_sort(list, strcmp);
     array_unique(list, strcmp_qsort);
 
-    array_push(list, 0); // terminator
-    return (const char**)list;
+    return list;
 }
 
 static
@@ -912,8 +912,7 @@ if( found && *found == 0 ) {
     // yet another last resort: redirect vfs_load() calls to file_load()
     // (for environments without tools or cooked assets)
     if(!ptr) {
-        static bool have_tools; do_once have_tools = file_exist(COOK_INI);
-        if( !have_tools ) {
+        if( !have_tools() ) {
             ptr = file_load(pathfile, size_out);
         }
     }

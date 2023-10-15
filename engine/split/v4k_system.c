@@ -603,13 +603,13 @@ void tty_attach() {
     //   "following calls are the closest i'm aware you can get to /SUBSYSTEM:CONSOLE in a gui program 
     //   while cleanly handling existing consoles (cmd.exe), pipes (ninja) and no console (VS/RemedyBG; double-clicking the game)"
     do_once {
-        if( !AttachConsole(ATTACH_PARENT_PROCESS) && GetLastError() != ERROR_ACCESS_DENIED ) ASSERT( AllocConsole() );
+        if( !AttachConsole(ATTACH_PARENT_PROCESS) && GetLastError() != ERROR_ACCESS_DENIED ) { bool ok = !!AllocConsole(); ASSERT( ok ); }
         printf("\n"); // print >= 1 byte to distinguish empty stdout from a redirected stdout (fgetpos() position <= 0)
         fpos_t pos = 0;
         if( fgetpos(stdout, &pos) != 0 || pos <= 0 ) {
-            ASSERT(freopen("CONIN$" , "r", stdin ));
-            ASSERT(freopen("CONOUT$", "w", stderr));
-            ASSERT(freopen("CONOUT$", "w", stdout));
+            bool ok1 = !!freopen("CONIN$" , "r", stdin ); ASSERT( ok1 );
+            bool ok2 = !!freopen("CONOUT$", "w", stderr); ASSERT( ok2 );
+            bool ok3 = !!freopen("CONOUT$", "w", stdout); ASSERT( ok3 );
         }
     }
 #endif
@@ -813,6 +813,10 @@ void app_singleton(const char *guid) {
     }
     #endif
 }
+
+#ifdef APP_SINGLETON_GUID
+AUTORUN { app_singleton(APP_SINGLETON_GUID); }
+#endif
 
 static
 bool app_open_folder(const char *file) {

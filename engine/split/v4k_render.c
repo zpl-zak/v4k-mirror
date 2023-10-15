@@ -2665,7 +2665,7 @@ skybox_t skybox(const char *asset, int flags) {
     // sky cubemap & SH
     if( asset ) {
         int is_panorama = vfs_size( asset );
-        if( is_panorama ) {
+        if( is_panorama ) { // is file
             stbi_hdr_to_ldr_gamma(1.2f);
             image_t panorama = image( asset, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
@@ -2682,7 +2682,7 @@ skybox_t skybox(const char *asset, int flags) {
             for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
         }
     } else {
-        // set up mie defaults
+        // set up mie defaults // @fixme: use shader params instead
         shader_bind(sky.program);
         shader_vec3("uSunPos", vec3( 0, 0.1, -1 ));
         shader_vec3("uRayOrigin", vec3(0.0, 6372000.0, 0.0));
@@ -3446,9 +3446,9 @@ int fx_load_from_mem(const char *nameid, const char *content) {
 }
 int fx_load(const char *filemask) {
     static set(char*) added = 0; do_once set_init_str(added);
-    for(const char **list = vfs_list(filemask); *list; list++) {
-        if( set_find(added, (char*)*list) ) continue;
-        char *name = STRDUP(*list); // @leak
+    for each_array( vfs_list(filemask), char*, list ) {
+        if( set_find(added, list) ) continue;
+        char *name = STRDUP(list); // @leak
         set_insert(added, name);
         (void)postfx_load_from_mem(&fx, file_name(name), vfs_read(name));
     }
@@ -3508,7 +3508,8 @@ static void brdf_load() {
     brdf = texture_compressed( filename,
         TEXTURE_CLAMP | TEXTURE_NEAREST | TEXTURE_RG | TEXTURE_FLOAT | TEXTURE_SRGB
     );
-    ASSERT(brdf.id != texture_checker().id, "!Couldn't load BRDF lookup table '%s'!", filename );
+    unsigned texchecker = texture_checker().id;
+    ASSERT(brdf.id != texchecker, "!Couldn't load BRDF lookup table '%s'!", filename );
 }
 
 texture_t brdf_lut() {
@@ -3676,8 +3677,9 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
             return s;
         }
 
-        float mx = input(MOUSE_X), my = input(MOUSE_Y);
-        if(input(MOUSE_L)) s->clickx = mx, s->clicky = my;
+        if(input_down(MOUSE_L) || input_down(MOUSE_R) ) s->mouse.z = input(MOUSE_X), s->mouse.w = -(window_height() - input(MOUSE_Y));
+        if(input(MOUSE_L) || input(MOUSE_R)) s->mouse.x = input(MOUSE_X), s->mouse.y = (window_height() - input(MOUSE_Y));
+        vec4 m = mul4(s->mouse, vec4(1,1,1-2*(!input(MOUSE_L) && !input(MOUSE_R)),1-2*(input_down(MOUSE_L) || input_down(MOUSE_R))));
 
         time_t tmsec = time(0);
         struct tm *tm = localtime(&tmsec);
@@ -3688,7 +3690,7 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
         glUniform1f(s->uniforms[iGlobalFrame], s->frame++);
         glUniform1f(s->uniforms[iGlobalDelta], delta / 1000.f );
         glUniform2f(s->uniforms[iResolution], s->dims.x ? s->dims.x : window_width(), s->dims.y ? s->dims.y : window_height());
-        if (!(s->flags&SHADERTOY_IGNORE_MOUSE)) glUniform4f(s->uniforms[iMouse], mx, my, s->clickx, s->clicky );
+        if (!(s->flags&SHADERTOY_IGNORE_MOUSE)) glUniform4f(s->uniforms[iMouse], m.x,m.y,m.z,m.w );
 
         glUniform1i(s->uniforms[iFrame], (int)window_frame());
         glUniform1f(s->uniforms[iTime], time_ss());

@@ -339,18 +339,3 @@ API void printq( quat q );
 API void print33( float *m );
 API void print34( float *m );
 API void print44( float *m );
-
-API vec2 atof2(const char *s);
-API vec3 atof3(const char *s);
-API vec4 atof4(const char *s);
-
-API char* ftoa(float f);
-API char* ftoa2(vec2 v);
-API char* ftoa3(vec3 v);
-API char* ftoa4(vec4 v);
-
-API void swapf(float *a, float *b);
-API void swapf2(vec2 *a, vec2 *b);
-API void swapf3(vec3 *a, vec3 *b);
-API void swapf4(vec4 *a, vec4 *b);
-

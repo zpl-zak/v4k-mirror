@@ -1,14 +1,64 @@
+// -----------------------------------------------------------------------------
+// compile-time fourcc, eightcc
+
+char *cc4str(unsigned x) {
+    static __thread char type[4+1] = {0};
+    type[3] = (x >> 24ULL) & 255;
+    type[2] = (x >> 16ULL) & 255;
+    type[1] = (x >>  8ULL) & 255;
+    type[0] = (x >>  0ULL) & 255;
+    return type;
+}
+char *cc8str(uint64_t x) {
+    static __thread char type[8+1] = {0};
+    type[7] = (x >> 56ULL) & 255;
+    type[6] = (x >> 48ULL) & 255;
+    type[5] = (x >> 40ULL) & 255;
+    type[4] = (x >> 32ULL) & 255;
+    type[3] = (x >> 24ULL) & 255;
+    type[2] = (x >> 16ULL) & 255;
+    type[1] = (x >>  8ULL) & 255;
+    type[0] = (x >>  0ULL) & 255;
+    return type;
+}
+
+// ----------------------------------------------------------------------------
+// float conversion (text)
+
+vec2 atof2(const char *s) {
+    vec2 v = {0};
+    sscanf(s, "%f,%f", &v.x, &v.y);
+    return v;
+}
+vec3 atof3(const char *s) {
+    vec3 v = {0};
+    sscanf(s, "%f,%f,%f", &v.x, &v.y, &v.z);
+    return v;
+}
+vec4 atof4(const char *s) {
+    vec4 v = {0};
+    sscanf(s, "%f,%f,%f,%f", &v.x, &v.y, &v.z, &v.w);
+    return v;
+}
+
+char* ftoa(float f) {
+    return va("%f", f);
+}
+char* ftoa2(vec2 v) {
+    return va("%f,%f", v.x, v.y);
+}
+char* ftoa3(vec3 v) {
+    return va("%f,%f,%f", v.x, v.y, v.z);
+}
+char* ftoa4(vec4 v) {
+    return va("%f,%f,%f,%f", v.x, v.y, v.z, v.w);
+}
+
 // endianness -----------------------------------------------------------------
 // - rlyeh, public domain
 
-#if !is(cl) && !is(gcc)
-uint16_t (swap16)( uint16_t x ) { return (x << 8) | (x >> 8); }
-uint32_t (swap32)( uint32_t x ) { x = ((x << 8) & 0xff00ff00) | ((x >> 8) & 0x00ff00ff); return (x << 16) | (x >> 16); }
-uint64_t (swap64)( uint64_t x ) { x = ((x <<  8) & 0xff00ff00ff00ff00ULL) | ((x >>  8) & 0x00ff00ff00ff00ffULL); x = ((x << 16) & 0xffff0000ffff0000ULL) | ((x >> 16) & 0x0000ffff0000ffffULL); return (x << 32) | (x >> 32); }
-#endif
-
-float    swap32f(float n)  { union { float  t; uint32_t i; } conv; conv.t = n; conv.i = swap32(conv.i); return conv.t; }
-double   swap64f(double n) { union { double t; uint64_t i; } conv; conv.t = n; conv.i = swap64(conv.i); return conv.t; }
+int is_big() { return IS_BIG; }
+int is_little() { return IS_LITTLE; }
 
 uint16_t  lil16(uint16_t n) { return IS_BIG     ? swap16(n) : n; }
 uint32_t  lil32(uint32_t n) { return IS_BIG     ? swap32(n) : n; }
@@ -34,8 +84,33 @@ float   * big32pf(void *p, int sz) { if(IS_LITTLE ) { float    *n = (float    *)
 double  * lil64pf(void *p, int sz) { if(IS_BIG    ) { double   *n = (double   *)p; for(int i = 0; i < sz; ++i) n[i] = swap64f(n[i]); } return p; }
 double  * big64pf(void *p, int sz) { if(IS_LITTLE ) { double   *n = (double   *)p; for(int i = 0; i < sz; ++i) n[i] = swap64f(n[i]); } return p; }
 
-int is_big() { return IS_BIG; }
-int is_little() { return IS_LITTLE; }
+#if !is(cl) && !is(gcc)
+uint16_t (swap16)( uint16_t x ) { return (x << 8) | (x >> 8); }
+uint32_t (swap32)( uint32_t x ) { x = ((x << 8) & 0xff00ff00) | ((x >> 8) & 0x00ff00ff); return (x << 16) | (x >> 16); }
+uint64_t (swap64)( uint64_t x ) { x = ((x <<  8) & 0xff00ff00ff00ff00ULL) | ((x >>  8) & 0x00ff00ff00ff00ffULL); x = ((x << 16) & 0xffff0000ffff0000ULL) | ((x >> 16) & 0x0000ffff0000ffffULL); return (x << 32) | (x >> 32); }
+#endif
+
+float    swap32f(float n)  { union { float  t; uint32_t i; } conv; conv.t = n; conv.i = swap32(conv.i); return conv.t; }
+double   swap64f(double n) { union { double t; uint64_t i; } conv; conv.t = n; conv.i = swap64(conv.i); return conv.t; }
+
+void swapf(float *a, float *b) {
+    float t = *a; *a = *b; *b = *a;
+}
+void swapf2(vec2 *a, vec2 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+}
+void swapf3(vec3 *a, vec3 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+    float z = a->z; a->z = b->z; b->z = a->z;
+}
+void swapf4(vec4 *a, vec4 *b) {
+    float x = a->x; a->x = b->x; b->x = a->x;
+    float y = a->y; a->y = b->y; b->y = a->y;
+    float z = a->z; a->z = b->z; b->z = a->z;
+    float w = a->w; a->w = b->w; b->w = a->w;
+}
 
 // half packing -----------------------------------------------------------------
 // from GingerBill's gbmath.h (public domain)
