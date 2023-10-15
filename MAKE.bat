@@ -454,6 +454,7 @@ set run=no
     if "%1"=="dbg"      set "build=%1" && goto loop
     if "%1"=="dev"      set "build=%1" && goto loop
     if "%1"=="rel"      set "build=%1" && goto loop
+    if "%1"=="ret"      set "build=%1" && goto loop
 
     if "%1"=="debug"       set "build=dbg" && goto loop
     if "%1"=="devel"       set "build=dev" && goto loop
@@ -558,14 +559,18 @@ if "!cc!"=="cl" (
         set import=/DAPI=IMPORT v4k.lib
     )
 
+    if "!build!"=="ret" (
+        set args=-DENABLE_RETAIL -Dmain=WinMain !args!
+        set args=/nologo /Zi /MT /openmp /DNDEBUG=3 !args!        /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
+    )
     if "!build!"=="rel" (
         set args=/nologo /Zi /MT /openmp /DNDEBUG=2 !args!        /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
     )
     if "!build!"=="dev" (
-        set args=/nologo /Zi /MT /openmp /DNDEBUG   !args! && REM /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2
+        set args=/nologo /Zi /MT /openmp /DNDEBUG=1 !args!        && REM /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2
     )
     if "!build!"=="dbg" (
-        set args=/nologo /Zi /MT         /DEBUG   !args!        /Od  /fsanitize=address               
+        set args=/nologo /Zi /MT         /DEBUG   !args!          /Od  /fsanitize=address
         rem make -- /RTC1, or make -- /Zi /fsanitize=address /DEBUG
     )
 
@@ -582,18 +587,22 @@ if "!cc!"=="cl" (
         set import=/DAPI=IMPORT v4k.lib
     )
 
-    set warnings_v4kc=-Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare
+    set warnings_fwkc=-Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare
     set warnings_demos=-Wno-empty-body -Wno-format-security -Wno-pointer-sign
-    set warnings=!warnings_v4kc! !warnings_demos!
+    set warnings=!warnings_fwkc! !warnings_demos!
 
+    if "!build!"=="ret" (
+        set args=-DENABLE_RETAIL -Dmain=WinMain !args!
+        set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG=3 !args!        /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
+    )
     if "!build!"=="rel" (
         set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG=2 !args!        /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
     )
     if "!build!"=="dev" (
-        set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG   !args! && REM /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
+        set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG=1 !args!        && REM /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
     )
     if "!build!"=="dbg" (
-        set args=!warnings! /nologo /Zi /MT         /DEBUG   !args!        /Od  /fsanitize=address
+        set args=!warnings! /nologo /Zi /MT         /DEBUG     !args!        /Od  /fsanitize=address
     )
 
     set o=-o
@@ -609,14 +618,18 @@ if "!cc!"=="cl" (
         set import=-DAPI=IMPORT v4k.def
     )
 
+    if "!build!"=="ret" (
+        set args=-DENABLE_RETAIL -Dmain=WinMain !args!
+        set args=-O3 -DNDEBUG=3    !args!
+    )
     if "!build!"=="rel" (
-        set args=-O3 -DNDEBUG=2 !args!
+        set args=-O2 -DNDEBUG=2    !args!
     )
     if "!build!"=="dev" (
-        set args=-O2 -g -DNDEBUG !args!
+        set args=-O1 -DNDEBUG=1 -g !args!
     )
     if "!build!"=="dbg" (
-        set args=-O0 -g !args!
+        set args=-O0            -g !args!
     )
 
     set o=-o
@@ -628,23 +641,27 @@ if "!cc!"=="cl" (
 
     if "!dll!"=="static" (
         set export=-c
-        set import=v4k.o !libs! -Wl,--allow-multiple-definition
+        set import=v4k.o -Wl,--allow-multiple-definition
     ) else (
-        set export=-DAPI=EXPORT -shared -o v4k.dll !libs! -Wl,--out-implib,v4k.a
+        set export=-DAPI=EXPORT -shared -o v4k.dll -Wl,--out-implib,v4k.a
         set import=-DAPI=IMPORT v4k.a
     )
 
-    set args=-Wno-implicit-function-declaration !args!
+    set args=-Wno-implicit-function-declaration !libs! !args!
 
+    if "!build!"=="ret" (
+        set args=-DENABLE_RETAIL   !args!
+        set args=-O3 -DNDEBUG=3    !args!
+    )
     if "!build!"=="rel" (
         rem @todo see: https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
-        set args=-O3 -DNDEBUG=2 !args!
+        set args=-O2 -DNDEBUG=2    !args!
     )
     if "!build!"=="dev" (
-        set args=-g -O1 -DNDEBUG !args!
+        set args=-O1 -DNDEBUG=1 -g !args!
     )
     if "!build!"=="dbg" (
-        set args=-g -O0 !args!
+        set args=-O0            -g !args!
     )
 
     set o=-o
