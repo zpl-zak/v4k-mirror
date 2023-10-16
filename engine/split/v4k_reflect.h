@@ -4,8 +4,8 @@
 // @todo: nested structs? pointers in members?
 // @todo: declare TYPEDEF(vec3, float[3]), TYPEDEF(mat4, vec4[4]/*float[16]*/)
 
-#ifndef ifdef_objapi
-#define ifdef_objapi(T,...) __VA_ARGS__
+#ifndef OBJTYPE
+#define OBJTYPE(T) 0
 #endif
 
 typedef struct reflect_t {
@@ -27,7 +27,7 @@ typedef struct reflect_t {
     function_inscribe(#F,intern(#F),(void*)F, function_annotations)
 
 #define STRUCT(T, type, member, member_annotations) \
-    struct_inscribe(#T,intern(#T),sizeof(T),ifdef(objapi,OBJTYPE_##T,0),NULL), \
+    struct_inscribe(#T,intern(#T),sizeof(T),OBJTYPE(T),NULL), \
     type_inscribe(#type,intern(#type),sizeof(((T){0}).member),member_annotations), \
     member_inscribe(intern(#T), #member,intern(#member),(uintptr_t)&((T*)0)->member, member_annotations, #type )
 
@@ -55,5 +55,6 @@ API void               struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,u
 API void               member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type);
 API void               function_inscribe(const char *F,unsigned Fid,void *func,const char *infos);
 
-API void               reflected_printf(reflect_t *r);
-API void               reflected_printf_all();
+API void               reflect_print(const char *symbol);
+API void               reflect_dump(const char *mask);
+API void               reflect_init();

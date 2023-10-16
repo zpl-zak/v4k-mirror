@@ -308,6 +308,22 @@ extern "C" {
 #define EXPAND_ARGS(args)          EXPAND_RETURN_COUNT args ///-
 #define EXPAND_RETURN_COUNT(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, count, ...) count ///-
 
+// expands to the first argument
+#define VA_FIRST(...) VA_F1RST(__VA_ARGS__, throwaway)
+#define VA_F1RST(first, ...) first ///-
+// if there's only one argument, expands to nothing.  if there is more
+// than one argument, expands to a comma followed by everything but
+// the first argument.  only supports up to 9 arguments but can be expanded.
+#define VA_REST(...) VA_R3ST(VA_NUM(__VA_ARGS__), __VA_ARGS__)
+#define VA_R3ST(qty, ...) VA_R3S7(qty, __VA_ARGS__) ///-
+#define VA_R3S7(qty, ...) VA_R3S7_##qty(__VA_ARGS__) ///-
+#define VA_R3S7_ONE(first) ///-
+#define VA_R3S7_TWOORMORE(first, ...) , __VA_ARGS__ ///-
+#define VA_NUM(...) VA_SELECT_10TH(__VA_ARGS__, TWOORMORE, TWOORMORE, TWOORMORE, TWOORMORE, TWOORMORE, TWOORMORE, TWOORMORE, TWOORMORE, ONE, throwaway) ///-
+#define VA_SELECT_10TH(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, ...) A10
+// VA_SPLIT() expands to A) 1 item OR B) 1 item + ',' + va_args[1..N]
+#define VA_SPLIT(...) VA_FIRST(__VA_ARGS__) VA_REST(__VA_ARGS__)
+
 #if is(cl) && !is(cpp)
 #define INLINE __inline
 #else
@@ -332,6 +348,21 @@ extern "C" {
 // typedef union vec2 { float X,Y; }; vec2 a = {0,1}, b = vec2(0,1);
 #define C_CAST(type, ...)  ( ifdef(c,(type),type) { __VA_ARGS__ } )
 
+// create a WARNING(...) macro
+// usage: WARNING("this is displayed at compile time")
+#if is(gcc)
+#   define WARNING(msg) WARN1NG( message( msg ) )
+#   define WARN1NG(msg) _Pragma(#msg)
+#elif is(cl)
+#   define WARNING(msg) __pragma( message( msg ) )
+#else
+#   define WARNING(msg)
+#endif
+
+// document todos and fixmes via compiler warnings
+#define TODO(str)  ifdef(debug,WARNING("TO DO: " str " (" FILELINE ")"))
+#define FIXME(str) ifdef(debug,WARNING("FIXME: " str " (" FILELINE ")"))
+
 // -----------------------------------------------------------------------------
 // autorun initializers for C
 // - rlyeh, public domain
@@ -340,29 +371,25 @@ extern "C" {
 // note: XIU for C initializers, XCU for C++ initializers, XTU for C deinitializers
 
 #ifdef __cplusplus
-#define AUTORUN \
-    static void AUTORUN_U(f)(void); \
-    static const int AUTORUN_J(AUTORUN_U(f),__1) = (AUTORUN_U(f)(), 1); \
-    static void AUTORUN_U(f)(void)
+#define AUTORUN_(fn) \
+    static void fn(void); \
+    static const int concat(fn,__1) = (fn(), 1); \
+    static void fn(void)
 #elif defined _MSC_VER && !defined(__clang__) // cl, but not clang-cl
-#define AUTORUN \
-    static void AUTORUN_U(f)(void); \
-    static int AUTORUN_J(AUTORUN_U(f),__1) (){ AUTORUN_U(f)(); return 0; } \
+#define AUTORUN_(fn) \
+    static void fn(void); \
+    static int concat(fn,__1) (){ fn(); return 0; } \
     __pragma(section(".CRT$XIU", long, read)) \
     __declspec(allocate(".CRT$XIU")) \
-    static int(* AUTORUN_J(AUTORUN_U(f),__2) )() = AUTORUN_J(AUTORUN_U(f),__1); \
-    static void AUTORUN_U(f)(void)
+    static int(* concat(fn,__2) )() = concat(fn,__1); \
+    static void fn(void)
 #else // gcc,tcc,clang,clang-cl...
-#define AUTORUN \
+#define AUTORUN_(fn) \
     __attribute__((constructor)) \
-    static void AUTORUN_U(f)(void)
+    static void fn(void)
 #endif
 
-// join + unique macro utils
-
-#define AUTORUN_j(a, b) a##b
-#define AUTORUN_J(a, b) AUTORUN_j(a, b)
-#define AUTORUN_U(x)    AUTORUN_J(x, __LINE__)
+#define AUTORUN AUTORUN_( concat(concat(concat(fn_L,__LINE__),_),__COUNTER__) )
 
 #if 0 // autorun demo
 void byebye(void) { puts("seen after main()"); }
@@ -2644,8 +2671,8 @@ extern API int profiler_enabled; ///-
 // @todo: nested structs? pointers in members?
 // @todo: declare TYPEDEF(vec3, float[3]), TYPEDEF(mat4, vec4[4]/*float[16]*/)
 
-#ifndef ifdef_objapi
-#define ifdef_objapi(T,...) __VA_ARGS__
+#ifndef OBJTYPE
+#define OBJTYPE(T) 0
 #endif
 
 typedef struct reflect_t {
@@ -2667,7 +2694,7 @@ typedef struct reflect_t {
     function_inscribe(#F,intern(#F),(void*)F, function_annotations)
 
 #define STRUCT(T, type, member, member_annotations) \
-    struct_inscribe(#T,intern(#T),sizeof(T),ifdef(objapi,OBJTYPE_##T,0),NULL), \
+    struct_inscribe(#T,intern(#T),sizeof(T),OBJTYPE(T),NULL), \
     type_inscribe(#type,intern(#type),sizeof(((T){0}).member),member_annotations), \
     member_inscribe(intern(#T), #member,intern(#member),(uintptr_t)&((T*)0)->member, member_annotations, #type )
 
@@ -2695,8 +2722,9 @@ API void               struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,u
 API void               member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type);
 API void               function_inscribe(const char *F,unsigned Fid,void *func,const char *infos);
 
-API void               reflected_printf(reflect_t *r);
-API void               reflected_printf_all();
+API void               reflect_print(const char *symbol);
+API void               reflect_dump(const char *mask);
+API void               reflect_init();
 #line 0
 
 #line 1 "engine/split/v4k_render.h"

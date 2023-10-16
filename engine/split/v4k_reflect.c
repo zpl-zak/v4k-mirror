@@ -7,42 +7,40 @@
 static map(unsigned, reflect_t) reflects;
 static map(unsigned, array(reflect_t)) members;
 
-void reflected_printf(reflect_t *r) {
-    printf("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s",
-        r->name ? r->name : "", r->info ? r->info : "", r->id, r->objtype, r->sz, r->addr, r->parent, r->type ? r->type : "");
-}
-void reflected_printf_all() {
-    for each_map_ptr(reflects, unsigned, k, reflect_t, p) {
-        reflected_printf(p);
-        puts("");
+void reflect_init() {
+    if(!reflects) map_init_int(reflects);
     }
+AUTORUN {
+    reflect_init();
 }
 
 void type_inscribe(const char *TY,unsigned TYid,unsigned TYsz,const char *infos) {
-    if(!reflects) map_init_int(reflects);
+    reflect_init();
     map_find_or_add(reflects, TYid, ((reflect_t){TYid, 0, TYsz, TY, infos}));
 }
 void enum_inscribe(const char *E,unsigned Eid,unsigned Eval,const char *infos) {
-    if(!reflects) map_init_int(reflects);
+    reflect_init();
     map_find_or_add(reflects, Eid, ((reflect_t){Eid,0, Eval, E,infos}));
 }
 unsigned enum_find(const char *E) {
+    reflect_init();
     return map_find(reflects, intern(E))->sz;
 }
 void function_inscribe(const char *F,unsigned Fid,void *func,const char *infos) {
-    if(!reflects) map_init_int(reflects);
+    reflect_init();
     map_find_or_add(reflects, Fid, ((reflect_t){Fid,0, 0, F,infos, func}));
     reflect_t *found = map_find(reflects,Fid);
 }
 void *function_find(const char *F) {
+    reflect_init();
     return map_find(reflects, intern(F))->addr;
 }
 void struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,unsigned OBJTYPEid, const char *infos) {
-    if(!reflects) map_init_int(reflects);
+    reflect_init();
     map_find_or_add(reflects, Tid, ((reflect_t){Tid, OBJTYPEid, Tsz, T, infos}));
 }
 void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type) {
-    if(!reflects) map_init_int(reflects);
+    reflect_init();
     map_find_or_add(reflects, (Mid<<16)|Tid, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
     // add member separately as well
     if(!members) map_init_int(members);
@@ -50,13 +48,50 @@ void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, cons
     array_push(*found, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
 }
 reflect_t member_find(const char *T, const char *M) {
+    reflect_init();
     return *map_find(reflects, (intern(M)<<16)|intern(T));
 }
 void *member_findptr(void *obj, const char *T, const char *M) {
+    reflect_init();
     return (char*)obj + member_find(T,M).sz;
 }
 array(reflect_t) members_find(const char *T) {
+    reflect_init();
     return *map_find(members, intern(T));
+}
+
+
+void reflect_dump(const char *mask) {
+    for each_map_ptr(reflects, unsigned, k, reflect_t, R) {
+        if( strmatchi(R->name, mask))
+        printf("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s\n",
+            R->name ? R->name : "", R->info ? R->info : "", R->id, R->objtype, R->sz, R->addr, R->parent, R->type ? R->type : "");
+    }
+}
+
+void reflect_print_(const reflect_t *R) {
+    static __thread int tabs = 0;
+    printf("%*.s", 4 * (tabs++), "");
+    unsigned symbol_q = intern(R->name);
+    {
+        array(reflect_t) *RR = map_find(members, symbol_q);
+        /**/ if( RR ) {       printf("struct %s: %s%s\n", R->name, R->info ? "// ":"", R->info ? R->info : ""); for each_array_ptr(*RR, reflect_t, it) reflect_print_(it); }
+        else if( R->addr )    printf("func %s(); %s%s\n", R->name, R->info ? "// ":"", R->info ? R->info : "");
+        else if( !R->parent ) printf("enum %s = %d; %s%s\n", R->name, R->sz, R->info ? "// ":"", R->info ? R->info : "");
+        else                  printf("%s %s; %s%s\n", R->type, R->name, R->info ? "// ":"", R->info ? R->info : "");
+/*
+        ifdef(debug,
+            printf("%.*sname:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s\n",
+                tabs, "", R->name ? R->name : "", R->info ? R->info : "", R->id, R->objtype, R->sz, R->addr, R->parent, R->type ? R->type : "");
+        );
+*/
+    }
+    --tabs;
+}
+
+void reflect_print(const char *symbol) {
+    reflect_t *found = map_find(reflects, intern(symbol));
+    if( found ) reflect_print_(found);
 }
 
 // -- tests
@@ -72,7 +107,7 @@ typedef struct MyVec4 {
     float x,y,z,w;
 } MyVec4;
 
-ifdef(objapi, enum { OBJTYPE_MyVec4 = 0x100 });
+enum { OBJTYPE_MyVec4 = 0x01 };
 
 AUTOTEST {
     // register structs, enums and functions
@@ -105,5 +140,9 @@ AUTOTEST {
         // printf("+%s MyVec4.%s // %s\n", R->type, R->name, R->info);
     }
 
-    // reflected_printf_all();
+    // reflect_print("puts");
+    // reflect_print("MYVALUE0");
+    // reflect_print("MyVec4");
+
+    // reflect_dump("*");
 }

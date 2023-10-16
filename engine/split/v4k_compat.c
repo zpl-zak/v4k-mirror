@@ -31,9 +31,9 @@ const struct in6_addr in6addr_loopback;   /* ::1 */
 #define chdir         ifdef(cl, _chdir, chdir)
 #if is(cl) || is(tcc)
 #define ftruncate     _chsize_s
-#define flockfile     ifdef(cl,_lock_file,(void))
-#define funlockfile   ifdef(cl,_unlock_file,(void))
 #endif
+#define flockfile     ifdef(cl,_lock_file,ifdef(mingw,_lock_file,(void)))
+#define funlockfile   ifdef(cl,_unlock_file,ifdef(mingw,_unlock_file,(void)))
 #else // gcc
 //#include <alloca.h> // mingw64 does not have it
 #include <strings.h> // strncasecmp
