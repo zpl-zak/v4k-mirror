@@ -271,6 +271,8 @@ void glNewFrame() {
 }
 
 bool window_create_from_handle(void *handle, float scale, unsigned flags) {
+    ifdef(debug, if( flag("--tests") ) exit(0));
+
     glfw_init();
     v4k_init();
     if(!t) t = glfwGetTime();

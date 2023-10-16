@@ -773,7 +773,7 @@ int msgpack(const char *fmt, ... ) {
     va_end(vl);
     return count;
 }
-bool msgunpack(const char *fmt, ... ) {
+int msgunpack(const char *fmt, ... ) {
     int count = 0;
     va_list vl;
     va_start(vl, fmt);
@@ -788,7 +788,7 @@ bool msgunpack(const char *fmt, ... ) {
 //          break; case 'b': { bool *v = !!va_arg(vl, bool*); count += msgunpack_chr(v); }
 //          break; case 'e': { uint8_t k = va_arg(vl, uint64_t); void *v = va_arg(vl, void*); size_t l = va_arg(vl, uint64_t); count += msgunpack_ext( k, v, l ); }
 //          break; case 'n': { count += msgunpack_nil(); }
-//          break; case 'p': { void *p = va_arg(vl, void*); size_t l = va_arg(vl, uint64_t); count += msgunpack_bin( p, l ); }
+            break; case 'p': { void *p = va_arg(vl, void*); uint64_t l = va_arg(vl, uint64_t); count += msgunpack_bin( p, &l ); }
 //          break; case 'u': { uint64_t v = va_arg(vl, uint64_t); count += msgunpack_uns(v); }
 //          break; case 'd': case 'i': { int64_t v = va_arg(vl, int64_t); count += msgunpack_int(v); }
             default: /*count = 0;*/ break;

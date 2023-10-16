@@ -171,7 +171,8 @@
 #define macro(name)      concat(name, __LINE__)
 #define defer(begin,end) for(int macro(i) = ((begin), 0); !macro(i); macro(i) = ((end), 1))
 #define scope(end)       defer((void)0, end)
-#define benchmark        for(double macro(i) = 1, macro(t) = -time_ss(); macro(i); macro(t)+=time_ss(), macro(i)=0, printf("%.4fs %2.f%% (" FILELINE ")\n", macro(t), macro(t)*100/0.0166667 ))
+#define benchmark        for(double macro(i) = 1, macro(t) = (time_ss(),-time_ss()); macro(i); macro(t)+=time_ss(), macro(i)=0, printf("%.4fs %2.f%% (" FILELINE ")\n", macro(t), macro(t)*100/0.0166667 ))
+#define benchmark_ms     for(double macro(i) = 1, macro(t) = (time_ss(),-time_ss()); macro(i); macro(t)+=time_ss(), macro(i)=0, printf("%.2fms %2.f%% (" FILELINE ")\n", macro(t)*1000, macro(t)*100/0.016666667 ))
 #define do_once          static int macro(once) = 0; for(;!macro(once);macro(once)=1)
 
 #if is(cl)
@@ -287,7 +288,7 @@
     static void fn(void)
 #else // gcc,tcc,clang,clang-cl...
 #define AUTORUN_(fn) \
-    __attribute__((constructor)) \
+    __attribute__((constructor(__COUNTER__+101))) \
     static void fn(void)
 #endif
 

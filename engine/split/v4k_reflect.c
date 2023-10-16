@@ -39,13 +39,13 @@ void struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,unsigned OBJTYPEid,
     reflect_init();
     map_find_or_add(reflects, Tid, ((reflect_t){Tid, OBJTYPEid, Tsz, T, infos}));
 }
-void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type) {
+void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type, unsigned bytes) {
     reflect_init();
     map_find_or_add(reflects, (Mid<<16)|Tid, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
     // add member separately as well
     if(!members) map_init_int(members);
     array(reflect_t) *found = map_find_or_add(members, Tid, 0);
-    array_push(*found, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
+    array_push(*found, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type, bytes }));
 }
 reflect_t member_find(const char *T, const char *M) {
     reflect_init();
@@ -96,53 +96,42 @@ void reflect_print(const char *symbol) {
 
 // -- tests
 
-enum {
-    MYVALUE0 = 0,
-    MYVALUE1,
-    MYVALUE2,
-    MYVALUEA = 123,
-};
-
-typedef struct MyVec4 {
-    float x,y,z,w;
-} MyVec4;
-
-enum { OBJTYPE_MyVec4 = 0x01 };
+// type0 is reserved (no type)
+// type1 reserved for objs
+// type2 reserved for entities
+// @todo: type3 and 4 likely reserved for components and systems??
+// enum { OBJTYPE_vec3 = 0x03 };
 
 AUTOTEST {
-    // register structs, enums and functions
+    // register structs, enums and functions. with and without comments+tags
 
-    STRUCT( MyVec4, float, x, "Right" );
-    STRUCT( MyVec4, float, y, "Forward" );
-    STRUCT( MyVec4, float, z, "Up" );
-    STRUCT( MyVec4, float, w, "W" );
+    STRUCT( vec3, float, x );
+    STRUCT( vec3, float, y );
+    STRUCT( vec3, float, z, "Up" );
 
-    ENUM( MYVALUE0, "bla bla #0" );
-    ENUM( MYVALUE1, "bla bla #1" );
-    ENUM( MYVALUE2, "bla bla #2" );
-    ENUM( MYVALUEA, "bla bla (A)" );
+    ENUM( IMAGE_RGB );
+    ENUM( TEXTURE_RGB, "3-channel Red+Green+Blue texture flag" );
+    ENUM( TEXTURE_RGBA, "4-channel Red+Green+Blue+Alpha texture flag" );
 
-    FUNCTION( puts, "handy function that I use a lot" );
-    FUNCTION( printf, "handy function that I use a lot" );
+    FUNCTION( puts );
+    FUNCTION( printf, "function that prints formatted text to stdout" );
 
     // verify some reflected infos
 
     test( function_find("puts") == puts );
     test( function_find("printf") == printf );
 
-    test( enum_find("MYVALUE0") == MYVALUE0 );
-    test( enum_find("MYVALUE1") == MYVALUE1 );
-    test( enum_find("MYVALUE2") == MYVALUE2 );
-    test( enum_find("MYVALUEA") == MYVALUEA );
+    test( enum_find("TEXTURE_RGB") == TEXTURE_RGB );
+    test( enum_find("TEXTURE_RGBA") == TEXTURE_RGBA );
 
     // iterate reflected struct
-    for each_member("MyVec4", R) {
-        // printf("+%s MyVec4.%s // %s\n", R->type, R->name, R->info);
+    for each_member("vec3", R) {
+        //printf("+%s vec3.%s (+%x) // %s\n", R->type, R->name, R->member_offset, R->info);
     }
 
     // reflect_print("puts");
-    // reflect_print("MYVALUE0");
-    // reflect_print("MyVec4");
+    //reflect_print("TEXTURE_RGBA");
+    //reflect_print("vec3");
 
     // reflect_dump("*");
 }
