@@ -581,11 +581,13 @@ int cook_async( void *userdata ) {
 
     // tcc: only a single running thread shall pass, because of racing shared state due to missing thread_local support at compiler level
     ifdef(tcc, thread_mutex_lock( job->lock ));
+    ifdef(osx, thread_mutex_lock( job->lock ));
 
     int ret = cook(userdata);
 
     // tcc: only a single running thread shall pass, because of racing shared state due to missing thread_local support at compiler level
     ifdef(tcc, thread_mutex_unlock( job->lock ));
+    ifdef(osx, thread_mutex_unlock( job->lock ));
 
     thread_exit( ret );
     return ret;
