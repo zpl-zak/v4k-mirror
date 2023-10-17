@@ -52,6 +52,7 @@
 #define BQ_WEBSOCKET_IMPLEMENTATION           // websocket
 #define XML_C                                 // xml
 #ifdef __APPLE__
+#define MA_NO_RUNTIME_LINKING                 // miniaudio
 #define _GLFW_COCOA                           // glfw osx
 #elif defined _WIN32
 #define _GLFW_WIN32                           // glfw win32
