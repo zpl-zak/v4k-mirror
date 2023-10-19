@@ -1541,9 +1541,9 @@ uniform float num_colors;\n\
 out vec4 outColor;\n\
 \n\
 void main() {\
-    vec3 col = texture(sampler_colors, (color_index+0.5)/num_colors).rgb;\n\
+    vec4 col = texture(sampler_colors, (color_index+0.5)/num_colors);\n\
     float s = texture(sampler_font, uv).r;\n\
-    outColor = vec4(col, s);\n\
+    outColor = vec4(col.rgb, s*col.a);\n\
 }\n";
 
 enum { FONT_MAX_COLORS = 256};
@@ -1695,6 +1695,7 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
     const char *vs = vs_filename ? file_read(vs_filename) : mv_vs_source;
     const char *fs = fs_filename ? file_read(fs_filename) : mv_fs_source;
     f->program = shader(vs, fs, "vertexPosition,instanceGlyph", "outColor", NULL);
+    ASSERT(f->program > 0);
 
     // figure out what ranges we're about to bake
     #define MERGE_TABLE(table) do { \
