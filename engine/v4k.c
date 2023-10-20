@@ -12794,33 +12794,53 @@ AUTORUN {
     reflect_init();
 }
 
-void type_inscribe(const char *TY,unsigned TYid,unsigned TYsz,const char *infos) {
+static
+const char* symbol(const char *s) {
+    if( strbeg(s, "const ") ) s += 6;
+    if( strbeg(s, "union ") ) s += 6;
+    if( strbeg(s, "struct ") ) s += 7;
+    if(!strstr(s, " *") ) return s;
+    char *copy = va("%s", s);
+    do strswap(copy," *","*"); while( strstr(copy, " *") ); // char  * -> char*
+    return (const char *)copy;
+}
+
+void type_inscribe(const char *TY,unsigned TYsz,const char *infos) {
     reflect_init();
+    unsigned TYid = intern(TY = symbol(TY));
     map_find_or_add(reflects, TYid, ((reflect_t){TYid, 0, TYsz, TY, infos}));
 }
-void enum_inscribe(const char *E,unsigned Eid,unsigned Eval,const char *infos) {
+void enum_inscribe(const char *E,unsigned Eval,const char *infos) {
     reflect_init();
+    unsigned Eid = intern(E = symbol(E));
     map_find_or_add(reflects, Eid, ((reflect_t){Eid,0, Eval, E,infos}));
 }
 unsigned enum_find(const char *E) {
     reflect_init();
+    E = symbol(E);
     return map_find(reflects, intern(E))->sz;
 }
-void function_inscribe(const char *F,unsigned Fid,void *func,const char *infos) {
+void function_inscribe(const char *F,void *func,const char *infos) {
     reflect_init();
+    unsigned Fid = intern(F = symbol(F));
     map_find_or_add(reflects, Fid, ((reflect_t){Fid,0, 0, F,infos, func}));
     reflect_t *found = map_find(reflects,Fid);
 }
 void *function_find(const char *F) {
     reflect_init();
+    F = symbol(F);
     return map_find(reflects, intern(F))->addr;
 }
-void struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,unsigned OBJTYPEid, const char *infos) {
+void struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTYPEid, const char *infos) {
     reflect_init();
+    unsigned Tid = intern(T = symbol(T));
     map_find_or_add(reflects, Tid, ((reflect_t){Tid, OBJTYPEid, Tsz, T, infos}));
 }
-void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type, unsigned bytes) {
+void member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes) {
     reflect_init();
+    unsigned Tid = intern(T = symbol(T));
+    unsigned Mid = intern(M = symbol(M));
+    type = symbol(type);
     map_find_or_add(reflects, (Mid<<16)|Tid, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
     // add member separately as well
     if(!members) map_init_int(members);
@@ -12829,14 +12849,19 @@ void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, cons
 }
 reflect_t member_find(const char *T, const char *M) {
     reflect_init();
+    T = symbol(T);
+    M = symbol(M);
     return *map_find(reflects, (intern(M)<<16)|intern(T));
 }
 void *member_findptr(void *obj, const char *T, const char *M) {
     reflect_init();
+    T = symbol(T);
+    M = symbol(M);
     return (char*)obj + member_find(T,M).sz;
 }
 array(reflect_t) members_find(const char *T) {
     reflect_init();
+    T = symbol(T);
     return *map_find(members, intern(T));
 }
 
@@ -20336,11 +20361,37 @@ void app_hang() {
     for(;;);
 }
 void app_crash() {
-    int *p = 0;
+    volatile int *p = 0;
     *p = 42;
 }
 void app_beep() {
+    ifdef(win32, system("rundll32 user32.dll,MessageBeep"); return; );
+    ifdef(linux, system("paplay /usr/share/sounds/freedesktop/stereo/message.oga"); return; );
+    ifdef(osx,   system("tput bel"); return; );
+
+    //fallback:
     fputc('\x7', stdout);
+
+    // win32:
+    // rundll32 user32.dll,MessageBeep ; ok
+    // rundll32 cmdext.dll,MessageBeepStub ; ok
+
+    // osx:
+    // tput bel
+    // say "beep"
+    // osascript -e 'beep'
+    // osascript -e "beep 1"
+    // afplay /System/Library/Sounds/Ping.aiff
+    // /usr/bin/printf "\a"
+
+    // linux:
+    // paplay /usr/share/sounds/freedesktop/stereo/message.oga ; ok
+    // paplay /usr/share/sounds/freedesktop/stereo/complete.oga ; ok
+    // paplay /usr/share/sounds/freedesktop/stereo/bell.oga ; ok
+    // beep ; apt-get
+    // echo -e '\007' ; mute
+    // echo -e "\007" >/dev/tty10 ; sudo
+    // tput bel ; mute
 }
 
 void app_singleton(const char *guid) {
@@ -22199,6 +22250,8 @@ int ui_label2_toolbar(const char *label, const char *icons) {
 }
 
 int ui_notify(const char *title, const char *body) {
+    app_beep();
+
     struct ui_notify n = {0};
     n.title = title && title[0] ? stringf("*%s", title) : 0;
     n.body = body && body[0] ? STRDUP(body) : 0;
@@ -25688,8 +25741,8 @@ int editor_send(const char *cmd, const char *optional_value) {
     else if( !strcmp(cmd, "key_battery" ))    *powersave = optional_value ? !!atoi(optional_value) : *powersave ^ 1;
     else if( !strcmp(cmd, "key_browser" ))    ui_show("File Browser", ui_visible("File Browser") ^ true);
     else if( !strcmp(cmd, "key_outliner" ))   ui_show("Outliner", ui_visible("Outliner") ^ true);
-    else if( !strcmp(cmd, "key_record" ))     if(record_active()) record_stop(); else
-                                              name = file_counter(va("%s.mp4",app_name())), window_record(name),     ui_notify(va("Video capturing: %s", name), date_string());
+    else if( !strcmp(cmd, "key_record" ))     if(record_active()) record_stop(), ui_notify(va("Video recorded"), date_string()); else
+                                              app_beep(), name = file_counter(va("%s.mp4",app_name())), window_record(name);
     else if( !strcmp(cmd, "key_screenshot" )) name = file_counter(va("%s.png",app_name())), window_screenshot(name), ui_notify(va("Screenshot: %s", name), date_string());
     else if( !strcmp(cmd, "key_profiler" ))   ui_show("Profiler", profiler_enable(ui_visible("Profiler") ^ true));
     else if( !strcmp(cmd, "key_fullscreen" )) record_stop(), window_fullscreen( window_has_fullscreen() ^ 1 ); // framebuffer resizing corrupts video stream, so stop any recording beforehand

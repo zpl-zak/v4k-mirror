@@ -169,6 +169,7 @@
 #define conc4t(a,b)      a##b ///-
 
 #define macro(name)      concat(name, __LINE__)
+#define unique(name)     concat(concat(name, L##__LINE__), __COUNTER__)
 #define defer(begin,end) for(int macro(i) = ((begin), 0); !macro(i); macro(i) = ((end), 1))
 #define scope(end)       defer((void)0, end)
 #define benchmark        for(double macro(i) = 1, macro(t) = (time_ss(),-time_ss()); macro(i); macro(t)+=time_ss(), macro(i)=0, printf("%.4fs %2.f%% (" FILELINE ")\n", macro(t), macro(t)*100/0.0166667 ))
@@ -196,7 +197,7 @@
 #define ASSERT(expr, ...)          do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
 #define ASSERT_ONCE(expr, ...)     do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; static int seen = 0; if(!seen) seen = 1, breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
 #endif
-#define STATIC_ASSERT(EXPR)        typedef struct { unsigned macro(static_assert_on_line_) : !!(EXPR); } macro(static_assert_on_line_)
+#define STATIC_ASSERT(EXPR)        typedef struct { unsigned macro(static_assert_on_L) : !!(EXPR); } unique(static_assert_on_L)
 
 #define FILELINE                   __FILE__ ":" STRINGIZE(__LINE__)
 #define STRINGIZE(x)               STRINGIZ3(x)
@@ -286,7 +287,11 @@
     __declspec(allocate(".CRT$XIU")) \
     static int(* concat(fn,__2) )() = concat(fn,__1); \
     static void fn(void)
-#else // gcc,tcc,clang,clang-cl...
+#elif defined __TINYC__ // tcc...
+#define AUTORUN_(fn) \
+    __attribute__((constructor)) \
+    static void fn(void)
+#else // gcc,clang,clang-cl...
 #define AUTORUN_(fn) \
     __attribute__((constructor(__COUNTER__+101))) \
     static void fn(void)

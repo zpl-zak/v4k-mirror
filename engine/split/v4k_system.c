@@ -793,11 +793,37 @@ void app_hang() {
     for(;;);
 }
 void app_crash() {
-    int *p = 0;
+    volatile int *p = 0;
     *p = 42;
 }
 void app_beep() {
+    ifdef(win32, system("rundll32 user32.dll,MessageBeep"); return; );
+    ifdef(linux, system("paplay /usr/share/sounds/freedesktop/stereo/message.oga"); return; );
+    ifdef(osx,   system("tput bel"); return; );
+
+    //fallback:
     fputc('\x7', stdout);
+
+    // win32:
+    // rundll32 user32.dll,MessageBeep ; ok
+    // rundll32 cmdext.dll,MessageBeepStub ; ok
+
+    // osx:
+    // tput bel
+    // say "beep"
+    // osascript -e 'beep'
+    // osascript -e "beep 1"
+    // afplay /System/Library/Sounds/Ping.aiff
+    // /usr/bin/printf "\a"
+
+    // linux:
+    // paplay /usr/share/sounds/freedesktop/stereo/message.oga ; ok
+    // paplay /usr/share/sounds/freedesktop/stereo/complete.oga ; ok
+    // paplay /usr/share/sounds/freedesktop/stereo/bell.oga ; ok
+    // beep ; apt-get
+    // echo -e '\007' ; mute
+    // echo -e "\007" >/dev/tty10 ; sudo
+    // tput bel ; mute
 }
 
 void app_singleton(const char *guid) {

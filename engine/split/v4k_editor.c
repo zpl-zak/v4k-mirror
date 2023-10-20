@@ -160,8 +160,8 @@ int editor_send(const char *cmd, const char *optional_value) {
     else if( !strcmp(cmd, "key_battery" ))    *powersave = optional_value ? !!atoi(optional_value) : *powersave ^ 1;
     else if( !strcmp(cmd, "key_browser" ))    ui_show("File Browser", ui_visible("File Browser") ^ true);
     else if( !strcmp(cmd, "key_outliner" ))   ui_show("Outliner", ui_visible("Outliner") ^ true);
-    else if( !strcmp(cmd, "key_record" ))     if(record_active()) record_stop(); else
-                                              name = file_counter(va("%s.mp4",app_name())), window_record(name),     ui_notify(va("Video capturing: %s", name), date_string());
+    else if( !strcmp(cmd, "key_record" ))     if(record_active()) record_stop(), ui_notify(va("Video recorded"), date_string()); else
+                                              app_beep(), name = file_counter(va("%s.mp4",app_name())), window_record(name);
     else if( !strcmp(cmd, "key_screenshot" )) name = file_counter(va("%s.png",app_name())), window_screenshot(name), ui_notify(va("Screenshot: %s", name), date_string());
     else if( !strcmp(cmd, "key_profiler" ))   ui_show("Profiler", profiler_enable(ui_visible("Profiler") ^ true));
     else if( !strcmp(cmd, "key_fullscreen" )) record_stop(), window_fullscreen( window_has_fullscreen() ^ 1 ); // framebuffer resizing corrupts video stream, so stop any recording beforehand

@@ -1596,6 +1596,8 @@ int ui_label2_toolbar(const char *label, const char *icons) {
 }
 
 int ui_notify(const char *title, const char *body) {
+    app_beep();
+
     struct ui_notify n = {0};
     n.title = title && title[0] ? stringf("*%s", title) : 0;
     n.body = body && body[0] ? STRDUP(body) : 0;

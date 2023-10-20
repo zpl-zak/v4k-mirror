@@ -267,6 +267,7 @@ extern "C" {
 #define conc4t(a,b)      a##b ///-
 
 #define macro(name)      concat(name, __LINE__)
+#define unique(name)     concat(concat(name, L##__LINE__), __COUNTER__)
 #define defer(begin,end) for(int macro(i) = ((begin), 0); !macro(i); macro(i) = ((end), 1))
 #define scope(end)       defer((void)0, end)
 #define benchmark        for(double macro(i) = 1, macro(t) = (time_ss(),-time_ss()); macro(i); macro(t)+=time_ss(), macro(i)=0, printf("%.4fs %2.f%% (" FILELINE ")\n", macro(t), macro(t)*100/0.0166667 ))
@@ -294,7 +295,7 @@ extern "C" {
 #define ASSERT(expr, ...)          do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
 #define ASSERT_ONCE(expr, ...)     do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; static int seen = 0; if(!seen) seen = 1, breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
 #endif
-#define STATIC_ASSERT(EXPR)        typedef struct { unsigned macro(static_assert_on_line_) : !!(EXPR); } macro(static_assert_on_line_)
+#define STATIC_ASSERT(EXPR)        typedef struct { unsigned macro(static_assert_on_L) : !!(EXPR); } unique(static_assert_on_L)
 
 #define FILELINE                   __FILE__ ":" STRINGIZE(__LINE__)
 #define STRINGIZE(x)               STRINGIZ3(x)
@@ -384,7 +385,11 @@ extern "C" {
     __declspec(allocate(".CRT$XIU")) \
     static int(* concat(fn,__2) )() = concat(fn,__1); \
     static void fn(void)
-#else // gcc,tcc,clang,clang-cl...
+#elif defined __TINYC__ // tcc...
+#define AUTORUN_(fn) \
+    __attribute__((constructor)) \
+    static void fn(void)
+#else // gcc,clang,clang-cl...
 #define AUTORUN_(fn) \
     __attribute__((constructor(__COUNTER__+101))) \
     static void fn(void)
@@ -2694,15 +2699,15 @@ typedef struct reflect_t {
 // inscribe api
 
 #define ENUM(V, .../*value_annotations*/) \
-    enum_inscribe(#V,intern(#V),V, "" __VA_ARGS__/*value_annotations*/)
+    enum_inscribe(#V,V, "" __VA_ARGS__/*value_annotations*/)
 
 #define FUNCTION(F, .../*function_annotations*/) \
-    function_inscribe(#F,intern(#F),(void*)F, "" __VA_ARGS__/*function_annotations*/)
+    function_inscribe(#F,(void*)F, "" __VA_ARGS__/*function_annotations*/)
 
 #define STRUCT(T, type, member, .../*member_annotations*/) \
-    struct_inscribe(#T,intern(#T),sizeof(T),OBJTYPE(T),NULL), \
-    type_inscribe(#type,intern(#type),sizeof(((T){0}).member),"" __VA_ARGS__/*member_annotations*/), \
-    member_inscribe(intern(#T), #member,intern(#member),(uintptr_t)&((T*)0)->member, "" __VA_ARGS__/*member_annotations*/, #type, sizeof(((T){0}).member) )
+    struct_inscribe(#T,sizeof(T),OBJTYPE(T),NULL), \
+    type_inscribe(#type,sizeof(((T){0}).member),"" __VA_ARGS__/*member_annotations*/), \
+    member_inscribe(#T, #member,(uintptr_t)&((T*)0)->member, "" __VA_ARGS__/*member_annotations*/, #type, sizeof(((T){0}).member) )
 
 // find api
 
@@ -2722,11 +2727,11 @@ API array(reflect_t)   members_find(const char *T);
 
 // private api, still exposed
 
-API void               type_inscribe(const char *TY,unsigned TYid,unsigned TYsz,const char *infos);
-API void               enum_inscribe(const char *E,unsigned Eid,unsigned Eval,const char *infos);
-API void               struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,unsigned OBJTYPEid, const char *infos);
-API void               member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type, unsigned bytes);
-API void               function_inscribe(const char *F,unsigned Fid,void *func,const char *infos);
+API void               type_inscribe(const char *TY,unsigned TYsz,const char *infos);
+API void               enum_inscribe(const char *E,unsigned Eval,const char *infos);
+API void               struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTYPEid, const char *infos);
+API void               member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes);
+API void               function_inscribe(const char *F,void *func,const char *infos);
 
 API void               reflect_print(const char *symbol);
 API void               reflect_dump(const char *mask);

@@ -14,33 +14,53 @@ AUTORUN {
     reflect_init();
 }
 
-void type_inscribe(const char *TY,unsigned TYid,unsigned TYsz,const char *infos) {
+static
+const char* symbol(const char *s) {
+    if( strbeg(s, "const ") ) s += 6;
+    if( strbeg(s, "union ") ) s += 6;
+    if( strbeg(s, "struct ") ) s += 7;
+    if(!strstr(s, " *") ) return s;
+    char *copy = va("%s", s);
+    do strswap(copy," *","*"); while( strstr(copy, " *") ); // char  * -> char*
+    return (const char *)copy;
+}
+
+void type_inscribe(const char *TY,unsigned TYsz,const char *infos) {
     reflect_init();
+    unsigned TYid = intern(TY = symbol(TY));
     map_find_or_add(reflects, TYid, ((reflect_t){TYid, 0, TYsz, TY, infos}));
 }
-void enum_inscribe(const char *E,unsigned Eid,unsigned Eval,const char *infos) {
+void enum_inscribe(const char *E,unsigned Eval,const char *infos) {
     reflect_init();
+    unsigned Eid = intern(E = symbol(E));
     map_find_or_add(reflects, Eid, ((reflect_t){Eid,0, Eval, E,infos}));
 }
 unsigned enum_find(const char *E) {
     reflect_init();
+    E = symbol(E);
     return map_find(reflects, intern(E))->sz;
 }
-void function_inscribe(const char *F,unsigned Fid,void *func,const char *infos) {
+void function_inscribe(const char *F,void *func,const char *infos) {
     reflect_init();
+    unsigned Fid = intern(F = symbol(F));
     map_find_or_add(reflects, Fid, ((reflect_t){Fid,0, 0, F,infos, func}));
     reflect_t *found = map_find(reflects,Fid);
 }
 void *function_find(const char *F) {
     reflect_init();
+    F = symbol(F);
     return map_find(reflects, intern(F))->addr;
 }
-void struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,unsigned OBJTYPEid, const char *infos) {
+void struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTYPEid, const char *infos) {
     reflect_init();
+    unsigned Tid = intern(T = symbol(T));
     map_find_or_add(reflects, Tid, ((reflect_t){Tid, OBJTYPEid, Tsz, T, infos}));
 }
-void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type, unsigned bytes) {
+void member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes) {
     reflect_init();
+    unsigned Tid = intern(T = symbol(T));
+    unsigned Mid = intern(M = symbol(M));
+    type = symbol(type);
     map_find_or_add(reflects, (Mid<<16)|Tid, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
     // add member separately as well
     if(!members) map_init_int(members);
@@ -49,14 +69,19 @@ void member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, cons
 }
 reflect_t member_find(const char *T, const char *M) {
     reflect_init();
+    T = symbol(T);
+    M = symbol(M);
     return *map_find(reflects, (intern(M)<<16)|intern(T));
 }
 void *member_findptr(void *obj, const char *T, const char *M) {
     reflect_init();
+    T = symbol(T);
+    M = symbol(M);
     return (char*)obj + member_find(T,M).sz;
 }
 array(reflect_t) members_find(const char *T) {
     reflect_init();
+    T = symbol(T);
     return *map_find(members, intern(T));
 }
 
