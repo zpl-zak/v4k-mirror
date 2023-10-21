@@ -4321,11 +4321,14 @@ int cook(void *userdata) {
             cook_subscript_t cs = mcs.cs[pass];
 
             // log to batch file for forensic purposes, if explicitly requested
-            static __thread bool logging = 0; do_once logging = !!flag("--cook-debug") || cook_debug;
+            static __thread int logging = -1; if(logging < 0) logging = !!flag("--cook-debug") || cook_debug;
             if( logging ) {
-                FILE *logfile = fopen(va("cook%d.cmd",job->threadid), "a+t");
-                if( logfile ) { fprintf(logfile, "@rem %s\n%s\n", cs.outname, cs.script); fclose(logfile); }
-                fprintf(stderr, "%s\n", cs.script);
+                static __thread FILE *logfile = 0; if(!logfile) fseek(logfile = fopen(va("cook%d.cmd",job->threadid), "a+t"), 0L, SEEK_END);
+                if( logfile ) {
+                    fprintf(logfile, "@rem %s\n%s\n", cs.outname, cs.script);
+                    fprintf(logfile, "for %%%%i in (\"%s\") do md _cook\\%%%%~pi\\%%%%~ni%%%%~xi 1>nul 2>nul\n", infile);
+                    fprintf(logfile, "for %%%%i in (\"%s\") do xcopy /y %s _cook\\%%%%~pi\\%%%%~ni%%%%~xi\n\n", infile, file_normalize(cs.outfile));
+                }
             }
 
             // invoke cooking script and recap status
@@ -11349,12 +11352,12 @@ char* ftoa4(vec4 v) {
 
 float atof1(const char *s) {
     char buf[64];
-    return sscanf(s, "%64[^]\r\n,}]", buf) == 1 ? (float)eval(buf) : (float)NAN;
+    return sscanf(s, "%63[^]\r\n,}]", buf) == 1 ? (float)eval(buf) : (float)NAN;
 }
 vec2 atof2(const char *s) {
     vec2 v = { 0 };
     char buf1[64],buf2[64];
-    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2);
+    int num = sscanf(s, "%63[^]\r\n,}],%63[^]\r\n,}]", buf1, buf2);
     if( num > 0 ) v.x = eval(buf1);
     if( num > 1 ) v.y = eval(buf2);
     return v;
@@ -11362,7 +11365,7 @@ vec2 atof2(const char *s) {
 vec3 atof3(const char *s) {
     vec3 v = {0};
     char buf1[64],buf2[64],buf3[64];
-    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2, buf3);
+    int num = sscanf(s, "%63[^]\r\n,}],%63[^]\r\n,}],%63[^]\r\n,}]", buf1, buf2, buf3);
     if( num > 0 ) v.x = eval(buf1);
     if( num > 1 ) v.y = eval(buf2);
     if( num > 2 ) v.z = eval(buf3);
@@ -11371,7 +11374,7 @@ vec3 atof3(const char *s) {
 vec4 atof4(const char *s) {
     vec4 v = {0};
     char buf1[64],buf2[64],buf3[64],buf4[64];
-    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2, buf3, buf4);
+    int num = sscanf(s, "%63[^]\r\n,}],%63[^]\r\n,}],%63[^]\r\n,}],%63[^]\r\n,}]", buf1, buf2, buf3, buf4);
     if( num > 0 ) v.x = eval(buf1);
     if( num > 1 ) v.y = eval(buf2);
     if( num > 2 ) v.z = eval(buf3);
@@ -16118,7 +16121,7 @@ unsigned fbo(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
 
     if( color_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture_id, 0);
     if( depth_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture_id, 0);
-#if 0
+#if 0 // this is working; it's just not enabled for now
     else {
         // create a non-sampleable renderbuffer object for depth and stencil attachments
         unsigned int rbo;
@@ -25291,7 +25294,7 @@ obj *obj_mergeini(void *o, const char *ini) { // @testme
     ini = sqr+1;
 
     char T[64] = {0};
-    if( sscanf(ini, "%64[^]]", &T) != 1 ) return 0; // @todo: parse version as well
+    if( sscanf(ini, "%63[^]]", T) != 1 ) return 0; // @todo: parse version as well
     ini += strlen(T);
 
     for each_member(T,R) {
@@ -25575,7 +25578,7 @@ void *obj_make(const char *str) {
     else T = I < J ? I : J;
 
     char name[64] = {0};
-    if( sscanf(T+1, T == I ? "%64[^]]" : "%64[^:=]", &name) != 1 ) return 0;
+    if( sscanf(T+1, T == I ? "%63[^]]" : "%63[^:=]", name) != 1 ) return 0;
 
     int has_components = 0; // @todo: support entities too
 

@@ -95,12 +95,12 @@ char* ftoa4(vec4 v) {
 
 float atof1(const char *s) {
     char buf[64];
-    return sscanf(s, "%64[^]\r\n,}]", buf) == 1 ? (float)eval(buf) : (float)NAN;
+    return sscanf(s, "%63[^]\r\n,}]", buf) == 1 ? (float)eval(buf) : (float)NAN;
 }
 vec2 atof2(const char *s) {
     vec2 v = { 0 };
     char buf1[64],buf2[64];
-    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2);
+    int num = sscanf(s, "%63[^]\r\n,}],%63[^]\r\n,}]", buf1, buf2);
     if( num > 0 ) v.x = eval(buf1);
     if( num > 1 ) v.y = eval(buf2);
     return v;
@@ -108,7 +108,7 @@ vec2 atof2(const char *s) {
 vec3 atof3(const char *s) {
     vec3 v = {0};
     char buf1[64],buf2[64],buf3[64];
-    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2, buf3);
+    int num = sscanf(s, "%63[^]\r\n,}],%63[^]\r\n,}],%63[^]\r\n,}]", buf1, buf2, buf3);
     if( num > 0 ) v.x = eval(buf1);
     if( num > 1 ) v.y = eval(buf2);
     if( num > 2 ) v.z = eval(buf3);
@@ -117,7 +117,7 @@ vec3 atof3(const char *s) {
 vec4 atof4(const char *s) {
     vec4 v = {0};
     char buf1[64],buf2[64],buf3[64],buf4[64];
-    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2, buf3, buf4);
+    int num = sscanf(s, "%63[^]\r\n,}],%63[^]\r\n,}],%63[^]\r\n,}],%63[^]\r\n,}]", buf1, buf2, buf3, buf4);
     if( num > 0 ) v.x = eval(buf1);
     if( num > 1 ) v.y = eval(buf2);
     if( num > 2 ) v.z = eval(buf3);

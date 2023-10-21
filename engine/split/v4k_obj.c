@@ -499,7 +499,7 @@ obj *obj_mergeini(void *o, const char *ini) { // @testme
     ini = sqr+1;
 
     char T[64] = {0};
-    if( sscanf(ini, "%64[^]]", &T) != 1 ) return 0; // @todo: parse version as well
+    if( sscanf(ini, "%63[^]]", T) != 1 ) return 0; // @todo: parse version as well
     ini += strlen(T);
 
     for each_member(T,R) {
@@ -783,7 +783,7 @@ void *obj_make(const char *str) {
     else T = I < J ? I : J;
 
     char name[64] = {0};
-    if( sscanf(T+1, T == I ? "%64[^]]" : "%64[^:=]", &name) != 1 ) return 0;
+    if( sscanf(T+1, T == I ? "%63[^]]" : "%63[^:=]", name) != 1 ) return 0;
 
     int has_components = 0; // @todo: support entities too
 

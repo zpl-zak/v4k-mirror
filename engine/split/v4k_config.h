@@ -117,7 +117,7 @@
 #define ifdef_release                  ifdef_false
 #endif
 
-#if ENABLE_RETAIL
+#if ENABLE_RETAIL // NDEBUG>=2 ?
 #define ifdef_retail                   ifdef_true
 #else
 #define ifdef_retail                   ifdef_false

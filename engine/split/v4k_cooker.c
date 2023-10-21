@@ -509,11 +509,14 @@ int cook(void *userdata) {
             cook_subscript_t cs = mcs.cs[pass];
 
             // log to batch file for forensic purposes, if explicitly requested
-            static __thread bool logging = 0; do_once logging = !!flag("--cook-debug") || cook_debug;
+            static __thread int logging = -1; if(logging < 0) logging = !!flag("--cook-debug") || cook_debug;
             if( logging ) {
-                FILE *logfile = fopen(va("cook%d.cmd",job->threadid), "a+t");
-                if( logfile ) { fprintf(logfile, "@rem %s\n%s\n", cs.outname, cs.script); fclose(logfile); }
-                fprintf(stderr, "%s\n", cs.script);
+                static __thread FILE *logfile = 0; if(!logfile) fseek(logfile = fopen(va("cook%d.cmd",job->threadid), "a+t"), 0L, SEEK_END);
+                if( logfile ) {
+                    fprintf(logfile, "@rem %s\n%s\n", cs.outname, cs.script);
+                    fprintf(logfile, "for %%%%i in (\"%s\") do md _cook\\%%%%~pi\\%%%%~ni%%%%~xi 1>nul 2>nul\n", infile);
+                    fprintf(logfile, "for %%%%i in (\"%s\") do xcopy /y %s _cook\\%%%%~pi\\%%%%~ni%%%%~xi\n\n", infile, file_normalize(cs.outfile));
+                }
             }
 
             // invoke cooking script and recap status
