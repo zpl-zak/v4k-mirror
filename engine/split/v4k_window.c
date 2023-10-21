@@ -168,7 +168,7 @@ void window_drop_callback(GLFWwindow* window, int count, const char** paths) {
 void window_hints(unsigned flags) {
     #ifdef __APPLE__
     //glfwInitHint( GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE );
-    //glfwWindowHint( GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE );
+    glfwWindowHint( GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE );
     //glfwWindowHint( GLFW_COCOA_GRAPHICS_SWITCHING, GLFW_FALSE );
     //glfwWindowHint( GLFW_COCOA_MENUBAR, GLFW_FALSE );
     #endif
@@ -1042,7 +1042,7 @@ int window_record(const char *outfile_mp4) {
 
 vec2 window_dpi() {
     vec2 dpi = vec2(1,1);
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(__APPLE__)
     glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &dpi.x, &dpi.y);
 #endif
     return dpi;
