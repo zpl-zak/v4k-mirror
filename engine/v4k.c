@@ -16118,7 +16118,7 @@ unsigned fbo(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
 
     if( color_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture_id, 0);
     if( depth_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture_id, 0);
-#if 0 // this is working; it's just not enabled for now
+#if 0
     else {
         // create a non-sampleable renderbuffer object for depth and stencil attachments
         unsigned int rbo;
