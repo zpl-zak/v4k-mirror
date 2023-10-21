@@ -112,9 +112,6 @@ float ease_inout_bounce(float t) { return t < 0.5f ? 0.5f*ease_in_bounce(t*2) : 
 
 float ease_inout_perlin(float t) { float t3=t*t*t,t4=t3*t,t5=t4*t; return 6*t5-15*t4+10*t3; }
 
-float ease_ping_pong(float t, float(*fn1)(float), float(*fn2)(float)) { return t < 0.5 ? fn1(t*2) : fn2(1-(t-0.5)*2); }
-float ease_pong_ping(float t, float(*fn1)(float), float(*fn2)(float)) { return 1 - ease_ping_pong(t,fn1,fn2); }
-
 float ease(float t01, unsigned mode) {
     typedef float (*easing)(float);
     easing modes[] = {
@@ -158,6 +155,10 @@ float ease(float t01, unsigned mode) {
     };
     return modes[clampi(mode, 0, countof(modes))](clampf(t01,0,1));
 }
+
+float ease_pong(float t, unsigned fn) { return 1 - ease(t, fn); }
+float ease_ping_pong(float t, unsigned fn1, unsigned fn2) { return t < 0.5 ? ease(t*2,fn1) : ease(1-(t-0.5)*2,fn2); }
+float ease_pong_ping(float t, unsigned fn1, unsigned fn2) { return 1 - ease_ping_pong(t,fn1,fn2); }
 
 // ----------------------------------------------------------------------------
 
@@ -953,3 +954,11 @@ void printq( quat q ) { print_(&q.x,4,1); }
 void print33( float *m ) { print_(m,3,3); }
 void print34( float *m ) { print_(m,3,4); }
 void print44( float *m ) { print_(m,4,4); }
+
+// -----------
+
+AUTORUN {
+    STRUCT( vec3, float, x );
+    STRUCT( vec3, float, y );
+    STRUCT( vec3, float, z, "Up" );
+}

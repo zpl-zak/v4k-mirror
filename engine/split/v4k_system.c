@@ -279,7 +279,7 @@ void trap_on_abort(int signal) {
     exit(-1);
 }
 void trap_on_debug(int signal) {
-    breakpoint("Error: unexpected signal");
+    alert("Error: unexpected signal"), breakpoint();
     fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
     exit(-1);
 }
@@ -549,7 +549,7 @@ void tty_color(unsigned color) {
     }
     #endif
     if( color ) {
-        // if( color == RED ) breakpoint("break on RED"); // debug
+        // if( color == RED ) alert("break on error message (RED)"), breakpoint(); // debug
         unsigned r = (color >> 16) & 255;
         unsigned g = (color >>  8) & 255;
         unsigned b = (color >>  0) & 255;
@@ -668,6 +668,9 @@ static void debugbreak(void) { // break if debugger present
 #endif
 
 void alert(const char *message) { // @todo: move to app_, besides die()
+    window_visible(false);
+    message = message[0] == '!' ? (const char*)va("%s\n%s", message+1, callstack(+48)) : message;
+
 #if is(win32)
     MessageBoxA(0, message, 0,0);
 #elif is(ems)
@@ -678,18 +681,12 @@ void alert(const char *message) { // @todo: move to app_, besides die()
 #elif is(osx)
     system(va("osascript -e 'display alert \"Alert\" message \"%s\"'", message));
 #endif
-}
 
-void breakpoint(const char *reason) {
-    window_visible(false);
-    if( reason ) {
-        const char *fulltext = reason[0] == '!' ? va("%s\n%s", reason+1, callstack(+48)) : reason;
-        PRINTF("%s", fulltext);
-
-        (alert)(fulltext);
-    }
-    debugbreak();
     window_visible(true);
+    }
+
+void breakpoint() {
+    debugbreak();
 }
 
 bool has_debugger() {
@@ -752,7 +749,9 @@ int (PANIC)(const char *error, const char *file, int line) {
 
     tty_color(0);
 
-    breakpoint(error);
+    alert(error);
+    breakpoint();
+
     exit(-line);
     return 1;
 }
@@ -904,10 +903,12 @@ const char* app_savefile() {
 // ----------------------------------------------------------------------------
 // tests
 
-static __thread int test_oks, test_errs, test_once;
-static void test_exit(void) { fprintf(stderr, "%d/%d tests passed\n", test_oks, test_oks+test_errs); }
+static __thread int test_oks, test_errors, test_once;
+static void test_exit(void) { fprintf(stderr, "%d/%d tests passed\n", test_oks, test_oks+test_errors); }
 int (test)(const char *file, int line, const char *expr, bool result) {
+    static int breakon = -1; if(breakon<0) breakon = optioni("--test-break", 0);
+    if( breakon == (test_oks+test_errors+1) ) alert("user requested to break on this test"), breakpoint();
     test_once = test_once || !(atexit)(test_exit);
-    test_oks += result, test_errs += !result;
+    test_oks += result, test_errors += !result;
     return (result || (tty_color(RED), fprintf(stderr, "(Test `%s` failed %s:%d)\n", expr, file, line), tty_color(0), 0) );
 }

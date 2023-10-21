@@ -267,7 +267,7 @@ extern "C" {
 #define conc4t(a,b)      a##b ///-
 
 #define macro(name)      concat(name, __LINE__)
-#define unique(name)     concat(concat(name, L##__LINE__), __COUNTER__)
+#define unique(name)     concat(concat(concat(name,concat(_L,__LINE__)),_),__COUNTER__)
 #define defer(begin,end) for(int macro(i) = ((begin), 0); !macro(i); macro(i) = ((end), 1))
 #define scope(end)       defer((void)0, end)
 #define benchmark        for(double macro(i) = 1, macro(t) = (time_ss(),-time_ss()); macro(i); macro(t)+=time_ss(), macro(i)=0, printf("%.4fs %2.f%% (" FILELINE ")\n", macro(t), macro(t)*100/0.0166667 ))
@@ -292,8 +292,8 @@ extern "C" {
 #define ASSERT(expr, ...)          (void)0
 #define ASSERT_ONCE(expr, ...)     (void)0
 #else
-#define ASSERT(expr, ...)          do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
-#define ASSERT_ONCE(expr, ...)     do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; static int seen = 0; if(!seen) seen = 1, breakpoint(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)); } } while(0)
+#define ASSERT(expr, ...)          do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; alert(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)), breakpoint(); } } while(0)
+#define ASSERT_ONCE(expr, ...)     do { int fool_msvc[] = {0,}; if(!(expr)) { fool_msvc[0]++; static int seen = 0; if(!seen) seen = 1, alert(va("!Expression failed: " #expr " " FILELINE "\n" __VA_ARGS__)), breakpoint(); } } while(0)
 #endif
 #define STATIC_ASSERT(EXPR)        typedef struct { unsigned macro(static_assert_on_L) : !!(EXPR); } unique(static_assert_on_L)
 
@@ -372,6 +372,7 @@ extern "C" {
 // note: based on code by Joe Lowe (public domain).
 // note: XIU for C initializers, XCU for C++ initializers, XTU for C deinitializers
 
+#define AUTORUN AUTORUN_( unique(fn) )
 #ifdef __cplusplus
 #define AUTORUN_(fn) \
     static void fn(void); \
@@ -395,8 +396,6 @@ extern "C" {
     static void fn(void)
 #endif
 
-#define AUTORUN AUTORUN_( concat(concat(concat(fn_L,__LINE__),_),__COUNTER__) )
-
 #if 0 // autorun demo
 void byebye(void) { puts("seen after main()"); }
 AUTORUN { puts("seen before main()"); }
@@ -413,7 +412,7 @@ AUTORUN { puts("seen before main() too"); atexit( byebye ); }
 // -----------------------------------------------------------------------------
 // visibility
 
-// win32 users would need to -DAPI=IMPORT/EXPORT as needed when using/building V4K as DLL.
+// win32 users would need to -DAPI=EXPORT/IMPORT as needed when building/using V4K as DLL.
 
 #define IMPORT ifdef(win32, ifdef(gcc, __attribute__ ((dllimport)), __declspec(dllimport)))
 #define EXPORT ifdef(win32, ifdef(gcc, __attribute__ ((dllexport)), __declspec(dllexport)))
@@ -586,7 +585,7 @@ static __thread unsigned array_n_;
 #define array_vlen_(t)  ( vlen(t) - 0 )
 #define array_realloc_(t,n)  ( (t) = array_cast(t) vrealloc((t), ((n)+0) * sizeof(0[t])) )
 #define array_free(t) array_clear(t)
-#else // new: with reserve support (bugs?)
+#else // new: with reserve support (@todo: check for bugs?)
 #define array_reserve(t, n) ( array_realloc_((t),(n)), array_clear(t) )
 #define array_clear(t) ( array_realloc_((t),0) ) // -1
 #define array_vlen_(t)  ( vlen(t) - sizeof(0[t]) ) // -1
@@ -633,7 +632,7 @@ static __thread unsigned array_n_;
     memcpy( (t), src, array_count(src) * sizeof(0[t])); \
 } while(0)
 
-#define array_erase_fast(t, i) do { /*may alter ordering*/ \
+#define array_erase_fast(t, i) do { /*alters ordering*/ \
     memcpy( &(t)[i], &(t)[array_count(t) - 1], sizeof(0[t])); \
     array_pop(t); \
 } while(0)
@@ -955,9 +954,9 @@ API void  (map_clear)(map* m);
 // Credits: @ands+@krig+@vurtun (PD), @datenwolf (WTFPL2), @evanw+@barerose (CC0), @sgorsten (Unlicense).
 
 #define C_EPSILON  (1e-6)
-#define C_PI       (3.141592654f) // (3.14159265358979323846f)
-#define TO_RAD     (C_PI/180.f)
-#define TO_DEG     (180.f/C_PI)
+#define C_PI       (3.14159265358979323846f) // (3.141592654f)
+#define TO_RAD     (C_PI/180)
+#define TO_DEG     (180/C_PI)
 
 // ----------------------------------------------------------------------------
 
@@ -989,7 +988,6 @@ API void     randset(uint64_t state);
 API uint64_t rand64(void);
 API double   randf(void); // [0, 1) interval
 API int      randi(int mini, int maxi); // [mini, maxi) interval
-//API double rng(void); // [0..1) Lehmer RNG "minimal standard"
 
 // ----------------------------------------------------------------------------
 
@@ -1055,10 +1053,10 @@ enum EASE_FLAGS {
     EASE_OUT = 0,
 };
 
-API float ease(float t01, unsigned mode); // 0=linear,1=out_sine...31=inout_perlin
-
-API float ease_ping_pong(float t, float(*fn1)(float), float(*fn2)(float));
-API float ease_pong_ping(float t, float(*fn1)(float), float(*fn2)(float));
+API float ease(float t01, unsigned fn); // / 0-to-1
+API float ease_pong(float t01, unsigned fn); // \ 1-to-0
+API float ease_ping_pong(float t, unsigned fn1, unsigned fn2); // /\ 0-to-1-to-0
+API float ease_pong_ping(float t, unsigned fn1, unsigned fn2); // \/ 1-to-0-to-1
 
 // ----------------------------------------------------------------------------
 
@@ -2048,6 +2046,64 @@ bool        id_valid(uintptr_t id);
 
 #line 1 "engine/split/v4k_pack.h"
 // -----------------------------------------------------------------------------
+// semantic versioning in a single byte (octal)
+// - rlyeh, public domain.
+//
+// - single octal byte that represents semantic versioning (major.minor.patch).
+// - allowed range [0000..0377] ( <-> [0..255] decimal )
+// - comparison checks only major.minor tuple as per convention.
+
+API int semver( int major, int minor, int patch );
+API int semvercmp( int v1, int v2 );
+
+#define SEMVER(major,minor,patch) (0100 * (major) + 010 * (minor) + (patch))
+#define SEMVERCMP(v1,v2) (((v1) & 0110) - ((v2) & 0110))
+#define SEMVERFMT "%03o"
+
+// -----------------------------------------------------------------------------
+// storage types. refer to vec2i/3i, vec2/3/4 if you plan to do math operations
+
+typedef struct byte2 { uint8_t x,y; } byte2;
+typedef struct byte3 { uint8_t x,y,z; } byte3;
+typedef struct byte4 { uint8_t x,y,z,w; } byte4;
+
+typedef struct int2 { int x,y; } int2;
+typedef struct int3 { int x,y,z; } int3;
+typedef struct int4 { int x,y,z,w; } int4;
+
+typedef struct uint2 { unsigned int x,y; } uint2;
+typedef struct uint3 { unsigned int x,y,z; } uint3;
+typedef struct uint4 { unsigned int x,y,z,w; } uint4;
+
+typedef struct float2 { float x,y; } float2;
+typedef struct float3 { float x,y,z; } float3;
+typedef struct float4 { float x,y,z,w; } float4;
+
+typedef struct double2 { double x,y; } double2;
+typedef struct double3 { double x,y,z; } double3;
+typedef struct double4 { double x,y,z,w; } double4;
+
+#define byte2(x,y)       M_CAST(byte2, (uint8_t)(x), (uint8_t)(y) )
+#define byte3(x,y,z)     M_CAST(byte3, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z) )
+#define byte4(x,y,z,w)   M_CAST(byte4, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z), (uint8_t)(w) )
+
+#define int2(x,y)        M_CAST(int2, (int)(x), (int)(y) )
+#define int3(x,y,z)      M_CAST(int3, (int)(x), (int)(y), (int)(z) )
+#define int4(x,y,z,w)    M_CAST(int4, (int)(x), (int)(y), (int)(z), (int)(w) )
+
+#define uint2(x,y)       M_CAST(uint2, (unsigned)(x), (unsigned)(y) )
+#define uint3(x,y,z)     M_CAST(uint3, (unsigned)(x), (unsigned)(y), (unsigned)(z) )
+#define uint4(x,y,z,w)   M_CAST(uint4, (unsigned)(x), (unsigned)(y), (unsigned)(z), (unsigned)(w) )
+
+#define float2(x,y)      M_CAST(float2, (float)(x), (float)(y) )
+#define float3(x,y,z)    M_CAST(float3, (float)(x), (float)(y), (float)(z) )
+#define float4(x,y,z,w)  M_CAST(float4, (float)(x), (float)(y), (float)(z), (float)(w) )
+
+#define double2(x,y)     M_CAST(double2, (double)(x), (double)(y) )
+#define double3(x,y,z)   M_CAST(double3, (double)(x), (double)(y), (double)(z) )
+#define double4(x,y,z,w) M_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )
+
+// -----------------------------------------------------------------------------
 // compile-time fourcc, eightcc
 
 API char *cc4str(unsigned cc);
@@ -2075,16 +2131,25 @@ enum {
 #define cc7(a,b,c,d,e,f,g) cc8(,a,b,c,d,e,f,g)
 
 // ----------------------------------------------------------------------------
-// float conversion (text)
+// text conversions
 
+API char* ftoa1(float v);
+API char* ftoa2(vec2  v);
+API char* ftoa3(vec3  v);
+API char* ftoa4(vec4  v);
+
+API float atof1(const char *s);
 API vec2 atof2(const char *s);
 API vec3 atof3(const char *s);
 API vec4 atof4(const char *s);
 
-API char* ftoa(float f);
-API char* ftoa2(vec2 v);
-API char* ftoa3(vec3 v);
-API char* ftoa4(vec4 v);
+API char* itoa1(int   v);
+API char* itoa2(vec2i v);
+API char* itoa3(vec3i v);
+
+API int   atoi1(const char *s);
+API vec2i atoi2(const char *s);
+API vec3i atoi3(const char *s);
 
 // ----------------------------------------------------------------------------
 // endianness
@@ -2579,63 +2644,312 @@ API int64_t  client_join(const char *ip, int port);
 #line 0
 
 #line 1 "engine/split/v4k_obj.h"
-// -----------------------------------------------------------------------------
-// semantic versioning in a single byte (octal)
+// C objects framework
 // - rlyeh, public domain.
 //
-// - single octal byte that represents semantic versioning (major.minor.patch).
-// - allowed range [0000..0377] ( <-> [0..255] decimal )
-// - comparison checks only major.minor tuple as per convention.
+// ## object limitations
+// - 8-byte overhead per object
+// - XX-byte overhead per object-entity
+// - 32 components max per object-entity
+// - 256 classes max per game
+// - 256 references max per object
+// - 1024K bytes max per object
+// - 8 generations + 64K IDs per running instance (19-bit IDs)
+// - support for pragma pack(1) structs not enabled by default.
 
-API int semver( int major, int minor, int patch );
-API int semvercmp( int v1, int v2 );
+/* /!\ if you plan to use pragma pack(1) on any struct, you need #define OBJ_MIN_PRAGMAPACK_BITS 0 at the expense of max class size /!\ */
+#ifndef   OBJ_MIN_PRAGMAPACK_BITS
+//#define OBJ_MIN_PRAGMAPACK_BITS 3 // allows pragma packs >= 8. objsizew becomes 7<<3, so 1024 bytes max per class (default)
+#define   OBJ_MIN_PRAGMAPACK_BITS 1 // allows pragma packs >= 2. objsizew becomes 7<<1, so  256 bytes max per class
+//#define OBJ_MIN_PRAGMAPACK_BITS 0 // allows pragma packs >= 1. objsizew becomes 7<<0, so  128 bytes max per class
+#endif
 
-#define SEMVER(major,minor,patch) (0100 * (major) + 010 * (minor) + (patch))
-#define SEMVERCMP(v1,v2) (((v1) & 0110) - ((v2) & 0110))
-#define SEMVERFMT "%03o"
+#define OBJHEADER \
+    union { \
+        uintptr_t objheader; \
+        struct {  \
+        uintptr_t objtype:8; \
+        uintptr_t objheap:1; \
+        uintptr_t objsizew:7; \
+        uintptr_t objrefs:8; \
+        uintptr_t objcomps:1; /* << can be removed? check payload ptr instead? */ \
+        uintptr_t objnameid:16; \
+        uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
+        uintptr_t objunused:64-8-7-1-1-8-16-ID_INDEX_BITS-ID_COUNT_BITS; /*4*/ \
+        }; \
+    };
 
-// -----------------------------------------------------------------------------
-// storage types. refer to vec2i/3i, vec2/3/4 if you plan to do math operations
+#define OBJ \
+    struct { OBJHEADER };
 
-typedef struct byte2 { uint8_t x,y; } byte2;
-typedef struct byte3 { uint8_t x,y,z; } byte3;
-typedef struct byte4 { uint8_t x,y,z,w; } byte4;
+// ----------------------------------------------------------------------------
+// syntax sugars
 
-typedef struct int2 { int x,y; } int2;
-typedef struct int3 { int x,y,z; } int3;
-typedef struct int4 { int x,y,z,w; } int4;
+#ifdef OBJTYPE
+#undef OBJTYPE
+#endif
 
-typedef struct uint2 { unsigned int x,y; } uint2;
-typedef struct uint3 { unsigned int x,y,z; } uint3;
-typedef struct uint4 { unsigned int x,y,z,w; } uint4;
+#define OBJTYPE(T) \
+    OBJTYPE_##T
 
-typedef struct float2 { float x,y; } float2;
-typedef struct float3 { float x,y,z; } float3;
-typedef struct float4 { float x,y,z,w; } float4;
+#define OBJTYPEDEF(NAME,N) \
+     enum { OBJTYPE(NAME) = N }; \
+     STATIC_ASSERT( N <= 255 ); \
+     STATIC_ASSERT( (sizeof(NAME) & ((1<<OBJ_MIN_PRAGMAPACK_BITS)-1)) == 0 );
 
-typedef struct double2 { double x,y; } double2;
-typedef struct double3 { double x,y,z; } double3;
-typedef struct double4 { double x,y,z,w; } double4;
+// ----------------------------------------------------------------------------
+// objects
 
-#define byte2(x,y)       M_CAST(byte2, (uint8_t)(x), (uint8_t)(y) )
-#define byte3(x,y,z)     M_CAST(byte3, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z) )
-#define byte4(x,y,z,w)   M_CAST(byte4, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z), (uint8_t)(w) )
+#define TYPEDEF_STRUCT(NAME,N,...) \
+    typedef struct NAME { OBJ \
+        __VA_ARGS__ \
+        char payload[0]; \
+    } NAME; OBJTYPEDEF(NAME,N);
 
-#define int2(x,y)        M_CAST(int2, (int)(x), (int)(y) )
-#define int3(x,y,z)      M_CAST(int3, (int)(x), (int)(y), (int)(z) )
-#define int4(x,y,z,w)    M_CAST(int4, (int)(x), (int)(y), (int)(z), (int)(w) )
+// TYPEDEF_STRUCT(obj,0);
+    typedef struct obj { OBJ } obj;
 
-#define uint2(x,y)       M_CAST(uint2, (unsigned)(x), (unsigned)(y) )
-#define uint3(x,y,z)     M_CAST(uint3, (unsigned)(x), (unsigned)(y), (unsigned)(z) )
-#define uint4(x,y,z,w)   M_CAST(uint4, (unsigned)(x), (unsigned)(y), (unsigned)(z), (unsigned)(w) )
+// ----------------------------------------------------------------------------
+// entities
 
-#define float2(x,y)      M_CAST(float2, (float)(x), (float)(y) )
-#define float3(x,y,z)    M_CAST(float3, (float)(x), (float)(y), (float)(z) )
-#define float4(x,y,z,w)  M_CAST(float4, (float)(x), (float)(y), (float)(z), (float)(w) )
+#define OBJCOMPONENTS_MAX 32
+#define OBJCOMPONENTS_ALL_ENABLED 0xAAAAAAAAAAAAAAAAULL
+#define OBJCOMPONENTS_ALL_FLAGGED 0x5555555555555555ULL
+#define COMPONENTS_ONLY(x) ((x) & ~OBJCOMPONENTS_ALL_FLAGGED)
 
-#define double2(x,y)     M_CAST(double2, (double)(x), (double)(y) )
-#define double3(x,y,z)   M_CAST(double3, (double)(x), (double)(y), (double)(z) )
-#define double4(x,y,z,w) M_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )
+#define ENTITY \
+    struct { OBJHEADER union { struct { uintptr_t objenabled:OBJCOMPONENTS_MAX, objflagged:OBJCOMPONENTS_MAX; }; uintptr_t cflags; }; void *c[OBJCOMPONENTS_MAX]; };
+
+#define TYPEDEF_ENTITY(NAME,N,...) \
+    typedef struct NAME { ENTITY \
+        __VA_ARGS__ \
+        char payload[0]; \
+    } NAME; OBJTYPEDEF(NAME,N);
+
+// OBJTYPEDEF(entity,1)
+    typedef struct entity { ENTITY } entity;
+
+// ----------------------------------------------------------------------------
+// heap/stack ctor/dtor
+
+static __thread obj *objtmp;
+#define OBJ_CTOR_HDR(PTR,HEAP,OBJ_NAMEID,SIZEOF_OBJ,OBJ_TYPE) ( \
+        (PTR)->objheader = HEAP ? id_make(PTR) : 0, /*should assign to .objid instead. however, id_make() returns shifted bits already*/ \
+        (PTR)->objnameid = (OBJ_NAMEID), \
+        (PTR)->objtype = (OBJ_TYPE), \
+        (PTR)->objheap = (HEAP), \
+        (PTR)->objsizew = (SIZEOF_OBJ>>OBJ_MIN_PRAGMAPACK_BITS))
+#define OBJ_CTOR_PTR(PTR,HEAP,OBJ_NAMEID,SIZEOF_OBJ,OBJ_TYPE) ( \
+        OBJ_CTOR_HDR(PTR,HEAP,OBJ_NAMEID,SIZEOF_OBJ,OBJ_TYPE), \
+        obj_ctor(PTR))
+#define OBJ_CTOR(TYPE, NAME, HEAP, PAYLOAD_SIZE, ...) (TYPE*)( \
+        objtmp = (HEAP ? MALLOC(sizeof(TYPE)+(PAYLOAD_SIZE)) : ALLOCA(sizeof(TYPE)+(PAYLOAD_SIZE))), \
+        *(TYPE*)objtmp = ((TYPE){ {0}, __VA_ARGS__}), \
+        ((PAYLOAD_SIZE) ? memset((char*)objtmp + sizeof(TYPE), 0, (PAYLOAD_SIZE)) : objtmp), \
+        ( OBJTYPES[ OBJTYPE(TYPE) ] = #TYPE ), \
+        OBJ_CTOR_PTR(objtmp, HEAP,intern(NAME),sizeof(TYPE),OBJTYPE(TYPE)), \
+        ifdef(debug, (obj_printf)(objtmp, va("%s", callstack(+16))), 0), \
+        objtmp)
+
+#define obj(TYPE, ...)                 obj_ext(TYPE, #TYPE, __VA_ARGS__)
+#define obj_ext(TYPE, NAME, ...)      *OBJ_CTOR(TYPE, NAME, 0, sizeof(array(obj*)), __VA_ARGS__)
+
+#define obj_new(TYPE, ...)             obj_new_ext(TYPE, #TYPE, __VA_ARGS__)
+#define obj_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE, NAME, 1, sizeof(array(obj*)), __VA_ARGS__)
+
+void*   obj_malloc(unsigned sz);
+void*   obj_free(void *o);
+
+// ----------------------------------------------------------------------------
+// obj generics. can be extended.
+
+#define obj_ctor(o,...) obj_method(ctor, o, ##__VA_ARGS__)
+#define obj_dtor(o,...) obj_method(dtor, o, ##__VA_ARGS__)
+
+#define obj_save(o,...) obj_method(save, o, ##__VA_ARGS__)
+#define obj_load(o,...) obj_method(load, o, ##__VA_ARGS__)
+
+#define obj_test(o,...) obj_method(test, o, ##__VA_ARGS__)
+
+#define obj_init(o,...) obj_method(init, o, ##__VA_ARGS__)
+#define obj_quit(o,...) obj_method(quit, o, ##__VA_ARGS__)
+#define obj_tick(o,...) obj_method(tick, o, ##__VA_ARGS__)
+#define obj_draw(o,...) obj_method(draw, o, ##__VA_ARGS__)
+
+#define obj_lerp(o,...) obj_method(lerp, o, ##__VA_ARGS__)
+#define obj_edit(o,...) obj_method(edit, o, ##__VA_ARGS__)
+
+// --- syntax sugars
+
+#define obj_extend(T,func)               (obj_##func[OBJTYPE(T)] = (void*)T##_##func)
+#define obj_method(method,o,...)         (obj_##method[((obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((obj*)(o))->objtype]((o), ##__VA_ARGS__))
+
+#define obj_vtable(func,RC,...)          RC macro(obj_##func)(){ __VA_ARGS__ }; RC (*obj_##func[256])() = { REPEAT256(macro(obj_##func)) };
+#define obj_vtable_null(func,RC)         RC (*obj_##func[256])() = { 0 }; // null virtual table. will crash unless obj_extend'ed
+
+#define REPEAT16(f)  f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f
+#define REPEAT64(f)  REPEAT16(f),REPEAT16(f),REPEAT16(f),REPEAT16(f)
+#define REPEAT256(f) REPEAT64(f),REPEAT64(f),REPEAT64(f),REPEAT64(f)
+
+// --- declare vtables
+
+API extern void  (*obj_ctor[256])(); ///-
+API extern void  (*obj_dtor[256])(); ///-
+
+API extern char* (*obj_save[256])(); ///-
+API extern bool  (*obj_load[256])(); ///-
+API extern int   (*obj_test[256])(); ///-
+
+API extern int   (*obj_init[256])(); ///-
+API extern int   (*obj_quit[256])(); ///-
+API extern int   (*obj_tick[256])(); ///-
+API extern int   (*obj_draw[256])(); ///-
+
+API extern int   (*obj_lerp[256])(); ///-
+API extern int   (*obj_edit[256])(); ///-
+
+// ----------------------------------------------------------------------------
+// core
+
+API uintptr_t   obj_header(const void *o);
+
+API uintptr_t   obj_id(const void *o);
+API const char* obj_name(const void *o);
+
+API unsigned    obj_typeid(const void *o);
+API const char* obj_type(const void *o);
+
+API int         obj_sizeof(const void *o);
+API int         obj_size(const void *o); // size of all members together in struct. may include padding bytes.
+
+API char*       obj_data(void *o); // pointer to the first member in struct
+API const char* obj_datac(const void *o); // const pointer to the first struct member
+
+API void*       obj_payload(const void *o); // pointer right after last member in struct
+API void*       obj_zero(void *o); // reset all object members
+
+// ----------------------------------------------------------------------------
+// refcounting
+
+API void*       obj_ref(void *oo);
+API void*       obj_unref(void *oo);
+
+// ----------------------------------------------------------------------------
+// scene tree
+
+// non-recursive
+#define each_objchild(p,t,o) \
+    (array(obj*)* children = obj_children(p); children; children = 0) \
+        for(int _i = 1, _end = array_count(*children); _i < _end; ++_i) \
+            for(t *o = (t *)((*children)[_i]); o && 0[*children]; o = 0)
+
+API obj*        obj_detach(void *c);
+API obj*        obj_attach(void *o, void *c);
+
+API obj*        obj_root(const void *o);
+API obj*        obj_parent(const void *o);
+API array(obj*)*obj_children(const void *o);
+API array(obj*)*obj_siblings(const void *o);
+
+API int         obj_dumptree(const void *o);
+
+// ----------------------------------------------------------------------------
+// metadata
+
+API const char* obj_metaset(const void *o, const char *key, const char *value);
+API const char* obj_metaget(const void *o, const char *key);
+
+// ----------------------------------------------------------------------------
+// stl
+
+API void*       obj_swap(void *dst, void *src);
+API void*       obj_copy_fast(void *dst, const void *src);
+API void*       obj_copy(void *dst, const void *src);
+
+API int         obj_comp_fast(const void *a, const void *b);
+API int         obj_comp(const void *a, const void *b);
+API int         obj_lesser(const void *a, const void *b);
+API int         obj_greater(const void *a, const void *b);
+API int         obj_equal(const void *a, const void *b);
+
+API uint64_t    obj_hash(const void *o);
+
+// ----------------------------------------------------------------------------
+// debug
+
+API bool        obj_hexdump(const void *oo);
+API int         obj_print(const void *o);
+
+API int         obj_printf(const void *o, const char *text);
+API int         obj_console(const void *o); // obj_output() ?
+
+#define         obj_printf(o, ...) obj_printf(o, va(__VA_ARGS__))
+
+// ----------------------------------------------------------------------------
+// serialization
+
+API char*       obj_saveini(const void *o);
+API obj*        obj_mergeini(void *o, const char *ini);
+API obj*        obj_loadini(void *o, const char *ini);
+
+API char*       obj_savejson(const void *o);
+API obj*        obj_mergejson(void *o, const char *json);
+API obj*        obj_loadjson(void *o, const char *json);
+
+API char*       obj_savebin(const void *o);
+API obj*        obj_mergebin(void *o, const char *sav);
+API obj*        obj_loadbin(void *o, const char *sav);
+
+API char*       obj_savempack(const void *o); // @todo
+API obj*        obj_mergempack(void *o, const char *sav); // @todo
+API obj*        obj_loadmpack(void *o, const char *sav); // @todo
+
+API int         obj_push(const void *o);
+API int         obj_pop(void *o);
+
+// ----------------------------------------------------------------------------
+// components
+
+API bool        obj_addcomponent(void *object, unsigned c, void *ptr);
+API bool        obj_hascomponent(void *object, unsigned c);
+API void*       obj_getcomponent(void *object, unsigned c);
+API bool        obj_delcomponent(void *object, unsigned c);
+API bool        obj_usecomponent(void *object, unsigned c);
+API bool        obj_offcomponent(void *object, unsigned c);
+
+API char*       entity_save(entity *self);
+
+// ----------------------------------------------------------------------------
+// reflection
+
+#define each_objmember(oo,TYPE,NAME,PTR) \
+    (array(reflect_t) *found_ = members_find(quark(((obj*)oo)->objnameid)); found_; found_ = 0) \
+        for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
+            for(reflect_t *R = &(*found_)[it_]; R; R = 0 ) \
+                for(const char *NAME = R->name, *TYPE = R->type; NAME || TYPE; ) \
+                    for(void *PTR = ((char*)oo) + R->sz ; NAME || TYPE ; NAME = TYPE = 0 )
+
+API void*       obj_clone(const void *src);
+API void*       obj_merge(void *dst, const void *src); // @testme
+API void*       obj_mutate(void **dst, const void *src);
+API void*       obj_make(const char *str);
+
+// built-ins
+
+typedef enum OBJTYPE_BUILTINS {
+    OBJTYPE_obj    =  0,
+    OBJTYPE_entity =  1,
+    OBJTYPE_vec2   =  2,
+    OBJTYPE_vec3   =  3,
+    OBJTYPE_vec4   =  4,
+    OBJTYPE_quat   =  5,
+    OBJTYPE_mat33  =  6,
+    OBJTYPE_mat34  =  7,
+    OBJTYPE_mat44  =  8,
+    OBJTYPE_vec2i  =  9,
+    OBJTYPE_vec3i  = 10,
+} OBJTYPE_BUILTINS;
+
 #line 0
 
 #line 1 "engine/split/v4k_profile.h"
@@ -2716,14 +3030,14 @@ API void *             function_find(const char *F);
 
 API reflect_t          member_find(const char *T, const char *M); /// find specific member
 API void *             member_findptr(void *obj, const char *T, const char *M); // @deprecate
-API array(reflect_t)   members_find(const char *T);
+API array(reflect_t)*  members_find(const char *T);
 
 // iterate members in a struct
 
 #define each_member(T,R) \
-    (array(reflect_t)*found_ = map_find(members, intern(T)); found_; found_ = 0) \
+    (array(reflect_t) *found_ = members_find(T); found_; found_ = 0) \
         for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
-            for(reflect_t *R = (*found_)+it_; R; R = 0 )
+            for(reflect_t *R = &(*found_)[it_]; R; R = 0 )
 
 // private api, still exposed
 
@@ -2756,7 +3070,7 @@ API unsigned rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a );
 API unsigned bgra( uint8_t b, uint8_t g, uint8_t r, uint8_t a );
 API unsigned rgbaf( float r, float g, float b, float a );
 API unsigned bgraf( float b, float g, float r, float a );
-API float    alpha( unsigned rgba );
+API unsigned alpha( unsigned rgba );
 
 #define RGBX(rgb,x)   ( ((rgb)&0xFFFFFF) | (((unsigned)(x))<<24) )
 #define RGB3(r,g,b)   ( (255<<24) | ((r)<<16) | ((g)<<8) | (b) )
@@ -3742,16 +4056,16 @@ API array(uint32_t) string32( const char *utf8 ); /// convert from utf8 to utf32
 // ## string interning (quarks)
 // - rlyeh, public domain.
 
-unsigned    intern( const char *string );
-const char *quark( unsigned key );
+API unsigned    intern( const char *string );
+API const char *quark( unsigned key );
 
 typedef struct quarks_db {
 	array(char) blob;
 	array(vec2i) entries;
 } quarks_db;
 
-unsigned    quark_intern( quarks_db*, const char *string );
-const char *quark_string( quarks_db*, unsigned key );
+API unsigned    quark_intern( quarks_db*, const char *string );
+API const char *quark_string( quarks_db*, unsigned key );
 #line 0
 
 #line 1 "engine/split/v4k_time.h"
@@ -3781,7 +4095,7 @@ API void        timer_destroy(unsigned timer_handle);
 //
 // also similar to a mongo object id, 12 bytes as follows:
 // - 4-byte timestamp (ss). epoch: Tuesday, 12 September 2023 6:06:56
-// - 2-byte (machine or app hash)
+// - 2-byte (machine, hash or app id)
 // - 2-byte (thread-id)
 // - 4-byte (rand counter, that gets increased at every id creation)
 
@@ -3853,7 +4167,7 @@ API void        die(const char *message);
 API void        alert(const char *message);
 API void        hexdump( const void *ptr, unsigned len );
 API void        hexdumpf( FILE *fp, const void *ptr, unsigned len, int width );
-API void        breakpoint(const char *optional_reason);
+API void        breakpoint();
 API bool        has_debugger();
 
 API void        trap_install(void);

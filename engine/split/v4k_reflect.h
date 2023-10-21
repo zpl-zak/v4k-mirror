@@ -43,14 +43,14 @@ API void *             function_find(const char *F);
 
 API reflect_t          member_find(const char *T, const char *M); /// find specific member
 API void *             member_findptr(void *obj, const char *T, const char *M); // @deprecate
-API array(reflect_t)   members_find(const char *T);
+API array(reflect_t)*  members_find(const char *T);
 
 // iterate members in a struct
 
 #define each_member(T,R) \
-    (array(reflect_t)*found_ = map_find(members, intern(T)); found_; found_ = 0) \
+    (array(reflect_t) *found_ = members_find(T); found_; found_ = 0) \
         for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
-            for(reflect_t *R = (*found_)+it_; R; R = 0 )
+            for(reflect_t *R = &(*found_)[it_]; R; R = 0 )
 
 // private api, still exposed
 

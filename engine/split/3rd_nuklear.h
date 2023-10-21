@@ -8020,7 +8020,7 @@ nk_utf_decode(const char *c, nk_rune *u, int clen)
     *u = NK_UTF_INVALID;
 
     udecoded = nk_utf_decode_byte(c[0], &len);
-    if (!NK_BETWEEN(len, 1, NK_UTF_SIZE))
+    if (!NK_BETWEEN(len, 1, NK_UTF_SIZE+1)) //< @r-lyeh: add +1 for len<=4
         return 1;
 
     for (i = 1, j = 1; i < clen && j < len; ++i, ++j) {
@@ -20155,7 +20155,12 @@ window->is_window_resizing |= layout->flags & NK_WINDOW_SCALE_TOP ? NK_WINDOW_SC
                     }
 
                 }
-                ctx->style.cursor_active = ctx->style.cursors[NK_CURSOR_RESIZE_TOP_RIGHT_DOWN_LEFT];
+                int icon = //< @r-lyeh
+                  ((layout->flags & NK_WINDOW_SCALE_TOP) && !(layout->flags & NK_WINDOW_SCALE_LEFT))
+                  ||
+                  ((layout->flags & NK_WINDOW_SCALE_LEFT) && !(layout->flags & NK_WINDOW_SCALE_TOP))
+                ? NK_CURSOR_RESIZE_TOP_LEFT_DOWN_RIGHT : NK_CURSOR_RESIZE_TOP_RIGHT_DOWN_LEFT;
+                ctx->style.cursor_active = ctx->style.cursors[icon]; //< @r-lyeh
                 in->mouse.buttons[NK_BUTTON_LEFT].clicked_pos.x = scaler.x + scaler.w/2.0f;
                 in->mouse.buttons[NK_BUTTON_LEFT].clicked_pos.y = scaler.y + scaler.h/2.0f;
             }

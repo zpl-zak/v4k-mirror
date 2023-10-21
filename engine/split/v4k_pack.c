@@ -1,4 +1,49 @@
 // -----------------------------------------------------------------------------
+// semantic versioning in a single byte (octal)
+// - rlyeh, public domain.
+//
+// - single octal byte that represents semantic versioning (major.minor.patch).
+// - allowed range [0000..0377] ( <-> [0..255] decimal )
+// - comparison checks only major.minor tuple as per convention.
+
+int semver( int major, int minor, int patch ) {
+    return SEMVER(major, minor, patch);
+}
+int semvercmp( int v1, int v2 ) {
+    return SEMVERCMP(v1, v2);
+}
+
+#if 0
+AUTORUN {
+    for( int i= 0; i <= 255; ++i) printf(SEMVERFMT ",", i);
+    puts("");
+
+    printf(SEMVERFMT "\n", semver(3,7,7));
+    printf(SEMVERFMT "\n", semver(2,7,7));
+    printf(SEMVERFMT "\n", semver(1,7,7));
+    printf(SEMVERFMT "\n", semver(0,7,7));
+
+    printf(SEMVERFMT "\n", semver(3,7,1));
+    printf(SEMVERFMT "\n", semver(2,5,3));
+    printf(SEMVERFMT "\n", semver(1,3,5));
+    printf(SEMVERFMT "\n", semver(0,1,7));
+
+    assert( semvercmp( 0357, 0300 )  > 0 );
+    assert( semvercmp( 0277, 0300 )  < 0 );
+    assert( semvercmp( 0277, 0200 )  > 0 );
+    assert( semvercmp( 0277, 0100 )  < 0 );
+    assert( semvercmp( 0076, 0070 ) == 0 );
+    assert( semvercmp( 0076, 0077 ) == 0 );
+    assert( semvercmp( 0176, 0170 ) == 0 );
+    assert( semvercmp( 0176, 0177 ) == 0 );
+    assert( semvercmp( 0276, 0270 ) == 0 );
+    assert( semvercmp( 0276, 0277 ) == 0 );
+    assert( semvercmp( 0376, 0370 ) == 0 );
+    assert( semvercmp( 0376, 0377 ) == 0 );
+}
+#endif
+
+// -----------------------------------------------------------------------------
 // compile-time fourcc, eightcc
 
 char *cc4str(unsigned x) {
@@ -25,24 +70,18 @@ char *cc8str(uint64_t x) {
 // ----------------------------------------------------------------------------
 // float conversion (text)
 
-vec2 atof2(const char *s) {
-    vec2 v = {0};
-    sscanf(s, "%f,%f", &v.x, &v.y);
-    return v;
+char* itoa1(int v) {
+    return va("%d", v);
 }
-vec3 atof3(const char *s) {
-    vec3 v = {0};
-    sscanf(s, "%f,%f,%f", &v.x, &v.y, &v.z);
-    return v;
+char* itoa2(vec2i v) {
+    return va("%d,%d", v.x,v.y);
 }
-vec4 atof4(const char *s) {
-    vec4 v = {0};
-    sscanf(s, "%f,%f,%f,%f", &v.x, &v.y, &v.z, &v.w);
-    return v;
+char* itoa3(vec3i v) {
+    return va("%d,%d,%d", v.x,v.y,v.z);
 }
 
-char* ftoa(float f) {
-    return va("%f", f);
+char* ftoa1(float v) {
+    return va("%f", v);
 }
 char* ftoa2(vec2 v) {
     return va("%f,%f", v.x, v.y);
@@ -52,6 +91,51 @@ char* ftoa3(vec3 v) {
 }
 char* ftoa4(vec4 v) {
     return va("%f,%f,%f,%f", v.x, v.y, v.z, v.w);
+}
+
+float atof1(const char *s) {
+    char buf[64];
+    return sscanf(s, "%64[^]\r\n,}]", buf) == 1 ? (float)eval(buf) : (float)NAN;
+}
+vec2 atof2(const char *s) {
+    vec2 v = { 0 };
+    char buf1[64],buf2[64];
+    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2);
+    if( num > 0 ) v.x = eval(buf1);
+    if( num > 1 ) v.y = eval(buf2);
+    return v;
+}
+vec3 atof3(const char *s) {
+    vec3 v = {0};
+    char buf1[64],buf2[64],buf3[64];
+    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2, buf3);
+    if( num > 0 ) v.x = eval(buf1);
+    if( num > 1 ) v.y = eval(buf2);
+    if( num > 2 ) v.z = eval(buf3);
+    return v;
+}
+vec4 atof4(const char *s) {
+    vec4 v = {0};
+    char buf1[64],buf2[64],buf3[64],buf4[64];
+    int num = sscanf(s, "%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}],%64[^]\r\n,}]", buf1, buf2, buf3, buf4);
+    if( num > 0 ) v.x = eval(buf1);
+    if( num > 1 ) v.y = eval(buf2);
+    if( num > 2 ) v.z = eval(buf3);
+    if( num > 3 ) v.w = eval(buf4);
+    return v;
+}
+
+// @todo: expand this to proper int parsers
+int atoi1(const char *s) {
+    return (int)atof1(s);
+}
+vec2i atoi2(const char *s) {
+    vec2 v = atof2(s);
+    return vec2i( v.x, v.y );
+}
+vec3i atoi3(const char *s) {
+    vec3 v = atof3(s);
+    return vec3i( v.x, v.y, v.z );
 }
 
 // endianness -----------------------------------------------------------------

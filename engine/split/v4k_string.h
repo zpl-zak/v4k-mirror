@@ -79,13 +79,13 @@ API array(uint32_t) string32( const char *utf8 ); /// convert from utf8 to utf32
 // ## string interning (quarks)
 // - rlyeh, public domain.
 
-unsigned    intern( const char *string );
-const char *quark( unsigned key );
+API unsigned    intern( const char *string );
+API const char *quark( unsigned key );
 
 typedef struct quarks_db {
 	array(char) blob;
 	array(vec2i) entries;
 } quarks_db;
 
-unsigned    quark_intern( quarks_db*, const char *string );
-const char *quark_string( quarks_db*, unsigned key );
+API unsigned    quark_intern( quarks_db*, const char *string );
+API const char *quark_string( quarks_db*, unsigned key );

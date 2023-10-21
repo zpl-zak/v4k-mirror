@@ -24,7 +24,7 @@ API void        timer_destroy(unsigned timer_handle);
 //
 // also similar to a mongo object id, 12 bytes as follows:
 // - 4-byte timestamp (ss). epoch: Tuesday, 12 September 2023 6:06:56
-// - 2-byte (machine or app hash)
+// - 2-byte (machine, hash or app id)
 // - 2-byte (thread-id)
 // - 4-byte (rand counter, that gets increased at every id creation)
 

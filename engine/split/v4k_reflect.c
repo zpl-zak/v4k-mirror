@@ -79,10 +79,10 @@ void *member_findptr(void *obj, const char *T, const char *M) {
     M = symbol(M);
     return (char*)obj + member_find(T,M).sz;
 }
-array(reflect_t) members_find(const char *T) {
+array(reflect_t)* members_find(const char *T) {
     reflect_init();
     T = symbol(T);
-    return *map_find(members, intern(T));
+    return map_find(members, intern(T));
 }
 
 

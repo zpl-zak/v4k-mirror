@@ -5,7 +5,6 @@
 
 #define UI_FONT_ENUM(carlito,b612) b612 // carlito
 
-#define UI_FONT_ICONS    "MaterialIconsSharp-Regular.otf" // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf" //
 #define UI_FONT_REGULAR  UI_FONT_ENUM("Carlito",     "B612")     "-Regular.ttf"
 #define UI_FONT_HEADING  UI_FONT_ENUM("Carlito",     "B612")     "-BoldItalic.ttf"
 #define UI_FONT_TERMINAL UI_FONT_ENUM("Inconsolata", "B612Mono") "-Regular.ttf"
@@ -76,12 +75,16 @@ static void nk_config_custom_fonts() {
         }
 
         // ...with icons embedded on it.
-
-        for( char *data = vfs_load(UI_FONT_ICONS, &datalen); data; data = 0 ) {
-            static const nk_rune icon_range[] = {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0};
-
+        static struct icon_font {
+            const char *file; nk_rune range[3];
+        } icons[] = {
+            {"MaterialIconsSharp-Regular.otf", {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0}}, // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf"
+            {"materialdesignicons-webfont.ttf", {0xF68C /*ICON_MIN_MDI*/, 0xF1C80/*ICON_MAX_MDI*/, 0}},
+        };
+        for( int f = 0; f < countof(icons); ++f )
+        for( char *data = vfs_load(icons[f].file, &datalen); data; data = 0 ) {
             struct nk_font_config cfg = nk_font_config(UI_ICON_FONTSIZE);
-            cfg.range = icon_range; // nk_font_default_glyph_ranges();
+            cfg.range = icons[f].range; // nk_font_default_glyph_ranges();
             cfg.merge_mode = 1;
 
             cfg.spacing.x += UI_ICON_SPACING_X;
