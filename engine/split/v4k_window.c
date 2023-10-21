@@ -271,7 +271,8 @@ void glNewFrame() {
 }
 
 bool window_create_from_handle(void *handle, float scale, unsigned flags) {
-    ifdef(debug, if( flag("--tests") ) exit(0));
+    // abort run if any test suite failed in unit-test mode
+    ifdef(debug, if( flag("--test-only") ) exit( test_errors ? -test_errors : 0 ));
 
     glfw_init();
     v4k_init();

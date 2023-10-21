@@ -158,6 +158,9 @@ if "%1"=="pull" (
 )
 
 if "%1"=="depot" (
+    pushd depot\
+        git pull
+    popd
     git submodule update --remote --merge depot/
     exit /b
 )

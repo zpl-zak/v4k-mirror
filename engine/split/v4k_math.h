@@ -5,9 +5,9 @@
 // Credits: @ands+@krig+@vurtun (PD), @datenwolf (WTFPL2), @evanw+@barerose (CC0), @sgorsten (Unlicense).
 
 #define C_EPSILON  (1e-6)
-#define C_PI       (3.141592654f) // (3.14159265358979323846f)
-#define TO_RAD     (C_PI/180.f)
-#define TO_DEG     (180.f/C_PI)
+#define C_PI       (3.14159265358979323846f) // (3.141592654f)
+#define TO_RAD     (C_PI/180)
+#define TO_DEG     (180/C_PI)
 
 // ----------------------------------------------------------------------------
 
@@ -39,7 +39,6 @@ API void     randset(uint64_t state);
 API uint64_t rand64(void);
 API double   randf(void); // [0, 1) interval
 API int      randi(int mini, int maxi); // [mini, maxi) interval
-//API double rng(void); // [0..1) Lehmer RNG "minimal standard"
 
 // ----------------------------------------------------------------------------
 
@@ -105,10 +104,10 @@ enum EASE_FLAGS {
     EASE_OUT = 0,
 };
 
-API float ease(float t01, unsigned mode); // 0=linear,1=out_sine...31=inout_perlin
-
-API float ease_ping_pong(float t, float(*fn1)(float), float(*fn2)(float));
-API float ease_pong_ping(float t, float(*fn1)(float), float(*fn2)(float));
+API float ease(float t01, unsigned fn); // / 0-to-1
+API float ease_pong(float t01, unsigned fn); // \ 1-to-0
+API float ease_ping_pong(float t, unsigned fn1, unsigned fn2); // /\ 0-to-1-to-0
+API float ease_pong_ping(float t, unsigned fn1, unsigned fn2); // \/ 1-to-0-to-1
 
 // ----------------------------------------------------------------------------
 

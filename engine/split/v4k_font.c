@@ -1634,7 +1634,7 @@ void font_color(const char *tag, uint32_t color) {
             if( f->initialized ) {
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_1D, f->texture_colors);
-                glTexSubImage1D(GL_TEXTURE_1D, 0, 0, FONT_MAX_COLORS, GL_BGRA, GL_UNSIGNED_BYTE, font_palette);
+                glTexSubImage1D(GL_TEXTURE_1D, 0, 0, FONT_MAX_COLORS, GL_RGBA, GL_UNSIGNED_BYTE, font_palette);
             }
         }
     }
@@ -1832,7 +1832,7 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // last chance to inspect the font atlases
-    if( flag("--debug-font-atlas") )
+    if( flag("--font-debug") )
     stbi_write_png(va("debug_font_atlas%d.png", index), f->width, f->height, 1, bitmap, 0);
 
     FREE(bitmap);
@@ -1880,7 +1880,7 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
     glGenTextures(1, &f->texture_colors);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_1D, f->texture_colors);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, FONT_MAX_COLORS, 0, GL_BGRA, GL_UNSIGNED_BYTE, font_palette);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, FONT_MAX_COLORS, 0, GL_RGBA, GL_UNSIGNED_BYTE, font_palette);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);

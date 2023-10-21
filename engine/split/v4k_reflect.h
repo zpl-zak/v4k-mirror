@@ -26,15 +26,15 @@ typedef struct reflect_t {
 // inscribe api
 
 #define ENUM(V, .../*value_annotations*/) \
-    enum_inscribe(#V,intern(#V),V, "" __VA_ARGS__/*value_annotations*/)
+    enum_inscribe(#V,V, "" __VA_ARGS__/*value_annotations*/)
 
 #define FUNCTION(F, .../*function_annotations*/) \
-    function_inscribe(#F,intern(#F),(void*)F, "" __VA_ARGS__/*function_annotations*/)
+    function_inscribe(#F,(void*)F, "" __VA_ARGS__/*function_annotations*/)
 
 #define STRUCT(T, type, member, .../*member_annotations*/) \
-    struct_inscribe(#T,intern(#T),sizeof(T),OBJTYPE(T),NULL), \
-    type_inscribe(#type,intern(#type),sizeof(((T){0}).member),"" __VA_ARGS__/*member_annotations*/), \
-    member_inscribe(intern(#T), #member,intern(#member),(uintptr_t)&((T*)0)->member, "" __VA_ARGS__/*member_annotations*/, #type, sizeof(((T){0}).member) )
+    struct_inscribe(#T,sizeof(T),OBJTYPE(T),NULL), \
+    type_inscribe(#type,sizeof(((T){0}).member),"" __VA_ARGS__/*member_annotations*/), \
+    member_inscribe(#T, #member,(uintptr_t)&((T*)0)->member, "" __VA_ARGS__/*member_annotations*/, #type, sizeof(((T){0}).member) )
 
 // find api
 
@@ -43,22 +43,22 @@ API void *             function_find(const char *F);
 
 API reflect_t          member_find(const char *T, const char *M); /// find specific member
 API void *             member_findptr(void *obj, const char *T, const char *M); // @deprecate
-API array(reflect_t)   members_find(const char *T);
+API array(reflect_t)*  members_find(const char *T);
 
 // iterate members in a struct
 
 #define each_member(T,R) \
-    (array(reflect_t)*found_ = map_find(members, intern(T)); found_; found_ = 0) \
+    (array(reflect_t) *found_ = members_find(T); found_; found_ = 0) \
         for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
-            for(reflect_t *R = (*found_)+it_; R; R = 0 )
+            for(reflect_t *R = &(*found_)[it_]; R; R = 0 )
 
 // private api, still exposed
 
-API void               type_inscribe(const char *TY,unsigned TYid,unsigned TYsz,const char *infos);
-API void               enum_inscribe(const char *E,unsigned Eid,unsigned Eval,const char *infos);
-API void               struct_inscribe(const char *T,unsigned Tid,unsigned Tsz,unsigned OBJTYPEid, const char *infos);
-API void               member_inscribe(unsigned Tid, const char *M,unsigned Mid,unsigned Msz, const char *infos, const char *type, unsigned bytes);
-API void               function_inscribe(const char *F,unsigned Fid,void *func,const char *infos);
+API void               type_inscribe(const char *TY,unsigned TYsz,const char *infos);
+API void               enum_inscribe(const char *E,unsigned Eval,const char *infos);
+API void               struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTYPEid, const char *infos);
+API void               member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes);
+API void               function_inscribe(const char *F,void *func,const char *infos);
 
 API void               reflect_print(const char *symbol);
 API void               reflect_dump(const char *mask);

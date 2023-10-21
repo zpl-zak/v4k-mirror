@@ -49,7 +49,7 @@ API void        die(const char *message);
 API void        alert(const char *message);
 API void        hexdump( const void *ptr, unsigned len );
 API void        hexdumpf( FILE *fp, const void *ptr, unsigned len, int width );
-API void        breakpoint(const char *optional_reason);
+API void        breakpoint();
 API bool        has_debugger();
 
 API void        trap_install(void);

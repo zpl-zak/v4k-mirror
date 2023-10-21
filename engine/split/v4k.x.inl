@@ -169,6 +169,8 @@ errno_t fopen_s(
 {{FILE:3rd_xml.h}}
 #undef g
 {{FILE:3rd_polychop.h}}
+#define expr expr2 // 3rd_lua.h
+{{FILE:3rd_eval.h}}
 // #define SQLITE_OMIT_LOAD_EXTENSION
 // #define SQLITE_CORE 1
 // #define SQLITE_DEBUG 1

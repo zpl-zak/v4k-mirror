@@ -74,7 +74,7 @@ static __thread unsigned array_n_;
 #define array_vlen_(t)  ( vlen(t) - 0 )
 #define array_realloc_(t,n)  ( (t) = array_cast(t) vrealloc((t), ((n)+0) * sizeof(0[t])) )
 #define array_free(t) array_clear(t)
-#else // new: with reserve support (bugs?)
+#else // new: with reserve support (@todo: check for bugs?)
 #define array_reserve(t, n) ( array_realloc_((t),(n)), array_clear(t) )
 #define array_clear(t) ( array_realloc_((t),0) ) // -1
 #define array_vlen_(t)  ( vlen(t) - sizeof(0[t]) ) // -1
@@ -121,7 +121,7 @@ static __thread unsigned array_n_;
     memcpy( (t), src, array_count(src) * sizeof(0[t])); \
 } while(0)
 
-#define array_erase_fast(t, i) do { /*may alter ordering*/ \
+#define array_erase_fast(t, i) do { /*alters ordering*/ \
     memcpy( &(t)[i], &(t)[array_count(t) - 1], sizeof(0[t])); \
     array_pop(t); \
 } while(0)

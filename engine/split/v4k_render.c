@@ -533,13 +533,13 @@ void shader_colormap(const char *name, colormap_t c ) {
 // colors
 
 unsigned rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a ) {
-    return (unsigned)r << 24 | g << 16 | b << 8 | a;
+    return (unsigned)a << 24 | b << 16 | g << 8 | r;
 }
 unsigned bgra( uint8_t b, uint8_t g, uint8_t r, uint8_t a ) {
     return rgba(r,g,b,a);
 }
-float alpha( unsigned rgba ) {
-    return ( rgba >> 24 ) / 255.f;
+unsigned alpha( unsigned rgba ) {
+    return rgba >> 24;
 }
 
 unsigned rgbaf(float r, float g, float b, float a) {
