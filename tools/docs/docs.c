@@ -900,6 +900,8 @@ int main(int argc, char **argv) {
         strrepl(&chg, "\r\n", "\n");
         for each_substring(chg, "\n", it) {
             if (strstr(it, "sync depot")) continue;
+            if (strstr(it, "sync fwk")) continue;
+            if (strstr(it, "sync FWK")) continue;
             // printf("<details><summary>%s</summary></details>\n", it);
             printf("* %s\n", it);
         }
