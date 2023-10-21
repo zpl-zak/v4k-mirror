@@ -16,3 +16,7 @@ engine/v4k.html
 *.exe.manifest
 
 v4k.osx
+libv4k.*
+editor
+*.dSYM
+.DS_store
