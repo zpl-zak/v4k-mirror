@@ -2,7 +2,7 @@
 <project>
 	<paths>
 		<left>C:\Projects\v4k\_fwk\</left>
-		<right>C:\Projects\v4k\_mirror\</right>
+		<right>C:\Projects\fwk-mirror\</right>
 		<filter>*.cpp,*.h,*.c</filter>
 		<subfolders>1</subfolders>
 		<left-readonly>0</left-readonly>
