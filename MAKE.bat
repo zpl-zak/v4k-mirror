@@ -278,7 +278,7 @@ if "%1"=="vps" (
 )
 
 if "%1"=="fwk" (
-    pushd _mirror
+    pushd ..\fwk-mirror
         call MAKE.bat sync
     popd
     call MAKE.bat fwk_prep

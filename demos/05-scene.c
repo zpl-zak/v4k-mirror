@@ -81,7 +81,7 @@ int main() {
 
         // queue model scale bounces
         float t = fmod(window_time(), 0.3) / 0.3;
-        float s = 0.01f * ease_ping_pong(t, ease_in_cubic,ease_out_cubic);
+        float s = 1.0;//0.01f * ease_ping_pong(t, ease_in_cubic,ease_out_cubic);
         object_scale(obj1, vec3(0.20f - s,0.20f + s,0.20f - s));
         object_scale(obj2, vec3(0.20f - s,0.20f + s,0.20f - s));
 
