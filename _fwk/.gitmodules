@@ -1,0 +1,6 @@
+[submodule "depot"]
+	path = depot
+	url = git@dev.v4.games:v4games/depot.git
+[submodule "_mirror"]
+	path = _mirror
+	url = https://github.com/r-lyeh/FWK

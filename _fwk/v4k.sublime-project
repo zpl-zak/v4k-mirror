@@ -1,0 +1,19 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+			"file_exclude_patterns": ["*.zip", "*.ilk", "*.exp", "_mirror/", "engine/v4k*", "engine/joint/"],
+			"index_exclude_patterns": ["engine/joint/v4k.h", "engine/v4k.h", "engine/v4k.c", "_mirror/**"]
+		}
+	],
+	"settings": {
+		"tab_size": 4
+	},
+	"build_systems": [
+		{
+			"name": "build",
+			"shell_cmd": "MAKE.bat"
+		}
+	]
+}
