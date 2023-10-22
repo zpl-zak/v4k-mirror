@@ -5815,7 +5815,7 @@ if( found && *found == 0 ) {
     }
 
     // search (cache)
-    if( !ptr ) {
+    if( !ptr && ! is(osx) ) {
         ptr = cache_lookup(lookup_id, &size);
     }
 
