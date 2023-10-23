@@ -354,7 +354,7 @@ void node_blend_create(struct node_editor *editor, struct nk_vec2 position) {
 /* ================================= */
 
 #define NK_RGB3(r,g,b) {r,g,b,255}
-#define BG_COLOR ((struct nk_color){0,0,0,80}) // nk_rgba(0,0,0,192)
+#define BG_COLOR ((struct nk_color){60,60,60,192}) // nk_rgba(0,0,0,192)
 
 static
 struct editor_node_style {
@@ -376,9 +376,12 @@ struct editor_node_style {
 #define COLOR_FLOW_HI styles[type_flow].color_hover
 #define COLOR_FLOW_LO styles[type_flow].color_idle
 
-#define GRID_SIZE 32.0f
-#define GRID_COLOR ((struct nk_color)NK_RGB3(60,60,80))
+#define GRID_SIZE 64.0f
+#define GRID_COLOR ((struct nk_color)NK_RGB3(80,80,120))
 #define GRID_THICKNESS 1.0f
+
+// 4 colors: top-left, top-right, bottom-right, bottom-left
+#define GRID_BG_COLORS ((struct nk_color){30,30,30,255}), ((struct nk_color){40,20,0,255}), ((struct nk_color){30,30,30,255}), ((struct nk_color){20,30,40,255})
 
 #define LINK_THICKNESS 1.0f
 #define LINK_DRAW(POINT_A,POINT_B,COLOR) do { \
@@ -615,6 +618,9 @@ static int node_editor(struct node_editor *editor) {
             struct node *it = editor->begin;
             struct nk_rect size = nk_layout_space_bounds(ui_ctx);
             struct nk_panel *nodePanel = 0;
+
+            //nk_fill_rect(canvas, size, 0/*rounding*/, ((struct nk_color){30,30,30,255})); // 20,30,40,255
+            nk_fill_rect_multi_color(canvas, size, GRID_BG_COLORS);
 
             if (editor->show_grid) {
                 /* display grid */

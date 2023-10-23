@@ -28,7 +28,7 @@ const char *OBJTYPES[256] = { 0 }; // = { REPEAT256("") };
 void *obj_malloc(unsigned sz) {
     //sz = sizeof(obj) + sz + sizeof(array(obj*))); // useful?
     obj *ptr = CALLOC(1, sz);
-    OBJ_CTOR_HDR(ptr,1,intern("obj"),sz,OBJTYPE_obj);
+    OBJ_CTOR_HDR(ptr,1,sz,OBJTYPE_obj);
     return ptr;
 }
 void *obj_free(void *o) {
@@ -58,9 +58,9 @@ unsigned obj_typeid(const void *o) {
 const char *obj_type(const void *o) {
     return OBJTYPES[ (((obj*)o)->objtype) ];
 }
-const char *obj_name(const void *o) {
-    return quark(((obj*)o)->objnameid);
-}
+//const char *obj_name(const void *o) {
+//    return quark(((obj*)o)->objnameid);
+//}
 int obj_sizeof(const void *o) {
     return (int)( ((const obj*)o)->objsizew << OBJ_MIN_PRAGMAPACK_BITS );
 }
@@ -110,8 +110,8 @@ void test_obj_core() {
     test( obj_id(s) != 0 );
     test( obj_id(r) != obj_id(s) );
 
-    obj t = obj_ext(obj, "root");
-    obj u = obj_ext(obj, "root");
+    obj t = obj(obj); obj_setname(&t, "root");
+    obj u = obj(obj); obj_setname(&u, "root");
 
     test(&t);
     test( 0 == strcmp(obj_type(&t), "obj") );
@@ -248,7 +248,7 @@ void test_obj_scene() {
     obj_attach(c2, gc2);       //  +- gc2
     obj_attach(c2, gc3);       //  +- gc3
 
-    // obj_dumptree(r);
+    obj_dumptree(r);
     // puts("---");
 
     test( obj_parent(r) == 0 );
@@ -285,16 +285,16 @@ void test_obj_scene() {
 
 static map(int,int) oms;
 static thread_mutex_t *oms_lock;
-const char *obj_metaset(const void *o, const char *key, const char *value) {
+void *obj_setmeta(void *o, const char *key, const char *value) {
     do_threadlock(oms_lock) {
         if(!oms) map_init_int(oms);
         int *q = map_find_or_add(oms, intern(va("%llu-%s",obj_id((obj*)o),key)), 0);
         if(!*q && !value[0]) {} else *q = intern(value);
-        return quark(*q);
+        return quark(*q), o;
     }
     return 0; // unreachable
 }
-const char* obj_metaget(const void *o, const char *key) {
+const char* obj_meta(const void *o, const char *key) {
     do_threadlock(oms_lock) {
         if(!oms) map_init_int(oms);
         int *q = map_find_or_add(oms, intern(va("%llu-%s",obj_id((obj*)o),key)), 0);
@@ -303,12 +303,21 @@ const char* obj_metaget(const void *o, const char *key) {
     return 0; // unreachable
 }
 
+void *obj_setname(void *o, const char *name) {
+    return obj_setmeta(o, "name", name);
+}
+const char *obj_name(const void *o) {
+    const char *objname = obj_meta(o, "name");
+    return objname[0] ? objname : "obj";
+}
+
+
 static
 void test_obj_metadatas( void *o1 ) {
     obj *o = (obj *)o1;
-    test( !strcmp("", obj_metaget(o, "has_passed_test")) );
-    test( !strcmp("yes", obj_metaset(o, "has_passed_test", "yes")) );
-    test( !strcmp("yes", obj_metaget(o, "has_passed_test")) );
+    test( !strcmp("", obj_meta(o, "has_passed_test")) );
+    test( obj_setmeta(o, "has_passed_test", "yes") );
+    test( !strcmp("yes", obj_meta(o, "has_passed_test")) );
 }
 
 // ----------------------------------------------------------------------------
@@ -621,16 +630,29 @@ obj *obj_loadmpack(void *o, const char *sav) { // @todo
     return obj_mergempack(obj_zero(o), sav);
 }
 
-static __thread array(char*) obj_stack;
+static __thread map(void*,array(char*)) obj_stack;
 int obj_push(const void *o) {
-    char *bin = STRDUP(obj_savebin(o));
-    array_push(obj_stack, bin);
+    if(!obj_stack) map_init_ptr(obj_stack);
+    array(char*) *found = map_find_or_add(obj_stack,(void*)o,0);
+
+    char *bin = STRDUP(obj_saveini(o)); // @todo: savebin
+    array_push(*found, bin);
     return 1;
 }
 int obj_pop(void *o) {
-    char *bin = *array_pop(obj_stack);
-    int rc = !!obj_loadbin(o, bin);
-    return FREE(bin), rc;
+    if(!obj_stack) map_init_ptr(obj_stack);
+    array(char*) *found = map_find_or_add(obj_stack,(void*)o,0);
+
+    char **bin = array_back(*found);
+    if( bin ) {
+        int rc = !!obj_loadini(o, *bin); // @todo: loadbin
+        if( array_count(*found) > 1 ) {
+            FREE(*bin);
+            array_pop(*found);
+        }
+        return rc;
+    }
+    return 0;
 }
 
 static
@@ -792,10 +814,11 @@ void *obj_make(const char *str) {
     reflect_t *found = map_find(reflects, Tid);
     if(!found) return 0;
 
-    obj *ptr = CALLOC(1, found->sz + has_components * sizeof(array(obj*)));
+    obj *ptr = CALLOC(1, found->sz + (has_components+1) * sizeof(array(obj*)));
     void *ret = (T == I ? obj_mergeini : obj_mergejson)(ptr, str);
     OBJTYPES[ found->objtype ] = found->name;
-    OBJ_CTOR_PTR(ptr,1,found->id,found->sz,found->objtype);
+    OBJ_CTOR_PTR(ptr,1,/*found->id,*/found->sz,found->objtype);
+    obj_setname(ptr, name); // found->id);
 
     return ptr; // returns partial construction as well. @todo: just return `ret` for a more strict built/failed policy
 }

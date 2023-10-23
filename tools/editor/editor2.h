@@ -155,10 +155,10 @@ enum editor_keys {
 void editor_menubar() {
     do_once editor_init();
 
-    int alts = input(KEY_LALT) || input(KEY_RALT); // @todo: move to fwk.c
-    int ctrls = input(KEY_LCTRL) || input(KEY_RCTRL); // @todo: move to fwk.c
-    int shifts = input(KEY_LSHIFT) || input(KEY_RSHIFT); // @todo: move to fwk.c
-    int mods = alts || ctrls || shifts; // @todo: move to fwk.c
+    int alts = input(KEY_LALT) || input(KEY_RALT); // @todo: move to v4k.c
+    int ctrls = input(KEY_LCTRL) || input(KEY_RCTRL); // @todo: move to v4k.c
+    int shifts = input(KEY_LSHIFT) || input(KEY_RSHIFT); // @todo: move to v4k.c
+    int mods = alts || ctrls || shifts; // @todo: move to v4k.c
     if( input_down(KEY_F5) )  editor_key = key_reload;
     if( input_down(KEY_F11) ) editor_key = key_fullscreen;
     if( input_down(KEY_PAUSE) ) editor_key = key_pause;

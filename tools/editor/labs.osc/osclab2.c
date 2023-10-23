@@ -1,7 +1,7 @@
 // networked gui demo
 // - rlyeh, public domain
 
-#include "fwk.h"
+#include "v4k.h"
 
 #define OSCPACK_C
 #define OSCRECV_C

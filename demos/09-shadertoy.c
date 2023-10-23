@@ -7,7 +7,7 @@ int main() {
     window_create(75, 0); // WINDOW_MSAA8);
 
     array(char*) list = 0;
-    for each_array( file_list("demos/art/shadertoys/**.fs"), char*, dir ) {
+    for each_array( vfs_list("demos/art/shadertoys/**.fs"), char*, dir ) {
         array_push(list, STRDUP(file_name(dir)));
     }
 

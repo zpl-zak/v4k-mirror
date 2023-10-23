@@ -25,16 +25,16 @@ typedef struct reflect_t {
 
 // inscribe api
 
-#define ENUM(V, .../*value_annotations*/) \
-    enum_inscribe(#V,V, "" __VA_ARGS__/*value_annotations*/)
+#define ENUM(V, ...) \
+    enum_inscribe(#V,V, "E" __VA_ARGS__ " ("FILELINE")")
 
-#define FUNCTION(F, .../*function_annotations*/) \
-    function_inscribe(#F,(void*)F, "" __VA_ARGS__/*function_annotations*/)
+#define FUNCTION(F, ...) \
+    function_inscribe(#F,(void*)F, "F" __VA_ARGS__ " ("FILELINE")")
 
-#define STRUCT(T, type, member, .../*member_annotations*/) \
-    struct_inscribe(#T,sizeof(T),OBJTYPE(T),NULL), \
-    type_inscribe(#type,sizeof(((T){0}).member),"" __VA_ARGS__/*member_annotations*/), \
-    member_inscribe(#T, #member,(uintptr_t)&((T*)0)->member, "" __VA_ARGS__/*member_annotations*/, #type, sizeof(((T){0}).member) )
+#define STRUCT(T, type, member, ...) \
+    struct_inscribe(#T,sizeof(T),OBJTYPE(T),"S" " ("FILELINE")"), \
+    type_inscribe(#type,sizeof(((T){0}).member),"T" __VA_ARGS__ " ("FILELINE")"), \
+    member_inscribe(#T, #member,(uintptr_t)&((T*)0)->member, "M" __VA_ARGS__ " ("FILELINE")", #type, sizeof(((T){0}).member) )
 
 // find api
 
@@ -60,6 +60,4 @@ API void               struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTY
 API void               member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes);
 API void               function_inscribe(const char *F,void *func,const char *infos);
 
-API void               reflect_print(const char *symbol);
-API void               reflect_dump(const char *mask);
-API void               reflect_init();
+API int                ui_reflect(const char *mask); // *, model* or NULL

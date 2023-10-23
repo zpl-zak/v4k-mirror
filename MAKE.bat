@@ -729,25 +729,25 @@ if "!v4k!"=="yes" (
 rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL
-rem if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
-rem !echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
-rem !echo! editor2      && !cc! !o! editor2.exe tools\editor\editor2.c !edit!          !args! || set rc=1
+if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
+!echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
+!echo! editor3      && !cc! !o! editor3.exe tools\editor\editor3.c !edit! -Iengine/joint !args! || set rc=1
 
 !echo! v4k && !cc! engine\v4k.c !export! !edit! !args! || set rc=1
 
-if "!cc!"=="cl" (
-set plug_export=/LD
-) else if "!cc!"=="clang-cl" (
-set plug_export=/LD
-) else (
-set plug_export=-shared
-)
+rem if "!cc!"=="cl" (
+rem set plug_export=/LD
+rem ) else if "!cc!"=="clang-cl" (
+rem set plug_export=/LD
+rem ) else (
+rem set plug_export=-shared
+rem )
 
-for %%f in ("workbench\plugins\*.c") do (
-    !echo! %%~nf && !cc! !o! %%~nf.dll %%f -Iworkbench !plug_export! !args! !import! || set rc=1
-)
+rem for %%f in ("workbench\plugins\*.c") do (
+rem     !echo! %%~nf && !cc! !o! %%~nf.dll %%f -Iworkbench !plug_export! !args! !import! || set rc=1
+rem )
 
-!echo! workbench && !cc! !o! workbench.exe workbench\workbench.c -Iworkbench !args! !import! || set rc=1
+rem !echo! workbench && !cc! !o! workbench.exe workbench\workbench.c -Iworkbench !args! !import! || set rc=1
 )
 
 rem demos

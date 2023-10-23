@@ -272,7 +272,7 @@ void glNewFrame() {
 
 bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     // abort run if any test suite failed in unit-test mode
-    ifdef(debug, if( flag("--test-only") ) exit( test_errors ? -test_errors : 0 ));
+    ifdef(debug, if( flag("--test") ) exit( test_errors ? -test_errors : 0 ));
 
     glfw_init();
     v4k_init();
@@ -749,6 +749,9 @@ int window_frame_begin() {
                 if( choice == 2 ) editor_send("key_battery","1");
             }
 
+            EDITOR_UI_COLLAPSE(ICON_MD_WATER " Reflection", "Debug.Reflect") {
+                ui_reflect("*");
+            }
 
             EDITOR_UI_COLLAPSE(ICON_MD_EXTENSION " Plugins", "Debug.Plugins") {
                 // @todo. include VCS

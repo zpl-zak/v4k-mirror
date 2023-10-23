@@ -2659,9 +2659,10 @@ API int64_t  client_join(const char *ip, int port);
 
 /* /!\ if you plan to use pragma pack(1) on any struct, you need #define OBJ_MIN_PRAGMAPACK_BITS 0 at the expense of max class size /!\ */
 #ifndef   OBJ_MIN_PRAGMAPACK_BITS
-//#define OBJ_MIN_PRAGMAPACK_BITS 3 // allows pragma packs >= 8. objsizew becomes 7<<3, so 1024 bytes max per class (default)
-#define   OBJ_MIN_PRAGMAPACK_BITS 1 // allows pragma packs >= 2. objsizew becomes 7<<1, so  256 bytes max per class
-//#define OBJ_MIN_PRAGMAPACK_BITS 0 // allows pragma packs >= 1. objsizew becomes 7<<0, so  128 bytes max per class
+//#define OBJ_MIN_PRAGMAPACK_BITS 3 // allows pragma packs >= 8. objsizew becomes 8<<3, so 2048 bytes max per class (default)
+#define   OBJ_MIN_PRAGMAPACK_BITS 2 // allows pragma packs >= 4. objsizew becomes 8<<2, so 1024 bytes max per class
+//#define OBJ_MIN_PRAGMAPACK_BITS 1 // allows pragma packs >= 2. objsizew becomes 8<<1, so  512 bytes max per class
+//#define OBJ_MIN_PRAGMAPACK_BITS 0 // allows pragma packs >= 1. objsizew becomes 8<<0, so  256 bytes max per class
 #endif
 
 #define OBJHEADER \
@@ -2669,13 +2670,12 @@ API int64_t  client_join(const char *ip, int port);
         uintptr_t objheader; \
         struct {  \
         uintptr_t objtype:8; \
-        uintptr_t objheap:1; \
-        uintptr_t objsizew:7; \
+        uintptr_t objsizew:8; \
         uintptr_t objrefs:8; \
+        uintptr_t objheap:1; \
         uintptr_t objcomps:1; /* << can be removed? check payload ptr instead? */ \
-        uintptr_t objnameid:16; \
+        uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
         uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
-        uintptr_t objunused:64-8-7-1-1-8-16-ID_INDEX_BITS-ID_COUNT_BITS; /*4*/ \
         }; \
     };
 
@@ -2695,7 +2695,7 @@ API int64_t  client_join(const char *ip, int port);
 #define OBJTYPEDEF(NAME,N) \
      enum { OBJTYPE(NAME) = N }; \
      STATIC_ASSERT( N <= 255 ); \
-     STATIC_ASSERT( (sizeof(NAME) & ((1<<OBJ_MIN_PRAGMAPACK_BITS)-1)) == 0 );
+     STATIC_ASSERT( sizeof(NAME) == ((sizeof(NAME)>>OBJ_MIN_PRAGMAPACK_BITS)<<OBJ_MIN_PRAGMAPACK_BITS) ); // (sizeof(NAME) & ((1<<OBJ_MIN_PRAGMAPACK_BITS)-1)) == 0 );
 
 // ----------------------------------------------------------------------------
 // objects
@@ -2733,28 +2733,25 @@ API int64_t  client_join(const char *ip, int port);
 // heap/stack ctor/dtor
 
 static __thread obj *objtmp;
-#define OBJ_CTOR_HDR(PTR,HEAP,OBJ_NAMEID,SIZEOF_OBJ,OBJ_TYPE) ( \
+#define OBJ_CTOR_HDR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE) ( \
         (PTR)->objheader = HEAP ? id_make(PTR) : 0, /*should assign to .objid instead. however, id_make() returns shifted bits already*/ \
-        (PTR)->objnameid = (OBJ_NAMEID), \
         (PTR)->objtype = (OBJ_TYPE), \
         (PTR)->objheap = (HEAP), \
         (PTR)->objsizew = (SIZEOF_OBJ>>OBJ_MIN_PRAGMAPACK_BITS))
-#define OBJ_CTOR_PTR(PTR,HEAP,OBJ_NAMEID,SIZEOF_OBJ,OBJ_TYPE) ( \
-        OBJ_CTOR_HDR(PTR,HEAP,OBJ_NAMEID,SIZEOF_OBJ,OBJ_TYPE), \
+#define OBJ_CTOR_PTR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE) ( \
+        OBJ_CTOR_HDR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE), \
         obj_ctor(PTR))
 #define OBJ_CTOR(TYPE, NAME, HEAP, PAYLOAD_SIZE, ...) (TYPE*)( \
         objtmp = (HEAP ? MALLOC(sizeof(TYPE)+(PAYLOAD_SIZE)) : ALLOCA(sizeof(TYPE)+(PAYLOAD_SIZE))), \
         *(TYPE*)objtmp = ((TYPE){ {0}, __VA_ARGS__}), \
         ((PAYLOAD_SIZE) ? memset((char*)objtmp + sizeof(TYPE), 0, (PAYLOAD_SIZE)) : objtmp), \
         ( OBJTYPES[ OBJTYPE(TYPE) ] = #TYPE ), \
-        OBJ_CTOR_PTR(objtmp, HEAP,intern(NAME),sizeof(TYPE),OBJTYPE(TYPE)), \
+        OBJ_CTOR_PTR(objtmp, HEAP,sizeof(TYPE),OBJTYPE(TYPE)), \
         ifdef(debug, (obj_printf)(objtmp, va("%s", callstack(+16))), 0), \
-        objtmp)
+        obj_setname(objtmp, NAME))
 
-#define obj(TYPE, ...)                 obj_ext(TYPE, #TYPE, __VA_ARGS__)
-#define obj_ext(TYPE, NAME, ...)      *OBJ_CTOR(TYPE, NAME, 0, sizeof(array(obj*)), __VA_ARGS__)
-
-#define obj_new(TYPE, ...)             obj_new_ext(TYPE, #TYPE, __VA_ARGS__)
+#define obj(TYPE, ...)                *OBJ_CTOR(TYPE, #TYPE, 0, sizeof(array(obj*)), __VA_ARGS__)
+#define obj_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, sizeof(array(obj*)), __VA_ARGS__)
 #define obj_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE, NAME, 1, sizeof(array(obj*)), __VA_ARGS__)
 
 void*   obj_malloc(unsigned sz);
@@ -2812,12 +2809,10 @@ API extern int   (*obj_edit[256])(); ///-
 // core
 
 API uintptr_t   obj_header(const void *o);
-
 API uintptr_t   obj_id(const void *o);
-API const char* obj_name(const void *o);
 
-API unsigned    obj_typeid(const void *o);
 API const char* obj_type(const void *o);
+API unsigned    obj_typeid(const void *o);
 
 API int         obj_sizeof(const void *o);
 API int         obj_size(const void *o); // size of all members together in struct. may include padding bytes.
@@ -2837,27 +2832,29 @@ API void*       obj_unref(void *oo);
 // ----------------------------------------------------------------------------
 // scene tree
 
-// non-recursive
-#define each_objchild(p,t,o) \
+#define each_objchild(p,t,o) /*non-recursive*/ \
     (array(obj*)* children = obj_children(p); children; children = 0) \
         for(int _i = 1, _end = array_count(*children); _i < _end; ++_i) \
-            for(t *o = (t *)((*children)[_i]); o && 0[*children]; o = 0)
+            for(t *o = (t *)((*children)[_i]); o && (obj_parent(o) == p); o = 0)
 
 API obj*        obj_detach(void *c);
 API obj*        obj_attach(void *o, void *c);
 
 API obj*        obj_root(const void *o);
 API obj*        obj_parent(const void *o);
-API array(obj*)*obj_children(const void *o);
-API array(obj*)*obj_siblings(const void *o);
+API array(obj*)*obj_children(const void *o); // child[0]: parent, child[1]: 1st child, child[2]: 2nd child...
+API array(obj*)*obj_siblings(const void *o); // child[0]: grandpa, child[1]: sibling1, child[2]: sibling2...
 
 API int         obj_dumptree(const void *o);
 
 // ----------------------------------------------------------------------------
 // metadata
 
-API const char* obj_metaset(const void *o, const char *key, const char *value);
-API const char* obj_metaget(const void *o, const char *key);
+API void*       obj_setmeta(void *o, const char *key, const char *value);
+API const char* obj_meta(const void *o, const char *key);
+
+API void*       obj_setname(void *o, const char *name);
+API const char* obj_name(const void *o);
 
 // ----------------------------------------------------------------------------
 // stl
@@ -2923,7 +2920,7 @@ API char*       entity_save(entity *self);
 // reflection
 
 #define each_objmember(oo,TYPE,NAME,PTR) \
-    (array(reflect_t) *found_ = members_find(quark(((obj*)oo)->objnameid)); found_; found_ = 0) \
+    (array(reflect_t) *found_ = members_find(obj_type(oo)); found_; found_ = 0) \
         for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
             for(reflect_t *R = &(*found_)[it_]; R; R = 0 ) \
                 for(const char *NAME = R->name, *TYPE = R->type; NAME || TYPE; ) \
@@ -3012,16 +3009,16 @@ typedef struct reflect_t {
 
 // inscribe api
 
-#define ENUM(V, .../*value_annotations*/) \
-    enum_inscribe(#V,V, "" __VA_ARGS__/*value_annotations*/)
+#define ENUM(V, ...) \
+    enum_inscribe(#V,V, "E" __VA_ARGS__ " ("FILELINE")")
 
-#define FUNCTION(F, .../*function_annotations*/) \
-    function_inscribe(#F,(void*)F, "" __VA_ARGS__/*function_annotations*/)
+#define FUNCTION(F, ...) \
+    function_inscribe(#F,(void*)F, "F" __VA_ARGS__ " ("FILELINE")")
 
-#define STRUCT(T, type, member, .../*member_annotations*/) \
-    struct_inscribe(#T,sizeof(T),OBJTYPE(T),NULL), \
-    type_inscribe(#type,sizeof(((T){0}).member),"" __VA_ARGS__/*member_annotations*/), \
-    member_inscribe(#T, #member,(uintptr_t)&((T*)0)->member, "" __VA_ARGS__/*member_annotations*/, #type, sizeof(((T){0}).member) )
+#define STRUCT(T, type, member, ...) \
+    struct_inscribe(#T,sizeof(T),OBJTYPE(T),"S" " ("FILELINE")"), \
+    type_inscribe(#type,sizeof(((T){0}).member),"T" __VA_ARGS__ " ("FILELINE")"), \
+    member_inscribe(#T, #member,(uintptr_t)&((T*)0)->member, "M" __VA_ARGS__ " ("FILELINE")", #type, sizeof(((T){0}).member) )
 
 // find api
 
@@ -3047,9 +3044,7 @@ API void               struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTY
 API void               member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes);
 API void               function_inscribe(const char *F,void *func,const char *infos);
 
-API void               reflect_print(const char *symbol);
-API void               reflect_dump(const char *mask);
-API void               reflect_init();
+API int                ui_reflect(const char *mask); // *, model* or NULL
 #line 0
 
 #line 1 "engine/split/v4k_render.h"

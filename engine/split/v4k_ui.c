@@ -1530,7 +1530,7 @@ if( font )  nk_style_pop_color(ui_ctx);
 if( font )  nk_style_pop_font(ui_ctx);
 
             if (split && is_hovering && !ui_has_active_popups && nk_window_has_focus(ui_ctx)) {
-                nk_tooltip(ui_ctx, split + 1);
+                nk_tooltip(ui_ctx, split + 1); // @fixme: not working under ui_disable() state
             }
 
     layout->at_x -= spacing;

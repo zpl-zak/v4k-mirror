@@ -85,38 +85,45 @@ array(reflect_t)* members_find(const char *T) {
     return map_find(members, intern(T));
 }
 
+static
+void ui_reflect_(const reflect_t *R, const char *filter, int mask) {
+    // debug:
+    // ui_label(va("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s\n",
+    //     R->name ? R->name : "", R->info ? R->info : "", R->id, R->objtype, R->sz, R->addr, R->parent, R->type ? R->type : ""));
 
-void reflect_dump(const char *mask) {
+    if( mask == *R->info ) {
+        static __thread char *buf = 0;
+        if( buf ) *buf = '\0';
+
+        struct nk_context *ui_ctx = (struct nk_context *)ui_handle();
+        for ui_push_hspace(16) {
+            array(reflect_t) *T = map_find(members, intern(R->name));
+            /**/ if( T )         {ui_label(strcatf(&buf,"S struct %s@%s", R->name, R->info+1)); for each_array_ptr(*T, reflect_t, it) if(strmatchi(it->name,filter)) ui_reflect_(it,filter,'M'); }
+            else if( R->addr )    ui_label(strcatf(&buf,"F func %s()@%s", R->name, R->info+1));
+            else if( !R->parent ) ui_label(strcatf(&buf,"E enum %s = %d@%s", R->name, R->sz, R->info+1));
+            else                  ui_label(strcatf(&buf,"M %s %s@%s", R->type, R->name, R->info+1));
+        }
+    }
+}
+
+API void *ui_handle();
+int ui_reflect(const char *filter) {
+    if( !filter ) filter = "*";
+
+    int enabled = ui_enabled();
+    ui_disable();
+
+        // ENUMS, then FUNCTIONS, then STRUCTS
+        unsigned masks[] = { 'E', 'F', 'S' };
+        for( int i = 0; i < countof(masks); ++i )
     for each_map_ptr(reflects, unsigned, k, reflect_t, R) {
-        if( strmatchi(R->name, mask))
-        printf("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s\n",
-            R->name ? R->name : "", R->info ? R->info : "", R->id, R->objtype, R->sz, R->addr, R->parent, R->type ? R->type : "");
+            if( strmatchi(R->name, filter)) {
+                ui_reflect_(R, filter, masks[i]);
     }
 }
 
-void reflect_print_(const reflect_t *R) {
-    static __thread int tabs = 0;
-    printf("%*.s", 4 * (tabs++), "");
-    unsigned symbol_q = intern(R->name);
-    {
-        array(reflect_t) *RR = map_find(members, symbol_q);
-        /**/ if( RR ) {       printf("struct %s: %s%s\n", R->name, R->info ? "// ":"", R->info ? R->info : ""); for each_array_ptr(*RR, reflect_t, it) reflect_print_(it); }
-        else if( R->addr )    printf("func %s(); %s%s\n", R->name, R->info ? "// ":"", R->info ? R->info : "");
-        else if( !R->parent ) printf("enum %s = %d; %s%s\n", R->name, R->sz, R->info ? "// ":"", R->info ? R->info : "");
-        else                  printf("%s %s; %s%s\n", R->type, R->name, R->info ? "// ":"", R->info ? R->info : "");
-/*
-        ifdef(debug,
-            printf("%.*sname:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s\n",
-                tabs, "", R->name ? R->name : "", R->info ? R->info : "", R->id, R->objtype, R->sz, R->addr, R->parent, R->type ? R->type : "");
-        );
-*/
-    }
-    --tabs;
-}
-
-void reflect_print(const char *symbol) {
-    reflect_t *found = map_find(reflects, intern(symbol));
-    if( found ) reflect_print_(found);
+    if( enabled ) ui_enable();
+    return 0;
 }
 
 // -- tests

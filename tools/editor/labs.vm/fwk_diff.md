@@ -3,7 +3,8 @@ given a string A, we want it to be B.
 A: hello world and thanks for the fish.
 B: hello cruel o_o world and thanks for the fish!
 
-however, the instructions to reconstruct B must be as small as possible, to minimize transmission costs. this is why we dont send B entirely.
+however, the instructions to reconstruct B must be as small as possible, to minimize transmission costs.
+this is why we dont transmit B entirely.
 
 different algorithms as follow:
 
@@ -11,48 +12,57 @@ different algorithms as follow:
 
 - identify the first mismatching character (S).
 
-         v-- 6(S)
+         v-- S@6
 A: hello world and thanks for the fish.
 B: hello cruel o_o world and thanks for the fish!
 
 - identify the last mismatch character (E).
 
-                                                v-- 0(E)
+                                                v-- E@-0
 A:           hello world and thanks for the fish.
 B: hello cruel o_o world and thanks for the fish!
 
 - we construct the patch now with 3 numbers:
-  - number of bytes to copy from beginning(A) till S(A)
-  - number of bytes to copy from S(B) till E(B). plus the substring that is get copied.
-  - number of bytes to copy from E(A) till end of string.
+  - number of bytes to copy from A[0] till A[S] (not included)
+  - number of bytes to copy from B[S] till B[E] (not included) + plus the substring that is get copied.
+  - number of bytes to copy from A[E] till end of A string.
 
 6 40 "cruel o_o world and thanks for the fish!" 0
 
-- total patch size is 3 control bytes + 40 (string) = 43 bytes
+- total patch size is 3 control bytes [6,40,0] + 40 (string) = 43 bytes
 
 ## ALGORITHM 2
 
-- We delta every character in both strings, from beginning to end, and from end to beginning.
+- We delta every character in both strings, from head to tail, and from tail to head.
 
 A: hello world and thanks for the fish.0000000000
-B: hello cruel o_o world and thanks for the fish!
+B: hello cruel l_o world and thanks for the fish!
 C: 000000XXXXX0XXX0XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX (-)
 
 A: 0000000000hello world and thanks for the fish.
-B: hello cruel o_o world and thanks for the fish!
-C: XXXXXXXXXXXXXX0000000000000000000000000000000X (-)
+B: hello cruel l_o world and thanks for the fish!
+C: XXXXXXXXXXXX0X0000000000000000000000000000000X (-)
 
-- Pick the option with most zeros (2nd). Aka, select the option with less Xs.
+- Pick the choice with most zeros (2nd choice) (aka, select the choice with less Xs).
+- On C lane, promote gaps of one or two `0`s into `X`s.
 
-do { Encode every XXXX island in C as a positive operation indicating how many bytes to copy from.
-     Run-length the number of zeros into a negative operation.
-   } repeat till lane is exhausted.
+A: 0000000000hello world and thanks for the fish.\0
+B: hello cruel l_o world and thanks for the fish!\0
+C: XXXXXXXXXXXXXX0000000000000000000000000000000X 0 (-)
+                ^
 
-  XXXXXXXXXXXXXXX: +14 "hello cruel o_"
-                 0000000000000000000000000000000: -29
+- Do the number of leading Xs(C) - number of leading 0s(A) (14-10). If positive, write it [4].
+  This number will be needed in the patch function.
+- Do { Encode every XXXX island in C as a positive number indicating how many bytes to copy from.
+       Otherwise, run-length the number of zeros into a negative number.
+     } repeat till lane is exhausted.
+
+ 4
+  XXXXXXXXXXXXXXX: +14 "hello cruel l_"
+                 0000000000000000000000000000000: -31
                                                 X: +1 "!"
 
- - Patch size is 3 control bytes + 14 (string) + 1 (string) = 18 bytes
+ - Patch size is 4 control bytes [4,+14,-31,+1] + 14 (string) + 1 (string) = 19 bytes
 
 ## ALGORITHM 3
 
@@ -83,4 +93,3 @@ B: -29 +1 >> hello cruel o_o world and thanks for the fish!
 +6 0 -6 +10 "cruel o_o " +24 -1 -29 +1 "!"
 
 - total patch size is 8 control bytes + 10 (string) + 1 (string) = 19 bytes
-

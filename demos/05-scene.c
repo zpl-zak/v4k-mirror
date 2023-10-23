@@ -61,7 +61,6 @@ int main() {
 
     // camera
     camera_t cam = camera();
-    cam.speed = 0.2f;
 
     // demo loop
     while (window_swap())
@@ -81,7 +80,7 @@ int main() {
 
         // queue model scale bounces
         float t = fmod(window_time(), 0.3) / 0.3;
-        float s = 1.0;//0.01f * ease_ping_pong(t, ease_in_cubic,ease_out_cubic);
+        float s = 0.01f * ease_ping_pong(t, EASE_IN|EASE_CUBIC,EASE_OUT|EASE_CUBIC);
         object_scale(obj1, vec3(0.20f - s,0.20f + s,0.20f - s));
         object_scale(obj2, vec3(0.20f - s,0.20f + s,0.20f - s));
 
@@ -128,11 +127,6 @@ int main() {
         fx_end();
 
         // queue ui
-        if( ui_panel("Camera", 0)) {
-            if( ui_float("Speed", &cam.speed) ) {}
-            if( ui_float3("Position", &cam.position.x) ) {}
-            ui_panel_end();
-        }
         if( ui_panel("Scene", 0)) {
             if(ui_toggle("Billboard X", &do_billboard_x)) {}
             if(ui_toggle("Billboard Y", &do_billboard_y)) {}

@@ -99,8 +99,16 @@
 #endif
 
 #define do_threadlock(mutexptr) \
-for( int init_ = !!(mutexptr) || (thread_mutex_init( (mutexptr) = CALLOC(1, sizeof(thread_mutex_t)) ), 1); init_; init_ = 0) \
-for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mutex_unlock( mutexptr ), 0) )
+	for( int init_ = !!(mutexptr) || (thread_mutex_init( (mutexptr) = CALLOC(1, sizeof(thread_mutex_t)) ), 1); init_; init_ = 0) \
+	for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mutex_unlock( mutexptr ), 0) )
+
+API void *ui_handle();
+#define ui_push_hspace(px) \
+    (int xx = px; xx; xx = 0) \
+    for(struct nk_context *ctx = (struct nk_context*)ui_handle(); ctx; ctx = 0 ) \
+        for(struct nk_panel *layout = ui_ctx->current->layout; layout; ) \
+            for( xx = (layout->at_x += px, layout->bounds.w -= px, 0); layout; layout->at_x -= px, layout->bounds.w += px, layout = 0 )
+
 
 //-----------------------------------------------------------------------------
 // C files
@@ -10191,7 +10199,7 @@ size_t dlmalloc_usable_size(void*); // __ANDROID_API__
 
 // xrealloc --------------------------------------------------------------------
 
-static __thread uint64_t xstats_current = 0, xstats_total = 0;
+static __thread uint64_t xstats_current = 0, xstats_total = 0, xstats_allocs = 0;
 
 void* xrealloc(void* oldptr, size_t size) {
     // for stats
@@ -10210,8 +10218,10 @@ void* xrealloc(void* oldptr, size_t size) {
     // for stats
     if( oldptr ) {
         xstats_current += (int64_t)size - (int64_t)oldsize;
+        xstats_allocs -= !size;
     } else {
         xstats_current += size;
+        xstats_allocs += !!size;
     }
     if( xstats_current > xstats_total ) {
         xstats_total = xstats_current;
@@ -10224,7 +10234,8 @@ size_t xsize(void* p) {
     return 0;
 }
 char *xstats(void) {
-    return va("%03u/%03uMB", (unsigned)xstats_current / 1024 / 1024, (unsigned)xstats_total / 1024 / 1024);
+    uint64_t xtra = 0; // xstats_allocs * 65536; // assumes 64K pagesize for every alloc
+    return va("%03u/%03uMB", (unsigned)((xstats_current+xtra) / 1024 / 1024), (unsigned)((xstats_total+xtra) / 1024 / 1024));
 }
 
 // stack -----------------------------------------------------------------------
@@ -12961,38 +12972,45 @@ array(reflect_t)* members_find(const char *T) {
     return map_find(members, intern(T));
 }
 
+static
+void ui_reflect_(const reflect_t *R, const char *filter, int mask) {
+    // debug:
+    // ui_label(va("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s\n",
+    //     R->name ? R->name : "", R->info ? R->info : "", R->id, R->objtype, R->sz, R->addr, R->parent, R->type ? R->type : ""));
 
-void reflect_dump(const char *mask) {
+    if( mask == *R->info ) {
+        static __thread char *buf = 0;
+        if( buf ) *buf = '\0';
+
+        struct nk_context *ui_ctx = (struct nk_context *)ui_handle();
+        for ui_push_hspace(16) {
+            array(reflect_t) *T = map_find(members, intern(R->name));
+            /**/ if( T )         {ui_label(strcatf(&buf,"S struct %s@%s", R->name, R->info+1)); for each_array_ptr(*T, reflect_t, it) if(strmatchi(it->name,filter)) ui_reflect_(it,filter,'M'); }
+            else if( R->addr )    ui_label(strcatf(&buf,"F func %s()@%s", R->name, R->info+1));
+            else if( !R->parent ) ui_label(strcatf(&buf,"E enum %s = %d@%s", R->name, R->sz, R->info+1));
+            else                  ui_label(strcatf(&buf,"M %s %s@%s", R->type, R->name, R->info+1));
+        }
+    }
+}
+
+API void *ui_handle();
+int ui_reflect(const char *filter) {
+    if( !filter ) filter = "*";
+
+    int enabled = ui_enabled();
+    ui_disable();
+
+        // ENUMS, then FUNCTIONS, then STRUCTS
+        unsigned masks[] = { 'E', 'F', 'S' };
+        for( int i = 0; i < countof(masks); ++i )
     for each_map_ptr(reflects, unsigned, k, reflect_t, R) {
-        if( strmatchi(R->name, mask))
-        printf("name:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s\n",
-            R->name ? R->name : "", R->info ? R->info : "", R->id, R->objtype, R->sz, R->addr, R->parent, R->type ? R->type : "");
+            if( strmatchi(R->name, filter)) {
+                ui_reflect_(R, filter, masks[i]);
     }
 }
 
-void reflect_print_(const reflect_t *R) {
-    static __thread int tabs = 0;
-    printf("%*.s", 4 * (tabs++), "");
-    unsigned symbol_q = intern(R->name);
-    {
-        array(reflect_t) *RR = map_find(members, symbol_q);
-        /**/ if( RR ) {       printf("struct %s: %s%s\n", R->name, R->info ? "// ":"", R->info ? R->info : ""); for each_array_ptr(*RR, reflect_t, it) reflect_print_(it); }
-        else if( R->addr )    printf("func %s(); %s%s\n", R->name, R->info ? "// ":"", R->info ? R->info : "");
-        else if( !R->parent ) printf("enum %s = %d; %s%s\n", R->name, R->sz, R->info ? "// ":"", R->info ? R->info : "");
-        else                  printf("%s %s; %s%s\n", R->type, R->name, R->info ? "// ":"", R->info ? R->info : "");
-/*
-        ifdef(debug,
-            printf("%.*sname:%s info:'%s' id:%u objtype:%u sz:%u addr:%p parent:%u type:%s\n",
-                tabs, "", R->name ? R->name : "", R->info ? R->info : "", R->id, R->objtype, R->sz, R->addr, R->parent, R->type ? R->type : "");
-        );
-*/
-    }
-    --tabs;
-}
-
-void reflect_print(const char *symbol) {
-    reflect_t *found = map_find(reflects, intern(symbol));
-    if( found ) reflect_print_(found);
+    if( enabled ) ui_enable();
+    return 0;
 }
 
 // -- tests
@@ -22281,7 +22299,7 @@ if( font )  nk_style_pop_color(ui_ctx);
 if( font )  nk_style_pop_font(ui_ctx);
 
             if (split && is_hovering && !ui_has_active_popups && nk_window_has_focus(ui_ctx)) {
-                nk_tooltip(ui_ctx, split + 1);
+                nk_tooltip(ui_ctx, split + 1); // @fixme: not working under ui_disable() state
             }
 
     layout->at_x -= spacing;
@@ -23781,7 +23799,7 @@ void glNewFrame() {
 
 bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     // abort run if any test suite failed in unit-test mode
-    ifdef(debug, if( flag("--test-only") ) exit( test_errors ? -test_errors : 0 ));
+    ifdef(debug, if( flag("--test") ) exit( test_errors ? -test_errors : 0 ));
 
     glfw_init();
     v4k_init();
@@ -24258,6 +24276,9 @@ int window_frame_begin() {
                 if( choice == 2 ) editor_send("key_battery","1");
             }
 
+            EDITOR_UI_COLLAPSE(ICON_MD_WATER " Reflection", "Debug.Reflect") {
+                ui_reflect("*");
+            }
 
             EDITOR_UI_COLLAPSE(ICON_MD_EXTENSION " Plugins", "Debug.Plugins") {
                 // @todo. include VCS
@@ -24823,7 +24844,7 @@ const char *OBJTYPES[256] = { 0 }; // = { REPEAT256("") };
 void *obj_malloc(unsigned sz) {
     //sz = sizeof(obj) + sz + sizeof(array(obj*))); // useful?
     obj *ptr = CALLOC(1, sz);
-    OBJ_CTOR_HDR(ptr,1,intern("obj"),sz,OBJTYPE_obj);
+    OBJ_CTOR_HDR(ptr,1,sz,OBJTYPE_obj);
     return ptr;
 }
 void *obj_free(void *o) {
@@ -24853,9 +24874,9 @@ unsigned obj_typeid(const void *o) {
 const char *obj_type(const void *o) {
     return OBJTYPES[ (((obj*)o)->objtype) ];
 }
-const char *obj_name(const void *o) {
-    return quark(((obj*)o)->objnameid);
-}
+//const char *obj_name(const void *o) {
+//    return quark(((obj*)o)->objnameid);
+//}
 int obj_sizeof(const void *o) {
     return (int)( ((const obj*)o)->objsizew << OBJ_MIN_PRAGMAPACK_BITS );
 }
@@ -24905,8 +24926,8 @@ void test_obj_core() {
     test( obj_id(s) != 0 );
     test( obj_id(r) != obj_id(s) );
 
-    obj t = obj_ext(obj, "root");
-    obj u = obj_ext(obj, "root");
+    obj t = obj(obj); obj_setname(&t, "root");
+    obj u = obj(obj); obj_setname(&u, "root");
 
     test(&t);
     test( 0 == strcmp(obj_type(&t), "obj") );
@@ -25043,7 +25064,7 @@ void test_obj_scene() {
     obj_attach(c2, gc2);       //  +- gc2
     obj_attach(c2, gc3);       //  +- gc3
 
-    // obj_dumptree(r);
+    obj_dumptree(r);
     // puts("---");
 
     test( obj_parent(r) == 0 );
@@ -25080,16 +25101,16 @@ void test_obj_scene() {
 
 static map(int,int) oms;
 static thread_mutex_t *oms_lock;
-const char *obj_metaset(const void *o, const char *key, const char *value) {
+void *obj_setmeta(void *o, const char *key, const char *value) {
     do_threadlock(oms_lock) {
         if(!oms) map_init_int(oms);
         int *q = map_find_or_add(oms, intern(va("%llu-%s",obj_id((obj*)o),key)), 0);
         if(!*q && !value[0]) {} else *q = intern(value);
-        return quark(*q);
+        return quark(*q), o;
     }
     return 0; // unreachable
 }
-const char* obj_metaget(const void *o, const char *key) {
+const char* obj_meta(const void *o, const char *key) {
     do_threadlock(oms_lock) {
         if(!oms) map_init_int(oms);
         int *q = map_find_or_add(oms, intern(va("%llu-%s",obj_id((obj*)o),key)), 0);
@@ -25098,12 +25119,21 @@ const char* obj_metaget(const void *o, const char *key) {
     return 0; // unreachable
 }
 
+void *obj_setname(void *o, const char *name) {
+    return obj_setmeta(o, "name", name);
+}
+const char *obj_name(const void *o) {
+    const char *objname = obj_meta(o, "name");
+    return objname[0] ? objname : "obj";
+}
+
+
 static
 void test_obj_metadatas( void *o1 ) {
     obj *o = (obj *)o1;
-    test( !strcmp("", obj_metaget(o, "has_passed_test")) );
-    test( !strcmp("yes", obj_metaset(o, "has_passed_test", "yes")) );
-    test( !strcmp("yes", obj_metaget(o, "has_passed_test")) );
+    test( !strcmp("", obj_meta(o, "has_passed_test")) );
+    test( obj_setmeta(o, "has_passed_test", "yes") );
+    test( !strcmp("yes", obj_meta(o, "has_passed_test")) );
 }
 
 // ----------------------------------------------------------------------------
@@ -25416,16 +25446,29 @@ obj *obj_loadmpack(void *o, const char *sav) { // @todo
     return obj_mergempack(obj_zero(o), sav);
 }
 
-static __thread array(char*) obj_stack;
+static __thread map(void*,array(char*)) obj_stack;
 int obj_push(const void *o) {
-    char *bin = STRDUP(obj_savebin(o));
-    array_push(obj_stack, bin);
+    if(!obj_stack) map_init_ptr(obj_stack);
+    array(char*) *found = map_find_or_add(obj_stack,(void*)o,0);
+
+    char *bin = STRDUP(obj_saveini(o)); // @todo: savebin
+    array_push(*found, bin);
     return 1;
 }
 int obj_pop(void *o) {
-    char *bin = *array_pop(obj_stack);
-    int rc = !!obj_loadbin(o, bin);
-    return FREE(bin), rc;
+    if(!obj_stack) map_init_ptr(obj_stack);
+    array(char*) *found = map_find_or_add(obj_stack,(void*)o,0);
+
+    char **bin = array_back(*found);
+    if( bin ) {
+        int rc = !!obj_loadini(o, *bin); // @todo: loadbin
+        if( array_count(*found) > 1 ) {
+            FREE(*bin);
+            array_pop(*found);
+        }
+        return rc;
+    }
+    return 0;
 }
 
 static
@@ -25587,10 +25630,11 @@ void *obj_make(const char *str) {
     reflect_t *found = map_find(reflects, Tid);
     if(!found) return 0;
 
-    obj *ptr = CALLOC(1, found->sz + has_components * sizeof(array(obj*)));
+    obj *ptr = CALLOC(1, found->sz + (has_components+1) * sizeof(array(obj*)));
     void *ret = (T == I ? obj_mergeini : obj_mergejson)(ptr, str);
     OBJTYPES[ found->objtype ] = found->name;
-    OBJ_CTOR_PTR(ptr,1,found->id,found->sz,found->objtype);
+    OBJ_CTOR_PTR(ptr,1,/*found->id,*/found->sz,found->objtype);
+    obj_setname(ptr, name); // found->id);
 
     return ptr; // returns partial construction as well. @todo: just return `ret` for a more strict built/failed policy
 }
