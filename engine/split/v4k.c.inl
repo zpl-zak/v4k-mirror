@@ -143,6 +143,8 @@ API void *ui_handle();
 
 {{FILE:v4k_network.c}}
 
+{{FILE:v4k_track.c}}
+
 {{FILE:v4k_netsync.c}}
 
 {{FILE:v4k_pack.c}}

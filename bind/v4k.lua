@@ -2415,6 +2415,16 @@ GAMEPAD_GUID, GAMEPAD_NAME,
  char* tcp_port(int);
  int   tcp_close(int);
  int   tcp_debug(int);
+ int track_init(char const *host, char const *port);
+ int track_destroy(void);
+ int track_event(char const *event_id, char const *user_id, char const *json_payload);
+ int track_ident(char const *user_id, char const *traits);
+ int track_group(char const *user_id, char const *group_id, char const *traits);
+typedef struct {
+char const *key;
+char const *val;
+} track_prop;
+ int track_event_props(char const *event_id, char const *user_id, const track_prop *props);
 enum { NETWORK_BIND = 2, NETWORK_CONNECT = 4, NETWORK_NOFAIL = 8 };
  void   network_create(unsigned max_clients, const char *ip, const char *port, unsigned flags);
 enum { NETWORK_SEND = 2, NETWORK_RECV = 4 };

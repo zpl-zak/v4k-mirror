@@ -133,6 +133,8 @@ extern "C" {
 
 {{FILE:v4k_network.h}}
 
+{{FILE:v4k_track.h}}
+
 {{FILE:v4k_netsync.h}}
 
 {{FILE:v4k_obj.h}}
