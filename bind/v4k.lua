@@ -2420,7 +2420,7 @@ GAMEPAD_GUID, GAMEPAD_NAME,
  int track_event(char const *event_id, char const *user_id, char const *json_payload);
  int track_ident(char const *user_id, char const *traits);
  int track_group(char const *user_id, char const *group_id, char const *traits);
-typedef struct {
+typedef struct track_prop {
 char const *key;
 char const *val;
 } track_prop;

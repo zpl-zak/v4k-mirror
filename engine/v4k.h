@@ -2605,7 +2605,7 @@ API int track_group(char const *user_id, char const *group_id, char const *trait
 //~ Event utilities
 
 /// Structure to represent key-value pairs for event properties.
-typedef struct {
+typedef struct track_prop {
  char const *key;
  char const *val;
 } track_prop;
