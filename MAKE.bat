@@ -27,7 +27,7 @@ if "%1"=="help" (
     echo %0 [vps]                   ; upload the release to VPS
     echo %0 [tidy]                  ; clean up temp files
     echo %0 [bind]                  ; generate lua bindings
-    echo %0 [checkmem]              ; check untracked allocators in V4K
+    echo %0 [test]                  ; check untracked allocators in V4K
     echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
@@ -246,7 +246,7 @@ if "%1"=="fuse" (
 )
 
 rem check memory api calls
-if "%1"=="checkmem" (
+if "%1"=="test" (
     findstr /RNC:"[^_xv]realloc[(]"  engine\split\v4k*
     findstr /RNC:"[^_xv]REALLOC[(]"  engine\split\v4k*
     findstr /RNC:"[^_xv]MALLOC[(]"   engine\split\v4k*
