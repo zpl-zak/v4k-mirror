@@ -5143,7 +5143,7 @@ char *file_id(const char *pathfile) {
 char *ext = strchr(base, '.'); if (ext) ext[0] = '\0'; // remove all extensions
 #else // extensionless for audio/images only (materials: diffuse.tga and diffuse.png will match)
 char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensions
-    if(ext) if( strstr(".jpg.png.bmp.tga.hdr"".", ext) || strstr(".ogg.mp3.wav.mod.xm.flac"".", ext) || strstr(".mp4.ogv.avi.mkv.wmv.mpg.mpeg"".", ext) ) {
+    if(ext) if( strstr(".jpg.png.bmp.tga"".", ext) || strstr(".ogg.mp3.wav.mod.xm.flac"".", ext) || strstr(".mp4.ogv.avi.mkv.wmv.mpg.mpeg"".", ext) ) {
         ext = strchr(base, '.');
         ext[0] = '\0'; //strcpy(ext, "_xxx");
     }
@@ -5771,13 +5771,13 @@ char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_u
     while( pathfile[0] == '.' && (pathfile[1] == '/' || pathfile[1] == '\\') ) pathfile += 2;
     // if (pathfile[0] == '/' || pathfile[1] == ':') return file_load(pathfile, size_out); // @fixme: handle current cooked /home/V4K or C:/V4K path cases within zipfiles
 
-if( size_out ) *size_out = 0;
-if( strend(pathfile, "/") ) return 0; // it's a dir
-static __thread map(char*,int) misses = 0, *init = 0; if(!init) init = misses, map_init(misses, less_str, hash_str);
-int *found = map_find_or_add_allocated_key(misses, STRDUP(pathfile), -1); // [-1]non-init,[false]could not cook,[true]cooked
-if( found && *found == 0 ) {
-    return 0;
-}
+    if( size_out ) *size_out = 0;
+    if( strend(pathfile, "/") ) return 0; // it's a dir
+    static __thread map(char*,int) misses = 0, *init = 0; if(!init) init = misses, map_init(misses, less_str, hash_str);
+    int *found = map_find_or_add_allocated_key(misses, STRDUP(pathfile), -1); // [-1]non-init,[false]could not cook,[true]cooked
+    if( found && *found == 0 ) {
+        return 0;
+    }
 
     //{
     // exclude garbage from material names
@@ -5801,6 +5801,8 @@ if( found && *found == 0 ) {
             if( strbeg(folder, art_paths[i]) ) { pretty_folder = folder + strlen(art_paths[i]); break; }
         }
     //}
+
+    // PRINTF("VFS: %s\n", pathfile);
 
     int size = 0;
     void *ptr = 0;
