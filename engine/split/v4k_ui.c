@@ -76,10 +76,10 @@ static void nk_config_custom_fonts() {
 
         // ...with icons embedded on it.
         static struct icon_font {
-            const char *file; nk_rune range[3];
+            const char *file; int yspacing; nk_rune range[3];
         } icons[] = {
-            {"MaterialIconsSharp-Regular.otf", {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0}}, // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf"
-            {"materialdesignicons-webfont.ttf", {0xF68C /*ICON_MIN_MDI*/, 0xF1C80/*ICON_MAX_MDI*/, 0}},
+            {"MaterialIconsSharp-Regular.otf", UI_ICON_SPACING_Y, {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0}}, // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf"
+            {"materialdesignicons-webfont.ttf", 2, {0xF68C /*ICON_MIN_MDI*/, 0xF1CC7/*ICON_MAX_MDI*/, 0}},
         };
         for( int f = 0; f < countof(icons); ++f )
         for( char *data = vfs_load(icons[f].file, &datalen); data; data = 0 ) {
@@ -88,7 +88,7 @@ static void nk_config_custom_fonts() {
             cfg.merge_mode = 1;
 
             cfg.spacing.x += UI_ICON_SPACING_X;
-            cfg.spacing.y += UI_ICON_SPACING_Y;
+            cfg.spacing.y += icons[f].yspacing;
          // cfg.font->ascent += ICON_ASCENT;
          // cfg.font->height += ICON_HEIGHT;
 
@@ -179,6 +179,9 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
     // table[NK_COLOR_SELECT] = nk_rgba(57, 67, 61, 255);
     // table[NK_COLOR_SELECT_ACTIVE] = main;
 
+// table[NK_COLOR_SELECT] = nk_rgba(255,255,255,255);
+table[NK_COLOR_SELECT_ACTIVE] = main_hue;
+
     // @transparent
     #if !is(ems)
     if( glfwGetWindowAttrib(window_handle(), GLFW_TRANSPARENT_FRAMEBUFFER) == GLFW_TRUE ) {
@@ -190,6 +193,21 @@ table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = hover_hue; // nk_rgba(255, 0, 0, 255);
 
     nk_style_default(ui_ctx);
     nk_style_from_table(ui_ctx, table);
+
+
+    if(1)
+    {
+    struct nk_style_selectable *select;
+    select = &ui_ctx->style.selectable;
+//    nk_zero_struct(*select);
+//    select->hover.data.color     = hover_hue;
+//    select->normal_active   = nk_style_item_color(table[NK_COLOR_SELECT_ACTIVE]);
+    select->text_hover      = nk_rgba(0,192,255,255);
+    select->text_hover_active = select->text_hover;
+    select->text_normal_active = select->text_hover; // nk_style_item_color(table[NK_COLOR_SELECT_ACTIVE]).data.color;
+    select->rounding        = 2.0f;
+    }
+
 
     struct nk_style *s = &ui_ctx->style;
     s->window.spacing = nk_vec2(4,0);
@@ -1386,14 +1404,20 @@ int ui_panel_end() {
 }
 
 static unsigned ui_collapse_state = 0;
+static bool ui_collapse_next_open = 0;
 int ui_collapse(const char *label, const char *id) { // mask: 0(closed),1(open),2(created)
+    int open = label[0] == '!'; label += open;
 
     uint64_t hash = 14695981039346656037ULL, mult = 0x100000001b3ULL;
     for(int i = 0; id[i]; ++i) hash = (hash ^ id[i]) * mult;
     ui_hue = (hash & 0x3F) / (float)0x3F; ui_hue += !ui_hue;
 
-    ui_collapse_state = nk_tree_base_(ui_ctx, NK_TREE_NODE, 0, label, NK_MINIMIZED, id, strlen(id), 0);
-    return ui_collapse_state & 1; // |1 open, |2 clicked, |4 toggled
+    ui_collapse_state = nk_tree_base_(ui_ctx, NK_TREE_NODE, 0, label, ui_collapse_next_open ? NK_MAXIMIZED : NK_MINIMIZED, id, strlen(id), 0);
+    return ui_collapse_next_open = 0, ui_collapse_state & 1; // |1 open, |2 clicked, |4 toggled
+}
+int ui_collapseo(const char *label, const char *id) { // mask: 0(closed),1(open),2(created)
+    ui_collapse_next_open = true;
+    return ui_collapse(label, id);
 }
 int ui_collapse_clicked() {
     return ui_collapse_state >> 1; // |1 clicked, |2 toggled
@@ -1404,9 +1428,13 @@ int ui_collapse_end() {
 
 
 int ui_contextual() {
+#if 0
     struct nk_rect bounds = nk_widget_bounds(ui_ctx); // = nk_window_get_bounds(ui_ctx);
     bounds.y -= 25;
     return ui_popups() ? 0 : nk_contextual_begin(ui_ctx, 0, nk_vec2(150, 300), bounds);
+#else
+    return ui_popups() ? 0 : nk_contextual_begin(ui_ctx, 0, nk_vec2(300, 220), nk_window_get_bounds(ui_ctx));
+#endif
 }
 int ui_contextual_end(int close) {
     if(close) nk_contextual_close(ui_ctx);
@@ -1551,15 +1579,8 @@ int ui_label(const char *text) {
     nk_layout_row_dynamic(ui_ctx, 0, 1);
     return ui_label_(text, align);
 }
-int ui_label2(const char *label, const char *text_) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2);
 
-    int align1 = NK_TEXT_LEFT;
-    int align2 = NK_TEXT_LEFT;
-    if( label ) align1 = label[0] == '>' ? (label++, NK_TEXT_RIGHT) : label[0] == '=' ? (label++, NK_TEXT_CENTERED) : label[0] == '<' ? (label++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
-    if( text_ ) align2 = text_[0] == '>' ? (text_++, NK_TEXT_RIGHT) : text_[0] == '=' ? (text_++, NK_TEXT_CENTERED) : text_[0] == '<' ? (text_++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
-    ui_label_(label, align1);
-
+static int nk_label_(struct nk_context *ui_ctx, const char *text_, int align2 ) {
 const struct nk_input *input = &ui_ctx->input;
 struct nk_rect bounds = nk_widget_bounds(ui_ctx);
 int is_hovering = nk_input_is_mouse_hovering_rect(input, bounds) && !ui_has_active_popups;
@@ -1576,6 +1597,19 @@ if( is_hovering ) {
 ui_label_icon_clicked_R.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x) - (align2 == NK_TEXT_RIGHT ? bounds.w : 0) ) * nk_input_is_mouse_released(input, NK_BUTTON_LEFT)) : 0;
 
     return ui_label_icon_clicked_R.x;
+}
+
+
+int ui_label2(const char *label, const char *text_) {
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+
+    int align1 = NK_TEXT_LEFT;
+    int align2 = NK_TEXT_LEFT;
+    if( label ) align1 = label[0] == '>' ? (label++, NK_TEXT_RIGHT) : label[0] == '=' ? (label++, NK_TEXT_CENTERED) : label[0] == '<' ? (label++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
+    if( text_ ) align2 = text_[0] == '>' ? (text_++, NK_TEXT_RIGHT) : text_[0] == '=' ? (text_++, NK_TEXT_CENTERED) : text_[0] == '<' ? (text_++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
+    ui_label_(label, align1);
+
+    return nk_label_(ui_ctx, text_, align2);
 }
 int ui_label2_bool(const char *text, bool value) {
     bool b = !!value;
@@ -2004,8 +2038,8 @@ int ui_mat44(const char *label, float M[16]) {
 }
 
 int ui_buffer(const char *label, char *buffer, int buflen) {
-    nk_layout_row_dynamic(ui_ctx, 0, 2);
-    ui_label_(label, NK_TEXT_LEFT);
+    nk_layout_row_dynamic(ui_ctx, 0, 1 + (label && label[0]));
+    if(label && label[0]) ui_label_(label, NK_TEXT_LEFT);
 
     int active = nk_edit_string_zero_terminated(ui_ctx, NK_EDIT_AUTO_SELECT|NK_EDIT_CLIPBOARD|NK_EDIT_FIELD/*NK_EDIT_BOX*/|NK_EDIT_SIG_ENTER, buffer, buflen, nk_filter_default);
     return !!(active & NK_EDIT_COMMITED) ? nk_edit_unfocus(ui_ctx), 1 : 0;

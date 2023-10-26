@@ -666,9 +666,9 @@ int window_frame_begin() {
                 );
 
                 int choice = ui_toolbar(text);
-                if( choice == 1 ) editor_send("key_fullscreen",0);
-                if( choice == 2 ) editor_send("key_screenshot",0);
-                if( choice == 3 ) editor_send("key_record",0);
+                if( choice == 1 ) engine_send("key_fullscreen",0);
+                if( choice == 2 ) engine_send("key_screenshot",0);
+                if( choice == 3 ) engine_send("key_record",0);
             }
             EDITOR_UI_COLLAPSE(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard") {
                 ui_keyboard();
@@ -745,8 +745,8 @@ int window_frame_begin() {
 
             EDITOR_UI_COLLAPSE(power_icon_label, "Debug.Power") {
                 int choice = ui_toolbar( ICON_MD_POWER ";" ICON_MD_BOLT );
-                if( choice == 1 ) editor_send("key_battery","0");
-                if( choice == 2 ) editor_send("key_battery","1");
+                if( choice == 1 ) engine_send("key_battery","0");
+                if( choice == 2 ) engine_send("key_battery","1");
             }
 
             EDITOR_UI_COLLAPSE(ICON_MD_WATER " Reflection", "Debug.Reflect") {
@@ -763,8 +763,8 @@ int window_frame_begin() {
             (has_menu ? ui_window_end : ui_panel_end)();
         }
 
-        API int editor_tick();
-        editor_tick();
+        API int engine_tick();
+        engine_tick();
     }
 #endif // ENABLE_RETAIL
  

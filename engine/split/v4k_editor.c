@@ -86,6 +86,7 @@ vec3 editor_pick(float mouse_x, float mouse_y) {
 #endif
 }
 
+#if 0
 int editor_ui_bits8(const char *label, uint8_t *enabled) { // @to deprecate
     int clicked = 0;
     uint8_t copy = *enabled;
@@ -119,37 +120,37 @@ int editor_ui_bits8(const char *label, uint8_t *enabled) { // @to deprecate
     nk_layout_row_end(ui_ctx);
     return clicked | (copy ^ *enabled);
 }
+#endif
 
 
-
-typedef union editor_var {
+typedef union engine_var {
     int i;
     float f;
     char *s;
-} editor_var;
-static map(char*,editor_var) editor_vars;
-float *editor_getf(const char *key) {
-    if(!editor_vars) map_init_str(editor_vars);
-    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+} engine_var;
+static map(char*,engine_var) engine_vars;
+float *engine_getf(const char *key) {
+    if(!engine_vars) map_init_str(engine_vars);
+    engine_var *found = map_find_or_add(engine_vars, (char*)key, ((engine_var){0}) );
     return &found->f;
 }
-int *editor_geti(const char *key) {
-    if(!editor_vars) map_init_str(editor_vars);
-    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+int *engine_geti(const char *key) {
+    if(!engine_vars) map_init_str(engine_vars);
+    engine_var *found = map_find_or_add(engine_vars, (char*)key, ((engine_var){0}) );
     return &found->i;
 }
-char **editor_gets(const char *key) {
-    if(!editor_vars) map_init_str(editor_vars);
-    editor_var *found = map_find_or_add(editor_vars, (char*)key, ((editor_var){0}) );
+char **engine_gets(const char *key) {
+    if(!engine_vars) map_init_str(engine_vars);
+    engine_var *found = map_find_or_add(engine_vars, (char*)key, ((engine_var){0}) );
     if(!found->s) found->s = stringf("%s","");
     return &found->s;
 }
 
-int editor_send(const char *cmd, const char *optional_value) {
-    unsigned *gamepads = editor_geti("gamepads"); // 0 off, mask gamepad1(1), gamepad2(2), gamepad3(4), gamepad4(8)...
-    unsigned *renders = editor_geti("renders"); // 0 off, mask: 1=lit, 2=ddraw, 3=whiteboxes
-    float *speed = editor_getf("speed"); // <0 num of frames to advance, 0 paused, [0..1] slomo, 1 play regular speed, >1 fast-forward (x2/x4/x8)
-    unsigned *powersave = editor_geti("powersave");
+int engine_send(const char *cmd, const char *optional_value) {
+    unsigned *gamepads = engine_geti("gamepads"); // 0 off, mask gamepad1(1), gamepad2(2), gamepad3(4), gamepad4(8)...
+    unsigned *renders = engine_geti("renders"); // 0 off, mask: 1=lit, 2=ddraw, 3=whiteboxes
+    float *speed = engine_getf("speed"); // <0 num of frames to advance, 0 paused, [0..1] slomo, 1 play regular speed, >1 fast-forward (x2/x4/x8)
+    unsigned *powersave = engine_geti("powersave");
 
     char *name;
     /**/ if( !strcmp(cmd, "key_quit" ))       record_stop(), exit(0);
@@ -173,14 +174,14 @@ int editor_send(const char *cmd, const char *optional_value) {
     return 0;
 }
 
-int editor_tick() {
-    enum { editor_hz = 60 };
-    enum { editor_hz_mid = 18 };
-    enum { editor_hz_low = 5 };
-    if( *editor_geti("powersave") ) {
+int engine_tick() {
+    enum { engine_hz = 60 };
+    enum { engine_hz_mid = 18 };
+    enum { engine_hz_low = 5 };
+    if( *engine_geti("powersave") ) {
         // adaptive framerate
         int app_on_background = !window_has_focus();
-        int hz = app_on_background ? editor_hz_low : editor_hz_mid;
+        int hz = app_on_background ? engine_hz_low : engine_hz_mid;
         window_fps_lock( hz < 5 ? 5 : hz );
     } else {
         // window_fps_lock( editor_hz );

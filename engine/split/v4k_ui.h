@@ -13,6 +13,7 @@ API int ui_notify(const char *title, const char *body);
 API int ui_window(const char *title, int *enabled);
 API int  ui_panel(const char *title, int flags); // may be embedded inside a window, or standalone
 API int   ui_collapse(const char *label, const char *id);
+API int   ui_collapseo(const char *label, const char *id);
 API int   ui_contextual();
 API int    ui_section(const char *title);
 API int    ui_int(const char *label, int *value);

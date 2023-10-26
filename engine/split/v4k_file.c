@@ -820,8 +820,6 @@ char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_u
         }
     //}
 
-    // PRINTF("VFS: %s\n", pathfile);
-
     int size = 0;
     void *ptr = 0;
 

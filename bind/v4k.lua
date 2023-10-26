@@ -2101,25 +2101,25 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  void* dll(const char *filename, const char *symbol);
  vec3  editor_pick(float mouse_x, float mouse_y);
  char* editor_path(const char *path);
- float* editor_getf(const char *key);
- int*   editor_geti(const char *key);
- char** editor_gets(const char *key);
- int    editor_send(const char *cmd, const char *optional_value);
+ float* engine_getf(const char *key);
+ int*   engine_geti(const char *key);
+ char** engine_gets(const char *key);
+ int    engine_send(const char *cmd, const char *optional_value);
  char* dialog_load();
  char* dialog_save();
  int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
  bool  gizmo_active();
  bool  gizmo_hover();
- void  kit_locale( const char *langcode_iso639_1 );
- void  kit_set( const char *variable, const char *value );
- void  kit_reset();
- void  kit_insert( const char *id, const char *translation );
  bool  kit_load( const char *filename );
  bool  kit_merge( const char *filename );
+ void  kit_insert( const char *id, const char *translation );
  void  kit_clear();
- char* kit_translate( const char *id );
- char* kit_translate2( const char *id, const char *langcode_iso639_1 );
+ void  kit_set( const char *variable, const char *value );
+ void  kit_reset();
  void  kit_dump_state( FILE *fp );
+ char* kit_translate2( const char *id, const char *langcode_iso639_1 );
+ void  kit_locale( const char *langcode_iso639_1 );
+ char* kit_translate( const char *id );
  char** file_list( const char *pathmasks );
  bool         file_write( const char *file, const void *ptr, int len );
  bool         file_append( const char *file, const void *ptr, int len );
@@ -2353,7 +2353,9 @@ TOUCH_1,
  bool        input_touch_active();
  void        input_mappings(const char *filename);
  char        input_keychar(unsigned code);
+ int         input_enum(const char *sym);
  int         input_anykey();
+ int         input_eval(const char *expression);
  void        input_send( int vk );
  char* save_input();
  bool        load_input(char* replay);
@@ -2386,6 +2388,11 @@ MOUSE, MOUSE_X = MOUSE, MOUSE_Y, MOUSE_W,
 TOUCH_X1, TOUCH_Y1, TOUCH_X2, TOUCH_Y2,
 WINDOW_RESIZE, WINDOW_RESIZEX = WINDOW_RESIZE, WINDOW_RESIZEY, WINDOW_ORIENTATION, WINDOW_BATTERY,
 GAMEPAD_GUID, GAMEPAD_NAME,
+};
+enum INPUT_ALIASES {
+KEY_SHIFT = KEY_LSHIFT,
+KEY_ALT = KEY_LALT,
+KEY_CTRL = KEY_LCTRL,
 };
  void*  xrealloc(void* p, size_t sz);
  size_t xsize(void* p);
@@ -3226,6 +3233,7 @@ PANEL_OPEN = 1,
  int ui_window(const char *title, int *enabled);
  int  ui_panel(const char *title, int flags);
  int   ui_collapse(const char *label, const char *id);
+ int   ui_collapseo(const char *label, const char *id);
  int   ui_contextual();
  int    ui_section(const char *title);
  int    ui_int(const char *label, int *value);
