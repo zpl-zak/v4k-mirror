@@ -126,7 +126,7 @@ static __thread unsigned array_n_;
     array_pop(t); \
 } while(0)
 
-#define array_erase(t, i) do { \
+#define array_erase_slow(t, i) do { /*preserves ordering*/ \
     memmove( &(t)[i], &(t)[i + 1], sizeof(0[t])*(array_count(t) - i - 1)); \
     array_pop(t); \
 } while(0)

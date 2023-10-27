@@ -33,6 +33,7 @@ void *obj_malloc(unsigned sz) {
 }
 void *obj_free(void *o) {
     if( !((obj*)o)->objrefs ) {
+        obj_detach(o);
         obj_dtor(o);
         //obj_zero(o);
         if( ((obj*)o)->objheap ) {
@@ -192,6 +193,7 @@ obj* obj_detach(void *c) {
             {
                 if( obj_id(v) == id ) {
                     obj_reparent(c, 0);
+                    array_erase_slow(*oo, i);
                     return c;
                 }
             }
@@ -212,7 +214,7 @@ obj* obj_attach(void *o, void *c) {
 int obj_dumptree(const void *o) {
     static int tabs = 0;
     printf("%*s" "+- %s\n", tabs++, "", obj_name(o));
-    for each_objchild(o, obj, v) {
+    for each_objchild(o, obj*, v) {
         obj_dumptree(v);
     }
     --tabs;
@@ -265,19 +267,19 @@ void test_obj_scene() {
     test( obj_root(gc2) == r );
     test( obj_root(gc3) == r );
 
-    for each_objchild(r, obj, o) test( o == c1 || o == c2 );
-    for each_objchild(c1, obj, o) test( o == gc1 );
-    for each_objchild(c2, obj, o) test( o == gc2 || o == gc3 );
+    for each_objchild(r, obj*, o) test( o == c1 || o == c2 );
+    for each_objchild(c1, obj*, o) test( o == gc1 );
+    for each_objchild(c2, obj*, o) test( o == gc2 || o == gc3 );
 
     obj_detach(c1);
     test( !obj_parent(c1) );
-    for each_objchild(r, obj, o) test( o != c1 );
-    for each_objchild(c1, obj, o) test( o == gc1 );
+    for each_objchild(r, obj*, o) test( o != c1 );
+    for each_objchild(c1, obj*, o) test( o == gc1 );
 
     obj_detach(c2);
     test( !obj_parent(c2) );
-    for each_objchild(r, obj, o) test( o != c2 );
-    for each_objchild(c2, obj, o) test( o == gc2 || o == gc3 );
+    for each_objchild(r, obj*, o) test( o != c2 );
+    for each_objchild(c2, obj*, o) test( o == gc2 || o == gc3 );
 }
 
 // ----------------------------------------------------------------------------
@@ -304,6 +306,7 @@ const char* obj_meta(const void *o, const char *key) {
 }
 
 void *obj_setname(void *o, const char *name) {
+    ifdef(debug,((obj*)o)->objname = name);
     return obj_setmeta(o, "name", name);
 }
 const char *obj_name(const void *o) {
@@ -812,7 +815,7 @@ void *obj_make(const char *str) {
     unsigned Tid = intern(name);
     reflect_init();
     reflect_t *found = map_find(reflects, Tid);
-    if(!found) return 0;
+    if(!found) return obj_new(obj);
 
     obj *ptr = CALLOC(1, found->sz + (has_components+1) * sizeof(array(obj*)));
     void *ret = (T == I ? obj_mergeini : obj_mergejson)(ptr, str);

@@ -184,3 +184,5 @@ API void *ui_handle();
 // editor is last in place, so it can use all internals from above headers
 
 {{FILE:v4k_main.c}}
+
+{{FILE:v4k_end.c}}

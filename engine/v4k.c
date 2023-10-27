@@ -7828,7 +7828,6 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
     const char *vs = vs_filename ? file_read(vs_filename) : mv_vs_source;
     const char *fs = fs_filename ? file_read(fs_filename) : mv_fs_source;
     f->program = shader(vs, fs, "vertexPosition,instanceGlyph", "outColor", NULL);
-    ASSERT(f->program > 0);
 
     // figure out what ranges we're about to bake
     #define MERGE_TABLE(table) do { \
@@ -13459,22 +13458,31 @@ char** shader_property(unsigned shader, unsigned property) {
 void shader_apply_param(unsigned shader, unsigned param_no) {
     unsigned num_properties = shader_properties(shader);
     if( param_no < num_properties ) {
-        char *line = *shader_property(shader, param_no);
+        char *buf = *shader_property(shader, param_no);
 
-        char type[32], name[32];
+        char type[32], name[32], line[128]; snprintf(line, 127, "%s", buf);
         if( sscanf(line, "%*s %s %[^ =;/]", type, name) != 2 ) return;
 
+        char *mins = strstr(line, "min:");
+        char *sets = strstr(line, "set:");
+        char *maxs = strstr(line, "max:");
+        char *tips = strstr(line, "tip:");
+        if( mins ) *mins = 0, mins += 4;
+        if( sets ) *sets = 0, sets += 4;
+        if( maxs ) *maxs = 0, maxs += 4;
+        if( tips ) *tips = 0, tips += 4;
+
         int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
-        vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
-        vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
-        vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
+        vec4 minv = mins ? atof4(mins) : vec4(0,0,0,0);
+        vec4 setv = sets ? atof4(sets) : vec4(0,0,0,0);
+        vec4 maxv = maxs ? atof4(maxs) : vec4(top,top,top,top);
 
         if(minv.x > maxv.x) swapf(&minv.x, &maxv.x);
         if(minv.y > maxv.y) swapf(&minv.y, &maxv.y);
         if(minv.z > maxv.z) swapf(&minv.z, &maxv.z);
         if(minv.w > maxv.w) swapf(&minv.w, &maxv.w);
 
-        if( !strstr(line, "max:") ) {
+        if( !maxs ) {
         if(setv.x > maxv.x) maxv.x = setv.x;
         if(setv.y > maxv.y) maxv.y = setv.y;
         if(setv.z > maxv.z) maxv.z = setv.z;
@@ -13516,26 +13524,35 @@ int ui_shader(unsigned shader) {
     for( unsigned i = 0; i < num_properties; ++i ) {
         char **ptr = shader_property(shader,i);
 
-        const char *line = *ptr; // debug: ui_label(line);
-        char* tip = strstr(line, "tip:"); tip = tip && tip[4] ? tip + 4 : 0;
+        char line[128]; snprintf(line, 127, "%s", *ptr); // debug: ui_label(line);
 
         char uniform[32], type[32], name[32], early_exit = '\0';
         if( sscanf(line, "%s %s %[^ =;/]", uniform, type, name) != 3 ) continue; // @todo optimize: move to shader()
-        if( strcmp(uniform, "uniform") && strcmp(uniform, "}uniform") ) { if(tip) ui_label(va(ICON_MD_INFO "%s", tip)); continue; } // @todo optimize: move to shader()
+
+        char *mins = strstr(line, "min:");
+        char *sets = strstr(line, "set:");
+        char *maxs = strstr(line, "max:");
+        char *tips = strstr(line, "tip:");
+        if( mins ) *mins = 0, mins += 4;
+        if( sets ) *sets = 0, sets += 4;
+        if( maxs ) *maxs = 0, maxs += 4;
+        if( tips ) *tips = 0, tips += 4;
+
+        if( strcmp(uniform, "uniform") && strcmp(uniform, "}uniform") ) { if(tips) ui_label(va(ICON_MD_INFO "%s", tips)); continue; } // @todo optimize: move to shader()
 
         int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
-        vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
-        vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
-        vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
-        char *label = !tip ? va("%c%s", name[0] - 32 * !!(name[0] >= 'a'), name+1) :
-            va("%c%s  " ICON_MD_INFO  "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tip);
+        vec4 minv = mins ? atof4(mins) : vec4(0,0,0,0);
+        vec4 setv = sets ? atof4(sets) : vec4(0,0,0,0);
+        vec4 maxv = maxs ? atof4(maxs) : vec4(top,top,top,top);
+        char *label = !tips ? va("%c%s", name[0] - 32 * !!(name[0] >= 'a'), name+1) :
+            va("%c%s  " ICON_MD_INFO  "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tips);
 
         if(minv.x > maxv.x) swapf(&minv.x, &maxv.x); // @optimize: move to shader()
         if(minv.y > maxv.y) swapf(&minv.y, &maxv.y); // @optimize: move to shader()
         if(minv.z > maxv.z) swapf(&minv.z, &maxv.z); // @optimize: move to shader()
         if(minv.w > maxv.w) swapf(&minv.w, &maxv.w); // @optimize: move to shader()
 
-        if( !strstr(line, "max:") ) {
+        if( !maxs ) {
         if(setv.x > maxv.x) maxv.x = setv.x;
         if(setv.y > maxv.y) maxv.y = setv.y;
         if(setv.z > maxv.z) maxv.z = setv.z;
@@ -13562,7 +13579,7 @@ int ui_shader(unsigned shader) {
         }
         else if( type[0] == 'f' ) {
             setv.x = clampf(setv.x, minv.x, maxv.x);
-            char *caption = va("%5.2f", setv.x);
+            char *caption = va("%5.3f", setv.x);
             setv.x = (setv.x - minv.x) / (maxv.x - minv.x);
 
             if( (touched = ui_slider2(label, &setv.x, caption)) != 0 ) {
@@ -13590,12 +13607,12 @@ int ui_shader(unsigned shader) {
                 setv = clamp4(setv,minv,maxv);
             }
         }
-        else if( tip ) ui_label( tip );
+        else if( tips ) ui_label( tips );
 
         if( touched ) {
             // upgrade value
             *ptr = FREE(*ptr);
-            *ptr = stringf("%s %s %s ///set:%s min:%s max:%s tip:%s", uniform,type,name,ftoa4(setv),ftoa4(minv),ftoa4(maxv),tip?tip:"");
+            *ptr = stringf("%s %s %s ///set:%s min:%s max:%s tip:%s", uniform,type,name,ftoa4(setv),ftoa4(minv),ftoa4(maxv),tips?tips:"");
 
             // apply
             shader_apply_param(shader, i);
@@ -20119,22 +20136,31 @@ const char *trap_name(int signal) {
     ifndef(win32, if(signal == SIGQUIT) return "SIGQUIT");
     return "??";
 }
-void trap_on_ignore(int signal_) {
-    signal(signal_, trap_on_ignore);
+void trap_on_ignore(int sgn) {
+    signal(sgn, trap_on_ignore);
 }
-void trap_on_quit(int signal) {
-    // fprintf(stderr, "Ok: caught signal %s (%d)\n", trap_name(signal), signal);
+void trap_on_quit(int sgn) {
+    signal(sgn, trap_on_quit);
     exit(0);
 }
-void trap_on_abort(int signal) {
-    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
-    exit(-1);
+void trap_on_abort(int sgn) {
+    char *cs = va("Error: unexpected signal %s (%d)\n%s", trap_name(sgn), sgn, callstack(+16));
+    fprintf(stderr, "%s\n", cs), alert(cs), breakpoint();
+    signal(sgn, trap_on_abort);
+    exit(-sgn);
 }
-void trap_on_debug(int signal) {
-    alert("Error: unexpected signal"), breakpoint();
-    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
-    exit(-1);
+void trap_on_debug(int sgn) { // @todo: rename to trap_on_choice() and ask the developer what to do next? abort, continue, debug
+    char *cs = va("Error: unexpected signal %s (%d)\n%s", trap_name(sgn), sgn, callstack(+16));
+    fprintf(stderr, "%s\n", cs), alert(cs), breakpoint();
+    signal(sgn, trap_on_debug);
 }
+#if is(win32)
+LONG WINAPI trap_on_SEH(PEXCEPTION_POINTERS pExceptionPtrs) {
+    char *cs = va("Error: unexpected SEH exception\n%s", callstack(+16));
+    fprintf(stderr, "%s\n", cs), alert(cs), breakpoint();
+    return EXCEPTION_EXECUTE_HANDLER; // Execute default exception handler next
+}
+#endif
 void trap_install(void) {
     // expected signals
     signal(SIGINT, trap_on_quit);
@@ -20147,6 +20173,8 @@ void trap_install(void) {
     signal(SIGSEGV, trap_on_abort);
     ifndef(win32, signal(SIGBUS, trap_on_abort));
     ifdef(linux, signal(SIGSTKFLT, trap_on_abort));
+    // others
+    ifdef(win32,SetUnhandledExceptionFilter(trap_on_SEH));
 }
 
 #ifdef TRAP_DEMO
@@ -24446,7 +24474,7 @@ int window_frame_begin() {
                 // @todo
                 // SIGNAL_CELLULAR_1_BAR SIGNAL_CELLULAR_2_BAR
             }
-            EDITOR_UI_COLLAPSE(va(ICON_MD_SPEED " Profiler %5.2f/%d", window_fps(), (int)window_fps_target()), "Debug.Profiler") {
+            EDITOR_UI_COLLAPSE(va(ICON_MD_SPEED " Profiler %5.2f/%dfps", window_fps(), (int)window_fps_target()), "Debug.Profiler") {
                 ui_profiler();
             }
             EDITOR_UI_COLLAPSE(va(ICON_MD_STORAGE " Storage %s", xstats()), "Debug.Storage") {
@@ -25053,6 +25081,7 @@ void *obj_malloc(unsigned sz) {
 }
 void *obj_free(void *o) {
     if( !((obj*)o)->objrefs ) {
+        obj_detach(o);
         obj_dtor(o);
         //obj_zero(o);
         if( ((obj*)o)->objheap ) {
@@ -25212,6 +25241,7 @@ obj* obj_detach(void *c) {
             {
                 if( obj_id(v) == id ) {
                     obj_reparent(c, 0);
+                    array_erase_slow(*oo, i);
                     return c;
                 }
             }
@@ -25232,7 +25262,7 @@ obj* obj_attach(void *o, void *c) {
 int obj_dumptree(const void *o) {
     static int tabs = 0;
     printf("%*s" "+- %s\n", tabs++, "", obj_name(o));
-    for each_objchild(o, obj, v) {
+    for each_objchild(o, obj*, v) {
         obj_dumptree(v);
     }
     --tabs;
@@ -25285,19 +25315,19 @@ void test_obj_scene() {
     test( obj_root(gc2) == r );
     test( obj_root(gc3) == r );
 
-    for each_objchild(r, obj, o) test( o == c1 || o == c2 );
-    for each_objchild(c1, obj, o) test( o == gc1 );
-    for each_objchild(c2, obj, o) test( o == gc2 || o == gc3 );
+    for each_objchild(r, obj*, o) test( o == c1 || o == c2 );
+    for each_objchild(c1, obj*, o) test( o == gc1 );
+    for each_objchild(c2, obj*, o) test( o == gc2 || o == gc3 );
 
     obj_detach(c1);
     test( !obj_parent(c1) );
-    for each_objchild(r, obj, o) test( o != c1 );
-    for each_objchild(c1, obj, o) test( o == gc1 );
+    for each_objchild(r, obj*, o) test( o != c1 );
+    for each_objchild(c1, obj*, o) test( o == gc1 );
 
     obj_detach(c2);
     test( !obj_parent(c2) );
-    for each_objchild(r, obj, o) test( o != c2 );
-    for each_objchild(c2, obj, o) test( o == gc2 || o == gc3 );
+    for each_objchild(r, obj*, o) test( o != c2 );
+    for each_objchild(c2, obj*, o) test( o == gc2 || o == gc3 );
 }
 
 // ----------------------------------------------------------------------------
@@ -25324,6 +25354,7 @@ const char* obj_meta(const void *o, const char *key) {
 }
 
 void *obj_setname(void *o, const char *name) {
+    ifdef(debug,((obj*)o)->objname = name);
     return obj_setmeta(o, "name", name);
 }
 const char *obj_name(const void *o) {
@@ -25832,7 +25863,7 @@ void *obj_make(const char *str) {
     unsigned Tid = intern(name);
     reflect_init();
     reflect_t *found = map_find(reflects, Tid);
-    if(!found) return 0;
+    if(!found) return obj_new(obj);
 
     obj *ptr = CALLOC(1, found->sz + (has_components+1) * sizeof(array(obj*)));
     void *ret = (T == I ? obj_mergeini : obj_mergejson)(ptr, str);
@@ -27231,7 +27262,9 @@ void v4k_init() {
         atexit(v4k_quit);
     }
 }
+#line 0
 
+#line 1 "engine/split/v4k_end.c"
 // Enable more performant GPUs on laptops. Does this work into a dll?
 // int NvOptimusEnablement = 1;
 // int AmdPowerXpressRequestHighPerformance = 1;

@@ -267,22 +267,31 @@ const char *trap_name(int signal) {
     ifndef(win32, if(signal == SIGQUIT) return "SIGQUIT");
     return "??";
 }
-void trap_on_ignore(int signal_) {
-    signal(signal_, trap_on_ignore);
+void trap_on_ignore(int sgn) {
+    signal(sgn, trap_on_ignore);
 }
-void trap_on_quit(int signal) {
-    // fprintf(stderr, "Ok: caught signal %s (%d)\n", trap_name(signal), signal);
+void trap_on_quit(int sgn) {
+    signal(sgn, trap_on_quit);
     exit(0);
 }
-void trap_on_abort(int signal) {
-    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
-    exit(-1);
+void trap_on_abort(int sgn) {
+    char *cs = va("Error: unexpected signal %s (%d)\n%s", trap_name(sgn), sgn, callstack(+16));
+    fprintf(stderr, "%s\n", cs), alert(cs), breakpoint();
+    signal(sgn, trap_on_abort);
+    exit(-sgn);
 }
-void trap_on_debug(int signal) {
-    alert("Error: unexpected signal"), breakpoint();
-    fprintf(stderr, "Error: unexpected signal %s (%d)\n%s\n", trap_name(signal), signal, callstack(16));
-    exit(-1);
+void trap_on_debug(int sgn) { // @todo: rename to trap_on_choice() and ask the developer what to do next? abort, continue, debug
+    char *cs = va("Error: unexpected signal %s (%d)\n%s", trap_name(sgn), sgn, callstack(+16));
+    fprintf(stderr, "%s\n", cs), alert(cs), breakpoint();
+    signal(sgn, trap_on_debug);
 }
+#if is(win32)
+LONG WINAPI trap_on_SEH(PEXCEPTION_POINTERS pExceptionPtrs) {
+    char *cs = va("Error: unexpected SEH exception\n%s", callstack(+16));
+    fprintf(stderr, "%s\n", cs), alert(cs), breakpoint();
+    return EXCEPTION_EXECUTE_HANDLER; // Execute default exception handler next
+}
+#endif
 void trap_install(void) {
     // expected signals
     signal(SIGINT, trap_on_quit);
@@ -295,6 +304,8 @@ void trap_install(void) {
     signal(SIGSEGV, trap_on_abort);
     ifndef(win32, signal(SIGBUS, trap_on_abort));
     ifdef(linux, signal(SIGSTKFLT, trap_on_abort));
+    // others
+    ifdef(win32,SetUnhandledExceptionFilter(trap_on_SEH));
 }
 
 #ifdef TRAP_DEMO

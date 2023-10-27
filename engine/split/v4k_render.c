@@ -230,22 +230,31 @@ char** shader_property(unsigned shader, unsigned property) {
 void shader_apply_param(unsigned shader, unsigned param_no) {
     unsigned num_properties = shader_properties(shader);
     if( param_no < num_properties ) {
-        char *line = *shader_property(shader, param_no);
+        char *buf = *shader_property(shader, param_no);
 
-        char type[32], name[32];
+        char type[32], name[32], line[128]; snprintf(line, 127, "%s", buf);
         if( sscanf(line, "%*s %s %[^ =;/]", type, name) != 2 ) return;
 
+        char *mins = strstr(line, "min:");
+        char *sets = strstr(line, "set:");
+        char *maxs = strstr(line, "max:");
+        char *tips = strstr(line, "tip:");
+        if( mins ) *mins = 0, mins += 4;
+        if( sets ) *sets = 0, sets += 4;
+        if( maxs ) *maxs = 0, maxs += 4;
+        if( tips ) *tips = 0, tips += 4;
+
         int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
-        vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
-        vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
-        vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
+        vec4 minv = mins ? atof4(mins) : vec4(0,0,0,0);
+        vec4 setv = sets ? atof4(sets) : vec4(0,0,0,0);
+        vec4 maxv = maxs ? atof4(maxs) : vec4(top,top,top,top);
 
         if(minv.x > maxv.x) swapf(&minv.x, &maxv.x);
         if(minv.y > maxv.y) swapf(&minv.y, &maxv.y);
         if(minv.z > maxv.z) swapf(&minv.z, &maxv.z);
         if(minv.w > maxv.w) swapf(&minv.w, &maxv.w);
 
-        if( !strstr(line, "max:") ) {
+        if( !maxs ) {
         if(setv.x > maxv.x) maxv.x = setv.x;
         if(setv.y > maxv.y) maxv.y = setv.y;
         if(setv.z > maxv.z) maxv.z = setv.z;
@@ -287,26 +296,35 @@ int ui_shader(unsigned shader) {
     for( unsigned i = 0; i < num_properties; ++i ) {
         char **ptr = shader_property(shader,i);
 
-        const char *line = *ptr; // debug: ui_label(line);
-        char* tip = strstr(line, "tip:"); tip = tip && tip[4] ? tip + 4 : 0;
+        char line[128]; snprintf(line, 127, "%s", *ptr); // debug: ui_label(line);
 
         char uniform[32], type[32], name[32], early_exit = '\0';
         if( sscanf(line, "%s %s %[^ =;/]", uniform, type, name) != 3 ) continue; // @todo optimize: move to shader()
-        if( strcmp(uniform, "uniform") && strcmp(uniform, "}uniform") ) { if(tip) ui_label(va(ICON_MD_INFO "%s", tip)); continue; } // @todo optimize: move to shader()
+
+        char *mins = strstr(line, "min:");
+        char *sets = strstr(line, "set:");
+        char *maxs = strstr(line, "max:");
+        char *tips = strstr(line, "tip:");
+        if( mins ) *mins = 0, mins += 4;
+        if( sets ) *sets = 0, sets += 4;
+        if( maxs ) *maxs = 0, maxs += 4;
+        if( tips ) *tips = 0, tips += 4;
+
+        if( strcmp(uniform, "uniform") && strcmp(uniform, "}uniform") ) { if(tips) ui_label(va(ICON_MD_INFO "%s", tips)); continue; } // @todo optimize: move to shader()
 
         int is_color = !!strstri(name, "color"), top = is_color ? 1 : 10;
-        vec4 minv = strstr(line, "min:") ? atof4(strstr(line, "min:") + 4) : vec4(0,0,0,0);
-        vec4 setv = strstr(line, "set:") ? atof4(strstr(line, "set:") + 4) : vec4(0,0,0,0);
-        vec4 maxv = strstr(line, "max:") ? atof4(strstr(line, "max:") + 4) : vec4(top,top,top,top);
-        char *label = !tip ? va("%c%s", name[0] - 32 * !!(name[0] >= 'a'), name+1) :
-            va("%c%s  " ICON_MD_INFO  "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tip);
+        vec4 minv = mins ? atof4(mins) : vec4(0,0,0,0);
+        vec4 setv = sets ? atof4(sets) : vec4(0,0,0,0);
+        vec4 maxv = maxs ? atof4(maxs) : vec4(top,top,top,top);
+        char *label = !tips ? va("%c%s", name[0] - 32 * !!(name[0] >= 'a'), name+1) :
+            va("%c%s  " ICON_MD_INFO  "@%s", name[0] - 32 * !!(name[0] >= 'a'), name+1, tips);
 
         if(minv.x > maxv.x) swapf(&minv.x, &maxv.x); // @optimize: move to shader()
         if(minv.y > maxv.y) swapf(&minv.y, &maxv.y); // @optimize: move to shader()
         if(minv.z > maxv.z) swapf(&minv.z, &maxv.z); // @optimize: move to shader()
         if(minv.w > maxv.w) swapf(&minv.w, &maxv.w); // @optimize: move to shader()
 
-        if( !strstr(line, "max:") ) {
+        if( !maxs ) {
         if(setv.x > maxv.x) maxv.x = setv.x;
         if(setv.y > maxv.y) maxv.y = setv.y;
         if(setv.z > maxv.z) maxv.z = setv.z;
@@ -333,7 +351,7 @@ int ui_shader(unsigned shader) {
         }
         else if( type[0] == 'f' ) {
             setv.x = clampf(setv.x, minv.x, maxv.x);
-            char *caption = va("%5.2f", setv.x);
+            char *caption = va("%5.3f", setv.x);
             setv.x = (setv.x - minv.x) / (maxv.x - minv.x);
 
             if( (touched = ui_slider2(label, &setv.x, caption)) != 0 ) {
@@ -361,12 +379,12 @@ int ui_shader(unsigned shader) {
                 setv = clamp4(setv,minv,maxv);
             }
         }
-        else if( tip ) ui_label( tip );
+        else if( tips ) ui_label( tips );
 
         if( touched ) {
             // upgrade value
             *ptr = FREE(*ptr);
-            *ptr = stringf("%s %s %s ///set:%s min:%s max:%s tip:%s", uniform,type,name,ftoa4(setv),ftoa4(minv),ftoa4(maxv),tip?tip:"");
+            *ptr = stringf("%s %s %s ///set:%s min:%s max:%s tip:%s", uniform,type,name,ftoa4(setv),ftoa4(minv),ftoa4(maxv),tips?tips:"");
 
             // apply
             shader_apply_param(shader, i);

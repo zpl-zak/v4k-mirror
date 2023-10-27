@@ -637,7 +637,7 @@ static __thread unsigned array_n_;
     array_pop(t); \
 } while(0)
 
-#define array_erase(t, i) do { \
+#define array_erase_slow(t, i) do { /*preserves ordering*/ \
     memmove( &(t)[i], &(t)[i + 1], sizeof(0[t])*(array_count(t) - i - 1)); \
     array_pop(t); \
 } while(0)
@@ -2749,7 +2749,7 @@ API int64_t  client_join(const char *ip, int port);
     };
 
 #define OBJ \
-    struct { OBJHEADER };
+    struct { OBJHEADER ifdef(debug,const char *objname;) };
 
 // ----------------------------------------------------------------------------
 // syntax sugars
@@ -2901,10 +2901,10 @@ API void*       obj_unref(void *oo);
 // ----------------------------------------------------------------------------
 // scene tree
 
-#define each_objchild(p,t,o) /*non-recursive*/ \
+#define each_objchild(p,T,o) /*non-recursive*/ \
     (array(obj*)* children = obj_children(p); children; children = 0) \
         for(int _i = 1, _end = array_count(*children); _i < _end; ++_i) \
-            for(t *o = (t *)((*children)[_i]); o && (obj_parent(o) == p); o = 0)
+            for(T o = (T)((*children)[_i]); o && (obj_parent(o) == p); o = 0)
 
 API obj*        obj_detach(void *c);
 API obj*        obj_attach(void *o, void *c);

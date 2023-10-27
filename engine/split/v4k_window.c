@@ -715,7 +715,7 @@ int window_frame_begin() {
                 // @todo
                 // SIGNAL_CELLULAR_1_BAR SIGNAL_CELLULAR_2_BAR
             }
-            EDITOR_UI_COLLAPSE(va(ICON_MD_SPEED " Profiler %5.2f/%d", window_fps(), (int)window_fps_target()), "Debug.Profiler") {
+            EDITOR_UI_COLLAPSE(va(ICON_MD_SPEED " Profiler %5.2f/%dfps", window_fps(), (int)window_fps_target()), "Debug.Profiler") {
                 ui_profiler();
             }
             EDITOR_UI_COLLAPSE(va(ICON_MD_STORAGE " Storage %s", xstats()), "Debug.Storage") {

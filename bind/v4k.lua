@@ -2470,7 +2470,7 @@ enum { NETWORK_USERID = 7,  NETWORK_COUNT , NETWORK_CAPACITY };
  void   server_send_bin(int64_t handle, const void *ptr, int len);
  void   server_drop(int64_t handle);
  int64_t  client_join(const char *ip, int port);
-typedef struct obj { struct { union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };      }; }; } obj;
+typedef struct obj { struct { union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };      }; ifdef(debug,const char *objname;) }; } obj;
 typedef struct entity { struct { union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };      }; union { struct { uintptr_t objenabled:32, objflagged:32; }; uintptr_t cflags; }; void *c[32]; }; } entity;
   obj *objtmp;
 void*   obj_malloc(unsigned sz);

@@ -1695,7 +1695,6 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
     const char *vs = vs_filename ? file_read(vs_filename) : mv_vs_source;
     const char *fs = fs_filename ? file_read(fs_filename) : mv_fs_source;
     f->program = shader(vs, fs, "vertexPosition,instanceGlyph", "outColor", NULL);
-    ASSERT(f->program > 0);
 
     // figure out what ranges we're about to bake
     #define MERGE_TABLE(table) do { \
