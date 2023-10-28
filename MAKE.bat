@@ -273,6 +273,12 @@ if "%1"=="v4web" (
         git commit -m "website update"
         git push origin main
     popd
+    git stash
+    git add website
+    git commit -m "sync website"
+    git pull
+    git push
+    git stash pop
     exit /b
 )
 
