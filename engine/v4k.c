@@ -26989,7 +26989,6 @@ int engine_tick() {
         window_fps_lock( hz < 5 ? 5 : hz );
     } else {
         // window_fps_lock( editor_hz );
-        window_fps_unlock( );
         } 
 
     return 0;
