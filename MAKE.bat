@@ -426,6 +426,7 @@ if "%1"=="tidy" (
     del tools\*.exp                 > nul 2> nul
     del *.lib                       > nul 2> nul
     del *.exe                       > nul 2> nul
+    del *.log                       > nul 2> nul
     del *.obj                       > nul 2> nul
     del tools\*.obj                 > nul 2> nul
     del *.o                         > nul 2> nul
@@ -753,14 +754,14 @@ if "!v4k!"=="yes" (
     )
 )
 
+!echo! v4k && !cc! engine\v4k.c !export! !edit! !args! || set rc=1
+
 rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL
 if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
 !echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
 !echo! editor3      && !cc! !o! editor3.exe tools\editor\editor3.c !edit! -Iengine/joint !args! || set rc=1
-
-!echo! v4k && !cc! engine\v4k.c !export! !edit! !args! || set rc=1
 
 rem if "!cc!"=="cl" (
 rem set plug_export=/LD
