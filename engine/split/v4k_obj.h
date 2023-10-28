@@ -20,6 +20,8 @@
 #endif
 
 #define OBJHEADER \
+    struct { \
+        ifdef(debug, const char *objname;) \
     union { \
         uintptr_t objheader; \
         struct {  \
@@ -31,10 +33,12 @@
         uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
         uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
         }; \
+        }; \
+        array(struct obj*) objchildren; \
     };
 
 #define OBJ \
-    struct { OBJHEADER ifdef(debug,const char *objname;) };
+    OBJHEADER
 
 // ----------------------------------------------------------------------------
 // syntax sugars
@@ -83,6 +87,9 @@
 // OBJTYPEDEF(entity,1)
     typedef struct entity { ENTITY } entity;
 
+#define entity_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, 0, __VA_ARGS__)
+#define entity_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE,  NAME, 1, 0, __VA_ARGS__)
+
 // ----------------------------------------------------------------------------
 // heap/stack ctor/dtor
 
@@ -97,16 +104,16 @@ static __thread obj *objtmp;
         obj_ctor(PTR))
 #define OBJ_CTOR(TYPE, NAME, HEAP, PAYLOAD_SIZE, ...) (TYPE*)( \
         objtmp = (HEAP ? MALLOC(sizeof(TYPE)+(PAYLOAD_SIZE)) : ALLOCA(sizeof(TYPE)+(PAYLOAD_SIZE))), \
-        *(TYPE*)objtmp = ((TYPE){ {0}, __VA_ARGS__}), \
+        *(TYPE*)objtmp = ((TYPE){ {0,}, __VA_ARGS__}), \
         ((PAYLOAD_SIZE) ? memset((char*)objtmp + sizeof(TYPE), 0, (PAYLOAD_SIZE)) : objtmp), \
         ( OBJTYPES[ OBJTYPE(TYPE) ] = #TYPE ), \
         OBJ_CTOR_PTR(objtmp, HEAP,sizeof(TYPE),OBJTYPE(TYPE)), \
         ifdef(debug, (obj_printf)(objtmp, va("%s", callstack(+16))), 0), \
         obj_setname(objtmp, NAME))
 
-#define obj(TYPE, ...)                *OBJ_CTOR(TYPE, #TYPE, 0, sizeof(array(obj*)), __VA_ARGS__)
-#define obj_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, sizeof(array(obj*)), __VA_ARGS__)
-#define obj_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE, NAME, 1, sizeof(array(obj*)), __VA_ARGS__)
+#define obj(TYPE, ...)                *OBJ_CTOR(TYPE, #TYPE, 0, 0, __VA_ARGS__)
+#define obj_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, 0, __VA_ARGS__)
+#define obj_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE,  NAME, 1, 0, __VA_ARGS__)
 
 void*   obj_malloc(unsigned sz);
 void*   obj_free(void *o);
@@ -261,12 +268,12 @@ API int         obj_pop(void *o);
 // ----------------------------------------------------------------------------
 // components
 
-API bool        obj_addcomponent(void *object, unsigned c, void *ptr);
-API bool        obj_hascomponent(void *object, unsigned c);
-API void*       obj_getcomponent(void *object, unsigned c);
-API bool        obj_delcomponent(void *object, unsigned c);
-API bool        obj_usecomponent(void *object, unsigned c);
-API bool        obj_offcomponent(void *object, unsigned c);
+API bool        obj_addcomponent(entity *e, unsigned c, void *ptr);
+API bool        obj_hascomponent(entity *e, unsigned c);
+API void*       obj_getcomponent(entity *e, unsigned c);
+API bool        obj_delcomponent(entity *e, unsigned c);
+API bool        obj_usecomponent(entity *e, unsigned c);
+API bool        obj_offcomponent(entity *e, unsigned c);
 
 API char*       entity_save(entity *self);
 
@@ -282,7 +289,7 @@ API char*       entity_save(entity *self);
 
 API void*       obj_clone(const void *src);
 API void*       obj_merge(void *dst, const void *src); // @testme
-API void*       obj_mutate(void **dst, const void *src);
+API void*       obj_mutate(void *dst, const void *src);
 API void*       obj_make(const char *str);
 
 // built-ins

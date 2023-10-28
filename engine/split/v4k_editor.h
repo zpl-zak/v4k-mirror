@@ -14,6 +14,8 @@ API int*   engine_geti(const char *key);
 API char** engine_gets(const char *key);
 API int    engine_send(const char *cmd, const char *optional_value);
 
+API int    ui_debug();
+
 // open file dialog
 
 API char* dialog_load();

@@ -27,7 +27,20 @@
 * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 * ------------------------------------------------------------------------------
-* ALTERNATIVE B - MIT-0 (No Attribution clause)
+* ALTERNATIVE B - 0-BSD License (https://opensource.org/licenses/FPL-1.0.0)
+* ------------------------------------------------------------------------------
+* Permission to use, copy, modify, and/or distribute this software for any
+* purpose with or without fee is hereby granted.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+* REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+* FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+* INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+* LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+* OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+* PERFORMANCE OF THIS SOFTWARE.
+* ------------------------------------------------------------------------------
+* ALTERNATIVE C - MIT-0 (No Attribution clause)
 * ------------------------------------------------------------------------------
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this
 * software and associated documentation files (the "Software"), to deal in the Software
@@ -41,19 +54,6 @@
 * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* ------------------------------------------------------------------------------
-* ALTERNATIVE C - Zero BSD License (https://opensource.org/licenses/FPL-1.0.0)
-* ------------------------------------------------------------------------------
-* Permission to use, copy, modify, and/or distribute this software for any
-* purpose with or without fee is hereby granted.
-*
-* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-* REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-* FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-* INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-* LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
-* OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-* PERFORMANCE OF THIS SOFTWARE.
 *
 * ## License: Contributed Code ------------------------------------------------
 *
@@ -73,7 +73,7 @@
 * --
 *
 * "I dedicate any and all copyright interest in this software to the three
-* license terms listed above. I make this dedication for the benefit of the
+* licensing terms listed above. I make this dedication for the benefit of the
 * public at large and to the detriment of my heirs and successors. I intend
 * this dedication to be an overt act of relinquishment in perpetuity of all
 * present and future rights to this software under copyright law."
@@ -112,6 +112,12 @@ API void *ui_handle();
 
 //-----------------------------------------------------------------------------
 // C files
+
+#line 1 "engine/split/v4k_begin.c"
+#define do_threadlock(mutexptr) \
+    for( int init_ = !!(mutexptr) || (thread_mutex_init( (mutexptr) = CALLOC(1, sizeof(thread_mutex_t)) ), 1); init_; init_ = 0) \
+    for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mutex_unlock( mutexptr ), 0) )
+#line 0
 
 #line 1 "engine/split/v4k_ds.c"
 
@@ -13141,6 +13147,7 @@ static map(unsigned, array(reflect_t)) members;
 
 void reflect_init() {
     if(!reflects) map_init_int(reflects);
+    if(!members)  map_init_int(members);
     }
 AUTORUN {
     reflect_init();
@@ -13228,7 +13235,7 @@ void ui_reflect_(const reflect_t *R, const char *filter, int mask) {
         if( buf ) *buf = '\0';
 
         struct nk_context *ui_ctx = (struct nk_context *)ui_handle();
-        for ui_push_hspace(16) {
+        /*for ui_push_hspace(16)*/ {
             array(reflect_t) *T = map_find(members, intern(R->name));
             /**/ if( T )         {ui_label(strcatf(&buf,"S struct %s@%s", R->name, R->info+1)); for each_array_ptr(*T, reflect_t, it) if(strmatchi(it->name,filter)) ui_reflect_(it,filter,'M'); }
             else if( R->addr )    ui_label(strcatf(&buf,"F func %s()@%s", R->name, R->info+1));
@@ -21041,6 +21048,124 @@ bool id_valid(uintptr_t id) {
 #line 0
 
 #line 1 "engine/split/v4k_ui.c"
+// ----------------------------------------------------------------------------------------
+// ui extensions first
+
+static float
+nk_text_width(struct nk_context *ctx, const char *str, unsigned len) {
+    const struct nk_style *style = &ctx->style;
+    const struct nk_user_font *f = style->font;
+    float pixels_width = f->width(f->userdata, f->height, str, len ? (int)len : (int)strlen(str));
+    return pixels_width;
+}
+
+static nk_bool
+nk_hovered_text(struct nk_context *ctx, const char *str, int len,
+    nk_flags align, nk_bool value)
+{
+    struct nk_window *win;
+    struct nk_panel *layout;
+    const struct nk_input *in;
+    const struct nk_style *style;
+
+    enum nk_widget_layout_states state;
+    struct nk_rect bounds;
+
+    NK_ASSERT(ctx);
+    NK_ASSERT(ctx->current);
+    NK_ASSERT(ctx->current->layout);
+    if (!ctx || !ctx->current || !ctx->current->layout)
+        return 0;
+
+    win = ctx->current;
+    layout = win->layout;
+    style = &ctx->style;
+
+    state = nk_widget(&bounds, ctx);
+    if (!state) return 0;
+    in = (state == NK_WIDGET_ROM || layout->flags & NK_WINDOW_ROM) ? 0 : &ctx->input;
+
+    #if 1 //< @r-lyeh: sim button logic
+    struct nk_rect touch;
+    touch.x = bounds.x - style->selectable.touch_padding.x;
+    touch.y = bounds.y - style->selectable.touch_padding.y;
+    touch.w = bounds.w + style->selectable.touch_padding.x * 2;
+    touch.h = bounds.h + style->selectable.touch_padding.y * 2;
+    int clicked = !!nk_button_behavior(&ctx->last_widget_state, touch, in, NK_BUTTON_DEFAULT);
+    in = 0; //< @r-lyeh: do not pass any input
+    #endif
+
+    nk_do_selectable(&ctx->last_widget_state, &win->buffer, bounds,
+                str, len, align, &value, &style->selectable, in, style->font);
+
+    return clicked; //< @r-lyeh: return sim button logic instead of prev function call
+}
+
+#define ui_push_hspace(px) \
+    (int xx = px; xx; xx = 0) \
+    for(struct nk_context *ctx = (struct nk_context*)ui_handle(); ctx; ctx = 0 ) \
+        for(struct nk_panel *layout = ui_ctx->current->layout; layout; ) \
+            for( xx = (layout->at_x += px, layout->bounds.w -= px, 0); layout; layout->at_x -= px, layout->bounds.w += px, layout = 0 )
+
+// helper macros to instance an overlayed toolbar within the regions of an existing widget
+#define UI_TOOLBAR_OVERLAY_DECLARE(...) \
+            __VA_ARGS__; \
+            struct nk_rect toolbar_bounds; nk_layout_peek(&toolbar_bounds, ui_ctx); \
+            struct nk_vec2 item_padding = ui_ctx->style.text.padding; \
+            struct nk_text text; \
+            text.padding.x = item_padding.x; \
+            text.padding.y = item_padding.y; \
+            text.background = ui_ctx->style.window.background;
+#define UI_TOOLBAR_OVERLAY(CHOICE,TEXT,COLOR,ALIGNMENT) \
+            do { \
+            text.text = COLOR; \
+            nk_widget_text(&ui_ctx->current->buffer, toolbar_bounds, TEXT, strlen(TEXT), &text, ALIGNMENT, ui_ctx->style.font); \
+            int clicked_x = input_down(MOUSE_L) && nk_input_is_mouse_hovering_rect(&ui_ctx->input, toolbar_bounds); \
+            if( clicked_x ) clicked_x = (int)((ui_ctx->input.mouse.pos.x - toolbar_bounds.x) - (ALIGNMENT == NK_TEXT_RIGHT ? bounds.w : 0) ); \
+            CHOICE = 1 + (ALIGNMENT == NK_TEXT_RIGHT ? -1 : +1) * clicked_x / (UI_ICON_FONTSIZE + UI_ICON_SPACING_X); /* divided by px per ICON_MD_ glyph approximately */ \
+            int glyphs = strlen(TEXT) / 4 /*3:MD,4:MDI*/; CHOICE *= !!clicked_x * (CHOICE <= glyphs); } while(0)
+
+// menu macros that work not only standalone but also contained within a panel or window
+#define UI_MENU(N, ...) do { \
+    enum { MENUROW_HEIGHT = 25 }; \
+    int embedded = !!ui_ctx->current; \
+    struct nk_rect total_space = {0,0,window_width(),window_height()}; \
+    if( embedded ) total_space = nk_window_get_bounds(ui_ctx), total_space.w -= 10; \
+    vec2 popup_space = { total_space.w * 0.33, total_space.h * 0.85 }; \
+    int created = !embedded && nk_begin(ui_ctx, "MENU_" STRINGIZE(__COUNTER__), nk_rect(0, 0, window_width(), UI_MENUROW_HEIGHT), NK_WINDOW_NO_SCROLLBAR); \
+    if ( embedded || created ) { \
+        int align = NK_TEXT_LEFT, Nth = (N), ITEM_WIDTH = 30, span = 0; \
+        nk_menubar_begin(ui_ctx); \
+        nk_layout_row_begin(ui_ctx, NK_STATIC, MENUROW_HEIGHT, Nth); \
+            __VA_ARGS__; \
+        nk_menubar_end(ui_ctx); \
+        if( created ) nk_end(ui_ctx); \
+    } } while(0)
+#define UI_MENU_POPUP(title, ...) { \
+    int hspace = maxi(ITEM_WIDTH, nk_text_width(ui_ctx,(title),0)); \
+    nk_layout_row_push(ui_ctx, hspace); span += hspace; \
+    if (nk_menu_begin_label(ui_ctx, (title), align, nk_vec2(popup_space.w,popup_space.h))) { \
+        __VA_ARGS__; \
+        nk_menu_end(ui_ctx); \
+    }}
+#define UI_MENU_ITEM(title, ...) { \
+    int hspace = maxi(ITEM_WIDTH, nk_text_width(ui_ctx,(title),0)); \
+    nk_layout_row_push(ui_ctx, hspace); span += hspace; \
+    if (nk_menu_begin_label(ui_ctx, (title), align, nk_vec2(1,1))) { \
+        __VA_ARGS__; \
+        nk_menu_close(ui_ctx); \
+        nk_menu_end(ui_ctx); \
+    }}
+#define UI_MENU_ALIGN_RIGHT(px) { \
+    int hspace = total_space.w - span - (px) - 1.5 * ITEM_WIDTH; \
+    nk_layout_row_push(ui_ctx, hspace); span += hspace; \
+    if (nk_menu_begin_label(ui_ctx, (title), align = NK_TEXT_RIGHT, nk_vec2(1,1))) { \
+        nk_menu_close(ui_ctx); \
+        nk_menu_end(ui_ctx); \
+    }}
+
+// ----------------------------------------------------------------------------------------
+// ui
 
 #ifndef UI_ICONS_SMALL
 //#define UI_ICONS_SMALL 1
@@ -21359,7 +21484,6 @@ vec2 ui_toolbar_(array(ui_item_t) ui_items, vec2 ui_results) {
     // old method: nk_layout_row_dynamic(ui_ctx, UI_MENUBAR_ICON_HEIGHT/*h*/, array_count(ui_items));
     {
         const struct nk_style *style = &ui_ctx->style;
-        const struct nk_user_font *f = style->font;
 
         nk_layout_row_template_begin(ui_ctx, UI_MENUBAR_ICON_HEIGHT/*h*/);
         for(int i = 0; i < array_count(ui_items); ++i) {
@@ -21369,7 +21493,7 @@ vec2 ui_toolbar_(array(ui_item_t) ui_items, vec2 ui_results) {
             char *tooltip = strchr(first_token, '@');
             int len = tooltip ? (int)(tooltip - first_token /*- 1*/) : strlen(first_token);
 
-            float pixels_width = f->width(f->userdata, f->height, first_token, len);
+            float pixels_width = nk_text_width(ui_ctx, first_token, len);
             pixels_width += style->window.header.label_padding.x * 2 + style->window.header.padding.x * 2;
             if( pixels_width < 5 ) pixels_width = 5;
             nk_layout_row_template_push_static(ui_ctx, pixels_width);
@@ -22447,20 +22571,19 @@ int ui_panel_end() {
 }
 
 static unsigned ui_collapse_state = 0;
-static bool ui_collapse_next_open = 0;
 int ui_collapse(const char *label, const char *id) { // mask: 0(closed),1(open),2(created)
-    int open = label[0] == '!'; label += open;
+    int start_open = label[0] == '!'; label += start_open;
 
     uint64_t hash = 14695981039346656037ULL, mult = 0x100000001b3ULL;
     for(int i = 0; id[i]; ++i) hash = (hash ^ id[i]) * mult;
     ui_hue = (hash & 0x3F) / (float)0x3F; ui_hue += !ui_hue;
 
-    ui_collapse_state = nk_tree_base_(ui_ctx, NK_TREE_NODE, 0, label, ui_collapse_next_open ? NK_MAXIMIZED : NK_MINIMIZED, id, strlen(id), 0);
-    return ui_collapse_next_open = 0, ui_collapse_state & 1; // |1 open, |2 clicked, |4 toggled
-}
-int ui_collapseo(const char *label, const char *id) { // mask: 0(closed),1(open),2(created)
-    ui_collapse_next_open = true;
-    return ui_collapse(label, id);
+    int forced = ui_filter && ui_filter[0];
+    enum nk_collapse_states forced_open = NK_MAXIMIZED;
+
+    ui_collapse_state = nk_tree_base_(ui_ctx, NK_TREE_NODE, 0, label, start_open ? NK_MAXIMIZED : NK_MINIMIZED, forced ? &forced_open : NULL, id, strlen(id), 0);
+
+    return ui_collapse_state & 1; // |1 open, |2 clicked, |4 toggled
 }
 int ui_collapse_clicked() {
     return ui_collapse_state >> 1; // |1 clicked, |2 toggled
@@ -22617,10 +22740,12 @@ if( font )  nk_style_pop_font(ui_ctx);
     return ui_label_icon_clicked_L.x;
 }
 
-int ui_label(const char *text) {
-    int align = text[0] == '>' ? (text++, NK_TEXT_RIGHT) : text[0] == '=' ? (text++, NK_TEXT_CENTERED) : text[0] == '<' ? (text++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
+int ui_label(const char *label) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    int align = label[0] == '>' ? (label++, NK_TEXT_RIGHT) : label[0] == '=' ? (label++, NK_TEXT_CENTERED) : label[0] == '<' ? (label++, NK_TEXT_LEFT) : NK_TEXT_LEFT;
     nk_layout_row_dynamic(ui_ctx, 0, 1);
-    return ui_label_(text, align);
+    return ui_label_(label, align);
 }
 
 static int nk_label_(struct nk_context *ui_ctx, const char *text_, int align2 ) {
@@ -22644,6 +22769,8 @@ ui_label_icon_clicked_R.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x
 
 
 int ui_label2(const char *label, const char *text_) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
 
     int align1 = NK_TEXT_LEFT;
@@ -22698,7 +22825,9 @@ int ui_button_transparent(const char *text) {
 #endif
 
 static
-int ui_button_(const char *text) {
+int ui_button_(const char *label) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     if( 1 ) {
 #if UI_BUTTON_MONOCHROME
         nk_style_push_color(ui_ctx, &ui_ctx->style.button.text_normal, nk_rgba(0,0,0,ui_alpha));
@@ -22729,8 +22858,8 @@ int ui_button_(const char *text) {
 
     struct nk_rect bounds = nk_widget_bounds(ui_ctx);
 
-    const char *split = strchr(text, '@'), *tooltip = split + 1;
-    int ret = nk_button_text(ui_ctx, text, split ? (int)(split - text) : strlen(text) );
+    const char *split = strchr(label, '@'), *tooltip = split + 1;
+    int ret = nk_button_text(ui_ctx, label, split ? (int)(split - label) : strlen(label) );
 
     const struct nk_input *in = &ui_ctx->input;
     if (split && nk_input_is_mouse_hovering_rect(in, bounds) && !ui_has_active_popups && nk_window_has_focus(ui_ctx)) {
@@ -22751,6 +22880,23 @@ int ui_button_(const char *text) {
 }
 
 int ui_buttons(int buttons, ...) {
+    static array(char*) args = 0;
+    array_resize(args, 0);
+
+    int num_skips = 0;
+        va_list list;
+        va_start(list, buttons);
+        for( int i = 0; i < buttons; ++i ) {
+            const char *label = va_arg(list, const char*);
+            int skip = ui_filter && ui_filter[0] && !strstri(label, ui_filter);
+            array_push(args, skip ? NULL : (char*)label);
+            num_skips += skip;
+        }
+        va_end(list);
+
+    if( num_skips == array_count(args) ) return 0;
+    buttons = array_count(args) - num_skips;
+
     nk_layout_row_dynamic(ui_ctx, 0, buttons);
 
     float ui_hue_old = ui_hue;
@@ -22765,10 +22911,8 @@ int ui_buttons(int buttons, ...) {
         layout->bounds.w -= indent;
 
             int rc = 0;
-            va_list list;
-            va_start(list, buttons);
-            for( int i = 0; i < buttons; ++i ) {
-                if( ui_button_( va_arg(list, const char*) ) ) rc = i+1;
+            for( int i = 0, end = array_count(args); i < end; ++i ) {
+                if( args[i] && ui_button_( args[i] ) ) rc = i+1;
                 ui_hue_cycle( 3 );
             }
             va_end(list);
@@ -22785,6 +22929,8 @@ int ui_button(const char *s) {
 }
 
 int ui_toggle(const char *label, bool *value) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22794,6 +22940,8 @@ int ui_toggle(const char *label, bool *value) {
 }
 
 int ui_color4f(const char *label, float *color4) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     float c[4] = { color4[0]*255, color4[1]*255, color4[2]*255, color4[3]*255 };
     int ret = ui_color4(label, c);
     for( int i = 0; i < 4; ++i ) color4[i] = c[i] / 255.0f;
@@ -22803,6 +22951,8 @@ int ui_color4f(const char *label, float *color4) {
 static enum color_mode {COL_RGB, COL_HSV} ui_color_mode = COL_RGB;
 
 int ui_color4(const char *label, float *color4) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22849,6 +22999,8 @@ int ui_color3f(const char *label, float *color3) {
 }
 
 int ui_color3(const char *label, float *color3) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22885,6 +23037,8 @@ int ui_color3(const char *label, float *color3) {
 }
 
 int ui_list(const char *label, const char **items, int num_items, int *selector) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22895,6 +23049,8 @@ int ui_list(const char *label, const char **items, int num_items, int *selector)
 }
 
 int ui_slider(const char *label, float *slider) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     // return ui_slider2(label, slider, va("%.2f ", *slider));
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
@@ -22905,6 +23061,8 @@ int ui_slider(const char *label, float *slider) {
     return chg;
 }
 int ui_slider2(const char *label, float *slider, const char *caption) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22929,6 +23087,8 @@ int ui_slider2(const char *label, float *slider, const char *caption) {
 }
 
 int ui_bool(const char *label, bool *enabled ) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22943,6 +23103,8 @@ int ui_bool(const char *label, bool *enabled ) {
 }
 
 int ui_int(const char *label, int *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22952,6 +23114,8 @@ int ui_int(const char *label, int *v) {
 }
 
 int ui_unsigned(const char *label, unsigned *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22961,11 +23125,15 @@ int ui_unsigned(const char *label, unsigned *v) {
 }
 
 int ui_short(const char *label, short *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     int i = *v, ret = ui_int( label, &i );
     return *v = (short)i, ret;
 }
 
 int ui_float(const char *label, float *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22974,6 +23142,8 @@ int ui_float(const char *label, float *v) {
 }
 
 int ui_double(const char *label, double *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -22982,6 +23152,8 @@ int ui_double(const char *label, double *v) {
 }
 
 int ui_clampf(const char *label, float *v, float minf, float maxf) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     if( minf > maxf ) return ui_clampf(label, v, maxf, minf);
 
     nk_layout_row_dynamic(ui_ctx, 0, 2);
@@ -22994,6 +23166,8 @@ int ui_clampf(const char *label, float *v, float minf, float maxf) {
 static bool ui_float_sign = 0;
 
 int ui_float2(const char *label, float *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -23012,6 +23186,8 @@ int ui_float2(const char *label, float *v) {
 }
 
 int ui_float3(const char *label, float *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -23031,6 +23207,8 @@ int ui_float3(const char *label, float *v) {
 }
 
 int ui_float4(const char *label, float *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
@@ -23052,6 +23230,8 @@ int ui_float4(const char *label, float *v) {
 }
 
 int ui_mat33(const char *label, float M[9]) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     ui_float_sign = 3;
     int changed = 0;
     changed |= ui_label(label);
@@ -23061,6 +23241,8 @@ int ui_mat33(const char *label, float M[9]) {
     return changed;
 }
 int ui_mat34(const char *label, float M[12]) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     ui_float_sign = 3;
     int changed = 0;
     changed |= ui_label(label);
@@ -23070,6 +23252,8 @@ int ui_mat34(const char *label, float M[12]) {
     return changed;
 }
 int ui_mat44(const char *label, float M[16]) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     ui_float_sign = 4;
     int changed = 0;
     changed |= ui_label(label);
@@ -23081,6 +23265,8 @@ int ui_mat44(const char *label, float M[16]) {
 }
 
 int ui_buffer(const char *label, char *buffer, int buflen) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, 0, 1 + (label && label[0]));
     if(label && label[0]) ui_label_(label, NK_TEXT_LEFT);
 
@@ -23089,6 +23275,8 @@ int ui_buffer(const char *label, char *buffer, int buflen) {
 }
 
 int ui_string(const char *label, char **str) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     char *bak = va("%s%c", *str ? *str : "", '\0');
     int rc = ui_buffer(label, bak, strlen(bak)+2);
     if( *str ) 0[*str] = '\0';
@@ -23097,6 +23285,8 @@ int ui_string(const char *label, char **str) {
 }
 
 int ui_separator() {
+    if( /*label &&*/ ui_filter && ui_filter[0] ) return 0; // if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, UI_SEPARATOR_HEIGHT, 1);
 
     ui_hue_cycle( 1 );
@@ -23113,6 +23303,8 @@ int ui_separator() {
 }
 
 int ui_subimage(const char *label, handle id, unsigned iw, unsigned ih, unsigned sx, unsigned sy, unsigned sw, unsigned sh) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     nk_layout_row_dynamic(ui_ctx, sh < 30 || id == texture_checker().id ? 0 : sh, 1 + (label && label[0]));
     if( label && label[0] ) ui_label_(label, NK_TEXT_LEFT);
 
@@ -23142,31 +23334,35 @@ int ui_subtexture(const char *label, texture_t t, unsigned x, unsigned y, unsign
     return ui_subimage(label, t.id, t.w,t.h, x,y,w,h);
 }
 
-int ui_colormap( const char *map_name, colormap_t *cm ) {
+int ui_colormap( const char *label, colormap_t *cm ) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     int ret = 0;
     if( !cm->texture ) {
-        const char *title = va("%s (no image)", map_name);
+        const char *title = va("%s (no image)", label);
         if( ui_image( title, texture_checker().id, 0,0 ) ) {
             ret = 2;
         }
     } else {
         unsigned w = cm->texture->w, h = cm->texture->h;
-        ui_label(va("%s (%s)", map_name, cm->texture->filename) ); // @fixme: labelf would crash?
+        ui_label(va("%s (%s)", label, cm->texture->filename) ); // @fixme: labelf would crash?
 
         const char *fmt[] = { "", "R", "RG", "RGB", "RGBA" };
-        const char *title = va("%s %dx%d %s", map_name, w, h, fmt[cm->texture->n]);
+        const char *title = va("%s %dx%d %s", label, w, h, fmt[cm->texture->n]);
         if( ui_image( title, cm->texture->id, 128, 128 ) ) {
             ret = 2;
         }
     }
 
-    if( ui_color4f( va("%s Color", map_name), (float *) &cm->color ) ) {
+    if( ui_color4f( va("%s Color", label), (float *) &cm->color ) ) {
         ret = 1;
     }
     return ret;
 }
 
 int ui_radio(const char *label, const char **items, int num_items, int *selector) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     int ret = 0;
     if( label && label[0] ) ui_label(label);
     for( int i = 0; i < num_items; i++ ) {
@@ -23179,20 +23375,24 @@ int ui_radio(const char *label, const char **items, int num_items, int *selector
     return ret;
 }
 
-int ui_section(const char *section) {
+int ui_section(const char *label) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     //ui_separator();
-    return ui_label(va("*%s", section));
+    return ui_label(va("*%s", label));
 }
 
-int ui_dialog(const char *title, const char *text, int choices, bool *show) { // @fixme: return
+int ui_dialog(const char *label, const char *text, int choices, bool *show) { // @fixme: return
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
     ui_has_active_popups = 0;
     if(*show) {
         static struct nk_rect s = {0, 0, 300, 190};
-        if (nk_popup_begin(ui_ctx, NK_POPUP_STATIC, title, NK_WINDOW_BORDER|NK_WINDOW_CLOSABLE, s)) {
+        if (nk_popup_begin(ui_ctx, NK_POPUP_STATIC, label, NK_WINDOW_BORDER|NK_WINDOW_CLOSABLE, s)) {
             nk_layout_row_dynamic(ui_ctx, 20, 1);
-            for( char label[1024]; *text && sscanf(text, "%[^\r\n]", label); ) {
-                nk_label(ui_ctx, label, NK_TEXT_LEFT);
-                text += strlen(label); while(*text && *text < 32) text++;
+            for( char t[1024]; *text && sscanf(text, "%[^\r\n]", t); ) {
+                nk_label(ui_ctx, t, NK_TEXT_LEFT);
+                text += strlen(t); while(*text && *text < 32) text++;
             }
 
             if( choices ) {
@@ -23213,6 +23413,8 @@ int ui_dialog(const char *title, const char *text, int choices, bool *show) { //
 
 #define ui_bitmask_template(X) \
 int ui_bitmask##X(const char *label, uint##X##_t *enabled) { \
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0; \
+\
     /* @fixme: better way to retrieve widget width? nk_layout_row_dynamic() seems excessive */ \
     nk_layout_row_dynamic(ui_ctx, 1, 1); \
     struct nk_rect bounds = nk_widget_bounds(ui_ctx); \
@@ -23340,9 +23542,46 @@ int ui_browse(const char **output, bool *inlined) {
         struct browser *browser = browsers + windowed; // select instance
         char **result = results + windowed; // select instance
 
-        struct nk_rect bounds = {0,0,400,300}; // @fixme: how to retrieve inlined region below? (inlined)
-        if( windowed || (!windowed && *inlined) ) bounds = nk_window_get_content_region(ui_ctx);
-        else { struct nk_rect b; nk_layout_peek(&b, ui_ctx); bounds.w = b.w; }
+        struct nk_rect bounds = {0}; // // {0,0,400,300};
+        // #define P(b) printf(FILELINE " (%3d,%3d) %3d,%3d\n", (int)b.x,(int)b.y, (int)b.w,(int)b.h)
+        // if(ui_ctx->current) bounds = nk_layout_space_bounds(ui_ctx), P(bounds);
+        // if(ui_ctx->current) bounds = nk_layout_widget_bounds(ui_ctx), P(bounds);
+        // if(ui_ctx->current) bounds = nk_widget_bounds(ui_ctx), P(bounds);
+        // if(ui_ctx->current) bounds = nk_window_get_bounds(ui_ctx), P(bounds);
+        // if(ui_ctx->current) bounds = nk_window_get_content_region(ui_ctx), P(bounds);
+        // if(ui_ctx->current) nk_layout_peek(&bounds, ui_ctx), P(bounds);
+        // // if(ui_ctx->current) nk_layout_widget_space(&bounds, ui_ctx, ui_ctx->current, nk_false), P(bounds); // note: cant be used within a panel
+        // #undef P
+
+        // panel
+        // v4k_ui.c:2497 (  6, 34) 310, 24
+        // v4k_ui.c:2498 ( 16, 62) 286, 24
+        // v4k_ui.c:2499 ( 16, 86) 296, 24
+        // v4k_ui.c:2500 (  0,  0) 327,613
+        // v4k_ui.c:2501 (  6, 34) 310,572 << ok
+        // v4k_ui.c:2502 ( 16, 86) 296, 24
+        // v4k_ui.c:2503 (316, 62) 297, 24
+
+        // window
+        // v4k_ui.c:2497 (188,152) 711,  4
+        // v4k_ui.c:2498 (188,152) 711,  4
+        // v4k_ui.c:2499 (-2147483648,156) -2147483648,  4
+        // v4k_ui.c:2500 (182,118) 728,409
+        // v4k_ui.c:2501 (188,152) 711,368 << ok
+        // v4k_ui.c:2502 (-2147483648,156) -2147483648,  4
+        // v4k_ui.c:2503 (-2147483648,152) -2147483648,  4
+
+        // popup
+        // v4k_ui.c:2497 (  9, 30) 350, 24
+        // v4k_ui.c:2498 ( 19, 58) 326, 24
+        // v4k_ui.c:2499 ( 19, 82) 336, 24
+        // v4k_ui.c:2500 (  4, 29) 360,460
+        // v4k_ui.c:2501 (  9, 30) 350,458 << ok
+        // v4k_ui.c:2502 ( 19, 82) 336, 24
+        // v4k_ui.c:2503 (359, 58) 336, 24
+
+        bounds = nk_window_get_content_region(ui_ctx);
+        if( !windowed && *inlined ) bounds.h *= 0.80;
 
         clicked = browser_run(ui_ctx, browser, windowed, bounds);
         if( clicked ) {
@@ -24371,229 +24610,8 @@ int window_frame_begin() {
     // generate Debug panel contents
     if( may_render_debug_panel ) {
         if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
-
-            static int time_factor = 0;
-            static int playing = 0;
-            static int paused = 0;
-            int advance_frame = 0;
-
-            static int do_filter = 0;
-            static int do_profile = 0;
-            static int do_extra = 0;
-
-            char *EDITOR_TOOLBAR_ICONS = va("%s;%s;%s;%s;%s;%s;%s;%s",
-                do_filter ? ICON_MD_CLOSE : ICON_MD_SEARCH,
-                ICON_MD_PLAY_ARROW,
-                paused ? ICON_MD_SKIP_NEXT : ICON_MD_PAUSE,
-                ICON_MD_FAST_FORWARD,
-                ICON_MD_STOP,
-                ICON_MD_REPLAY,
-                ICON_MD_FACE,
-                ICON_MD_MENU
-            );
-
-            if( input_down(KEY_F) ) if( input(KEY_LCTRL) || input(KEY_RCTRL) ) do_filter ^= 1;
-            int choice = ui_toolbar(EDITOR_TOOLBAR_ICONS);
-            if( choice == 1 ) do_filter ^= 1, do_profile = 0, do_extra = 0;
-            if( choice == 2 ) playing = 1, paused = 0;
-            if( choice == 3 ) advance_frame = !!paused, paused = 1;
-            if( choice == 4 ) paused = 0, time_factor = (++time_factor) % 4;
-            if( choice == 5 ) playing = 0, paused = 0, advance_frame = 0, time_factor = 0;
-            if( choice == 6 ) window_reload();
-            if( choice == 7 ) do_filter = 0, do_profile ^= 1, do_extra = 0;
-            if( choice == 8 ) do_filter = 0, do_profile = 0, do_extra ^= 1;
-
-            static char *filter = 0;
-            if( do_filter ) {
-                ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &filter);
-                if( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 ) { // if clicked on CANCEL icon (1st icon)
-                    do_filter = 0;
-                }
-            } else {
-                if( filter ) filter[0] = '\0';
-            }
-            char *filter_mask = filter && filter[0] ? va("*%s*", filter) : "*";
-
-            static char *username = 0;
-            static char *userpass = 0;
-            if( do_profile ) {
-                ui_string(ICON_MD_FACE " Username", &username);
-                ui_string(ICON_MD_FACE " Password", &userpass);
-            }
-
-            if( do_extra ) {
-                int choice2 = ui_label2_toolbar(NULL,
-                    ICON_MD_VIEW_IN_AR
-                    ICON_MD_MESSAGE
-                    ICON_MD_TIPS_AND_UPDATES ICON_MD_LIGHTBULB ICON_MD_LIGHTBULB_OUTLINE
-                    ICON_MD_IMAGE_SEARCH ICON_MD_INSERT_PHOTO
-                    ICON_MD_VIDEOGAME_ASSET ICON_MD_VIDEOGAME_ASSET_OFF
-
-                    ICON_MD_VOLUME_UP ICON_MD_VOLUME_OFF // audio_volume_master(-1) > 0
-
-                    ICON_MD_TROUBLESHOOT ICON_MD_SCHEMA ICON_MD_MENU
-                );
-            }
-
-            int open = 0, clicked_or_toggled = 0;
-
-            #define ui_collapse_filtered(lbl,id) (strmatchi(lbl,filter_mask) && ui_collapse(lbl,id))
-
-            #define EDITOR_UI_COLLAPSE(f,...) \
-            for( int macro(p) = (open = ui_collapse_filtered(f,__VA_ARGS__)), macro(dummy) = (clicked_or_toggled = ui_collapse_clicked()); macro(p); ui_collapse_end(), macro(p) = 0)
-
-
-            EDITOR_UI_COLLAPSE(ICON_MD_BUG_REPORT " Bugs 0", "Debug.Bugs") {
-                // @todo. parse /bugs.ini, includes saved screenshots & videos.
-                // @todo. screenshot include parseable level, position screen markers (same info as /bugs.ini)
-            }
-
-
-            // Art and bookmarks
-            EDITOR_UI_COLLAPSE(ICON_MD_FOLDER_SPECIAL " Art", "Debug.Art") {
-                bool inlined = true;
-                const char *file = 0;
-                if( ui_browse(&file, &inlined) ) {
-                    const char *sep = ifdef(win32, "\"", "'");
-                    app_exec(va("%s %s%s%s", ifdef(win32, "start \"\"", ifdef(osx, "open", "xdg-open")), sep, file, sep));
-                }
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_BOOKMARK " Bookmarks", "Debug.Bookmarks") { /* @todo */ }
-
-
-            // E,C,S,W
-            EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Scene", "Debug.Scene") {
-                EDITOR_UI_COLLAPSE(ICON_MD_BUBBLE_CHART/*ICON_MD_SCATTER_PLOT*/ " Entities", "Debug.Entities") { /* @todo */ }
-                EDITOR_UI_COLLAPSE(ICON_MD_TUNE " Components", "Debug.Components") { /* @todo */ }
-                EDITOR_UI_COLLAPSE(ICON_MD_PRECISION_MANUFACTURING " Systems", "Debug.Systems") { /* @todo */ }
-                EDITOR_UI_COLLAPSE(ICON_MD_PUBLIC " Levels", "Debug.Levels") {
-                    //node_edit(editor.edit.down,&editor.edit);
-            }
-
-                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Init", "Debug.HierarchyInit") { /* @todo */ }
-                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Draw", "Debug.HierarchyDraw") { /* @todo */ }
-                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Tick", "Debug.HierarchyTick") { /* @todo */ }
-                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Edit", "Debug.HierarchyEdit") { /* @todo */ }
-                //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Quit", "Debug.HierarchyQuit") { /* @todo */ }
-
-                // node_edit(&editor.init,&editor.init);
-                // node_edit(&editor.draw,&editor.draw);
-                // node_edit(&editor.tick,&editor.tick);
-                // node_edit(&editor.edit,&editor.edit);
-                // node_edit(&editor.quit,&editor.quit);
-            }
-
-            EDITOR_UI_COLLAPSE(ICON_MD_ROCKET_LAUNCH " AI", "Debug.AI") {
-                // @todo
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_VOLUME_UP " Audio", "Debug.Audio") {
-                ui_audio();
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_VIDEOCAM " Camera", "Debug.Camera") {
-                ui_camera( camera_get_active() );
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_MONITOR " Display", "Debug.Display") {
-                // @todo: fps lock, fps target, aspect ratio, fullscreen
-                char *text = va("%s;%s;%s",
-                    window_has_fullscreen() ? ICON_MD_FULLSCREEN_EXIT : ICON_MD_FULLSCREEN,
-                    ICON_MD_PHOTO_CAMERA,
-                    record_active() ? ICON_MD_VIDEOCAM_OFF : ICON_MD_VIDEOCAM
-                );
-
-                int choice = ui_toolbar(text);
-                if( choice == 1 ) engine_send("key_fullscreen",0);
-                if( choice == 2 ) engine_send("key_screenshot",0);
-                if( choice == 3 ) engine_send("key_record",0);
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard") {
-                ui_keyboard();
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_MOUSE " Mouse", "Debug.Mouse") {
-                ui_mouse();
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_GAMEPAD " Gamepads", "Debug.Gamepads") {
-                for( int q = 0; q < 4; ++q ) {
-                    for( int r = (open = ui_collapse(va("Gamepad #%d",q+1), va("Debug.Gamepads%d",q))), dummy = (clicked_or_toggled = ui_collapse_clicked()); r; ui_collapse_end(), r = 0) {
-                        ui_gamepad(q);
-            }
-            }
-            }
-
-
-            EDITOR_UI_COLLAPSE(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts") {
-                // @todo
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_STAR_HALF " Shaders", "Debug.Shaders") {
-                ui_shaders();
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_MOVIE " FXs", "Debug.FXs") {
-                ui_fxs();
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_VIEW_QUILT " UI", "Debug.UI") {
-                int choice = ui_toolbar(ICON_MD_RECYCLING " Reset layout;" ICON_MD_SAVE_AS " Save layout");
-                if( choice == 1 ) ui_layout_all_reset("*");
-                if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
-
-                for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
-                    bool visible = ui_visible(*k);
-                    if( ui_bool( *k, &visible ) ) {
-                        ui_show( *k, ui_visible(*k) ^ true );
-                    }
-                }
-            }
-
-
-            EDITOR_UI_COLLAPSE(ICON_MD_SAVINGS " Budgets", "Debug.Budgets") {
-                // @todo. // mem,fps,gfx,net,hdd,... also logging
-            }
-            EDITOR_UI_COLLAPSE(ICON_MD_WIFI/*ICON_MD_SIGNAL_CELLULAR_ALT*/ " Network 0/0 KiB", "Debug.Network") {
-                // @todo
-                // SIGNAL_CELLULAR_1_BAR SIGNAL_CELLULAR_2_BAR
-            }
-            EDITOR_UI_COLLAPSE(va(ICON_MD_SPEED " Profiler %5.2f/%dfps", window_fps(), (int)window_fps_target()), "Debug.Profiler") {
-                ui_profiler();
-            }
-            EDITOR_UI_COLLAPSE(va(ICON_MD_STORAGE " Storage %s", xstats()), "Debug.Storage") {
-                // @todo
-            }
-
-
-
-            // logic: either plug icon (power saving off) or one of the following ones (power saving on):
-            //        if 0% batt (no batt): battery alert
-            //        if discharging:       battery levels [alert,0..6,full]
-            //        if charging:          battery charging
-            int battery_read = app_battery();
-            int battery_level = abs(battery_read);
-            int battery_discharging = battery_read < 0 && battery_level < 100;
-            const char *power_icon_label = ICON_MD_POWER " Power";
-            if( battery_level ) {
-                const char *battery_levels[9] = { // @todo: remap [7%..100%] -> [0..1] ?
-                    ICON_MD_BATTERY_ALERT,ICON_MD_BATTERY_0_BAR,ICON_MD_BATTERY_1_BAR,
-                    ICON_MD_BATTERY_2_BAR,ICON_MD_BATTERY_3_BAR,ICON_MD_BATTERY_4_BAR,
-                    ICON_MD_BATTERY_5_BAR,ICON_MD_BATTERY_6_BAR,ICON_MD_BATTERY_FULL,
-                };
-                power_icon_label = (const char*)va("%s Power %d%%",
-                    battery_discharging ? battery_levels[(int)((9-1)*clampf(battery_level/100.f,0,1))] : ICON_MD_BATTERY_CHARGING_FULL,
-                    battery_level);
-            }
-
-            EDITOR_UI_COLLAPSE(power_icon_label, "Debug.Power") {
-                int choice = ui_toolbar( ICON_MD_POWER ";" ICON_MD_BOLT );
-                if( choice == 1 ) engine_send("key_battery","0");
-                if( choice == 2 ) engine_send("key_battery","1");
-            }
-
-            EDITOR_UI_COLLAPSE(ICON_MD_WATER " Reflection", "Debug.Reflect") {
-                ui_reflect("*");
-            }
-
-            EDITOR_UI_COLLAPSE(ICON_MD_EXTENSION " Plugins", "Debug.Plugins") {
-                // @todo. include VCS
-                EDITOR_UI_COLLAPSE(ICON_MD_BUILD " Cook", "Debug.Cook") {
-                    // @todo
-                }
-            }
+            API int ui_debug();
+            ui_debug();
 
             (has_menu ? ui_window_end : ui_panel_end)();
         }
@@ -25283,13 +25301,13 @@ void *obj_unref(void *oo) {
 // scene tree
 
 array(obj*)* obj_children(const void *o) {
-    array(obj*) *c = obj_payload(o);
+    array(obj*) *c = &((obj*)o)->objchildren;
     if(!(*c)) array_push((*c), NULL); // default parenting: none. @todo: optimize & move this at construction time
     return c;
 }
 obj* obj_parent(const void *o) {
     array(obj*) *c = obj_children(o);
-    return (*c) ? 0[*c] : NULL;
+    return 0[*c]; // (*c) ? 0[*c] : NULL;
 }
 obj* obj_root(const void *o) {
     while( obj_parent(o) ) o = obj_parent(o);
@@ -25821,33 +25839,27 @@ void test_obj_serialization(void *o1, void *o2) {
 // ----------------------------------------------------------------------------
 // components
 
-bool obj_addcomponent(void *object, unsigned c, void *ptr) {
-    entity *e = (entity*)object;
+bool obj_addcomponent(entity *e, unsigned c, void *ptr) {
     e->cflags |= (3ULL << c);
     e->c[c & (OBJCOMPONENTS_MAX-1)] = ptr;
     return 1;
 }
-bool obj_hascomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+bool obj_hascomponent(entity *e, unsigned c) {
     return !!(e->cflags & (3ULL << c));
 }
-void* obj_getcomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+void* obj_getcomponent(entity *e, unsigned c) {
     return e->c[c & (OBJCOMPONENTS_MAX-1)];
 }
-bool obj_delcomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+bool obj_delcomponent(entity *e, unsigned c) {
     e->cflags &= ~(3ULL << c);
     e->c[c & (OBJCOMPONENTS_MAX-1)] = NULL;
     return 1;
 }
-bool obj_usecomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+bool obj_usecomponent(entity *e, unsigned c) {
     e->cflags |= (1ULL << c);
     return 1;
 }
-bool obj_offcomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+bool obj_offcomponent(entity *e, unsigned c) {
     e->cflags &= ~(1ULL << c);
     return 0;
 }
@@ -25857,17 +25869,23 @@ char *entity_save(entity *self) {
     return sav;
 }
 
-AUTORUN {
+static
+void entity_register() {
+    do_once {
     STRUCT(entity, uintptr_t, cflags);
-
-//    struct { OBJHEADER union { struct { uintptr_t objenabled : 32, objflagged : 32; }; uintptr_t cflags; }; void* c[32]; };
-
     obj_extend(entity, save);
+}
+}
+
+AUTORUN{
+    entity_register();
 }
 
 static
 void test_obj_ecs() {
-    entity *e = obj_new(entity);
+    entity_register(); // why is this required here? autorun init fiasco?
+
+    entity *e = entity_new(entity);
     puts(obj_save(e));
 
     for( int i = 0; i < 32; ++i) test(0 == obj_hascomponent(e, i));
@@ -25880,27 +25898,14 @@ void test_obj_ecs() {
 // ----------------------------------------------------------------------------
 // reflection
 
-void *obj_clone(const void *src) {
-    obj *ptr = obj_malloc( sizeof(obj) + obj_size(src) + sizeof(array(obj*)) );
-    ptr->objheader = ((const obj *)src)->objheader;
-    obj_loadini(ptr, obj_saveini(src));
-    return ptr;
-}
+void* obj_mutate(void *dst, const void *src) {
+    ((obj*)dst)->objheader = ((const obj *)src)->objheader;
 
-void* obj_merge(void *dst, const void *src) { // @testme
-    char *bin = obj_savebin(src);
-    return obj_mergebin(dst, bin);
-}
-
-void* obj_mutate(void **dst, const void *src) {
 #if 0
     // mutate a class. ie, convert a given object class into a different one,
     // while preserving the original metas, components and references as much as possible.
     // @todo iterate per field
 
-    if(!*dst_) return *dst_ = obj_clone(src);
-
-    void *dst = *dst_;
     dtor(dst);
 
         unsigned src_sz = obj_sizeof(src);
@@ -25920,6 +25925,20 @@ void* obj_mutate(void **dst, const void *src) {
     ctor(dst);
 #endif
     return dst;
+}
+
+void *obj_clone(const void *src) {
+    int sz = sizeof(obj) + obj_size(src) + sizeof(array(obj*));
+    enum { N = 8 }; sz = ((sz + (N - 1)) & -N);  // Round up to N-byte boundary
+    obj *ptr = obj_malloc( sz );
+    obj_mutate(ptr, src); // ptr->objheader = ((const obj *)src)->objheader;
+    obj_loadini(ptr, obj_saveini(src));
+    return ptr;
+}
+
+void* obj_merge(void *dst, const void *src) { // @testme
+    char *bin = obj_savebin(src);
+    return obj_mergebin(dst, bin);
 }
 
 void *obj_make(const char *str) {
@@ -25969,7 +25988,7 @@ vec3 rnd3() { // random uniform
 int less3(vec3 *lhs, vec3 *rhs) {
     if(lhs->x != rhs->x) return lhs->x - rhs->x;
     if(lhs->y != rhs->y) return lhs->y - rhs->y;
-    if(lhs->z != rhs->z) return lhs->z - rhs->z;
+    if(lhs->z != rhs->z) return lhs->z - rhs->z; // @testme: remove superfluous if check
     return 0;
 }
 uint64_t hash3(vec3 *v) {
@@ -26980,6 +26999,235 @@ int engine_tick() {
     } else {
         // window_fps_lock( editor_hz );
         window_fps_unlock( );
+        } 
+
+    return 0;
+}
+
+int ui_debug() {
+    static int time_factor = 0;
+    static int playing = 0;
+    static int paused = 0;
+    int advance_frame = 0;
+
+#if 0
+    static int do_filter = 0;
+    static int do_profile = 0;
+    static int do_extra = 0;
+
+    char *EDITOR_TOOLBAR_ICONS = va("%s;%s;%s;%s;%s;%s;%s;%s",
+        do_filter ? ICON_MD_CLOSE : ICON_MD_SEARCH,
+        ICON_MD_PLAY_ARROW,
+        paused ? ICON_MD_SKIP_NEXT : ICON_MD_PAUSE,
+        ICON_MD_FAST_FORWARD,
+        ICON_MD_STOP,
+        ICON_MD_REPLAY,
+        ICON_MD_FACE,
+        ICON_MD_MENU
+    );
+
+    if( input_down(KEY_F) ) if( input(KEY_LCTRL) || input(KEY_RCTRL) ) do_filter ^= 1;
+    int choice = ui_toolbar(EDITOR_TOOLBAR_ICONS);
+    if( choice == 1 ) do_filter ^= 1, do_profile = 0, do_extra = 0;
+    if( choice == 2 ) playing = 1, paused = 0;
+    if( choice == 3 ) advance_frame = !!paused, paused = 1;
+    if( choice == 4 ) paused = 0, time_factor = (++time_factor) % 4;
+    if( choice == 5 ) playing = 0, paused = 0, advance_frame = 0, time_factor = 0;
+    if( choice == 6 ) window_reload();
+    if( choice == 7 ) do_filter = 0, do_profile ^= 1, do_extra = 0;
+    if( choice == 8 ) do_filter = 0, do_profile = 0, do_extra ^= 1;
+
+    if( do_filter ) {
+        char *bak = ui_filter; ui_filter = 0;
+        ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &bak);
+        ui_filter = bak;
+        if( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 ) { // if clicked on CANCEL icon (1st icon)
+            do_filter = 0;
+        }
+    } else {
+        if( ui_filter ) ui_filter[0] = '\0';
+    }
+    char *filter_mask = ui_filter && ui_filter[0] ? va("*%s*", ui_filter) : "*";
+
+    static char *username = 0;
+    static char *userpass = 0;
+    if( do_profile ) {
+        ui_string(ICON_MD_FACE " Username", &username);
+        ui_string(ICON_MD_FACE " Password", &userpass);
+    }
+
+    if( do_extra ) {
+        int choice2 = ui_label2_toolbar(NULL,
+            ICON_MD_VIEW_IN_AR
+            ICON_MD_MESSAGE
+            ICON_MD_TIPS_AND_UPDATES ICON_MD_LIGHTBULB ICON_MD_LIGHTBULB_OUTLINE
+            ICON_MD_IMAGE_SEARCH ICON_MD_INSERT_PHOTO
+            ICON_MD_VIDEOGAME_ASSET ICON_MD_VIDEOGAME_ASSET_OFF
+
+            ICON_MD_VOLUME_UP ICON_MD_VOLUME_OFF // audio_volume_master(-1) > 0
+
+            ICON_MD_TROUBLESHOOT ICON_MD_SCHEMA ICON_MD_MENU
+        );
+    }
+#endif
+
+    int open = 0, clicked_or_toggled = 0;
+
+
+    #define EDITOR_UI_COLLAPSE(f,...) \
+    for( int macro(p) = (open = ui_collapse(f,__VA_ARGS__)), macro(dummy) = (clicked_or_toggled = ui_collapse_clicked()); macro(p); ui_collapse_end(), macro(p) = 0)
+
+
+    EDITOR_UI_COLLAPSE(ICON_MD_BUG_REPORT " Bugs 0", "Debug.Bugs") {
+        // @todo. parse /bugs.ini, includes saved screenshots & videos.
+        // @todo. screenshot include parseable level, position screen markers (same info as /bugs.ini)
+    }
+
+
+    // Art and bookmarks
+    EDITOR_UI_COLLAPSE(ICON_MD_FOLDER_SPECIAL " Art", "Debug.Art") {
+        bool inlined = true;
+        const char *file = 0;
+        if( ui_browse(&file, &inlined) ) {
+            const char *sep = ifdef(win32, "\"", "'");
+            app_exec(va("%s %s%s%s", ifdef(win32, "start \"\"", ifdef(osx, "open", "xdg-open")), sep, file, sep));
+        }
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_BOOKMARK " Bookmarks", "Debug.Bookmarks") { /* @todo */ }
+
+
+    // E,C,S,W
+    EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Scene", "Debug.Scene") {
+        EDITOR_UI_COLLAPSE(ICON_MD_BUBBLE_CHART/*ICON_MD_SCATTER_PLOT*/ " Entities", "Debug.Entities") { /* @todo */ }
+        EDITOR_UI_COLLAPSE(ICON_MD_TUNE " Components", "Debug.Components") { /* @todo */ }
+        EDITOR_UI_COLLAPSE(ICON_MD_PRECISION_MANUFACTURING " Systems", "Debug.Systems") { /* @todo */ }
+        EDITOR_UI_COLLAPSE(ICON_MD_PUBLIC " Levels", "Debug.Levels") {
+            //node_edit(editor.edit.down,&editor.edit);
+        }
+
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Init", "Debug.HierarchyInit") { /* @todo */ }
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Draw", "Debug.HierarchyDraw") { /* @todo */ }
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Tick", "Debug.HierarchyTick") { /* @todo */ }
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Edit", "Debug.HierarchyEdit") { /* @todo */ }
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Quit", "Debug.HierarchyQuit") { /* @todo */ }
+
+        // node_edit(&editor.init,&editor.init);
+        // node_edit(&editor.draw,&editor.draw);
+        // node_edit(&editor.tick,&editor.tick);
+        // node_edit(&editor.edit,&editor.edit);
+        // node_edit(&editor.quit,&editor.quit);
+    }
+
+    EDITOR_UI_COLLAPSE(ICON_MD_ROCKET_LAUNCH " AI", "Debug.AI") {
+        // @todo
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_VOLUME_UP " Audio", "Debug.Audio") {
+        ui_audio();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_VIDEOCAM " Camera", "Debug.Camera") {
+        ui_camera( camera_get_active() );
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_MONITOR " Display", "Debug.Display") {
+        // @todo: fps lock, fps target, aspect ratio, fullscreen
+        char *text = va("%s;%s;%s",
+            window_has_fullscreen() ? ICON_MD_FULLSCREEN_EXIT : ICON_MD_FULLSCREEN,
+            ICON_MD_PHOTO_CAMERA,
+            record_active() ? ICON_MD_VIDEOCAM_OFF : ICON_MD_VIDEOCAM
+        );
+
+        int choice = ui_toolbar(text);
+        if( choice == 1 ) engine_send("key_fullscreen",0);
+        if( choice == 2 ) engine_send("key_screenshot",0);
+        if( choice == 3 ) engine_send("key_record",0);
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard") {
+        ui_keyboard();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_MOUSE " Mouse", "Debug.Mouse") {
+        ui_mouse();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_GAMEPAD " Gamepads", "Debug.Gamepads") {
+        for( int q = 0; q < 4; ++q ) {
+            for( int r = (open = ui_collapse(va("Gamepad #%d",q+1), va("Debug.Gamepads%d",q))), dummy = (clicked_or_toggled = ui_collapse_clicked()); r; ui_collapse_end(), r = 0) {
+                ui_gamepad(q);
+            }
+        }
+    }
+
+
+    EDITOR_UI_COLLAPSE(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts") {
+        // @todo
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_STAR_HALF " Shaders", "Debug.Shaders") {
+        ui_shaders();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_MOVIE " FXs", "Debug.FXs") {
+        ui_fxs();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_VIEW_QUILT " UI", "Debug.UI") {
+        int choice = ui_toolbar(ICON_MD_RECYCLING " Reset layout;" ICON_MD_SAVE_AS " Save layout");
+        if( choice == 1 ) ui_layout_all_reset("*");
+        if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
+
+        for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
+            bool visible = ui_visible(*k);
+            if( ui_bool( *k, &visible ) ) {
+                ui_show( *k, ui_visible(*k) ^ true );
+            }
+        }
+    }
+
+
+    EDITOR_UI_COLLAPSE(ICON_MD_SAVINGS " Budgets", "Debug.Budgets") {
+        // @todo. // mem,fps,gfx,net,hdd,... also logging
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_WIFI/*ICON_MD_SIGNAL_CELLULAR_ALT*/ " Network 0/0 KiB", "Debug.Network") {
+        // @todo
+        // SIGNAL_CELLULAR_1_BAR SIGNAL_CELLULAR_2_BAR
+    }
+    EDITOR_UI_COLLAPSE(va(ICON_MD_SPEED " Profiler %5.2f/%dfps", window_fps(), (int)window_fps_target()), "Debug.Profiler") {
+        ui_profiler();
+    }
+    EDITOR_UI_COLLAPSE(va(ICON_MD_STORAGE " Storage %s", xstats()), "Debug.Storage") {
+        // @todo
+    }
+
+
+
+    // logic: either plug icon (power saving off) or one of the following ones (power saving on):
+    //        if 0% batt (no batt): battery alert
+    //        if discharging:       battery levels [alert,0..6,full]
+    //        if charging:          battery charging
+    int battery_read = app_battery();
+    int battery_level = abs(battery_read);
+    int battery_discharging = battery_read < 0 && battery_level < 100;
+    const char *power_icon_label = ICON_MD_POWER " Power";
+    if( battery_level ) {
+        const char *battery_levels[9] = { // @todo: remap [7%..100%] -> [0..1] ?
+            ICON_MD_BATTERY_ALERT,ICON_MD_BATTERY_0_BAR,ICON_MD_BATTERY_1_BAR,
+            ICON_MD_BATTERY_2_BAR,ICON_MD_BATTERY_3_BAR,ICON_MD_BATTERY_4_BAR,
+            ICON_MD_BATTERY_5_BAR,ICON_MD_BATTERY_6_BAR,ICON_MD_BATTERY_FULL,
+        };
+        power_icon_label = (const char*)va("%s Power %d%%",
+            battery_discharging ? battery_levels[(int)((9-1)*clampf(battery_level/100.f,0,1))] : ICON_MD_BATTERY_CHARGING_FULL,
+            battery_level);
+    }
+
+    EDITOR_UI_COLLAPSE(power_icon_label, "Debug.Power") {
+        int choice = ui_toolbar( ICON_MD_POWER ";" ICON_MD_BOLT );
+        if( choice == 1 ) engine_send("key_battery","0");
+        if( choice == 2 ) engine_send("key_battery","1");
+    }
+
+    EDITOR_UI_COLLAPSE(ICON_MD_WATER " Reflection", "Debug.Reflect") {
+        ui_reflect("*");
+    }
+
+    EDITOR_UI_COLLAPSE(ICON_MD_EXTENSION " Plugins", "Debug.Plugins") {
+        // @todo. include VCS
+        EDITOR_UI_COLLAPSE(ICON_MD_BUILD " Cook", "Debug.Cook") {
+            // @todo
+        }
     }
 
     return 0;

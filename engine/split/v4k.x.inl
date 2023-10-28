@@ -136,6 +136,7 @@ errno_t fopen_s(
 #define NK_DTOA(s,n) strcpy(s, va("%f", n)) // override cos built-in nk_dtoa() will freeze while parsing UINT_MAX otherwise
 {{FILE:3rd_nuklear.h}}
 {{FILE:3rd_nuklear_glfw_gl3.h}}
+static char *ui_filter = 0;
 {{FILE:3rd_nuklear_filebrowser.h}}
 //---
 #ifdef ENABLE_ASSIMP

@@ -27,7 +27,20 @@
 * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 * ------------------------------------------------------------------------------
-* ALTERNATIVE B - MIT-0 (No Attribution clause)
+* ALTERNATIVE B - 0-BSD License (https://opensource.org/licenses/FPL-1.0.0)
+* ------------------------------------------------------------------------------
+* Permission to use, copy, modify, and/or distribute this software for any
+* purpose with or without fee is hereby granted.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+* REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+* FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+* INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+* LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+* OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+* PERFORMANCE OF THIS SOFTWARE.
+* ------------------------------------------------------------------------------
+* ALTERNATIVE C - MIT-0 (No Attribution clause)
 * ------------------------------------------------------------------------------
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this
 * software and associated documentation files (the "Software"), to deal in the Software
@@ -41,19 +54,6 @@
 * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* ------------------------------------------------------------------------------
-* ALTERNATIVE C - Zero BSD License (https://opensource.org/licenses/FPL-1.0.0)
-* ------------------------------------------------------------------------------
-* Permission to use, copy, modify, and/or distribute this software for any
-* purpose with or without fee is hereby granted.
-*
-* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-* REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-* FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-* INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-* LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
-* OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-* PERFORMANCE OF THIS SOFTWARE.
 *
 * ## License: Contributed Code ------------------------------------------------
 *
@@ -73,7 +73,7 @@
 * --
 *
 * "I dedicate any and all copyright interest in this software to the three
-* license terms listed above. I make this dedication for the benefit of the
+* licensing terms listed above. I make this dedication for the benefit of the
 * public at large and to the detriment of my heirs and successors. I intend
 * this dedication to be an overt act of relinquishment in perpetuity of all
 * present and future rights to this software under copyright law."
@@ -325,6 +325,8 @@ extern "C" {
 #define VA_SELECT_10TH(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, ...) A10
 // VA_SPLIT() expands to A) 1 item OR B) 1 item + ',' + va_args[1..N]
 #define VA_SPLIT(...) VA_FIRST(__VA_ARGS__) VA_REST(__VA_ARGS__)
+// VA_COUNT() counts number of va args
+#define VA_COUNT(...)  (int)(sizeof((int[]){0, ##__VA_ARGS__})/sizeof(int)-1)
 
 #if is(cl) && !is(cpp)
 #define INLINE __inline
@@ -1820,6 +1822,8 @@ API int*   engine_geti(const char *key);
 API char** engine_gets(const char *key);
 API int    engine_send(const char *cmd, const char *optional_value);
 
+API int    ui_debug();
+
 // open file dialog
 
 API char* dialog_load();
@@ -2760,6 +2764,8 @@ API int64_t  client_join(const char *ip, int port);
 #endif
 
 #define OBJHEADER \
+    struct { \
+        ifdef(debug, const char *objname;) \
     union { \
         uintptr_t objheader; \
         struct {  \
@@ -2771,10 +2777,12 @@ API int64_t  client_join(const char *ip, int port);
         uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
         uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
         }; \
+        }; \
+        array(struct obj*) objchildren; \
     };
 
 #define OBJ \
-    struct { OBJHEADER ifdef(debug,const char *objname;) };
+    OBJHEADER
 
 // ----------------------------------------------------------------------------
 // syntax sugars
@@ -2823,6 +2831,9 @@ API int64_t  client_join(const char *ip, int port);
 // OBJTYPEDEF(entity,1)
     typedef struct entity { ENTITY } entity;
 
+#define entity_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, 0, __VA_ARGS__)
+#define entity_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE,  NAME, 1, 0, __VA_ARGS__)
+
 // ----------------------------------------------------------------------------
 // heap/stack ctor/dtor
 
@@ -2837,16 +2848,16 @@ static __thread obj *objtmp;
         obj_ctor(PTR))
 #define OBJ_CTOR(TYPE, NAME, HEAP, PAYLOAD_SIZE, ...) (TYPE*)( \
         objtmp = (HEAP ? MALLOC(sizeof(TYPE)+(PAYLOAD_SIZE)) : ALLOCA(sizeof(TYPE)+(PAYLOAD_SIZE))), \
-        *(TYPE*)objtmp = ((TYPE){ {0}, __VA_ARGS__}), \
+        *(TYPE*)objtmp = ((TYPE){ {0,}, __VA_ARGS__}), \
         ((PAYLOAD_SIZE) ? memset((char*)objtmp + sizeof(TYPE), 0, (PAYLOAD_SIZE)) : objtmp), \
         ( OBJTYPES[ OBJTYPE(TYPE) ] = #TYPE ), \
         OBJ_CTOR_PTR(objtmp, HEAP,sizeof(TYPE),OBJTYPE(TYPE)), \
         ifdef(debug, (obj_printf)(objtmp, va("%s", callstack(+16))), 0), \
         obj_setname(objtmp, NAME))
 
-#define obj(TYPE, ...)                *OBJ_CTOR(TYPE, #TYPE, 0, sizeof(array(obj*)), __VA_ARGS__)
-#define obj_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, sizeof(array(obj*)), __VA_ARGS__)
-#define obj_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE, NAME, 1, sizeof(array(obj*)), __VA_ARGS__)
+#define obj(TYPE, ...)                *OBJ_CTOR(TYPE, #TYPE, 0, 0, __VA_ARGS__)
+#define obj_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, 0, __VA_ARGS__)
+#define obj_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE,  NAME, 1, 0, __VA_ARGS__)
 
 void*   obj_malloc(unsigned sz);
 void*   obj_free(void *o);
@@ -3001,12 +3012,12 @@ API int         obj_pop(void *o);
 // ----------------------------------------------------------------------------
 // components
 
-API bool        obj_addcomponent(void *object, unsigned c, void *ptr);
-API bool        obj_hascomponent(void *object, unsigned c);
-API void*       obj_getcomponent(void *object, unsigned c);
-API bool        obj_delcomponent(void *object, unsigned c);
-API bool        obj_usecomponent(void *object, unsigned c);
-API bool        obj_offcomponent(void *object, unsigned c);
+API bool        obj_addcomponent(entity *e, unsigned c, void *ptr);
+API bool        obj_hascomponent(entity *e, unsigned c);
+API void*       obj_getcomponent(entity *e, unsigned c);
+API bool        obj_delcomponent(entity *e, unsigned c);
+API bool        obj_usecomponent(entity *e, unsigned c);
+API bool        obj_offcomponent(entity *e, unsigned c);
 
 API char*       entity_save(entity *self);
 
@@ -3022,7 +3033,7 @@ API char*       entity_save(entity *self);
 
 API void*       obj_clone(const void *src);
 API void*       obj_merge(void *dst, const void *src); // @testme
-API void*       obj_mutate(void **dst, const void *src);
+API void*       obj_mutate(void *dst, const void *src);
 API void*       obj_make(const char *str);
 
 // built-ins
@@ -4380,6 +4391,7 @@ API int ui_hover(); // ui_is_hover()?
 API int ui_active(); // ui_is_active()?
 
 API int ui_demo(int do_windows);
+API void *ui_handle();
 #line 0
 
 #line 1 "engine/split/v4k_video.h"

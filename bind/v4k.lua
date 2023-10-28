@@ -2128,6 +2128,7 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  int*   engine_geti(const char *key);
  char** engine_gets(const char *key);
  int    engine_send(const char *cmd, const char *optional_value);
+ int    ui_debug();
  char* dialog_load();
  char* dialog_save();
  int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
@@ -2493,8 +2494,8 @@ enum { NETWORK_USERID = 7,  NETWORK_COUNT , NETWORK_CAPACITY };
  void   server_send_bin(int64_t handle, const void *ptr, int len);
  void   server_drop(int64_t handle);
  int64_t  client_join(const char *ip, int port);
-typedef struct obj { struct { union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };      }; ifdef(debug,const char *objname;) }; } obj;
-typedef struct entity { struct { union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };      }; union { struct { uintptr_t objenabled:32, objflagged:32; }; uintptr_t cflags; }; void *c[32]; }; } entity;
+typedef struct obj { struct {          ifdef(debug, const char *objname;)      union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };          };          struct obj** objchildren;      }; } obj;
+typedef struct entity { struct { struct {          ifdef(debug, const char *objname;)      union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };          };          struct obj** objchildren;      }; union { struct { uintptr_t objenabled:32, objflagged:32; }; uintptr_t cflags; }; void *c[32]; }; } entity;
   obj *objtmp;
 void*   obj_malloc(unsigned sz);
 void*   obj_free(void *o);
@@ -2559,16 +2560,16 @@ void*   obj_free(void *o);
  obj*        obj_loadmpack(void *o, const char *sav);
  int         obj_push(const void *o);
  int         obj_pop(void *o);
- bool        obj_addcomponent(void *object, unsigned c, void *ptr);
- bool        obj_hascomponent(void *object, unsigned c);
- void*       obj_getcomponent(void *object, unsigned c);
- bool        obj_delcomponent(void *object, unsigned c);
- bool        obj_usecomponent(void *object, unsigned c);
- bool        obj_offcomponent(void *object, unsigned c);
+ bool        obj_addcomponent(entity *e, unsigned c, void *ptr);
+ bool        obj_hascomponent(entity *e, unsigned c);
+ void*       obj_getcomponent(entity *e, unsigned c);
+ bool        obj_delcomponent(entity *e, unsigned c);
+ bool        obj_usecomponent(entity *e, unsigned c);
+ bool        obj_offcomponent(entity *e, unsigned c);
  char*       entity_save(entity *self);
  void*       obj_clone(const void *src);
  void*       obj_merge(void *dst, const void *src);
- void*       obj_mutate(void **dst, const void *src);
+ void*       obj_mutate(void *dst, const void *src);
  void*       obj_make(const char *str);
 typedef enum OBJTYPE_BUILTINS {
 OBJTYPE_obj    =  0,
@@ -3324,6 +3325,7 @@ PANEL_OPEN = 1,
  int ui_hover();
  int ui_active();
  int ui_demo(int do_windows);
+ void *ui_handle();
 enum VIDEO_FLAGS {
 VIDEO_YCBCR = 0,
 VIDEO_RGB = 2,

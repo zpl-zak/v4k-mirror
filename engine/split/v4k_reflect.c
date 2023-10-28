@@ -9,6 +9,7 @@ static map(unsigned, array(reflect_t)) members;
 
 void reflect_init() {
     if(!reflects) map_init_int(reflects);
+    if(!members)  map_init_int(members);
     }
 AUTORUN {
     reflect_init();
@@ -96,7 +97,7 @@ void ui_reflect_(const reflect_t *R, const char *filter, int mask) {
         if( buf ) *buf = '\0';
 
         struct nk_context *ui_ctx = (struct nk_context *)ui_handle();
-        for ui_push_hspace(16) {
+        /*for ui_push_hspace(16)*/ {
             array(reflect_t) *T = map_find(members, intern(R->name));
             /**/ if( T )         {ui_label(strcatf(&buf,"S struct %s@%s", R->name, R->info+1)); for each_array_ptr(*T, reflect_t, it) if(strmatchi(it->name,filter)) ui_reflect_(it,filter,'M'); }
             else if( R->addr )    ui_label(strcatf(&buf,"F func %s()@%s", R->name, R->info+1));

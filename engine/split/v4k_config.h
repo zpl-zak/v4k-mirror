@@ -227,6 +227,8 @@
 #define VA_SELECT_10TH(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, ...) A10
 // VA_SPLIT() expands to A) 1 item OR B) 1 item + ',' + va_args[1..N]
 #define VA_SPLIT(...) VA_FIRST(__VA_ARGS__) VA_REST(__VA_ARGS__)
+// VA_COUNT() counts number of va args
+#define VA_COUNT(...)  (int)(sizeof((int[]){0, ##__VA_ARGS__})/sizeof(int)-1)
 
 #if is(cl) && !is(cpp)
 #define INLINE __inline

@@ -20995,6 +20995,9 @@ nk_nonblock_begin(struct nk_context *ctx,
     nk_flags flags, struct nk_rect body, struct nk_rect header,
     enum nk_panel_type panel_type)
 {
+if(body.x < 10) body.x = 0; //< @r-lyeh: popup snapping to the left
+if((body.x+body.w)>window_width()) body.x-=body.w-(window_width()-body.x); //< @r-lyeh: prevent popups to be printed outside of window client / right border
+
     struct nk_window *popup;
     struct nk_window *win;
     struct nk_panel *panel;
@@ -21476,7 +21479,7 @@ nk_menu_begin(struct nk_context *ctx, struct nk_window *win,
     is_active = (popup && (win->popup.name == hash) && win->popup.type == NK_PANEL_MENU);
     if ((is_clicked && is_open && !is_active) || (is_open && !is_active) ||
         (!is_open && !is_active && !is_clicked)) return 0;
-    if (!nk_nonblock_begin(ctx, NK_WINDOW_NO_SCROLLBAR, body, header, NK_PANEL_MENU))
+    if (!nk_nonblock_begin(ctx, NK_WINDOW_NO_SCROLLBAR_X/*|NK_WINDOW_NO_SCROLLBAR*/, body, header, NK_PANEL_MENU)) //< @r-lyeh: our popups are huge. enable Y scrollbars
         return 0;
 
     win->popup.type = NK_PANEL_MENU;
@@ -22710,6 +22713,7 @@ nk_tree_state_base_(struct nk_context *ctx, enum nk_tree_type type,
 NK_INTERN int
 nk_tree_base_(struct nk_context *ctx, enum nk_tree_type type,
     struct nk_image *img, const char *title, enum nk_collapse_states initial_state,
+    enum nk_collapse_states *forced_state, //< @r-lyeh
     const char *hash, int len, int line)
 {
     struct nk_window *win = ctx->current;
@@ -22727,7 +22731,8 @@ nk_tree_base_(struct nk_context *ctx, enum nk_tree_type type,
         state = nk_add_value(ctx, win, tree_hash, 0);
         *state = initial_state;
     }
-    return nk_tree_state_base_(ctx, type, img, title, (enum nk_collapse_states*)state);
+    return nk_tree_state_base_(ctx, type, img, title,
+      forced_state ? forced_state : (enum nk_collapse_states*)state); //< @r-lyeh
 }
 #endif
 NK_API nk_bool

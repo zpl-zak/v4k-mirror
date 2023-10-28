@@ -159,13 +159,13 @@ void *obj_unref(void *oo) {
 // scene tree
 
 array(obj*)* obj_children(const void *o) {
-    array(obj*) *c = obj_payload(o);
+    array(obj*) *c = &((obj*)o)->objchildren;
     if(!(*c)) array_push((*c), NULL); // default parenting: none. @todo: optimize & move this at construction time
     return c;
 }
 obj* obj_parent(const void *o) {
     array(obj*) *c = obj_children(o);
-    return (*c) ? 0[*c] : NULL;
+    return 0[*c]; // (*c) ? 0[*c] : NULL;
 }
 obj* obj_root(const void *o) {
     while( obj_parent(o) ) o = obj_parent(o);
@@ -697,33 +697,27 @@ void test_obj_serialization(void *o1, void *o2) {
 // ----------------------------------------------------------------------------
 // components
 
-bool obj_addcomponent(void *object, unsigned c, void *ptr) {
-    entity *e = (entity*)object;
+bool obj_addcomponent(entity *e, unsigned c, void *ptr) {
     e->cflags |= (3ULL << c);
     e->c[c & (OBJCOMPONENTS_MAX-1)] = ptr;
     return 1;
 }
-bool obj_hascomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+bool obj_hascomponent(entity *e, unsigned c) {
     return !!(e->cflags & (3ULL << c));
 }
-void* obj_getcomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+void* obj_getcomponent(entity *e, unsigned c) {
     return e->c[c & (OBJCOMPONENTS_MAX-1)];
 }
-bool obj_delcomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+bool obj_delcomponent(entity *e, unsigned c) {
     e->cflags &= ~(3ULL << c);
     e->c[c & (OBJCOMPONENTS_MAX-1)] = NULL;
     return 1;
 }
-bool obj_usecomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+bool obj_usecomponent(entity *e, unsigned c) {
     e->cflags |= (1ULL << c);
     return 1;
 }
-bool obj_offcomponent(void *object, unsigned c) {
-    entity *e = (entity*)object;
+bool obj_offcomponent(entity *e, unsigned c) {
     e->cflags &= ~(1ULL << c);
     return 0;
 }
@@ -733,17 +727,23 @@ char *entity_save(entity *self) {
     return sav;
 }
 
-AUTORUN {
+static
+void entity_register() {
+    do_once {
     STRUCT(entity, uintptr_t, cflags);
-
-//    struct { OBJHEADER union { struct { uintptr_t objenabled : 32, objflagged : 32; }; uintptr_t cflags; }; void* c[32]; };
-
     obj_extend(entity, save);
+}
+}
+
+AUTORUN{
+    entity_register();
 }
 
 static
 void test_obj_ecs() {
-    entity *e = obj_new(entity);
+    entity_register(); // why is this required here? autorun init fiasco?
+
+    entity *e = entity_new(entity);
     puts(obj_save(e));
 
     for( int i = 0; i < 32; ++i) test(0 == obj_hascomponent(e, i));
@@ -756,27 +756,14 @@ void test_obj_ecs() {
 // ----------------------------------------------------------------------------
 // reflection
 
-void *obj_clone(const void *src) {
-    obj *ptr = obj_malloc( sizeof(obj) + obj_size(src) + sizeof(array(obj*)) );
-    ptr->objheader = ((const obj *)src)->objheader;
-    obj_loadini(ptr, obj_saveini(src));
-    return ptr;
-}
+void* obj_mutate(void *dst, const void *src) {
+    ((obj*)dst)->objheader = ((const obj *)src)->objheader;
 
-void* obj_merge(void *dst, const void *src) { // @testme
-    char *bin = obj_savebin(src);
-    return obj_mergebin(dst, bin);
-}
-
-void* obj_mutate(void **dst, const void *src) {
 #if 0
     // mutate a class. ie, convert a given object class into a different one,
     // while preserving the original metas, components and references as much as possible.
     // @todo iterate per field
 
-    if(!*dst_) return *dst_ = obj_clone(src);
-
-    void *dst = *dst_;
     dtor(dst);
 
         unsigned src_sz = obj_sizeof(src);
@@ -796,6 +783,20 @@ void* obj_mutate(void **dst, const void *src) {
     ctor(dst);
 #endif
     return dst;
+}
+
+void *obj_clone(const void *src) {
+    int sz = sizeof(obj) + obj_size(src) + sizeof(array(obj*));
+    enum { N = 8 }; sz = ((sz + (N - 1)) & -N);  // Round up to N-byte boundary
+    obj *ptr = obj_malloc( sz );
+    obj_mutate(ptr, src); // ptr->objheader = ((const obj *)src)->objheader;
+    obj_loadini(ptr, obj_saveini(src));
+    return ptr;
+}
+
+void* obj_merge(void *dst, const void *src) { // @testme
+    char *bin = obj_savebin(src);
+    return obj_mergebin(dst, bin);
 }
 
 void *obj_make(const char *str) {

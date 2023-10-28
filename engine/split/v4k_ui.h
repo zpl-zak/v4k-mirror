@@ -86,3 +86,4 @@ API int ui_hover(); // ui_is_hover()?
 API int ui_active(); // ui_is_active()?
 
 API int ui_demo(int do_windows);
+API void *ui_handle();

@@ -15,7 +15,7 @@ vec3 rnd3() { // random uniform
 int less3(vec3 *lhs, vec3 *rhs) {
     if(lhs->x != rhs->x) return lhs->x - rhs->x;
     if(lhs->y != rhs->y) return lhs->y - rhs->y;
-    if(lhs->z != rhs->z) return lhs->z - rhs->z;
+    if(lhs->z != rhs->z) return lhs->z - rhs->z; // @testme: remove superfluous if check
     return 0;
 }
 uint64_t hash3(vec3 *v) {

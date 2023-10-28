@@ -186,6 +186,235 @@ int engine_tick() {
     } else {
         // window_fps_lock( editor_hz );
         window_fps_unlock( );
+        } 
+
+    return 0;
+}
+
+int ui_debug() {
+    static int time_factor = 0;
+    static int playing = 0;
+    static int paused = 0;
+    int advance_frame = 0;
+
+#if 0
+    static int do_filter = 0;
+    static int do_profile = 0;
+    static int do_extra = 0;
+
+    char *EDITOR_TOOLBAR_ICONS = va("%s;%s;%s;%s;%s;%s;%s;%s",
+        do_filter ? ICON_MD_CLOSE : ICON_MD_SEARCH,
+        ICON_MD_PLAY_ARROW,
+        paused ? ICON_MD_SKIP_NEXT : ICON_MD_PAUSE,
+        ICON_MD_FAST_FORWARD,
+        ICON_MD_STOP,
+        ICON_MD_REPLAY,
+        ICON_MD_FACE,
+        ICON_MD_MENU
+    );
+
+    if( input_down(KEY_F) ) if( input(KEY_LCTRL) || input(KEY_RCTRL) ) do_filter ^= 1;
+    int choice = ui_toolbar(EDITOR_TOOLBAR_ICONS);
+    if( choice == 1 ) do_filter ^= 1, do_profile = 0, do_extra = 0;
+    if( choice == 2 ) playing = 1, paused = 0;
+    if( choice == 3 ) advance_frame = !!paused, paused = 1;
+    if( choice == 4 ) paused = 0, time_factor = (++time_factor) % 4;
+    if( choice == 5 ) playing = 0, paused = 0, advance_frame = 0, time_factor = 0;
+    if( choice == 6 ) window_reload();
+    if( choice == 7 ) do_filter = 0, do_profile ^= 1, do_extra = 0;
+    if( choice == 8 ) do_filter = 0, do_profile = 0, do_extra ^= 1;
+
+    if( do_filter ) {
+        char *bak = ui_filter; ui_filter = 0;
+        ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &bak);
+        ui_filter = bak;
+        if( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 ) { // if clicked on CANCEL icon (1st icon)
+            do_filter = 0;
+        }
+    } else {
+        if( ui_filter ) ui_filter[0] = '\0';
+    }
+    char *filter_mask = ui_filter && ui_filter[0] ? va("*%s*", ui_filter) : "*";
+
+    static char *username = 0;
+    static char *userpass = 0;
+    if( do_profile ) {
+        ui_string(ICON_MD_FACE " Username", &username);
+        ui_string(ICON_MD_FACE " Password", &userpass);
+    }
+
+    if( do_extra ) {
+        int choice2 = ui_label2_toolbar(NULL,
+            ICON_MD_VIEW_IN_AR
+            ICON_MD_MESSAGE
+            ICON_MD_TIPS_AND_UPDATES ICON_MD_LIGHTBULB ICON_MD_LIGHTBULB_OUTLINE
+            ICON_MD_IMAGE_SEARCH ICON_MD_INSERT_PHOTO
+            ICON_MD_VIDEOGAME_ASSET ICON_MD_VIDEOGAME_ASSET_OFF
+
+            ICON_MD_VOLUME_UP ICON_MD_VOLUME_OFF // audio_volume_master(-1) > 0
+
+            ICON_MD_TROUBLESHOOT ICON_MD_SCHEMA ICON_MD_MENU
+        );
+    }
+#endif
+
+    int open = 0, clicked_or_toggled = 0;
+
+
+    #define EDITOR_UI_COLLAPSE(f,...) \
+    for( int macro(p) = (open = ui_collapse(f,__VA_ARGS__)), macro(dummy) = (clicked_or_toggled = ui_collapse_clicked()); macro(p); ui_collapse_end(), macro(p) = 0)
+
+
+    EDITOR_UI_COLLAPSE(ICON_MD_BUG_REPORT " Bugs 0", "Debug.Bugs") {
+        // @todo. parse /bugs.ini, includes saved screenshots & videos.
+        // @todo. screenshot include parseable level, position screen markers (same info as /bugs.ini)
+    }
+
+
+    // Art and bookmarks
+    EDITOR_UI_COLLAPSE(ICON_MD_FOLDER_SPECIAL " Art", "Debug.Art") {
+        bool inlined = true;
+        const char *file = 0;
+        if( ui_browse(&file, &inlined) ) {
+            const char *sep = ifdef(win32, "\"", "'");
+            app_exec(va("%s %s%s%s", ifdef(win32, "start \"\"", ifdef(osx, "open", "xdg-open")), sep, file, sep));
+        }
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_BOOKMARK " Bookmarks", "Debug.Bookmarks") { /* @todo */ }
+
+
+    // E,C,S,W
+    EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Scene", "Debug.Scene") {
+        EDITOR_UI_COLLAPSE(ICON_MD_BUBBLE_CHART/*ICON_MD_SCATTER_PLOT*/ " Entities", "Debug.Entities") { /* @todo */ }
+        EDITOR_UI_COLLAPSE(ICON_MD_TUNE " Components", "Debug.Components") { /* @todo */ }
+        EDITOR_UI_COLLAPSE(ICON_MD_PRECISION_MANUFACTURING " Systems", "Debug.Systems") { /* @todo */ }
+        EDITOR_UI_COLLAPSE(ICON_MD_PUBLIC " Levels", "Debug.Levels") {
+            //node_edit(editor.edit.down,&editor.edit);
+        }
+
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Init", "Debug.HierarchyInit") { /* @todo */ }
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Draw", "Debug.HierarchyDraw") { /* @todo */ }
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Tick", "Debug.HierarchyTick") { /* @todo */ }
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Edit", "Debug.HierarchyEdit") { /* @todo */ }
+        //EDITOR_UI_COLLAPSE(ICON_MD_ACCOUNT_TREE " Quit", "Debug.HierarchyQuit") { /* @todo */ }
+
+        // node_edit(&editor.init,&editor.init);
+        // node_edit(&editor.draw,&editor.draw);
+        // node_edit(&editor.tick,&editor.tick);
+        // node_edit(&editor.edit,&editor.edit);
+        // node_edit(&editor.quit,&editor.quit);
+    }
+
+    EDITOR_UI_COLLAPSE(ICON_MD_ROCKET_LAUNCH " AI", "Debug.AI") {
+        // @todo
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_VOLUME_UP " Audio", "Debug.Audio") {
+        ui_audio();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_VIDEOCAM " Camera", "Debug.Camera") {
+        ui_camera( camera_get_active() );
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_MONITOR " Display", "Debug.Display") {
+        // @todo: fps lock, fps target, aspect ratio, fullscreen
+        char *text = va("%s;%s;%s",
+            window_has_fullscreen() ? ICON_MD_FULLSCREEN_EXIT : ICON_MD_FULLSCREEN,
+            ICON_MD_PHOTO_CAMERA,
+            record_active() ? ICON_MD_VIDEOCAM_OFF : ICON_MD_VIDEOCAM
+        );
+
+        int choice = ui_toolbar(text);
+        if( choice == 1 ) engine_send("key_fullscreen",0);
+        if( choice == 2 ) engine_send("key_screenshot",0);
+        if( choice == 3 ) engine_send("key_record",0);
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard") {
+        ui_keyboard();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_MOUSE " Mouse", "Debug.Mouse") {
+        ui_mouse();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_GAMEPAD " Gamepads", "Debug.Gamepads") {
+        for( int q = 0; q < 4; ++q ) {
+            for( int r = (open = ui_collapse(va("Gamepad #%d",q+1), va("Debug.Gamepads%d",q))), dummy = (clicked_or_toggled = ui_collapse_clicked()); r; ui_collapse_end(), r = 0) {
+                ui_gamepad(q);
+            }
+        }
+    }
+
+
+    EDITOR_UI_COLLAPSE(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts") {
+        // @todo
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_STAR_HALF " Shaders", "Debug.Shaders") {
+        ui_shaders();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_MOVIE " FXs", "Debug.FXs") {
+        ui_fxs();
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_VIEW_QUILT " UI", "Debug.UI") {
+        int choice = ui_toolbar(ICON_MD_RECYCLING " Reset layout;" ICON_MD_SAVE_AS " Save layout");
+        if( choice == 1 ) ui_layout_all_reset("*");
+        if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
+
+        for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
+            bool visible = ui_visible(*k);
+            if( ui_bool( *k, &visible ) ) {
+                ui_show( *k, ui_visible(*k) ^ true );
+            }
+        }
+    }
+
+
+    EDITOR_UI_COLLAPSE(ICON_MD_SAVINGS " Budgets", "Debug.Budgets") {
+        // @todo. // mem,fps,gfx,net,hdd,... also logging
+    }
+    EDITOR_UI_COLLAPSE(ICON_MD_WIFI/*ICON_MD_SIGNAL_CELLULAR_ALT*/ " Network 0/0 KiB", "Debug.Network") {
+        // @todo
+        // SIGNAL_CELLULAR_1_BAR SIGNAL_CELLULAR_2_BAR
+    }
+    EDITOR_UI_COLLAPSE(va(ICON_MD_SPEED " Profiler %5.2f/%dfps", window_fps(), (int)window_fps_target()), "Debug.Profiler") {
+        ui_profiler();
+    }
+    EDITOR_UI_COLLAPSE(va(ICON_MD_STORAGE " Storage %s", xstats()), "Debug.Storage") {
+        // @todo
+    }
+
+
+
+    // logic: either plug icon (power saving off) or one of the following ones (power saving on):
+    //        if 0% batt (no batt): battery alert
+    //        if discharging:       battery levels [alert,0..6,full]
+    //        if charging:          battery charging
+    int battery_read = app_battery();
+    int battery_level = abs(battery_read);
+    int battery_discharging = battery_read < 0 && battery_level < 100;
+    const char *power_icon_label = ICON_MD_POWER " Power";
+    if( battery_level ) {
+        const char *battery_levels[9] = { // @todo: remap [7%..100%] -> [0..1] ?
+            ICON_MD_BATTERY_ALERT,ICON_MD_BATTERY_0_BAR,ICON_MD_BATTERY_1_BAR,
+            ICON_MD_BATTERY_2_BAR,ICON_MD_BATTERY_3_BAR,ICON_MD_BATTERY_4_BAR,
+            ICON_MD_BATTERY_5_BAR,ICON_MD_BATTERY_6_BAR,ICON_MD_BATTERY_FULL,
+        };
+        power_icon_label = (const char*)va("%s Power %d%%",
+            battery_discharging ? battery_levels[(int)((9-1)*clampf(battery_level/100.f,0,1))] : ICON_MD_BATTERY_CHARGING_FULL,
+            battery_level);
+    }
+
+    EDITOR_UI_COLLAPSE(power_icon_label, "Debug.Power") {
+        int choice = ui_toolbar( ICON_MD_POWER ";" ICON_MD_BOLT );
+        if( choice == 1 ) engine_send("key_battery","0");
+        if( choice == 2 ) engine_send("key_battery","1");
+    }
+
+    EDITOR_UI_COLLAPSE(ICON_MD_WATER " Reflection", "Debug.Reflect") {
+        ui_reflect("*");
+    }
+
+    EDITOR_UI_COLLAPSE(ICON_MD_EXTENSION " Plugins", "Debug.Plugins") {
+        // @todo. include VCS
+        EDITOR_UI_COLLAPSE(ICON_MD_BUILD " Cook", "Debug.Cook") {
+            // @todo
+        }
     }
 
     return 0;
