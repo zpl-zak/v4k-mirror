@@ -29,6 +29,7 @@ if "%1"=="help" (
     echo %0 [bind]                  ; generate lua bindings
     echo %0 [test]                  ; check untracked allocators in V4K
     echo %0 [todo]                  ; check for @fixme and @todo
+    echo %0 [v4web]                 ; sync v4 website
     echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
@@ -262,6 +263,16 @@ if "%1"=="test" (
 if "%1"=="todo" (
     findstr /RNC:"[^_xv]@todo"  engine\split\v4k*
     findstr /RNC:"[^_xv]@fixme"  engine\split\v4k*
+    exit /b
+)
+
+if "%1"=="v4web" (
+    pushd website\
+        git pull origin main
+        git add .
+        git commit -m "website update"
+        git push origin main
+    popd
     exit /b
 )
 
