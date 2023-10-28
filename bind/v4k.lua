@@ -1610,59 +1610,6 @@ typedef float mat44[16];
  float simplex2( vec2 xy );
  float simplex3( vec3 xyz );
  float simplex4( vec4 xyzw );
- float ease_linear(float t);
- float ease_nearest(float t);
- float ease_out_sine(float t);
- float ease_out_quad(float t);
- float ease_out_cubic(float t);
- float ease_out_quart(float t);
- float ease_out_quint(float t);
- float ease_out_expo(float t);
- float ease_out_circ(float t);
- float ease_out_back(float t);
- float ease_out_elastic(float t);
- float ease_out_bounce(float t);
- float ease_in_sine(float t);
- float ease_in_quad(float t);
- float ease_in_cubic(float t);
- float ease_in_quart(float t);
- float ease_in_quint(float t);
- float ease_in_expo(float t);
- float ease_in_circ(float t);
- float ease_in_back(float t);
- float ease_in_elastic(float t);
- float ease_in_bounce(float t);
- float ease_inout_sine(float t);
- float ease_inout_quad(float t);
- float ease_inout_cubic(float t);
- float ease_inout_quart(float t);
- float ease_inout_quint(float t);
- float ease_inout_expo(float t);
- float ease_inout_circ(float t);
- float ease_inout_back(float t);
- float ease_inout_elastic(float t);
- float ease_inout_bounce(float t);
- float ease_inout_perlin(float t);
-enum EASE_FLAGS {
-EASE_LINEAR,
-EASE_SINE,
-EASE_QUAD,
-EASE_CUBIC,
-EASE_QUART,
-EASE_QUINT,
-EASE_EXPO,
-EASE_CIRC,
-EASE_BACK,
-EASE_ELASTIC,
-EASE_BOUNCE,
-EASE_IN,
-EASE_INOUT = EASE_IN * 2,
-EASE_OUT = 0,
-};
- float ease(float t01, unsigned fn);
- float ease_pong(float t01, unsigned fn);
- float ease_ping_pong(float t, unsigned fn1, unsigned fn2);
- float ease_pong_ping(float t, unsigned fn1, unsigned fn2);
  float deg      (float radians);
  float rad      (float degrees);
  int   mini     (int    a, int    b);
@@ -1842,6 +1789,58 @@ EASE_OUT = 0,
  void print33( float *m );
  void print34( float *m );
  void print44( float *m );
+ float ease_linear(float t);
+ float ease_out_sine(float t);
+ float ease_out_quad(float t);
+ float ease_out_cubic(float t);
+ float ease_out_quart(float t);
+ float ease_out_quint(float t);
+ float ease_out_expo(float t);
+ float ease_out_circ(float t);
+ float ease_out_back(float t);
+ float ease_out_elastic(float t);
+ float ease_out_bounce(float t);
+ float ease_in_sine(float t);
+ float ease_in_quad(float t);
+ float ease_in_cubic(float t);
+ float ease_in_quart(float t);
+ float ease_in_quint(float t);
+ float ease_in_expo(float t);
+ float ease_in_circ(float t);
+ float ease_in_back(float t);
+ float ease_in_elastic(float t);
+ float ease_in_bounce(float t);
+ float ease_inout_sine(float t);
+ float ease_inout_quad(float t);
+ float ease_inout_cubic(float t);
+ float ease_inout_quart(float t);
+ float ease_inout_quint(float t);
+ float ease_inout_expo(float t);
+ float ease_inout_circ(float t);
+ float ease_inout_back(float t);
+ float ease_inout_elastic(float t);
+ float ease_inout_bounce(float t);
+ float ease_inout_perlin(float t);
+enum EASE_FLAGS {
+EASE_LINEAR,
+EASE_SINE,
+EASE_QUAD,
+EASE_CUBIC,
+EASE_QUART,
+EASE_QUINT,
+EASE_EXPO,
+EASE_CIRC,
+EASE_BACK,
+EASE_ELASTIC,
+EASE_BOUNCE,
+EASE_IN,
+EASE_INOUT = EASE_IN * 2,
+EASE_OUT = 0,
+};
+ float ease(float t01, unsigned fn);
+ float ease_pong(float t01, unsigned fn);
+ float ease_ping_pong(float t, unsigned fn1, unsigned fn2);
+ float ease_pong_ping(float t, unsigned fn1, unsigned fn2);
 typedef struct tween_keyframe_t {
 int easing_mode;
 float t;

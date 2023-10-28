@@ -81,7 +81,6 @@ nk_hovered_text(struct nk_context *ctx, const char *str, int len,
     int embedded = !!ui_ctx->current; \
     struct nk_rect total_space = {0,0,window_width(),window_height()}; \
     if( embedded ) total_space = nk_window_get_bounds(ui_ctx), total_space.w -= 10; \
-    vec2 popup_space = { total_space.w * 0.33, total_space.h * 0.85 }; \
     int created = !embedded && nk_begin(ui_ctx, "MENU_" STRINGIZE(__COUNTER__), nk_rect(0, 0, window_width(), UI_MENUROW_HEIGHT), NK_WINDOW_NO_SCROLLBAR); \
     if ( embedded || created ) { \
         int align = NK_TEXT_LEFT, Nth = (N), ITEM_WIDTH = 30, span = 0; \
@@ -91,10 +90,10 @@ nk_hovered_text(struct nk_context *ctx, const char *str, int len,
         nk_menubar_end(ui_ctx); \
         if( created ) nk_end(ui_ctx); \
     } } while(0)
-#define UI_MENU_POPUP(title, ...) { \
+#define UI_MENU_POPUP(title, px, ...) { \
     int hspace = maxi(ITEM_WIDTH, nk_text_width(ui_ctx,(title),0)); \
     nk_layout_row_push(ui_ctx, hspace); span += hspace; \
-    if (nk_menu_begin_label(ui_ctx, (title), align, nk_vec2(popup_space.w,popup_space.h))) { \
+    if (nk_menu_begin_label(ui_ctx, (title), align, nk_vec2(px.x>1?px.x:px.x*total_space.w,px.y>1?px.y:px.y*total_space.h))) { \
         __VA_ARGS__; \
         nk_menu_end(ui_ctx); \
     }}
