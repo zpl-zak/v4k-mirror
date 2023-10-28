@@ -50,6 +50,7 @@ API float simplex4( vec4 xyzw );
 // ----------------------------------------------------------------------------
 
 API float ease_linear(float t);
+API float ease_nearest(float t);
 
 API float ease_out_sine(float t);
 API float ease_out_quad(float t);

@@ -139,6 +139,8 @@ API void *ui_handle();
 
 {{FILE:v4k_math.c}}
 
+{{FILE:v4k_tween.c}}
+
 {{FILE:v4k_memory.c}}
 
 {{FILE:v4k_network.c}}

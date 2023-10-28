@@ -957,6 +957,11 @@ ffi.cdef([[
 //lcpp INF [0000] quat: macro name but used as C declaration in:API void printq( quat q );
 //lcpp INF [0000] quat: macro name but used as C declaration in:STATIC void printq( quat q );
 //lcpp INF [0000] quat: macro name but used as C declaration in: void printq( quat q );
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 v;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 result;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 velocity;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 acceleration;
@@ -1606,6 +1611,7 @@ typedef float mat44[16];
  float simplex3( vec3 xyz );
  float simplex4( vec4 xyzw );
  float ease_linear(float t);
+ float ease_nearest(float t);
  float ease_out_sine(float t);
  float ease_out_quad(float t);
  float ease_out_cubic(float t);
@@ -1836,6 +1842,23 @@ EASE_OUT = 0,
  void print33( float *m );
  void print34( float *m );
  void print44( float *m );
+typedef struct tween_keyframe_t {
+int easing_mode;
+float t;
+vec3 v;
+} tween_keyframe_t;
+typedef struct tween_t {
+tween_keyframe_t* keyframes;
+vec3 result;
+float time;
+float duration;
+} tween_t;
+ tween_t tween();
+ float     tween_update(tween_t *tw, float dt);
+ void      tween_reset(tween_t *tw);
+ void    tween_destroy(tween_t *tw);
+ void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
+ void tween_keyframe_unset(tween_t *tw, float t);
 typedef enum SWARM_DISTANCE {
 SWARM_DISTANCE_LINEAR,
 SWARM_DISTANCE_INVERSE_LINEAR,

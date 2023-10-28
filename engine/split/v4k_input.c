@@ -398,7 +398,7 @@ vec2 input2( int vk ) {
 
 // --- events
 
-const float MS2FRAME = 0.06f; // 60 hz/1000 ms
+const float MS2FRAME = 60.0f; // 60 hz/1000 ms
 
 int event( int vk ) {
     float v = input_frame(vk,0);
@@ -425,18 +425,29 @@ int input_up( int vk ) {
 int input_idle( int vk ) {
     return input_diff(vk) == 0 && input_frame(vk,0) <= 0; // input_frame(vk,-1) <= 0 && input_frame(vk,0) <= 0;
 }
-int input_repeat( int vk, int ms ) { // @fixme: broken
-    assert((unsigned)ms <= 1000);
-    return input_frame(vk,-ms * MS2FRAME ) > 0 && input_frame(vk,-ms * MS2FRAME /2) > 0 && input_frame(vk,0) > 0;
+int input_repeat(int vk, int ms) {
+    assert(ms >= 0 && ms <= 1000);
+    float hz = window_fps() ? window_fps() : MS2FRAME;
+    return input_frame(vk, -ms * hz) > 0 && 
+           input_frame(vk, -ms * hz / 2.0) > 0 && 
+           input_frame(vk, 0) > 0;
 }
-int input_click( int vk, int ms ) { // @fixme: broken
-    assert((unsigned)ms <= 1000);
-    return input_frame(vk,-ms * MS2FRAME ) <= 0 && input_frame(vk,-ms * MS2FRAME /2) > 0 && input_frame(vk,0) <= 0;
+int input_click(int vk, int ms) {
+    assert(ms >= 0 && ms <= 1000);
+    float hz = window_fps() ? window_fps() : MS2FRAME;
+    return input_frame(vk, -ms * hz) <= 0 && 
+           input_frame(vk, -ms * hz / 2.0) > 0 && 
+           input_frame(vk, 0) <= 0;
 }
-int input_click2( int vk, int ms ) { // @fixme: broken
-    assert((unsigned)ms <= 1000);
-    return input_frame(vk,-ms * MS2FRAME ) <= 0 && input_frame(vk,-ms * MS2FRAME *3/4) > 0
-    && input_frame(vk,-ms * MS2FRAME *2/4) <= 0 && input_frame(vk,-ms * MS2FRAME *1/4) > 0 && input_frame(vk,0) <= 0;
+
+int input_click2(int vk, int ms) {
+    assert(ms >= 0 && ms <= 1000);
+    float hz = window_fps() ? window_fps() : MS2FRAME;
+    return input_frame(vk, -ms * hz) <= 0 && 
+           input_frame(vk, -ms * hz * 3 / 4.0) > 0 &&
+           input_frame(vk, -ms * hz * 2 / 4.0) <= 0 && 
+           input_frame(vk, -ms * hz * 1 / 4.0) > 0 && 
+           input_frame(vk, 0) <= 0;
 }
 
 #undef MS2FRAME

@@ -76,6 +76,7 @@ float simplex4( vec4 v ) { return snoise4(v.x,v.y,v.z,v.w); }
 // ----------------------------------------------------------------------------
 
 float ease_linear(float t) { return t; }
+float ease_nearest(float t) { return t >= 0.5f ? 1.0f : 0.0f; }
 
 float ease_out_sine(float t) { return sinf(t*(C_PI*0.5f)); }
 float ease_out_quad(float t) { return -(t*(t-2)); }
