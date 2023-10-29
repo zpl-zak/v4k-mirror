@@ -86,6 +86,91 @@ float ease_pong(float t, unsigned fn) { return 1 - ease(t, fn); }
 float ease_ping_pong(float t, unsigned fn1, unsigned fn2) { return t < 0.5 ? ease(t*2,fn1) : ease(1-(t-0.5)*2,fn2); }
 float ease_pong_ping(float t, unsigned fn1, unsigned fn2) { return 1 - ease_ping_pong(t,fn1,fn2); }
 
+
+const char **ease_enums() {
+    static const char *list[] = {
+        "ease_linear",
+        "ease_out_sine",
+        "ease_out_quad",
+        "ease_out_cubic",
+        "ease_out_quart",
+        "ease_out_quint",
+        "ease_out_expo",
+        "ease_out_circ",
+        "ease_out_back",
+        "ease_out_elastic",
+        "ease_out_bounce",
+
+        "ease_linear",
+        "ease_in_sine",
+        "ease_in_quad",
+        "ease_in_cubic",
+        "ease_in_quart",
+        "ease_in_quint",
+        "ease_in_expo",
+        "ease_in_circ",
+        "ease_in_back",
+        "ease_in_elastic",
+        "ease_in_bounce",
+
+        "ease_linear",
+        "ease_inout_sine",
+        "ease_inout_quad",
+        "ease_inout_cubic",
+        "ease_inout_quart",
+        "ease_inout_quint",
+        "ease_inout_expo",
+        "ease_inout_circ",
+        "ease_inout_back",
+        "ease_inout_elastic",
+        "ease_inout_bounce",
+
+        "ease_inout_perlin",
+        0
+    };
+    return list;
+}
+
+const char *ease_enum(unsigned mode) {
+    return mode[ ease_enums() ];
+}
+
+/*AUTORUN {
+    ENUM(EASE_LINEAR|EASE_OUT);
+    ENUM(EASE_SINE|EASE_OUT);
+    ENUM(EASE_QUAD|EASE_OUT);
+    ENUM(EASE_CUBIC|EASE_OUT);
+    ENUM(EASE_QUART|EASE_OUT);
+    ENUM(EASE_QUINT|EASE_OUT);
+    ENUM(EASE_EXPO|EASE_OUT);
+    ENUM(EASE_CIRC|EASE_OUT);
+    ENUM(EASE_BACK|EASE_OUT);
+    ENUM(EASE_ELASTIC|EASE_OUT);
+    ENUM(EASE_BOUNCE|EASE_OUT);
+
+    ENUM(EASE_SINE|EASE_IN);
+    ENUM(EASE_QUAD|EASE_IN);
+    ENUM(EASE_CUBIC|EASE_IN);
+    ENUM(EASE_QUART|EASE_IN);
+    ENUM(EASE_QUINT|EASE_IN);
+    ENUM(EASE_EXPO|EASE_IN);
+    ENUM(EASE_CIRC|EASE_IN);
+    ENUM(EASE_BACK|EASE_IN);
+    ENUM(EASE_ELASTIC|EASE_IN);
+    ENUM(EASE_BOUNCE|EASE_IN);
+
+    ENUM(EASE_SINE|EASE_INOUT);
+    ENUM(EASE_QUAD|EASE_INOUT);
+    ENUM(EASE_CUBIC|EASE_INOUT);
+    ENUM(EASE_QUART|EASE_INOUT);
+    ENUM(EASE_QUINT|EASE_INOUT);
+    ENUM(EASE_EXPO|EASE_INOUT);
+    ENUM(EASE_CIRC|EASE_INOUT);
+    ENUM(EASE_BACK|EASE_INOUT);
+    ENUM(EASE_ELASTIC|EASE_INOUT);
+    ENUM(EASE_BOUNCE|EASE_INOUT);
+};*/
+
 // ----------------------------------------------------------------------------
 // tween
 

@@ -1841,6 +1841,8 @@ EASE_OUT = 0,
  float ease_pong(float t01, unsigned fn);
  float ease_ping_pong(float t, unsigned fn1, unsigned fn2);
  float ease_pong_ping(float t, unsigned fn1, unsigned fn2);
+ const char *ease_enum(unsigned fn);
+ const char**ease_enums();
 typedef struct tween_keyframe_t {
 int easing_mode;
 float t;

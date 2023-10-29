@@ -176,7 +176,7 @@ int engine_send(const char *cmd, const char *optional_value) {
 
 int engine_tick() {
     enum { engine_hz = 60 };
-    enum { engine_hz_mid = 30 };
+    enum { engine_hz_mid = 18 };
     enum { engine_hz_low = 5 };
     if( *engine_geti("powersave") ) {
         // adaptive framerate

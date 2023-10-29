@@ -61,6 +61,9 @@ API float ease_pong(float t01, unsigned fn); // \ 1-to-0
 API float ease_ping_pong(float t, unsigned fn1, unsigned fn2); // /\ 0-to-1-to-0
 API float ease_pong_ping(float t, unsigned fn1, unsigned fn2); // \/ 1-to-0-to-1
 
+API const char *ease_enum(unsigned fn);
+API const char**ease_enums();
+
 // ----------------------------------------------------------------------------
 // tween
 

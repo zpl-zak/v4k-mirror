@@ -499,7 +499,7 @@ set run=no
     if "%1"=="lab"      set "lab=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
     if "%1"=="hello"    set "hello=yes" && goto loop
-    if "%1"=="editor"   set "editor=yes" && set "v4k=no" && set "hello=no"&& goto loop
+    if "%1"=="editor"   set "editor=yes" && set "v4k=yes" && set "hello=no"&& goto loop
     if "%1"=="run"      set "run=yes" && goto loop
     if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "lab=yes" && set "editor=yes" && set "hello=yes" && goto loop
 
@@ -754,7 +754,6 @@ if "!v4k!"=="yes" (
     )
 )
 
-!echo! v4k && !cc! engine\v4k.c !export! !edit! !args! || set rc=1
 
 rem editor
 if "!editor!"=="yes" (

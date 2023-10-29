@@ -50,6 +50,7 @@
 //#include "objtests.h"
 #include "editor3.h"
 #define EXTEND obj_extend
+int editor_timeline();
 
 // ----------------------------------------------------------------------------
 
@@ -176,6 +177,8 @@ AUTORUN {
 
 // ----------------------------------------------------------------------------
 
+typedef int(*subeditor)();
+
 struct editor_t {
     // time
     unsigned   frame;
@@ -203,6 +206,8 @@ struct editor_t {
     // all of them
     array(obj*) objs; // @todo:set() world?
     array(char*) cmds;
+    // subeditors
+    array(subeditor) subeditors;
 } editor = {
     .active = 1,
     .gamepad = 1,
@@ -607,7 +612,7 @@ array(editor_bind_t) editor_binds;
 
 #define EDITOR_BIND(CMD,KEYS,...) void macro(editor_bind_fn_)() { __VA_ARGS__ }; AUTORUN { array_push(editor_binds, ((editor_bind_t){CMD,KEYS,macro(editor_bind_fn_)}) ); }
 
-EDITOR_BIND("play", "held(CTRL) & down(SPC)",             { window_pause(0); if(!editor.slomo) editor.active = 0; editor.slomo = 1; } );
+EDITOR_BIND("play", "held(CTRL) & down(SPC)",             { window_pause(0); /* if(!editor.slomo) editor.active = 0; */ editor.slomo = 1; } );
 EDITOR_BIND("slomo", "",                                  { window_pause(0); editor.slomo = maxf(fmod(editor.slomo * 2, 16), 0.125); } );
 EDITOR_BIND("stop", "(held(ALT)|held(SHIFT))&down(ESC)",  { window_pause(1), editor.frame = 0, editor.t = 0, editor.dt = 0, editor.slomo = 0, editor.active = 1; editor_select("**"); editor_destroy_selected(); } );
 EDITOR_BIND("pause", "down(ESC)",                         { window_pause( window_has_pause() ^ 1 ); } );
@@ -722,8 +727,10 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
 
     // draw menubar
     static double last_fps = 0; if(!window_has_pause()) last_fps = window_fps();
-    int fps_target = window_fps_target() > 0.0f ? (int)window_fps_target() : 60;
-    const char *TITLE = va("%02dF %5.2f/%dfps x%4.3f", editor.frame % (int)fps_target, last_fps, fps_target, editor.slomo);
+    const char *TITLE = va("%02dm:%02ds:%03dms:%02dF %5.2f/%dfps x%4.3f",
+        (int)editor.t / 60, (int)fmod(editor.t, 60), (int)(1000 * (editor.t - (int)editor.t)),
+        editor.frame % ((int)window_fps_target() + !(int)window_fps_target()),
+        last_fps, (int)window_fps_target(), editor.slomo);
     const char *ICON_PL4Y = window_has_pause() ? ICON_MDI_PLAY : ICON_MDI_PAUSE;
     const char *ICON_SKIP = window_has_pause() ? ICON_MDI_STEP_FORWARD/*ICON_MDI_SKIP_NEXT*/ : ICON_MDI_FAST_FORWARD;
 
@@ -813,6 +820,11 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
             app_exec(va("%s %s%s%s", ifdef(win32, "start \"\"", ifdef(osx, "open", "xdg-open")), sep, file, sep));
         }
         ui_window_end();
+    }
+
+    // draw subeditors
+    for each_array(editor.subeditors, subeditor, fn) {
+        fn();
     }
 
     // draw ui filter (note: render at end-of-frame, so it's hopefully on-top)
@@ -924,3 +936,5 @@ int main(){
         editor_frame(game);
     }
 }
+
+#include "editor3timeline.h"
