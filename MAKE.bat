@@ -831,12 +831,16 @@ if not "!other!"=="" (
 )
 
 if "!run!"=="yes" (
-    set exename=hello.exe
-    if not "!other!"=="" (
-        for /f "tokens=*" %%a in ("!other!") do set exename=%%~na.exe
+    if "!rc!"=="1" (
+        echo build failed. skipping run!
+    ) else (
+        set exename=hello.exe
+        if not "!other!"=="" (
+            for /f "tokens=*" %%a in ("!other!") do set exename=%%~na.exe
+        )
+        echo run !exename! !run_args!
+        !exename! !run_args! || set rc=1
     )
-    echo run !exename! !run_args!
-    !exename! !run_args! || set rc=1
 )
 
 rem PAUSE only if double-clicked from Windows explorer

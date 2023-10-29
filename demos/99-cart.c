@@ -12,7 +12,6 @@ int main() {
     window_title(__FILE__);
 
     camera_t cam = camera();
-
     vec3 route[] = {
         vec3(0.0f, 0.0f, 5.0f),
         vec3(0.0f, 0.0f, 10.0f),
