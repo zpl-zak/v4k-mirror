@@ -959,9 +959,9 @@ ffi.cdef([[
 //lcpp INF [0000] quat: macro name but used as C declaration in: void printq( quat q );
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 v;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 result;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 velocity;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 acceleration;
@@ -1529,11 +1529,12 @@ ffi.cdef([[
 typedef struct FILE FILE;
 typedef long int ptrdiff_t;
 typedef long unsigned int size_t;
- int sort_64(const void *a, const void *b);
  int less_64(uint64_t a, uint64_t b);
  int less_int(int a, int b);
  int less_ptr(void *a, void *b);
  int less_str(char *a, char *b);
+ int less_64_ptr(const void *a, const void *b);
+ int less_int_ptr(const void *a, const void *b);
  uint32_t unhash_32(uint32_t x);
  uint32_t hash_32(uint32_t x);
  uint64_t hash_64(uint64_t x);
@@ -1789,6 +1790,7 @@ typedef float mat44[16];
  void print33( float *m );
  void print34( float *m );
  void print44( float *m );
+ float ease_nop(float t);
  float ease_linear(float t);
  float ease_out_sine(float t);
  float ease_out_quad(float t);
@@ -1822,7 +1824,6 @@ typedef float mat44[16];
  float ease_inout_bounce(float t);
  float ease_inout_perlin(float t);
 enum EASE_FLAGS {
-EASE_LINEAR,
 EASE_SINE,
 EASE_QUAD,
 EASE_CUBIC,
@@ -1834,8 +1835,12 @@ EASE_BACK,
 EASE_ELASTIC,
 EASE_BOUNCE,
 EASE_IN,
-EASE_INOUT = EASE_IN * 2,
 EASE_OUT = 0,
+EASE_INOUT = EASE_IN * 2,
+EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
+EASE_LINEAR,
+EASE_INOUT_PERLIN,
+EASE_NUM
 };
  float ease(float t01, unsigned fn);
  float ease_pong(float t01, unsigned fn);
@@ -1844,9 +1849,9 @@ EASE_OUT = 0,
  const char *ease_enum(unsigned fn);
  const char**ease_enums();
 typedef struct tween_keyframe_t {
-int easing_mode;
 float t;
 vec3 v;
+unsigned ease;
 } tween_keyframe_t;
 typedef struct tween_t {
 tween_keyframe_t* keyframes;
@@ -1855,11 +1860,11 @@ float time;
 float duration;
 } tween_t;
  tween_t tween();
+ void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+ void        tween_delkey(tween_t *tw, float t);
  float     tween_update(tween_t *tw, float dt);
  void      tween_reset(tween_t *tw);
  void    tween_destroy(tween_t *tw);
- void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
- void tween_keyframe_unset(tween_t *tw, float t);
 typedef enum SWARM_DISTANCE {
 SWARM_DISTANCE_LINEAR,
 SWARM_DISTANCE_INVERSE_LINEAR,
@@ -2389,8 +2394,7 @@ TOUCH_1,
  int         ui_gamepad(int id);
  int         ui_gamepads();
 enum INPUT_ENUMS {
-KEY_ESC,
-KEY_TICK, KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9,KEY_0,  KEY_BS,
+KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9,   KEY_TICK,KEY_BS,           KEY_ESC,
 KEY_TAB,   KEY_Q,KEY_W,KEY_E,KEY_R,KEY_T,KEY_Y,KEY_U,KEY_I,KEY_O,KEY_P,
 KEY_CAPS,     KEY_A,KEY_S,KEY_D,KEY_F,KEY_G,KEY_H,KEY_J,KEY_K,KEY_L, KEY_ENTER,
 KEY_LSHIFT,       KEY_Z,KEY_X,KEY_C,KEY_V,KEY_B,KEY_N,KEY_M,        KEY_RSHIFT,            KEY_UP,
@@ -2511,6 +2515,7 @@ void*   obj_free(void *o);
  extern int   (*obj_draw[256])();
  extern int   (*obj_lerp[256])();
  extern int   (*obj_edit[256])();
+ extern int   (*obj_aabb[256])();
  uintptr_t   obj_header(const void *o);
  uintptr_t   obj_id(const void *o);
  const char* obj_type(const void *o);

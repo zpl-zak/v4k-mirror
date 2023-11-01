@@ -521,7 +521,7 @@ int window_frame_begin() {
     ui_create();
 
 #if !ENABLE_RETAIL
-    bool has_menu = 0; // ui_has_menubar();
+    bool has_menu = ui_has_menubar();
     bool may_render_debug_panel = 1;
 
     if( have_tools() ) {
@@ -764,9 +764,9 @@ void window_title(const char *title_) {
     if( !title[0] ) glfwSetWindowTitle(window, title);
 }
 void window_color(unsigned color) {
-    unsigned b = (color >>  0) & 255;
+    unsigned r = (color >>  0) & 255;
     unsigned g = (color >>  8) & 255;
-    unsigned r = (color >> 16) & 255;
+    unsigned b = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }

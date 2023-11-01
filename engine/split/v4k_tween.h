@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // ease
 
+API float ease_nop(float t);
 API float ease_linear(float t);
 
 API float ease_out_sine(float t);
@@ -39,7 +40,6 @@ API float ease_inout_bounce(float t);
 API float ease_inout_perlin(float t);
 
 enum EASE_FLAGS {
-    EASE_LINEAR,
     EASE_SINE,
     EASE_QUAD,
     EASE_CUBIC,
@@ -52,8 +52,14 @@ enum EASE_FLAGS {
     EASE_BOUNCE,
 
     EASE_IN,
-    EASE_INOUT = EASE_IN * 2,
     EASE_OUT = 0,
+    EASE_INOUT = EASE_IN * 2,
+
+    EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
+    EASE_LINEAR,
+    EASE_INOUT_PERLIN,
+
+    EASE_NUM
 };
 
 API float ease(float t01, unsigned fn); // / 0-to-1
@@ -68,9 +74,9 @@ API const char**ease_enums();
 // tween
 
 typedef struct tween_keyframe_t {
-	int easing_mode;
 	float t;
 	vec3 v;
+    unsigned ease;
 } tween_keyframe_t;
 
 typedef struct tween_t {
@@ -82,9 +88,9 @@ typedef struct tween_t {
 } tween_t;
 
 API tween_t tween();
+API void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+API void        tween_delkey(tween_t *tw, float t);
 API float     tween_update(tween_t *tw, float dt);
 API void      tween_reset(tween_t *tw);
 API void    tween_destroy(tween_t *tw);
 
-API void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
-API void tween_keyframe_unset(tween_t *tw, float t);

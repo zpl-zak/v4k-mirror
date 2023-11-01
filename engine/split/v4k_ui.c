@@ -6,7 +6,7 @@ nk_text_width(struct nk_context *ctx, const char *str, unsigned len) {
     const struct nk_style *style = &ctx->style;
     const struct nk_user_font *f = style->font;
     float pixels_width = f->width(f->userdata, f->height, str, len ? (int)len : (int)strlen(str));
-    return pixels_width;
+    return pixels_width + 10; // 10 -> internal widget padding
 }
 
 static nk_bool
@@ -76,6 +76,7 @@ nk_hovered_text(struct nk_context *ctx, const char *str, int len,
             int glyphs = strlen(TEXT) / 4 /*3:MD,4:MDI*/; CHOICE *= !!clicked_x * (CHOICE <= glyphs); } while(0)
 
 // menu macros that work not only standalone but also contained within a panel or window
+static int ui_using_v2_menubar = 0;
 #define UI_MENU(N, ...) do { \
     enum { MENUROW_HEIGHT = 25 }; \
     int embedded = !!ui_ctx->current; \
@@ -83,6 +84,7 @@ nk_hovered_text(struct nk_context *ctx, const char *str, int len,
     if( embedded ) total_space = nk_window_get_bounds(ui_ctx), total_space.w -= 10; \
     int created = !embedded && nk_begin(ui_ctx, "MENU_" STRINGIZE(__COUNTER__), nk_rect(0, 0, window_width(), UI_MENUROW_HEIGHT), NK_WINDOW_NO_SCROLLBAR); \
     if ( embedded || created ) { \
+        ui_using_v2_menubar = 1; \
         int align = NK_TEXT_LEFT, Nth = (N), ITEM_WIDTH = 30, span = 0; \
         nk_menubar_begin(ui_ctx); \
         nk_layout_row_begin(ui_ctx, NK_STATIC, MENUROW_HEIGHT, Nth); \
@@ -391,7 +393,7 @@ int ui_menu_editbox(char *buf, int bufcap) {
 }
 
 int ui_has_menubar() {
-    return !!ui_items; // array_count(ui_items) > 0;
+    return ui_using_v2_menubar || !!ui_items; // array_count(ui_items) > 0;
 }
 
 static
@@ -683,6 +685,7 @@ int ui_set_enable_(int enabled) {
 
         off.text.color.a *= alpha;
 
+#if 0
         off.button.normal.data.color.a *= alpha;
         off.button.hover.data.color.a *= alpha;
         off.button.active.data.color.a *= alpha;
@@ -700,7 +703,7 @@ int ui_set_enable_(int enabled) {
         off.contextual_button.text_normal.a *= alpha;
         off.contextual_button.text_hover.a *= alpha;
         off.contextual_button.text_active.a *= alpha;
-
+#endif
         off.menu_button.normal.data.color.a *= alpha;
         off.menu_button.hover.data.color.a *= alpha;
         off.menu_button.active.data.color.a *= alpha;
@@ -709,7 +712,7 @@ int ui_set_enable_(int enabled) {
         off.menu_button.text_normal.a *= alpha;
         off.menu_button.text_hover.a *= alpha;
         off.menu_button.text_active.a *= alpha;
-
+#if 0
         off.option.normal.data.color.a *= alpha;
         off.option.hover.data.color.a *= alpha;
         off.option.active.data.color.a *= alpha;
@@ -782,7 +785,7 @@ int ui_set_enable_(int enabled) {
         off.progress.cursor_hover.data.color.a *= alpha;
         off.progress.cursor_active.data.color.a *= alpha;
         off.progress.cursor_border_color.a *= alpha;
-
+#endif
         off.property.normal.data.color.a *= alpha;
         off.property.hover.data.color.a *= alpha;
         off.property.active.data.color.a *= alpha;
@@ -837,7 +840,7 @@ int ui_set_enable_(int enabled) {
         off.edit.selected_hover.a *= alpha;
         off.edit.selected_text_normal.a *= alpha;
         off.edit.selected_text_hover.a *= alpha;
-
+#if 0
         off.chart.background.data.color.a *= alpha;
         off.chart.border_color.a *= alpha;
         off.chart.selected_color.a *= alpha;
@@ -864,7 +867,7 @@ int ui_set_enable_(int enabled) {
         off.tab.background.data.color.a *= alpha;
         off.tab.border_color.a *= alpha;
         off.tab.text.a *= alpha;
-
+#endif
         off.combo.normal.data.color.a *= alpha;
         off.combo.hover.data.color.a *= alpha;
         off.combo.active.data.color.a *= alpha;
@@ -883,7 +886,7 @@ int ui_set_enable_(int enabled) {
         off.combo.button.text_normal.a *= alpha;
         off.combo.button.text_hover.a *= alpha;
         off.combo.button.text_active.a *= alpha;
-
+#if 0
         off.window.fixed_background.data.color.a *= alpha;
         off.window.background.a *= alpha;
         off.window.border_color.a *= alpha;
@@ -897,6 +900,7 @@ int ui_set_enable_(int enabled) {
         off.window.header.normal.data.color.a *= alpha;
         off.window.header.hover.data.color.a *= alpha;
         off.window.header.active.data.color.a *= alpha;
+#endif
     }
     static struct nk_input input;
     if (!enabled) {

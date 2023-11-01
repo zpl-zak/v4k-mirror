@@ -117,6 +117,9 @@ API void *ui_handle();
 #define do_threadlock(mutexptr) \
     for( int init_ = !!(mutexptr) || (thread_mutex_init( (mutexptr) = CALLOC(1, sizeof(thread_mutex_t)) ), 1); init_; init_ = 0) \
     for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mutex_unlock( mutexptr ), 0) )
+
+#define AS_NKCOLOR(color) \
+    ((struct nk_color){ ((color>>0))&255,((color>>8))&255,((color>>16))&255,((color>>24))&255 })
 #line 0
 
 #line 1 "engine/split/v4k_ds.c"
@@ -124,8 +127,11 @@ API void *ui_handle();
 // -----------------------------------------------------------------------------
 // sort/less
 
-int sort_64(const void *a, const void *b) {
+int less_64_ptr(const void *a, const void *b) {
     return 0[(uint64_t*)a] - 0[(uint64_t*)b];
+}
+int less_int_ptr(const void *a, const void *b) {
+    return 0[(int*)a] - 0[(int*)b];
 }
 
 int less_int(int a, int b) {
@@ -834,7 +840,7 @@ const char *extract_utf32(const char *s, uint32_t *out) {
     /**/ if( (s[0] & 0x80) == 0x00 ) return *out = (s[0]), s + 1;
     else if( (s[0] & 0xe0) == 0xc0 ) return *out = (s[0] & 31) <<  6 | (s[1] & 63), s + 2;
     else if( (s[0] & 0xf0) == 0xe0 ) return *out = (s[0] & 15) << 12 | (s[1] & 63) <<  6 | (s[2] & 63), s + 3;
-    else if( (s[0] & 0xf8) != 0xf0 ) return *out = (s[0] &  7) << 18 | (s[1] & 63) << 12 | (s[2] & 63) << 8 | (s[3] & 63), s + 4;
+    else if( (s[0] & 0xf8) == 0xf0 ) return *out = (s[0] &  7) << 18 | (s[1] & 63) << 12 | (s[2] & 63) << 8 | (s[3] & 63), s + 4;
     return *out = 0, s + 0;
 }
 array(uint32_t) string32( const char *utf8 ) {
@@ -7431,15 +7437,12 @@ static const char bm_mini_ttf[] = {
 /*004ec0*/ 0x00,0x08,0x00,0x40,0x00,0x0a,0x00,0x00,0x00,0x84,0x00,0xde,0x00,0x01,0x00,0x01
 };
 
-static const unsigned bm_mini_ttf_length = (unsigned)sizeof(bm_mini_ttf);
-
 // -----------------------------------------------------------------------------
 
 // The following data tables are coming from Dear Imgui.
 // Re-licensed under permission as MIT-0.
 //
 // @todo: 0x3100, 0x312F, FONT_TW, // Bopomofo
-//        0xE000, 0xEB4C, FONT_EM, // Private use (emojis)
 
 static const unsigned table_common[] = {
     0x0020, 0x00FF, // Basic Latin + Latin Supplement
@@ -7524,6 +7527,12 @@ static const unsigned table_middle_east[] = {
     0x0590, 0x05FF, // Hebrew, Yiddish, Ladino, and other Jewish diaspora languages.
     0x0600, 0x06FF, // Arabic script and Arabic-Indic digits
     0xFB00, 0xFB4F, // Ligatures for the Latin, Armenian, and Hebrew scripts
+    0
+};
+
+static const unsigned table_emoji[] = {
+//  0xE000, 0xEB4C, // Private use (emojis)
+    0xE000, 0xF8FF, // Private use (emojis+webfonts)
     0
 };
 
@@ -7751,18 +7760,18 @@ static font_t fonts[8] = {0};
 static
 void font_init() {
     do_once {
-        font_face_from_mem(FONT_FACE1, bm_mini_ttf,0, 42.5f, 0);
-        font_face_from_mem(FONT_FACE2, bm_mini_ttf,0, 42.5f, 0);
-        font_face_from_mem(FONT_FACE3, bm_mini_ttf,0, 42.5f, 0);
-        font_face_from_mem(FONT_FACE4, bm_mini_ttf,0, 42.5f, 0);
-        font_face_from_mem(FONT_FACE5, bm_mini_ttf,0, 42.5f, 0);
-        font_face_from_mem(FONT_FACE6, bm_mini_ttf,0, 42.5f, 0);
+        font_face_from_mem(FONT_FACE1, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE2, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE3, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE4, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE5, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE6, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
     }
 }
 
 // Remap color within all existing color textures
 void font_color(const char *tag, uint32_t color) {
-    do_once font_init();
+    font_init();
 
     unsigned index = *tag - FONT_COLOR1[0];
     if( index < FONT_MAX_COLORS ) {
@@ -7780,7 +7789,7 @@ void font_color(const char *tag, uint32_t color) {
 }
 
 void font_scales(const char *tag, float h1, float h2, float h3, float h4, float h5, float h6) {
-    do_once font_init();
+    font_init();
 
     unsigned index = *tag - FONT_FACE1[0];
     if( index >= 8 ) return;
@@ -7801,16 +7810,14 @@ void font_scales(const char *tag, float h1, float h2, float h3, float h4, float 
 // 1. Call stb_truetype.h routines to read and parse a .ttf file.
 // 1. Create a bitmap that is uploaded to the gpu using opengl.
 // 1. Calculate and save a bunch of useful variables and put them in the global font variable.
-void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_len, float font_size, unsigned flags) {
-    const unsigned char *ttf_buffer = ttf_bufferv;
-
-    flags |= FONT_ASCII; // ensure this minimal range [0020-00FF] is always in
-
+void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len, float font_size, unsigned flags) {
     unsigned index = *tag - FONT_FACE1[0];
 
     if( index >= 8 ) return;
-    if( !ttf_buffer /*|| !ttf_len*/ ) return;
     if( font_size <= 0 || font_size > 72 ) return;
+    if( !ttf_data || !ttf_len ) return;
+
+    flags |= FONT_ASCII; // ensure this minimal range [0020-00FF] is always in
 
     font_t *f = &fonts[index];
     f->initialized = 1;
@@ -7831,8 +7838,8 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
     f->scale[6] = 0.2500f; // H6
 
     const char *vs_filename = 0, *fs_filename = 0;
-    const char *vs = vs_filename ? file_read(vs_filename) : mv_vs_source;
-    const char *fs = fs_filename ? file_read(fs_filename) : mv_fs_source;
+    const char *vs = vs_filename ? vfs_read(vs_filename) : mv_vs_source;
+    const char *fs = fs_filename ? vfs_read(fs_filename) : mv_fs_source;
     f->program = shader(vs, fs, "vertexPosition,instanceGlyph", "outColor", NULL);
 
     // figure out what ranges we're about to bake
@@ -7851,6 +7858,7 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
 
     array(uint64_t) sorted = 0;
     if(flags & FONT_ASCII) { MERGE_TABLE(table_common); }
+    if(flags & FONT_EM)    { MERGE_TABLE(table_emoji); }
     if(flags & FONT_EU)    { MERGE_TABLE(table_eastern_europe); }
     if(flags & FONT_RU)    { MERGE_TABLE(table_western_europe); }
     if(flags & FONT_EL)    { MERGE_TABLE(table_western_europe); }
@@ -7863,8 +7871,8 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
     if(flags & FONT_ZH)    { MERGE_TABLE(table_chinese_japanese_common); MERGE_PACKED_TABLE(0x4E00, packed_table_chinese); } // zh-simplified
     if(flags & FONT_ZH)    { MERGE_TABLE(table_chinese_punctuation); } // both zh-simplified and zh-full
 //  if(flags & FONT_ZH)    { MERGE_TABLE(table_chinese_full); } // zh-full
-    array_sort(sorted, sort_64);
-    array_unique(sorted, sort_64); // sort + unique pass
+    array_sort(sorted, less_64_ptr);
+    array_unique(sorted, less_64_ptr); // sort + unique pass
 
     // pack and create bitmap
     unsigned char *bitmap = (unsigned char*)MALLOC(f->height*f->width);
@@ -7888,7 +7896,7 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
             while( i < (num-1) && (sorted[i+1]-sorted[i]) == 1 ) end = sorted[++i];
             //printf("(%d,%d)", (unsigned)begin, (unsigned)end);
 
-            if( stbtt_PackFontRange(&pc, ttf_buffer, 0, f->font_size, begin, end - begin + 1, (stbtt_packedchar*)f->cdata + begin) ) {
+            if( stbtt_PackFontRange(&pc, ttf_data, 0, f->font_size, begin, end - begin + 1, (stbtt_packedchar*)f->cdata + begin) ) {
                 for( int j = begin; j <= end; ++j ) {
                     // unicode->index runtime lookup
                     f->cp2iter[ j ] = count;
@@ -7901,11 +7909,13 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
         stbtt_PackEnd(&pc);
         f->num_glyphs = count;
 
+        assert( f->num_glyphs < charCount );
+
     array_free(sorted);
 
     // calculate vertical font metrics
-    stbtt_fontinfo info;
-    stbtt_InitFont(&info, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
+    stbtt_fontinfo info = {0};
+    stbtt_InitFont(&info, ttf_data, stbtt_GetFontOffsetForIndex(ttf_data,0));
 
     int a, d, l;
     float s = stbtt_ScaleForPixelHeight(&info, f->font_size);
@@ -7971,7 +7981,7 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
 
     // last chance to inspect the font atlases
     if( flag("--font-debug") )
-    stbi_write_png(va("debug_font_atlas%d.png", index), f->width, f->height, 1, bitmap, 0);
+    stbi_write_png(va("font_debug%d.png", index), f->width, f->height, 1, bitmap, 0);
 
     FREE(bitmap);
 
@@ -8038,12 +8048,13 @@ void font_face_from_mem(const char *tag, const void *ttf_bufferv, unsigned ttf_l
 }
 
 void font_face(const char *tag, const char *filename_ttf, float font_size, unsigned flags) {
-    do_once font_init();
+    font_init();
 
-    const char *buffer = //file_read(filename_ttf);
-    //if(!buffer) buffer = 
-        vfs_read(filename_ttf);
-    font_face_from_mem(tag, buffer,0, font_size, flags);
+    int len;
+    const char *buffer = vfs_load(filename_ttf, &len);
+    if( !buffer ) buffer = file_load(filename_ttf, &len);
+
+    font_face_from_mem(tag, buffer,len, font_size, flags);
 }
 
 static
@@ -8128,7 +8139,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
 // 1. draw the string
 static
 vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cmd)(font_t *,const float *,int,float,vec2)) {
-    do_once font_init();
+    font_init();
 
     // sanity checks
     int len = strlen(text);
@@ -8959,7 +8970,7 @@ int input_enum(const char *vk) {
     static map(char*,int) m = 0;
     do_once {
         map_init_str(m);
-        #define k(VK) map_insert(m, STRINGIZE(KEY_##VK), KEY_##VK); map_insert(m, STRINGIZE(VK), KEY_##VK);
+        #define k(VK) map_find_or_add(m, STRINGIZE(VK), KEY_##VK); map_find_or_add(m, STRINGIZE(KEY_##VK), KEY_##VK);
         k(ESC)
         k(TICK)  k(1) k(2) k(3) k(4) k(5) k(6) k(7) k(8) k(9) k(0)     k(BS)
         k(TAB)    k(Q) k(W) k(E) k(R) k(T) k(Y) k(U) k(I) k(O) k(P)
@@ -9161,6 +9172,7 @@ int ui_mouse() {
 
 int ui_keyboard() {
     char *keys[] = {
+        "F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12",
         "ESC",
         "TICK","1","2","3","4","5","6","7","8","9","0","BS",
         "TAB","Q","W","E","R","T","Y","U","I","O","P",
@@ -9169,25 +9181,23 @@ int ui_keyboard() {
         "LCTRL","LALT","SPACE","RALT","RCTRL","<","V",">",
     };
 
-    vec2i rows[] = {
-        vec2i(0,1),
-        vec2i(1,13),
-        vec2i(13,24),
-        vec2i(24,35),
-        vec2i(35,45),
-        vec2i(45,countof(keys)),
+    float rows[] = {
+        12,
+        1,
+        12,
+        11,
+        11,
+        10,
+        8
     };
 
-    for( int i = 0; i < countof(rows); ++i ) {
-        int any = 0;
-        char *row = 0;
-        for( int j = rows[i].x; j < rows[i].y; ++j ) {
-            strcatf(&row, input(KEY_ESC + j) ? (any|=1, "[%s]") : " %s ", keys[j]);
+    for( int row = 0, k = 0; row < countof(rows); ++row ) {
+        static char *buf = 0; if(buf) *buf = 0;
+        for( int col = 0; col < rows[row]; ++col, ++k ) {
+            assert( input_enum(keys[k]) == input_enum(va("KEY_%s", keys[k])) );
+            strcatf(&buf, input(input_enum(keys[k])) ? "[%s]" : " %s ", keys[k]);
         }
-        if(!any) ui_disable();
-        ui_label(row);
-        ui_enable();
-        FREE(row);
+        ui_label(buf);
     }
 
     return 0;
@@ -10136,6 +10146,7 @@ AUTORUN {
 // ----------------------------------------------------------------------------
 // ease
 
+float ease_nop(float t) { return 0; }
 float ease_linear(float t) { return t; }
 
 float ease_out_sine(float t) { return sinf(t*(C_PI*0.5f)); }
@@ -10176,7 +10187,6 @@ float ease_inout_perlin(float t) { float t3=t*t*t,t4=t3*t,t5=t4*t; return 6*t5-1
 float ease(float t01, unsigned mode) {
     typedef float (*easing)(float);
     easing modes[] = {
-        ease_linear,
         ease_out_sine,
         ease_out_quad,
         ease_out_cubic,
@@ -10188,7 +10198,6 @@ float ease(float t01, unsigned mode) {
         ease_out_elastic,
         ease_out_bounce,
 
-        ease_linear,
         ease_in_sine,
         ease_in_quad,
         ease_in_cubic,
@@ -10200,7 +10209,6 @@ float ease(float t01, unsigned mode) {
         ease_in_elastic,
         ease_in_bounce,
 
-        ease_linear,
         ease_inout_sine,
         ease_inout_quad,
         ease_inout_cubic,
@@ -10212,6 +10220,8 @@ float ease(float t01, unsigned mode) {
         ease_inout_elastic,
         ease_inout_bounce,
 
+        ease_nop,
+        ease_linear,
         ease_inout_perlin,
     };
     return modes[clampi(mode, 0, countof(modes))](clampf(t01,0,1));
@@ -10224,7 +10234,6 @@ float ease_pong_ping(float t, unsigned fn1, unsigned fn2) { return 1 - ease_ping
 
 const char **ease_enums() {
     static const char *list[] = {
-        "ease_linear",
         "ease_out_sine",
         "ease_out_quad",
         "ease_out_cubic",
@@ -10236,7 +10245,6 @@ const char **ease_enums() {
         "ease_out_elastic",
         "ease_out_bounce",
 
-        "ease_linear",
         "ease_in_sine",
         "ease_in_quad",
         "ease_in_cubic",
@@ -10248,7 +10256,6 @@ const char **ease_enums() {
         "ease_in_elastic",
         "ease_in_bounce",
 
-        "ease_linear",
         "ease_inout_sine",
         "ease_inout_quad",
         "ease_inout_cubic",
@@ -10260,6 +10267,8 @@ const char **ease_enums() {
         "ease_inout_elastic",
         "ease_inout_bounce",
 
+        "ease_nop",
+        "ease_linear",
         "ease_inout_perlin",
         0
     };
@@ -10304,6 +10313,10 @@ const char *ease_enum(unsigned mode) {
     ENUM(EASE_BACK|EASE_INOUT);
     ENUM(EASE_ELASTIC|EASE_INOUT);
     ENUM(EASE_BOUNCE|EASE_INOUT);
+
+    ENUM(EASE_NOP);
+    ENUM(EASE_LINEAR);
+    ENUM(EASE_INOUT_PERLIN);
 };*/
 
 // ----------------------------------------------------------------------------
@@ -10317,12 +10330,12 @@ tween_t tween() {
 float tween_update(tween_t *tw, float dt) {
 	if (!array_count(tw->keyframes)) return 0.0f;
 
-	for (size_t i = 0; i < array_count(tw->keyframes) - 1; ++i) {
+    for( int i = 0, end = array_count(tw->keyframes) - 1; i < end; ++i ) {
         tween_keyframe_t *kf1 = &tw->keyframes[i];
         tween_keyframe_t *kf2 = &tw->keyframes[i + 1];
         if (tw->time >= kf1->t && tw->time <= kf2->t) {
             float localT = (tw->time - kf1->t) / (kf2->t - kf1->t);
-            float easedT = ease(localT, kf1->easing_mode);
+            float easedT = ease(localT, kf1->ease);
             tw->result = mix3(kf1->v, kf2->v, easedT);
             break;
         }
@@ -10350,25 +10363,21 @@ int tween_comp_keyframes(const void *a, const void *b) {
     return (t1 > t2) - (t1 < t2);
 }
 
-void tween_keyframe_set(tween_t *tw, float t, int mode, vec3 v) {
-	tween_keyframe_t keyframe = { mode, t, v };
+void tween_setkey(tween_t *tw, float t, vec3 v, unsigned mode) {
+    tween_keyframe_t keyframe = { t, v, mode };
 	array_push(tw->keyframes, keyframe);
 	array_sort(tw->keyframes, tween_comp_keyframes);
 	tw->duration = array_back(tw->keyframes)->t;
 }
 
-void tween_keyframe_unset(tween_t *tw, float t) { // @todo: untested
-	int id = -1;
-	for (int i = 0; i < array_count(tw->keyframes); i++) {
+void tween_delkey(tween_t *tw, float t) { // @todo: untested
+    for( int i = 0, end = array_count(tw->keyframes); i < end; i++ ) {
 		if (tw->keyframes[i].t == t) {
-			id = i;
-			break;
+            array_erase_slow(tw->keyframes, i);
+            tw->duration = array_back(tw->keyframes)->t;
+            return;
 		}
 	}
-
-	if (id == -1) return;
-	array_erase_slow(tw->keyframes, id);
-	tw->duration = array_back(tw->keyframes)->t;
 }
 #line 0
 
@@ -13244,12 +13253,12 @@ const char* symbol(const char *s) {
 void type_inscribe(const char *TY,unsigned TYsz,const char *infos) {
     reflect_init();
     unsigned TYid = intern(TY = symbol(TY));
-    map_find_or_add(reflects, TYid, ((reflect_t){TYid, 0, TYsz, TY, infos}));
+    map_find_or_add(reflects, TYid, ((reflect_t){TYid, 0, TYsz, STRDUP(TY), infos})); // @leak
 }
 void enum_inscribe(const char *E,unsigned Eval,const char *infos) {
     reflect_init();
     unsigned Eid = intern(E = symbol(E));
-    map_find_or_add(reflects, Eid, ((reflect_t){Eid,0, Eval, E,infos}));
+    map_find_or_add(reflects, Eid, ((reflect_t){Eid,0, Eval, STRDUP(E),infos})); // @leak
 }
 unsigned enum_find(const char *E) {
     reflect_init();
@@ -13259,7 +13268,7 @@ unsigned enum_find(const char *E) {
 void function_inscribe(const char *F,void *func,const char *infos) {
     reflect_init();
     unsigned Fid = intern(F = symbol(F));
-    map_find_or_add(reflects, Fid, ((reflect_t){Fid,0, 0, F,infos, func}));
+    map_find_or_add(reflects, Fid, ((reflect_t){Fid,0, 0, STRDUP(F),infos, func})); // @leak
     reflect_t *found = map_find(reflects,Fid);
 }
 void *function_find(const char *F) {
@@ -13270,18 +13279,31 @@ void *function_find(const char *F) {
 void struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTYPEid, const char *infos) {
     reflect_init();
     unsigned Tid = intern(T = symbol(T));
-    map_find_or_add(reflects, Tid, ((reflect_t){Tid, OBJTYPEid, Tsz, T, infos}));
+    map_find_or_add(reflects, Tid, ((reflect_t){Tid, OBJTYPEid, Tsz, STRDUP(T), infos})); // @leak
 }
-void member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes) {
+void member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *TYPE, unsigned bytes) {
     reflect_init();
     unsigned Tid = intern(T = symbol(T));
     unsigned Mid = intern(M = symbol(M));
-    type = symbol(type);
-    map_find_or_add(reflects, (Mid<<16)|Tid, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type }));
+    map_find_or_add(reflects, (Mid<<16)|Tid, ((reflect_t){Mid, 0, Msz, STRDUP(M), infos, NULL, Tid, STRDUP(TYPE) })); // @leak
     // add member separately as well
     if(!members) map_init_int(members);
     array(reflect_t) *found = map_find_or_add(members, Tid, 0);
-    array_push(*found, ((reflect_t){Mid, 0, Msz, M, infos, NULL, Tid, type, bytes }));
+    reflect_t data = {Mid, 0, Msz, STRDUP(M), infos, NULL, Tid, STRDUP(TYPE), bytes }; // @leak
+    // ensure member has not been added previously
+#if 1
+    // works, without altering member order
+    reflect_t *index = 0;
+    for(int i = 0, end = array_count(*found); i < end; ++i) {
+        if( (*found)[i].id == Mid ) { index = (*found)+i; break; }
+    }
+    if( index ) *index = data; else array_push(*found, data);
+#else
+    // works, although members get sorted
+    array_push(*found, data);
+    array_sort(*found, less_unsigned_ptr); //< first member type in reflect_t is `unsigned id`, so less_unsigned_ptr works
+    array_unique(*found, less_unsigned_ptr); //< first member type in reflect_t is `unsigned id`, so less_unsigned_ptr works
+#endif
 }
 reflect_t member_find(const char *T, const char *M) {
     reflect_init();
@@ -13312,9 +13334,17 @@ void ui_reflect_(const reflect_t *R, const char *filter, int mask) {
         if( buf ) *buf = '\0';
 
         struct nk_context *ui_ctx = (struct nk_context *)ui_handle();
-        /*for ui_push_hspace(16)*/ {
+        for ui_push_hspace(16) {
             array(reflect_t) *T = map_find(members, intern(R->name));
-            /**/ if( T )         {ui_label(strcatf(&buf,"S struct %s@%s", R->name, R->info+1)); for each_array_ptr(*T, reflect_t, it) if(strmatchi(it->name,filter)) ui_reflect_(it,filter,'M'); }
+            /**/ if( T )         {ui_label(strcatf(&buf,"S struct %s@%s", R->name, R->info+1));
+            for each_array_ptr(*T, reflect_t, it)
+                if(strmatchi(it->name,filter)) {
+                    if( !R->type && !strcmp(it->name,R->name) ) // avoid recursion
+                        ui_label(strcatf(&buf,"M %s %s@%s", it->type, it->name, it->info+1));
+                    else
+                        ui_reflect_(it,filter,'M');
+                }
+            }
             else if( R->addr )    ui_label(strcatf(&buf,"F func %s()@%s", R->name, R->info+1));
             else if( !R->parent ) ui_label(strcatf(&buf,"E enum %s = %d@%s", R->name, R->sz, R->info+1));
             else                  ui_label(strcatf(&buf,"M %s %s@%s", R->type, R->name, R->info+1));
@@ -18269,7 +18299,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
             int count = array_count(list);
             if(!count) continue;
                 // color
-                vec3 rgbf = {((rgb>>16)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>0)&255)/255.f};
+                vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                 glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
                 // config vertex data
                 glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STATIC_DRAW);
@@ -18301,7 +18331,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
                 int count = array_count(list);
                 if(!count) continue;
                     // color
-                    vec3 rgbf = {((rgb>>16)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>0)&255)/255.f};
+                    vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                     glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
                     // config vertex data
                     glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STATIC_DRAW);
@@ -20590,9 +20620,9 @@ void tty_color(unsigned color) {
     #endif
     if( color ) {
         // if( color == RED ) alert("break on error message (RED)"), breakpoint(); // debug
-        unsigned r = (color >> 16) & 255;
+        unsigned r = (color >>  0) & 255;
         unsigned g = (color >>  8) & 255;
-        unsigned b = (color >>  0) & 255;
+        unsigned b = (color >> 16) & 255;
         // 24-bit console ESC[ … 38;2;<r>;<g>;<b> … m Select RGB foreground color
         // 256-color console ESC[38;5;<fgcode>m
         // 0x00-0x07:  standard colors (as in ESC [ 30..37 m)
@@ -21133,7 +21163,7 @@ nk_text_width(struct nk_context *ctx, const char *str, unsigned len) {
     const struct nk_style *style = &ctx->style;
     const struct nk_user_font *f = style->font;
     float pixels_width = f->width(f->userdata, f->height, str, len ? (int)len : (int)strlen(str));
-    return pixels_width;
+    return pixels_width + 10; // 10 -> internal widget padding
 }
 
 static nk_bool
@@ -21203,6 +21233,7 @@ nk_hovered_text(struct nk_context *ctx, const char *str, int len,
             int glyphs = strlen(TEXT) / 4 /*3:MD,4:MDI*/; CHOICE *= !!clicked_x * (CHOICE <= glyphs); } while(0)
 
 // menu macros that work not only standalone but also contained within a panel or window
+static int ui_using_v2_menubar = 0;
 #define UI_MENU(N, ...) do { \
     enum { MENUROW_HEIGHT = 25 }; \
     int embedded = !!ui_ctx->current; \
@@ -21210,6 +21241,7 @@ nk_hovered_text(struct nk_context *ctx, const char *str, int len,
     if( embedded ) total_space = nk_window_get_bounds(ui_ctx), total_space.w -= 10; \
     int created = !embedded && nk_begin(ui_ctx, "MENU_" STRINGIZE(__COUNTER__), nk_rect(0, 0, window_width(), UI_MENUROW_HEIGHT), NK_WINDOW_NO_SCROLLBAR); \
     if ( embedded || created ) { \
+        ui_using_v2_menubar = 1; \
         int align = NK_TEXT_LEFT, Nth = (N), ITEM_WIDTH = 30, span = 0; \
         nk_menubar_begin(ui_ctx); \
         nk_layout_row_begin(ui_ctx, NK_STATIC, MENUROW_HEIGHT, Nth); \
@@ -21518,7 +21550,7 @@ int ui_menu_editbox(char *buf, int bufcap) {
 }
 
 int ui_has_menubar() {
-    return !!ui_items; // array_count(ui_items) > 0;
+    return ui_using_v2_menubar || !!ui_items; // array_count(ui_items) > 0;
 }
 
 static
@@ -21810,6 +21842,7 @@ int ui_set_enable_(int enabled) {
 
         off.text.color.a *= alpha;
 
+#if 0
         off.button.normal.data.color.a *= alpha;
         off.button.hover.data.color.a *= alpha;
         off.button.active.data.color.a *= alpha;
@@ -21827,7 +21860,7 @@ int ui_set_enable_(int enabled) {
         off.contextual_button.text_normal.a *= alpha;
         off.contextual_button.text_hover.a *= alpha;
         off.contextual_button.text_active.a *= alpha;
-
+#endif
         off.menu_button.normal.data.color.a *= alpha;
         off.menu_button.hover.data.color.a *= alpha;
         off.menu_button.active.data.color.a *= alpha;
@@ -21836,7 +21869,7 @@ int ui_set_enable_(int enabled) {
         off.menu_button.text_normal.a *= alpha;
         off.menu_button.text_hover.a *= alpha;
         off.menu_button.text_active.a *= alpha;
-
+#if 0
         off.option.normal.data.color.a *= alpha;
         off.option.hover.data.color.a *= alpha;
         off.option.active.data.color.a *= alpha;
@@ -21909,7 +21942,7 @@ int ui_set_enable_(int enabled) {
         off.progress.cursor_hover.data.color.a *= alpha;
         off.progress.cursor_active.data.color.a *= alpha;
         off.progress.cursor_border_color.a *= alpha;
-
+#endif
         off.property.normal.data.color.a *= alpha;
         off.property.hover.data.color.a *= alpha;
         off.property.active.data.color.a *= alpha;
@@ -21964,7 +21997,7 @@ int ui_set_enable_(int enabled) {
         off.edit.selected_hover.a *= alpha;
         off.edit.selected_text_normal.a *= alpha;
         off.edit.selected_text_hover.a *= alpha;
-
+#if 0
         off.chart.background.data.color.a *= alpha;
         off.chart.border_color.a *= alpha;
         off.chart.selected_color.a *= alpha;
@@ -21991,7 +22024,7 @@ int ui_set_enable_(int enabled) {
         off.tab.background.data.color.a *= alpha;
         off.tab.border_color.a *= alpha;
         off.tab.text.a *= alpha;
-
+#endif
         off.combo.normal.data.color.a *= alpha;
         off.combo.hover.data.color.a *= alpha;
         off.combo.active.data.color.a *= alpha;
@@ -22010,7 +22043,7 @@ int ui_set_enable_(int enabled) {
         off.combo.button.text_normal.a *= alpha;
         off.combo.button.text_hover.a *= alpha;
         off.combo.button.text_active.a *= alpha;
-
+#if 0
         off.window.fixed_background.data.color.a *= alpha;
         off.window.background.a *= alpha;
         off.window.border_color.a *= alpha;
@@ -22024,6 +22057,7 @@ int ui_set_enable_(int enabled) {
         off.window.header.normal.data.color.a *= alpha;
         off.window.header.hover.data.color.a *= alpha;
         off.window.header.active.data.color.a *= alpha;
+#endif
     }
     static struct nk_input input;
     if (!enabled) {
@@ -23872,13 +23906,15 @@ void (ui_profiler)() {
         double fps = window_fps();
         profile_setstat("Render.num_fps", fps);
 
-            // draw fps-meter: 300 samples, [0..70] range each, 70px height plot.
-            nk_layout_row_dynamic(ui_ctx, 70, 1);
-
             enum { COUNT = 300 };
 
             static float values[COUNT] = {0}; static int offset = 0;
             values[offset=(offset+1)%COUNT] = fps;
+
+    // draw fps-meter: 300 samples, [0..70] range each, 70px height plot ...
+    // ... unless filtering is enabled
+    if( !(ui_filter && ui_filter[0]) ) {
+        nk_layout_row_dynamic(ui_ctx, 70, 1);
 
             int index = -1;
             if( nk_chart_begin(ui_ctx, NK_CHART_LINES, COUNT, 0.f, 70.f) ) {
@@ -23900,6 +23936,7 @@ void (ui_profiler)() {
             if( index >= 0 ) {
                 nk_tooltipf(ui_ctx, "%.2f fps", (float)values[index]);
             }
+    }
 
         for each_map_ptr_sorted(profiler, const char *, key, struct profile_t, val ) {
             if( isnan(val->stat) ) {
@@ -24671,7 +24708,7 @@ int window_frame_begin() {
     ui_create();
 
 #if !ENABLE_RETAIL
-    bool has_menu = 0; // ui_has_menubar();
+    bool has_menu = ui_has_menubar();
     bool may_render_debug_panel = 1;
 
     if( have_tools() ) {
@@ -24914,9 +24951,9 @@ void window_title(const char *title_) {
     if( !title[0] ) glfwSetWindowTitle(window, title);
 }
 void window_color(unsigned color) {
-    unsigned b = (color >>  0) & 255;
+    unsigned r = (color >>  0) & 255;
     unsigned g = (color >>  8) & 255;
-    unsigned r = (color >> 16) & 255;
+    unsigned b = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 }
@@ -25235,6 +25272,9 @@ obj_vtable_null(draw, int   );
 
 obj_vtable_null(lerp, int   );
 obj_vtable_null(edit, int   ); // OSC cmds: argc,argv "undo","redo","cut","copy","paste","edit","view","menu"
+obj_vtable_null(menu, int   );
+obj_vtable_null(aabb, int   );
+obj_vtable_null(icon, char* );
 
 // ----------------------------------------------------------------------------
 
@@ -27152,6 +27192,18 @@ int ui_debug() {
     #define EDITOR_UI_COLLAPSE(f,...) \
     for( int macro(p) = (open = ui_collapse(f,__VA_ARGS__)), macro(dummy) = (clicked_or_toggled = ui_collapse_clicked()); macro(p); ui_collapse_end(), macro(p) = 0)
 
+    EDITOR_UI_COLLAPSE(ICON_MD_VIEW_QUILT " Windows", "Debug.Windows") {
+        int choice = ui_toolbar(ICON_MD_RECYCLING "@Reset layout;" ICON_MD_SAVE_AS "@Save layout");
+        if( choice == 1 ) ui_layout_all_reset("*");
+        if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
+
+        for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
+            bool visible = ui_visible(*k);
+            if( ui_bool( *k, &visible ) ) {
+                ui_show( *k, ui_visible(*k) ^ true );
+            }
+        }
+    }
 
     EDITOR_UI_COLLAPSE(ICON_MD_BUG_REPORT " Bugs 0", "Debug.Bugs") {
         // @todo. parse /bugs.ini, includes saved screenshots & videos.
@@ -27238,18 +27290,6 @@ int ui_debug() {
     }
     EDITOR_UI_COLLAPSE(ICON_MD_MOVIE " FXs", "Debug.FXs") {
         ui_fxs();
-    }
-    EDITOR_UI_COLLAPSE(ICON_MD_VIEW_QUILT " UI", "Debug.UI") {
-        int choice = ui_toolbar(ICON_MD_RECYCLING " Reset layout;" ICON_MD_SAVE_AS " Save layout");
-        if( choice == 1 ) ui_layout_all_reset("*");
-        if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
-
-        for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
-            bool visible = ui_visible(*k);
-            if( ui_bool( *k, &visible ) ) {
-                ui_show( *k, ui_visible(*k) ^ true );
-            }
-        }
     }
 
 

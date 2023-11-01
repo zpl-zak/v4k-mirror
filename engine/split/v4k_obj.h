@@ -136,9 +136,13 @@ void*   obj_free(void *o);
 
 #define obj_lerp(o,...) obj_method(lerp, o, ##__VA_ARGS__)
 #define obj_edit(o,...) obj_method(edit, o, ##__VA_ARGS__)
+#define obj_menu(o,...) obj_method(menu, o, ##__VA_ARGS__)
+#define obj_aabb(o,...) obj_method(aabb, o, ##__VA_ARGS__)
+#define obj_icon(o,...) obj_method(icon, o, ##__VA_ARGS__)
 
 // --- syntax sugars
 
+#define EXTEND obj_extend
 #define obj_extend(T,func)               (obj_##func[OBJTYPE(T)] = (void*)T##_##func)
 #define obj_method(method,o,...)         (obj_##method[((obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((obj*)(o))->objtype]((o), ##__VA_ARGS__))
 
@@ -165,6 +169,7 @@ API extern int   (*obj_draw[256])(); ///-
 
 API extern int   (*obj_lerp[256])(); ///-
 API extern int   (*obj_edit[256])(); ///-
+API extern int   (*obj_aabb[256])(); ///-
 
 // ----------------------------------------------------------------------------
 // core

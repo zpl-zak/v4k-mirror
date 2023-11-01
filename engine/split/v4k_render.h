@@ -18,23 +18,13 @@ API unsigned bgraf( float b, float g, float r, float a );
 API unsigned alpha( unsigned rgba );
 
 #define RGBX(rgb,x)   ( ((rgb)&0xFFFFFF) | (((unsigned)(x))<<24) )
-#define RGB3(r,g,b)   ( (255<<24) | ((r)<<16) | ((g)<<8) | (b) )
-#define RGB4(r,g,b,a) RGBX(RGB3(r,g,b),a)
+#define RGB3(r,g,b)   ( (255<<24) | ((b)<<16) | ((g)<<8) | (r) )
+#define RGB4(r,g,b,a) ( ((a)<<24) | ((b)<<16) | ((g)<<8) | (r) )
 
 #define BLACK   RGBX(0x000000,255)
-#define WHITE   RGBX(0xFFF1E8,255)
+#define WHITE   RGBX(0xE8F1FF,255)
 
-#if 0
-#define RED     RGBX(0xFF004D,255)
-#define GREEN   RGBX(0x00B543,255)
-#define BLUE    RGBX(0x065AB5,255)
-#define ORANGE  RGBX(0xFF6C24,255)
-#define CYAN    RGBX(0x29ADFF,255)
-#define PURPLE  RGBX(0x7E2553,255)
-#define YELLOW  RGBX(0xFFEC27,255)
-#define GRAY    RGBX(0x725158,255)
-#else
-#define RED     RGB3(   255,48,48 )
+#define RED     RGB3(   255, 0,48 )
 #define GREEN   RGB3(  144,255,48 )
 #define CYAN    RGB3(   0,192,255 )
 #define ORANGE  RGB3(  255,144,48 )
@@ -45,8 +35,7 @@ API unsigned alpha( unsigned rgba );
 #define PINK    RGB3(  255,48,144 )
 #define AQUA    RGB3(  48,255,144 )
 
-#define BLUE    RGBX(0x065AB5,255)
-#endif
+#define BLUE    RGBX(0xB55A06,255)
 
 // -----------------------------------------------------------------------------
 // images

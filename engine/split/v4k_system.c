@@ -561,9 +561,9 @@ void tty_color(unsigned color) {
     #endif
     if( color ) {
         // if( color == RED ) alert("break on error message (RED)"), breakpoint(); // debug
-        unsigned r = (color >> 16) & 255;
+        unsigned r = (color >>  0) & 255;
         unsigned g = (color >>  8) & 255;
-        unsigned b = (color >>  0) & 255;
+        unsigned b = (color >> 16) & 255;
         // 24-bit console ESC[ … 38;2;<r>;<g>;<b> … m Select RGB foreground color
         // 256-color console ESC[38;5;<fgcode>m
         // 0x00-0x07:  standard colors (as in ESC [ 30..37 m)

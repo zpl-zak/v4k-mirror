@@ -263,6 +263,18 @@ int ui_debug() {
     #define EDITOR_UI_COLLAPSE(f,...) \
     for( int macro(p) = (open = ui_collapse(f,__VA_ARGS__)), macro(dummy) = (clicked_or_toggled = ui_collapse_clicked()); macro(p); ui_collapse_end(), macro(p) = 0)
 
+    EDITOR_UI_COLLAPSE(ICON_MD_VIEW_QUILT " Windows", "Debug.Windows") {
+        int choice = ui_toolbar(ICON_MD_RECYCLING "@Reset layout;" ICON_MD_SAVE_AS "@Save layout");
+        if( choice == 1 ) ui_layout_all_reset("*");
+        if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
+
+        for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
+            bool visible = ui_visible(*k);
+            if( ui_bool( *k, &visible ) ) {
+                ui_show( *k, ui_visible(*k) ^ true );
+            }
+        }
+    }
 
     EDITOR_UI_COLLAPSE(ICON_MD_BUG_REPORT " Bugs 0", "Debug.Bugs") {
         // @todo. parse /bugs.ini, includes saved screenshots & videos.
@@ -349,18 +361,6 @@ int ui_debug() {
     }
     EDITOR_UI_COLLAPSE(ICON_MD_MOVIE " FXs", "Debug.FXs") {
         ui_fxs();
-    }
-    EDITOR_UI_COLLAPSE(ICON_MD_VIEW_QUILT " UI", "Debug.UI") {
-        int choice = ui_toolbar(ICON_MD_RECYCLING " Reset layout;" ICON_MD_SAVE_AS " Save layout");
-        if( choice == 1 ) ui_layout_all_reset("*");
-        if( choice == 2 ) file_delete(WINDOWS_INI), ui_layout_all_save_disk("*");
-
-        for each_map_ptr_sorted(ui_windows, char*, k, unsigned, v) {
-            bool visible = ui_visible(*k);
-            if( ui_bool( *k, &visible ) ) {
-                ui_show( *k, ui_visible(*k) ^ true );
-            }
-        }
     }
 
 

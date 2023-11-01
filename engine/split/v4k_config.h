@@ -6,7 +6,7 @@
 #endif
 
 #ifndef ENABLE_PROFILER
-#define ENABLE_PROFILER         ifdef(debug, 1, 0)  ///+
+#define ENABLE_PROFILER         ifdef(retail, 0, 1)  ///+
 #endif
 
 #ifndef ENABLE_SELFIES

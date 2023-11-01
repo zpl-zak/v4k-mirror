@@ -92,7 +92,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
             int count = array_count(list);
             if(!count) continue;
                 // color
-                vec3 rgbf = {((rgb>>16)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>0)&255)/255.f};
+                vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                 glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
                 // config vertex data
                 glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STATIC_DRAW);
@@ -124,7 +124,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
                 int count = array_count(list);
                 if(!count) continue;
                     // color
-                    vec3 rgbf = {((rgb>>16)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>0)&255)/255.f};
+                    vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                     glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
                     // config vertex data
                     glBufferData(GL_ARRAY_BUFFER, count * 3 * 4, list, GL_STATIC_DRAW);

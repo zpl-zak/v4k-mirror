@@ -104,7 +104,7 @@ extern "C" {
 #endif
 
 #ifndef ENABLE_PROFILER
-#define ENABLE_PROFILER         ifdef(debug, 1, 0)  ///+
+#define ENABLE_PROFILER         ifdef(retail, 0, 1)  ///+
 #endif
 
 #ifndef ENABLE_SELFIES
@@ -515,17 +515,18 @@ typedef char bool;
 // - rlyeh, public domain
 
 // -----------------------------------------------------------------------------
-// sort
-
-API int sort_64(const void *a, const void *b);
-
-// -----------------------------------------------------------------------------
 // less
 
 API int less_64(uint64_t a, uint64_t b);
 API int less_int(int a, int b);
 API int less_ptr(void *a, void *b);
 API int less_str(char *a, char *b);
+
+// -----------------------------------------------------------------------------
+// qsort
+
+API int less_64_ptr(const void *a, const void *b);
+API int less_int_ptr(const void *a, const void *b);
 
 // -----------------------------------------------------------------------------
 // un/hash
@@ -1233,6 +1234,7 @@ API void print44( float *m );
 // ----------------------------------------------------------------------------
 // ease
 
+API float ease_nop(float t);
 API float ease_linear(float t);
 
 API float ease_out_sine(float t);
@@ -1271,7 +1273,6 @@ API float ease_inout_bounce(float t);
 API float ease_inout_perlin(float t);
 
 enum EASE_FLAGS {
-    EASE_LINEAR,
     EASE_SINE,
     EASE_QUAD,
     EASE_CUBIC,
@@ -1284,8 +1285,14 @@ enum EASE_FLAGS {
     EASE_BOUNCE,
 
     EASE_IN,
-    EASE_INOUT = EASE_IN * 2,
     EASE_OUT = 0,
+    EASE_INOUT = EASE_IN * 2,
+
+    EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
+    EASE_LINEAR,
+    EASE_INOUT_PERLIN,
+
+    EASE_NUM
 };
 
 API float ease(float t01, unsigned fn); // / 0-to-1
@@ -1300,9 +1307,9 @@ API const char**ease_enums();
 // tween
 
 typedef struct tween_keyframe_t {
-	int easing_mode;
 	float t;
 	vec3 v;
+    unsigned ease;
 } tween_keyframe_t;
 
 typedef struct tween_t {
@@ -1314,12 +1321,12 @@ typedef struct tween_t {
 } tween_t;
 
 API tween_t tween();
+API void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+API void        tween_delkey(tween_t *tw, float t);
 API float     tween_update(tween_t *tw, float dt);
 API void      tween_reset(tween_t *tw);
 API void    tween_destroy(tween_t *tw);
 
-API void tween_keyframe_set(tween_t *tw, float t, int easing_mode, vec3 v);
-API void tween_keyframe_unset(tween_t *tw, float t);
 #line 0
 
 #line 1 "engine/split/v4k_ai.h"
@@ -2468,8 +2475,7 @@ API int         ui_gamepads();
 enum INPUT_ENUMS {
     // -- bits: x104 keyboard, x3 mouse, x15 gamepad, x7 window
     // keyboard gaming keys (53-bit): first-class keys for gaming
-    KEY_ESC,
-    KEY_TICK, KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9,KEY_0,  KEY_BS,
+    KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9,   KEY_TICK,KEY_BS,           KEY_ESC,
     KEY_TAB,   KEY_Q,KEY_W,KEY_E,KEY_R,KEY_T,KEY_Y,KEY_U,KEY_I,KEY_O,KEY_P,
     KEY_CAPS,     KEY_A,KEY_S,KEY_D,KEY_F,KEY_G,KEY_H,KEY_J,KEY_K,KEY_L, KEY_ENTER,
     KEY_LSHIFT,       KEY_Z,KEY_X,KEY_C,KEY_V,KEY_B,KEY_N,KEY_M,        KEY_RSHIFT,            KEY_UP,
@@ -2886,9 +2892,13 @@ void*   obj_free(void *o);
 
 #define obj_lerp(o,...) obj_method(lerp, o, ##__VA_ARGS__)
 #define obj_edit(o,...) obj_method(edit, o, ##__VA_ARGS__)
+#define obj_menu(o,...) obj_method(menu, o, ##__VA_ARGS__)
+#define obj_aabb(o,...) obj_method(aabb, o, ##__VA_ARGS__)
+#define obj_icon(o,...) obj_method(icon, o, ##__VA_ARGS__)
 
 // --- syntax sugars
 
+#define EXTEND obj_extend
 #define obj_extend(T,func)               (obj_##func[OBJTYPE(T)] = (void*)T##_##func)
 #define obj_method(method,o,...)         (obj_##method[((obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((obj*)(o))->objtype]((o), ##__VA_ARGS__))
 
@@ -2915,6 +2925,7 @@ API extern int   (*obj_draw[256])(); ///-
 
 API extern int   (*obj_lerp[256])(); ///-
 API extern int   (*obj_edit[256])(); ///-
+API extern int   (*obj_aabb[256])(); ///-
 
 // ----------------------------------------------------------------------------
 // core
@@ -3179,23 +3190,13 @@ API unsigned bgraf( float b, float g, float r, float a );
 API unsigned alpha( unsigned rgba );
 
 #define RGBX(rgb,x)   ( ((rgb)&0xFFFFFF) | (((unsigned)(x))<<24) )
-#define RGB3(r,g,b)   ( (255<<24) | ((r)<<16) | ((g)<<8) | (b) )
-#define RGB4(r,g,b,a) RGBX(RGB3(r,g,b),a)
+#define RGB3(r,g,b)   ( (255<<24) | ((b)<<16) | ((g)<<8) | (r) )
+#define RGB4(r,g,b,a) ( ((a)<<24) | ((b)<<16) | ((g)<<8) | (r) )
 
 #define BLACK   RGBX(0x000000,255)
-#define WHITE   RGBX(0xFFF1E8,255)
+#define WHITE   RGBX(0xE8F1FF,255)
 
-#if 0
-#define RED     RGBX(0xFF004D,255)
-#define GREEN   RGBX(0x00B543,255)
-#define BLUE    RGBX(0x065AB5,255)
-#define ORANGE  RGBX(0xFF6C24,255)
-#define CYAN    RGBX(0x29ADFF,255)
-#define PURPLE  RGBX(0x7E2553,255)
-#define YELLOW  RGBX(0xFFEC27,255)
-#define GRAY    RGBX(0x725158,255)
-#else
-#define RED     RGB3(   255,48,48 )
+#define RED     RGB3(   255, 0,48 )
 #define GREEN   RGB3(  144,255,48 )
 #define CYAN    RGB3(   0,192,255 )
 #define ORANGE  RGB3(  255,144,48 )
@@ -3206,8 +3207,7 @@ API unsigned alpha( unsigned rgba );
 #define PINK    RGB3(  255,48,144 )
 #define AQUA    RGB3(  48,255,144 )
 
-#define BLUE    RGBX(0x065AB5,255)
-#endif
+#define BLUE    RGBX(0xB55A06,255)
 
 // -----------------------------------------------------------------------------
 // images

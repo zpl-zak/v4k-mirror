@@ -17,6 +17,9 @@ obj_vtable_null(draw, int   );
 
 obj_vtable_null(lerp, int   );
 obj_vtable_null(edit, int   ); // OSC cmds: argc,argv "undo","redo","cut","copy","paste","edit","view","menu"
+obj_vtable_null(menu, int   );
+obj_vtable_null(aabb, int   );
+obj_vtable_null(icon, char* );
 
 // ----------------------------------------------------------------------------
 

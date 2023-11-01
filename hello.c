@@ -1,4 +1,4 @@
-// playground tests for FWK
+// playground tests for V4K
 // - rlyeh, public domain
 //
 // # quickstart

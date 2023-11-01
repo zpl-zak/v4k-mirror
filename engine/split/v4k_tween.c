@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // ease
 
+float ease_nop(float t) { return 0; }
 float ease_linear(float t) { return t; }
 
 float ease_out_sine(float t) { return sinf(t*(C_PI*0.5f)); }
@@ -41,7 +42,6 @@ float ease_inout_perlin(float t) { float t3=t*t*t,t4=t3*t,t5=t4*t; return 6*t5-1
 float ease(float t01, unsigned mode) {
     typedef float (*easing)(float);
     easing modes[] = {
-        ease_linear,
         ease_out_sine,
         ease_out_quad,
         ease_out_cubic,
@@ -53,7 +53,6 @@ float ease(float t01, unsigned mode) {
         ease_out_elastic,
         ease_out_bounce,
 
-        ease_linear,
         ease_in_sine,
         ease_in_quad,
         ease_in_cubic,
@@ -65,7 +64,6 @@ float ease(float t01, unsigned mode) {
         ease_in_elastic,
         ease_in_bounce,
 
-        ease_linear,
         ease_inout_sine,
         ease_inout_quad,
         ease_inout_cubic,
@@ -77,6 +75,8 @@ float ease(float t01, unsigned mode) {
         ease_inout_elastic,
         ease_inout_bounce,
 
+        ease_nop,
+        ease_linear,
         ease_inout_perlin,
     };
     return modes[clampi(mode, 0, countof(modes))](clampf(t01,0,1));
@@ -89,7 +89,6 @@ float ease_pong_ping(float t, unsigned fn1, unsigned fn2) { return 1 - ease_ping
 
 const char **ease_enums() {
     static const char *list[] = {
-        "ease_linear",
         "ease_out_sine",
         "ease_out_quad",
         "ease_out_cubic",
@@ -101,7 +100,6 @@ const char **ease_enums() {
         "ease_out_elastic",
         "ease_out_bounce",
 
-        "ease_linear",
         "ease_in_sine",
         "ease_in_quad",
         "ease_in_cubic",
@@ -113,7 +111,6 @@ const char **ease_enums() {
         "ease_in_elastic",
         "ease_in_bounce",
 
-        "ease_linear",
         "ease_inout_sine",
         "ease_inout_quad",
         "ease_inout_cubic",
@@ -125,6 +122,8 @@ const char **ease_enums() {
         "ease_inout_elastic",
         "ease_inout_bounce",
 
+        "ease_nop",
+        "ease_linear",
         "ease_inout_perlin",
         0
     };
@@ -169,6 +168,10 @@ const char *ease_enum(unsigned mode) {
     ENUM(EASE_BACK|EASE_INOUT);
     ENUM(EASE_ELASTIC|EASE_INOUT);
     ENUM(EASE_BOUNCE|EASE_INOUT);
+
+    ENUM(EASE_NOP);
+    ENUM(EASE_LINEAR);
+    ENUM(EASE_INOUT_PERLIN);
 };*/
 
 // ----------------------------------------------------------------------------
@@ -182,12 +185,12 @@ tween_t tween() {
 float tween_update(tween_t *tw, float dt) {
 	if (!array_count(tw->keyframes)) return 0.0f;
 
-	for (size_t i = 0; i < array_count(tw->keyframes) - 1; ++i) {
+    for( int i = 0, end = array_count(tw->keyframes) - 1; i < end; ++i ) {
         tween_keyframe_t *kf1 = &tw->keyframes[i];
         tween_keyframe_t *kf2 = &tw->keyframes[i + 1];
         if (tw->time >= kf1->t && tw->time <= kf2->t) {
             float localT = (tw->time - kf1->t) / (kf2->t - kf1->t);
-            float easedT = ease(localT, kf1->easing_mode);
+            float easedT = ease(localT, kf1->ease);
             tw->result = mix3(kf1->v, kf2->v, easedT);
             break;
         }
@@ -215,23 +218,19 @@ int tween_comp_keyframes(const void *a, const void *b) {
     return (t1 > t2) - (t1 < t2);
 }
 
-void tween_keyframe_set(tween_t *tw, float t, int mode, vec3 v) {
-	tween_keyframe_t keyframe = { mode, t, v };
+void tween_setkey(tween_t *tw, float t, vec3 v, unsigned mode) {
+    tween_keyframe_t keyframe = { t, v, mode };
 	array_push(tw->keyframes, keyframe);
 	array_sort(tw->keyframes, tween_comp_keyframes);
 	tw->duration = array_back(tw->keyframes)->t;
 }
 
-void tween_keyframe_unset(tween_t *tw, float t) { // @todo: untested
-	int id = -1;
-	for (int i = 0; i < array_count(tw->keyframes); i++) {
+void tween_delkey(tween_t *tw, float t) { // @todo: untested
+    for( int i = 0, end = array_count(tw->keyframes); i < end; i++ ) {
 		if (tw->keyframes[i].t == t) {
-			id = i;
-			break;
+            array_erase_slow(tw->keyframes, i);
+            tw->duration = array_back(tw->keyframes)->t;
+            return;
 		}
 	}
-
-	if (id == -1) return;
-	array_erase_slow(tw->keyframes, id);
-	tw->duration = array_back(tw->keyframes)->t;
 }
