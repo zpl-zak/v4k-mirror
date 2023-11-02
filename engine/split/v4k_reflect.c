@@ -15,8 +15,7 @@ AUTORUN {
     reflect_init();
 }
 
-static
-const char* symbol(const char *s) {
+const char* symbol_naked(const char *s) {
     if( strbeg(s, "const ") ) s += 6;
     if( strbeg(s, "union ") ) s += 6;
     if( strbeg(s, "struct ") ) s += 7;
@@ -28,39 +27,40 @@ const char* symbol(const char *s) {
 
 void type_inscribe(const char *TY,unsigned TYsz,const char *infos) {
     reflect_init();
-    unsigned TYid = intern(TY = symbol(TY));
+    unsigned TYid = intern(TY = symbol_naked(TY));
     map_find_or_add(reflects, TYid, ((reflect_t){TYid, 0, TYsz, STRDUP(TY), infos})); // @leak
 }
 void enum_inscribe(const char *E,unsigned Eval,const char *infos) {
     reflect_init();
-    unsigned Eid = intern(E = symbol(E));
+    unsigned Eid = intern(E = symbol_naked(E));
     map_find_or_add(reflects, Eid, ((reflect_t){Eid,0, Eval, STRDUP(E),infos})); // @leak
 }
 unsigned enum_find(const char *E) {
     reflect_init();
-    E = symbol(E);
+    E = symbol_naked(E);
     return map_find(reflects, intern(E))->sz;
 }
 void function_inscribe(const char *F,void *func,const char *infos) {
     reflect_init();
-    unsigned Fid = intern(F = symbol(F));
+    unsigned Fid = intern(F = symbol_naked(F));
     map_find_or_add(reflects, Fid, ((reflect_t){Fid,0, 0, STRDUP(F),infos, func})); // @leak
     reflect_t *found = map_find(reflects,Fid);
 }
 void *function_find(const char *F) {
     reflect_init();
-    F = symbol(F);
+    F = symbol_naked(F);
     return map_find(reflects, intern(F))->addr;
 }
 void struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTYPEid, const char *infos) {
     reflect_init();
-    unsigned Tid = intern(T = symbol(T));
+    unsigned Tid = intern(T = symbol_naked(T));
     map_find_or_add(reflects, Tid, ((reflect_t){Tid, OBJTYPEid, Tsz, STRDUP(T), infos})); // @leak
 }
 void member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *TYPE, unsigned bytes) {
     reflect_init();
-    unsigned Tid = intern(T = symbol(T));
-    unsigned Mid = intern(M = symbol(M));
+    unsigned Tid = intern(T = symbol_naked(T));
+    unsigned Mid = intern(M = symbol_naked(M));
+    unsigned Xid = intern(TYPE = symbol_naked(TYPE));
     map_find_or_add(reflects, (Mid<<16)|Tid, ((reflect_t){Mid, 0, Msz, STRDUP(M), infos, NULL, Tid, STRDUP(TYPE) })); // @leak
     // add member separately as well
     if(!members) map_init_int(members);
@@ -83,19 +83,19 @@ void member_inscribe(const char *T, const char *M,unsigned Msz, const char *info
 }
 reflect_t member_find(const char *T, const char *M) {
     reflect_init();
-    T = symbol(T);
-    M = symbol(M);
+    T = symbol_naked(T);
+    M = symbol_naked(M);
     return *map_find(reflects, (intern(M)<<16)|intern(T));
 }
 void *member_findptr(void *obj, const char *T, const char *M) {
     reflect_init();
-    T = symbol(T);
-    M = symbol(M);
+    T = symbol_naked(T);
+    M = symbol_naked(M);
     return (char*)obj + member_find(T,M).sz;
 }
 array(reflect_t)* members_find(const char *T) {
     reflect_init();
-    T = symbol(T);
+    T = symbol_naked(T);
     return map_find(members, intern(T));
 }
 

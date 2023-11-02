@@ -121,17 +121,18 @@ API void *ui_handle();
 
 {{FILE:v4k_compat.c}}
 
-{{FILE:v4k_audio.c}}
+{{FILE:v4k_ui.c}}
 
-{{FILE:v4k_buffer.c}}
+
+{{FILE:v4k_audio.c}}
 
 {{FILE:v4k_collide.c}}
 
-{{FILE:v4k_cooker.c}}
+{{FILE:v4k_cook.c}}
 
 {{FILE:v4k_data.c}}
 
-{{FILE:v4k_dll.c}}
+{{FILE:v4k_extend.c}}
 
 {{FILE:v4k_file.c}}
 
@@ -140,8 +141,6 @@ API void *ui_handle();
 {{FILE:v4k_input.c}}
 
 {{FILE:v4k_math.c}}
-
-{{FILE:v4k_tween.c}}
 
 {{FILE:v4k_memory.c}}
 
@@ -161,15 +160,9 @@ API void *ui_handle();
 
 {{FILE:v4k_scene.c}}
 
-{{FILE:v4k_script.c}}
-
 {{FILE:v4k_time.c}}
 
 {{FILE:v4k_system.c}}
-
-{{FILE:v4k_id.c}}
-
-{{FILE:v4k_ui.c}}
 
 {{FILE:v4k_profile.c}}
 
@@ -180,8 +173,6 @@ API void *ui_handle();
 {{FILE:v4k_obj.c}}
 
 {{FILE:v4k_ai.c}}
-
-{{FILE:v4k_bt.c}}
 
 {{FILE:v4k_editor.c}}
 

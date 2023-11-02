@@ -138,7 +138,7 @@ void editor_scene_(obj *o, unsigned flags) {
 }
 
 int editor_scene(int window_mode) {
-    window_mode = 1; // force window
+    window_mode = EDITOR_WINDOW; // force window
 
     if( editor_begin(SCENE_TITLE, window_mode)) {
         // #define HELP ICON_MDI_INFORMATION_OUTLINE "@-A\n-B\n-C\n" ";"

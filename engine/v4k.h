@@ -1230,106 +1230,392 @@ API void print34( float *m );
 API void print44( float *m );
 #line 0
 
-#line 1 "engine/split/v4k_tween.h"
-// ----------------------------------------------------------------------------
-// ease
+#line 1 "engine/split/v4k_obj.h"
+// -----------------------------------------------------------------------------
+// factory of handle ids
 
-API float ease_nop(float t);
-API float ease_linear(float t);
+// convert between hard refs (pointers) and weak refs (ids)
+uintptr_t id_make(void *ptr);
+void *     id_handle(uintptr_t id);
+void       id_dispose(uintptr_t id);
+bool        id_valid(uintptr_t id);
 
-API float ease_out_sine(float t);
-API float ease_out_quad(float t);
-API float ease_out_cubic(float t);
-API float ease_out_quart(float t);
-API float ease_out_quint(float t);
-API float ease_out_expo(float t);
-API float ease_out_circ(float t);
-API float ease_out_back(float t);
-API float ease_out_elastic(float t);
-API float ease_out_bounce(float t);
+// configuration:
+// ideally, these two should be 32 each. they were changed to fit our OBJHEADER bits
+#ifndef ID_INDEX_BITS
+#define ID_INDEX_BITS 16
+#endif
+#ifndef ID_COUNT_BITS
+#define ID_COUNT_BITS  3
+#endif
 
-API float ease_in_sine(float t);
-API float ease_in_quad(float t);
-API float ease_in_cubic(float t);
-API float ease_in_quart(float t);
-API float ease_in_quint(float t);
-API float ease_in_expo(float t);
-API float ease_in_circ(float t);
-API float ease_in_back(float t);
-API float ease_in_elastic(float t);
-API float ease_in_bounce(float t);
+// C objects framework
+// - rlyeh, public domain.
+//
+// ## object limitations
+// - 8-byte overhead per object
+// - XX-byte overhead per object-entity
+// - 32 components max per object-entity
+// - 256 classes max per game
+// - 256 references max per object
+// - 1024K bytes max per object
+// - 8 generations + 64K IDs per running instance (19-bit IDs)
+// - support for pragma pack(1) structs not enabled by default.
 
-API float ease_inout_sine(float t);
-API float ease_inout_quad(float t);
-API float ease_inout_cubic(float t);
-API float ease_inout_quart(float t);
-API float ease_inout_quint(float t);
-API float ease_inout_expo(float t);
-API float ease_inout_circ(float t);
-API float ease_inout_back(float t);
-API float ease_inout_elastic(float t);
-API float ease_inout_bounce(float t);
+/* /!\ if you plan to use pragma pack(1) on any struct, you need #define OBJ_MIN_PRAGMAPACK_BITS 0 at the expense of max class size /!\ */
+#ifndef   OBJ_MIN_PRAGMAPACK_BITS
+//#define OBJ_MIN_PRAGMAPACK_BITS 3 // allows pragma packs >= 8. objsizew becomes 8<<3, so 2048 bytes max per class (default)
+#define   OBJ_MIN_PRAGMAPACK_BITS 2 // allows pragma packs >= 4. objsizew becomes 8<<2, so 1024 bytes max per class
+//#define OBJ_MIN_PRAGMAPACK_BITS 1 // allows pragma packs >= 2. objsizew becomes 8<<1, so  512 bytes max per class
+//#define OBJ_MIN_PRAGMAPACK_BITS 0 // allows pragma packs >= 1. objsizew becomes 8<<0, so  256 bytes max per class
+#endif
 
-API float ease_inout_perlin(float t);
+#define OBJHEADER \
+    struct { \
+        ifdef(debug, const char *objname;) \
+    union { \
+        uintptr_t objheader; \
+        struct {  \
+        uintptr_t objtype:8; \
+        uintptr_t objsizew:8; \
+        uintptr_t objrefs:8; \
+        uintptr_t objheap:1; \
+        uintptr_t objcomps:1; /* << can be removed? check payload ptr instead? */ \
+        uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
+        uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
+        }; \
+        }; \
+        array(struct obj*) objchildren; \
+    };
 
-enum EASE_FLAGS {
-    EASE_SINE,
-    EASE_QUAD,
-    EASE_CUBIC,
-    EASE_QUART,
-    EASE_QUINT,
-    EASE_EXPO,
-    EASE_CIRC,
-    EASE_BACK,
-    EASE_ELASTIC,
-    EASE_BOUNCE,
-
-    EASE_IN,
-    EASE_OUT = 0,
-    EASE_INOUT = EASE_IN * 2,
-
-    EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
-    EASE_LINEAR,
-    EASE_INOUT_PERLIN,
-
-    EASE_NUM
-};
-
-API float ease(float t01, unsigned fn); // / 0-to-1
-API float ease_pong(float t01, unsigned fn); // \ 1-to-0
-API float ease_ping_pong(float t, unsigned fn1, unsigned fn2); // /\ 0-to-1-to-0
-API float ease_pong_ping(float t, unsigned fn1, unsigned fn2); // \/ 1-to-0-to-1
-
-API const char *ease_enum(unsigned fn);
-API const char**ease_enums();
+#define OBJ \
+    OBJHEADER
 
 // ----------------------------------------------------------------------------
-// tween
+// syntax sugars
 
-typedef struct tween_keyframe_t {
-	float t;
-	vec3 v;
-    unsigned ease;
-} tween_keyframe_t;
+#ifdef OBJTYPE
+#undef OBJTYPE
+#endif
 
-typedef struct tween_t {
-	array(tween_keyframe_t) keyframes;
+#define OBJTYPE(T) \
+    OBJTYPE_##T
 
-	vec3 result;
-	float time;
-	float duration;
-} tween_t;
+#define OBJTYPEDEF(NAME,N) \
+     enum { OBJTYPE(NAME) = N }; \
+     STATIC_ASSERT( N <= 255 ); \
+     STATIC_ASSERT( sizeof(NAME) == ((sizeof(NAME)>>OBJ_MIN_PRAGMAPACK_BITS)<<OBJ_MIN_PRAGMAPACK_BITS) ); // (sizeof(NAME) & ((1<<OBJ_MIN_PRAGMAPACK_BITS)-1)) == 0 );
 
-API tween_t tween();
-API void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
-API void        tween_delkey(tween_t *tw, float t);
-API float     tween_update(tween_t *tw, float dt);
-API void      tween_reset(tween_t *tw);
-API void    tween_destroy(tween_t *tw);
+// ----------------------------------------------------------------------------
+// objects
+
+#define TYPEDEF_STRUCT(NAME,N,...) \
+    typedef struct NAME { OBJ \
+        __VA_ARGS__ \
+        char payload[0]; \
+    } NAME; OBJTYPEDEF(NAME,N);
+
+// TYPEDEF_STRUCT(obj,0);
+    typedef struct obj { OBJ } obj;
+
+// ----------------------------------------------------------------------------
+// entities
+
+#define OBJCOMPONENTS_MAX 32
+#define OBJCOMPONENTS_ALL_ENABLED 0xAAAAAAAAAAAAAAAAULL
+#define OBJCOMPONENTS_ALL_FLAGGED 0x5555555555555555ULL
+#define COMPONENTS_ONLY(x) ((x) & ~OBJCOMPONENTS_ALL_FLAGGED)
+
+#define ENTITY \
+    struct { OBJHEADER union { struct { uintptr_t objenabled:OBJCOMPONENTS_MAX, objflagged:OBJCOMPONENTS_MAX; }; uintptr_t cflags; }; void *c[OBJCOMPONENTS_MAX]; };
+
+#define TYPEDEF_ENTITY(NAME,N,...) \
+    typedef struct NAME { ENTITY \
+        __VA_ARGS__ \
+        char payload[0]; \
+    } NAME; OBJTYPEDEF(NAME,N);
+
+// OBJTYPEDEF(entity,1)
+    typedef struct entity { ENTITY } entity;
+
+#define entity_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, 0, __VA_ARGS__)
+#define entity_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE,  NAME, 1, 0, __VA_ARGS__)
+
+// ----------------------------------------------------------------------------
+// heap/stack ctor/dtor
+
+static __thread obj *objtmp;
+#define OBJ_CTOR_HDR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE) ( \
+        (PTR)->objheader = HEAP ? id_make(PTR) : 0, /*should assign to .objid instead. however, id_make() returns shifted bits already*/ \
+        (PTR)->objtype = (OBJ_TYPE), \
+        (PTR)->objheap = (HEAP), \
+        (PTR)->objsizew = (SIZEOF_OBJ>>OBJ_MIN_PRAGMAPACK_BITS))
+#define OBJ_CTOR_PTR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE) ( \
+        OBJ_CTOR_HDR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE), \
+        obj_ctor(PTR))
+#define OBJ_CTOR(TYPE, NAME, HEAP, PAYLOAD_SIZE, ...) (TYPE*)( \
+        objtmp = (HEAP ? MALLOC(sizeof(TYPE)+(PAYLOAD_SIZE)) : ALLOCA(sizeof(TYPE)+(PAYLOAD_SIZE))), \
+        *(TYPE*)objtmp = ((TYPE){ {0,}, __VA_ARGS__}), \
+        ((PAYLOAD_SIZE) ? memset((char*)objtmp + sizeof(TYPE), 0, (PAYLOAD_SIZE)) : objtmp), \
+        ( OBJTYPES[ OBJTYPE(TYPE) ] = #TYPE ), \
+        OBJ_CTOR_PTR(objtmp, HEAP,sizeof(TYPE),OBJTYPE(TYPE)), \
+        ifdef(debug, (obj_printf)(objtmp, va("%s", callstack(+16))), 0), \
+        obj_setname(objtmp, NAME))
+
+#define obj(TYPE, ...)                *OBJ_CTOR(TYPE, #TYPE, 0, 0, __VA_ARGS__)
+#define obj_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, 0, __VA_ARGS__)
+#define obj_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE,  NAME, 1, 0, __VA_ARGS__)
+
+void*   obj_malloc(unsigned sz);
+void*   obj_free(void *o);
+
+// ----------------------------------------------------------------------------
+// obj generics. can be extended.
+
+#define obj_ctor(o,...) obj_method(ctor, o, ##__VA_ARGS__)
+#define obj_dtor(o,...) obj_method(dtor, o, ##__VA_ARGS__)
+
+#define obj_save(o,...) obj_method(save, o, ##__VA_ARGS__)
+#define obj_load(o,...) obj_method(load, o, ##__VA_ARGS__)
+
+#define obj_test(o,...) obj_method(test, o, ##__VA_ARGS__)
+
+#define obj_init(o,...) obj_method(init, o, ##__VA_ARGS__)
+#define obj_quit(o,...) obj_method(quit, o, ##__VA_ARGS__)
+#define obj_tick(o,...) obj_method(tick, o, ##__VA_ARGS__)
+#define obj_draw(o,...) obj_method(draw, o, ##__VA_ARGS__)
+
+#define obj_lerp(o,...) obj_method(lerp, o, ##__VA_ARGS__)
+#define obj_edit(o,...) obj_method(edit, o, ##__VA_ARGS__)
+#define obj_menu(o,...) obj_method(menu, o, ##__VA_ARGS__)
+#define obj_aabb(o,...) obj_method(aabb, o, ##__VA_ARGS__)
+#define obj_icon(o,...) obj_method(icon, o, ##__VA_ARGS__)
+
+// --- syntax sugars
+
+#define obj_extend(T,method)       (obj_##method[OBJTYPE(T)] = (void*)T##_##method)
+#define obj_method(method,o,...)   (obj_##method[((struct obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((struct obj*)(o))->objtype]((o), ##__VA_ARGS__))
+#define obj_hasmethod(o,method)    (obj_typeid(o)[obj_##method])
+
+#define obj_vtable(method,RC,...)   RC macro(obj_##method)(){ __VA_ARGS__ }; RC (*obj_##method[256])() = { REPEAT256(macro(obj_##method)) };
+#define obj_vtable_null(method,RC)  RC (*obj_##method[256])() = { 0 }; // null virtual table. will crash unless obj_extend'ed
+
+#define REPEAT16(f)  f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f
+#define REPEAT64(f)  REPEAT16(f),REPEAT16(f),REPEAT16(f),REPEAT16(f)
+#define REPEAT256(f) REPEAT64(f),REPEAT64(f),REPEAT64(f),REPEAT64(f)
+
+#undef  EXTEND
+#define EXTEND(...) EXPAND(EXTEND, __VA_ARGS__)
+#define EXTEND2(o,F1) obj_extend(o,F1)
+#define EXTEND3(o,F1,F2) obj_extend(o,F1), obj_extend(o,F2)
+#define EXTEND4(o,F1,F2,F3) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3)
+#define EXTEND5(o,F1,F2,F3,F4) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4)
+#define EXTEND6(o,F1,F2,F3,F4,F5) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5)
+#define EXTEND7(o,F1,F2,F3,F4,F5,F6) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6)
+#define EXTEND8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7)
+#define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8)
+#define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9)
+
+// --- declare vtables
+
+API extern void  (*obj_ctor[256])(); ///-
+API extern void  (*obj_dtor[256])(); ///-
+
+API extern char* (*obj_save[256])(); ///-
+API extern bool  (*obj_load[256])(); ///-
+API extern int   (*obj_test[256])(); ///-
+
+API extern int   (*obj_init[256])(); ///-
+API extern int   (*obj_quit[256])(); ///-
+API extern int   (*obj_tick[256])(); ///-
+API extern int   (*obj_draw[256])(); ///-
+
+API extern int   (*obj_lerp[256])(); ///-
+API extern int   (*obj_edit[256])(); ///-
+API extern int   (*obj_aabb[256])(); ///-
+
+// ----------------------------------------------------------------------------
+// core
+
+API uintptr_t   obj_header(const void *o);
+API uintptr_t   obj_id(const void *o);
+
+API const char* obj_type(const void *o);
+API unsigned    obj_typeid(const void *o);
+
+API int         obj_sizeof(const void *o);
+API int         obj_size(const void *o); // size of all members together in struct. may include padding bytes.
+
+API char*       obj_data(void *o); // pointer to the first member in struct
+API const char* obj_datac(const void *o); // const pointer to the first struct member
+
+API void*       obj_payload(const void *o); // pointer right after last member in struct
+API void*       obj_zero(void *o); // reset all object members
+
+// ----------------------------------------------------------------------------
+// refcounting
+
+API void*       obj_ref(void *oo);
+API void*       obj_unref(void *oo);
+
+// ----------------------------------------------------------------------------
+// scene tree
+
+#define each_objchild(p,T,o) /*non-recursive*/ \
+    (array(struct obj*)* children = obj_children(p); children; children = 0) \
+        for(int _i = 1, _end = array_count(*children); _i < _end; ++_i) \
+            for(T o = (T)((*children)[_i]); o && (obj_parent(o) == p); o = 0)
+
+API obj*        obj_detach(void *c);
+API obj*        obj_attach(void *o, void *c);
+
+API obj*        obj_root(const void *o);
+API obj*        obj_parent(const void *o);
+API array(obj*)*obj_children(const void *o); // child[0]: parent, child[1]: 1st child, child[2]: 2nd child...
+API array(obj*)*obj_siblings(const void *o); // child[0]: grandpa, child[1]: sibling1, child[2]: sibling2...
+
+API int         obj_dumptree(const void *o);
+
+// ----------------------------------------------------------------------------
+// metadata
+
+API void*       obj_setmeta(void *o, const char *key, const char *value);
+API const char* obj_meta(const void *o, const char *key);
+
+API void*       obj_setname(void *o, const char *name);
+API const char* obj_name(const void *o);
+
+// ----------------------------------------------------------------------------
+// stl
+
+API void*       obj_swap(void *dst, void *src);
+API void*       obj_copy_fast(void *dst, const void *src);
+API void*       obj_copy(void *dst, const void *src);
+
+API int         obj_comp_fast(const void *a, const void *b);
+API int         obj_comp(const void *a, const void *b);
+API int         obj_lesser(const void *a, const void *b);
+API int         obj_greater(const void *a, const void *b);
+API int         obj_equal(const void *a, const void *b);
+
+API uint64_t    obj_hash(const void *o);
+
+// ----------------------------------------------------------------------------
+// debug
+
+API bool        obj_hexdump(const void *oo);
+API int         obj_print(const void *o);
+
+API int         obj_printf(const void *o, const char *text);
+API int         obj_console(const void *o); // obj_output() ?
+
+#define         obj_printf(o, ...) obj_printf(o, va(__VA_ARGS__))
+
+// ----------------------------------------------------------------------------
+// serialization
+
+API char*       obj_saveini(const void *o);
+API obj*        obj_mergeini(void *o, const char *ini);
+API obj*        obj_loadini(void *o, const char *ini);
+
+API char*       obj_savejson(const void *o);
+API obj*        obj_mergejson(void *o, const char *json);
+API obj*        obj_loadjson(void *o, const char *json);
+
+API char*       obj_savebin(const void *o);
+API obj*        obj_mergebin(void *o, const char *sav);
+API obj*        obj_loadbin(void *o, const char *sav);
+
+API char*       obj_savempack(const void *o); // @todo
+API obj*        obj_mergempack(void *o, const char *sav); // @todo
+API obj*        obj_loadmpack(void *o, const char *sav); // @todo
+
+API int         obj_push(const void *o);
+API int         obj_pop(void *o);
+
+// ----------------------------------------------------------------------------
+// components
+
+API bool        obj_addcomponent(entity *e, unsigned c, void *ptr);
+API bool        obj_hascomponent(entity *e, unsigned c);
+API void*       obj_getcomponent(entity *e, unsigned c);
+API bool        obj_delcomponent(entity *e, unsigned c);
+API bool        obj_usecomponent(entity *e, unsigned c);
+API bool        obj_offcomponent(entity *e, unsigned c);
+
+API char*       entity_save(entity *self);
+
+// ----------------------------------------------------------------------------
+// reflection
+
+#define each_objmember(oo,TYPE,NAME,PTR) \
+    (array(reflect_t) *found_ = members_find(obj_type(oo)); found_; found_ = 0) \
+        for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
+            for(reflect_t *R = &(*found_)[it_]; R; R = 0 ) \
+                for(const char *NAME = R->name, *TYPE = R->type; NAME || TYPE; ) \
+                    for(void *PTR = ((char*)oo) + R->sz ; NAME || TYPE ; NAME = TYPE = 0 )
+
+API void*       obj_clone(const void *src);
+API void*       obj_merge(void *dst, const void *src); // @testme
+API void*       obj_mutate(void *dst, const void *src);
+API void*       obj_make(const char *str);
+
+// built-ins
+
+typedef enum OBJTYPE_BUILTINS {
+    OBJTYPE_obj    =  0,
+    OBJTYPE_entity =  1,
+    OBJTYPE_vec2   =  2,
+    OBJTYPE_vec3   =  3,
+    OBJTYPE_vec4   =  4,
+    OBJTYPE_quat   =  5,
+    OBJTYPE_mat33  =  6,
+    OBJTYPE_mat34  =  7,
+    OBJTYPE_mat44  =  8,
+    OBJTYPE_vec2i  =  9,
+    OBJTYPE_vec3i  = 10,
+} OBJTYPE_BUILTINS;
 
 #line 0
 
+
 #line 1 "engine/split/v4k_ai.h"
+// AI framework
+// - rlyeh, public domain.
+//
+// [src] original A-star code by @mmozeiko (PD) - https://gist.github.com/mmozeiko/68f0a8459ef2f98bcd879158011cc275
+// [src] original swarm/boids code by @Cultrarius (UNLICENSE) - https://github.com/Cultrarius/Swarmz
+
+// pathfinding -----------------------------------------------------------------
+
+API int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
+
+// ----------------------------------------------------------------------------
+// Behavior trees: decision planning and decision making.
+// Supersedes finite state-machines (FSM) and hierarchical finite state-machines (HFSM).
+
+typedef int (*bt_func)();
+
+typedef struct bt_t {
+    uint64_t type;
+    int (*action)();
+    union {
+        int argi;
+        float argf;
+    };
+    array(struct bt_t) children;
+} bt_t;
+
+API bt_t    bt(const char *ini_file, unsigned flags);
+API int     bt_run(bt_t *b);
+API void    bt_addfun(const char *name, int(*func)());
+API bt_func bt_findfun(const char *name);
+API char   *bt_funcname(bt_func fn);
+
+API int ui_bt(bt_t *b);
+
+// boids/swarm -----------------------------------------------------------------
+
 typedef enum SWARM_DISTANCE {
     SWARM_DISTANCE_LINEAR,
     SWARM_DISTANCE_INVERSE_LINEAR,
@@ -1376,36 +1662,6 @@ API void    swarm_update_acceleration_only(swarm_t *self); // acc
 API void    swarm_update_acceleration_and_velocity_only(swarm_t *self, float delta); // acc,vel
 
 API int     ui_swarm(swarm_t *self);
-
-// pathfinding -----------------------------------------------------------------
-
-API int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
-#line 0
-
-#line 1 "engine/split/v4k_bt.h"
-// Behavior trees: decision planning and decision making.
-// Supersedes finite state-machines (FSM) and hierarchical finite state-machines (HFSM).
-// - rlyeh, public domain.
-
-typedef int (*bt_func)();
-
-typedef struct bt_t {
-    uint64_t type;
-    int (*action)();
-    union {
-        int argi;
-        float argf;
-    };
-    array(struct bt_t) children;
-} bt_t;
-
-API bt_t    bt(const char *ini_file, unsigned flags);
-API int     bt_run(bt_t *b);
-API void    bt_addfun(const char *name, int(*func)());
-API bt_func bt_findfun(const char *name);
-API char   *bt_funcname(bt_func fn);
-
-API int ui_bt(bt_t *b);
 #line 0
 
 #line 1 "engine/split/v4k_audio.h"
@@ -1467,104 +1723,6 @@ enum AUDIO_FLAGS {
 };
 
 API int audio_queue( const void *samples, int num_samples, int flags );
-#line 0
-
-#line 1 "engine/split/v4k_buffer.h"
-// ----------------------------------------------------------------------------
-// compression api
-
-enum COMPRESS_FLAGS {
-    COMPRESS_RAW     = 0,
-    COMPRESS_PPP     = (1<<4),
-    COMPRESS_ULZ     = (2<<4),
-    COMPRESS_LZ4     = (3<<4),
-    COMPRESS_CRUSH   = (4<<4),
-    COMPRESS_DEFLATE = (5<<4),
-    COMPRESS_LZP1    = (6<<4),
-    COMPRESS_LZMA    = (7<<4),
-    COMPRESS_BALZ    = (8<<4),
-    COMPRESS_LZW3    = (9<<4),
-    COMPRESS_LZSS    = (10<<4),
-    COMPRESS_BCM     = (11<<4),
-    COMPRESS_ZLIB    = (12<<4), // same as deflate with header
-};
-
-API unsigned zbounds(unsigned inlen, unsigned flags);
-API unsigned zencode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
-API unsigned zexcess(unsigned flags);
-API unsigned zdecode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
-
-// ----------------------------------------------------------------------------
-// array de/interleaving
-// - rlyeh, public domain.
-//
-// results:
-// R0G0B0   R1G1B1   R2G2B2...   -> R0R1R2... B0B1B2... G0G1G2...
-// R0G0B0A0 R1G1B1A1 R2G2B2A2... -> R0R1R2... A0A1A2... B0B1B2... G0G1G2...
-
-API void *interleave( void *out, const void *list, int list_count, int sizeof_item, unsigned columns );
-
-// ----------------------------------------------------------------------------
-// cobs en/decoder
-
-API unsigned cobs_bounds(unsigned len);
-API unsigned cobs_encode(const void *in, unsigned inlen, void *out, unsigned outlen);
-API unsigned cobs_decode(const void *in, unsigned inlen, void *out, unsigned outlen);
-
-// ----------------------------------------------------------------------------
-// base92 en/decoder
-
-API unsigned base92_encode(const void *in, unsigned inlen, void* out, unsigned outlen);
-API unsigned base92_decode(const void *in, unsigned inlen, void* out, unsigned outlen);
-API unsigned base92_bounds(unsigned inlen);
-
-// ----------------------------------------------------------------------------
-// netstring en/decoder
-
-API unsigned netstring_bounds(unsigned inlen);
-API unsigned netstring_encode(const char *in, unsigned inlen, char *out, unsigned outlen);
-API unsigned netstring_decode(const char *in, unsigned inlen, char *out, unsigned outlen);
-
-// ----------------------------------------------------------------------------
-// delta en/decoder
-
-API void delta8_encode(void *buffer, unsigned count);
-API void delta8_decode(void *buffer, unsigned count);
-
-API void delta16_encode(void *buffer, unsigned count);
-API void delta16_decode(void *buffer, unsigned count);
-
-API void delta32_encode(void *buffer, unsigned count);
-API void delta32_decode(void *buffer, unsigned count);
-
-API void delta64_encode(void *buffer, unsigned count);
-API void delta64_decode(void *buffer, unsigned count);
-
-// ----------------------------------------------------------------------------
-// zigzag en/decoder
-
-API uint64_t zig64( int64_t value ); // convert sign|magnitude to magnitude|sign
-API int64_t zag64( uint64_t value ); // convert magnitude|sign to sign|magnitude
-
-API uint32_t enczig32u( int32_t n);
-API uint64_t enczig64u( int64_t n);
-API  int32_t deczig32i(uint32_t n);
-API  int64_t deczig64i(uint64_t n);
-
-// ----------------------------------------------------------------------------
-// arc4 en/decryptor
-
-API void *arc4( void *buffer, unsigned buflen, const void *pass, unsigned passlen );
-
-// ----------------------------------------------------------------------------
-// crc64
-
-API uint64_t crc64(uint64_t h, const void *ptr, uint64_t len);
-
-// ----------------------------------------------------------------------------
-// entropy encoder
-
-API void entropy( void *buf, unsigned n );
 #line 0
 
 #line 1 "engine/split/v4k_collide.h"
@@ -1728,7 +1886,7 @@ API poly    diamond(vec3 from, vec3 to, float size); // poly_free() required
 API void    collide_demo(); // debug draw collisions
 #line 0
 
-#line 1 "engine/split/v4k_cooker.h"
+#line 1 "engine/split/v4k_cook.h"
 // -----------------------------------------------------------------------------
 // asset pipeline framework
 // - rlyeh, public domain.
@@ -1803,9 +1961,8 @@ API void            xml_pop();
 API bool data_tests();
 #line 0
 
-#line 1 "engine/split/v4k_dll.h"
-// dll utils
-// - rlyeh, public domain
+#line 1 "engine/split/v4k_extend.h"
+// dll ------------------------------------------------------------------------
 
 /// !!! `filename` must contain extension
 /// load dynamic library `file` and search for `symbol`
@@ -1816,6 +1973,19 @@ API bool data_tests();
 /// > bool (*plugin_init)(void) = dll("plugin.dll", "init");
 /// > assert(plugin_init());
 API void* dll(const char *filename, const char *symbol);
+
+// -----------------------------------------------------------------------------
+// script framework
+
+API void script_init();
+API void script_run(const char *script);
+API void script_runfile(const char *pathfile);
+
+API void script_bind_class(const char *objname, int num_methods, const char **c_names, void **c_functions);
+API void script_bind_function(const char *c_name, void *c_function);
+API void script_call(const char *lua_function);
+
+API bool script_tests();
 #line 0
 
 #line 1 "engine/split/v4k_editor.h"
@@ -1863,6 +2033,98 @@ API char* kit_translate2( const char *id, const char *langcode_iso639_1 ); // pe
 
 API void  kit_locale( const char *langcode_iso639_1 ); // set current locale: enUS, ptBR, esES, ...
 API char* kit_translate( const char *id ); // perform a translation, given current locale
+#line 0
+
+#line 1 "engine/split/v4k_font.h"
+// -----------------------------------------------------------------------------
+// font framework
+// - rlyeh, public domain
+
+// font size tags
+#define FONT_H1 "\1" // largest
+#define FONT_H2 "\2"
+#define FONT_H3 "\3"
+#define FONT_H4 "\4"
+#define FONT_H5 "\5"
+#define FONT_H6 "\6" // smallest
+
+// font color tags
+#define FONT_COLOR1  "\x10"
+#define FONT_COLOR2  "\x11"
+#define FONT_COLOR3  "\x12"
+#define FONT_COLOR4  "\x13"
+#define FONT_COLOR5  "\x14"
+#define FONT_COLOR6  "\x15"
+#define FONT_COLOR7  "\x16"
+#define FONT_COLOR8  "\x17"
+#define FONT_COLOR9  "\x18"
+#define FONT_COLOR10 "\x19"
+
+// font face tags
+#define FONT_FACE1   "\x1a"
+#define FONT_FACE2   "\x1b"
+#define FONT_FACE3   "\x1c"
+#define FONT_FACE4   "\x1d"
+#define FONT_FACE5   "\x1e"
+#define FONT_FACE6   "\x1f"
+
+// font align tags
+#define FONT_LEFT     "\\<"
+#define FONT_CENTER   "\\|"
+#define FONT_RIGHT    "\\>"
+#define FONT_TOP      "\\^"
+#define FONT_MIDDLE   "\\-"
+#define FONT_BASELINE "\\_"
+#define FONT_BOTTOM   "\\v"
+
+// font flags
+enum FONT_FLAGS {
+    // font atlas size
+    FONT_512 = 0x0,
+    FONT_1024 = 0x1,
+    FONT_2048 = 0x2,
+    FONT_4096 = 0x4,
+
+    // font oversampling
+    FONT_NO_OVERSAMPLE = 0x0,
+    FONT_OVERSAMPLE_X = 0x08,
+    FONT_OVERSAMPLE_Y = 0x10,
+
+    // unicode ranges
+    FONT_ASCII = 0x800, // Compatible charset
+    FONT_AR = 0x001000, // Arabic and Arabic-Indic digits
+    FONT_ZH = 0x002000, // Chinese Simplified (@todo: add ZH_FULL)
+    FONT_EL = 0x004000, // Greek, Coptic, modern Georgian, Svan, Mingrelian, Ancient Greek
+    FONT_EM = 0x008000, // Emoji
+    FONT_EU = 0x010000, // Eastern/western Europe, IPA, Latin ext A/B
+    FONT_HE = 0x020000, // Hebrew, Yiddish, Ladino, and other diaspora languages
+    FONT_JP = 0x040000, // Hiragana, Katakana, Punctuations, Half-width chars
+    FONT_KR = 0x080000, // Korean, Hangul
+    FONT_RU = 0x100000, // Cyrillic + ext A/B
+    FONT_TH = 0x200000, // Thai
+    FONT_VI = 0x400000, // Vietnamese
+    FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
+
+    // FONT_DEFAULTS = FONT_512 | FONT_NO_OVERSAMPLE | FONT_ASCII,
+};
+
+// configures
+API void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
+API void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
+API void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
+API void  font_color(const char *color_tag, uint32_t color);
+
+// commands
+API vec2  font_xy();
+API void  font_goto(float x, float y);
+API vec2  font_print(const char *text);
+API vec2  font_rect(const char *text);
+//  void  font_clip(vec2 topleft, vec2 bottomright);
+//  void  font_wrap(vec2 topleft, vec2 bottomright);
+
+// syntax highlighting
+API void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords); // comma separated tokens. expensive, please cache result.
+API vec2  font_highlight(const char *text, const void *colors);
 #line 0
 
 #line 1 "engine/split/v4k_file.h"
@@ -1963,428 +2225,6 @@ API ini_t        ini_from_mem(const char *data);
 API void         ini_destroy(ini_t);
 
 API bool         ini_write(const char *filename, const char *section, const char *key, const char *value);
-#line 0
-
-#line 1 "engine/split/v4k_font.h"
-// -----------------------------------------------------------------------------
-// font framework
-// - rlyeh, public domain
-
-// font size tags
-#define FONT_H1 "\1" // largest
-#define FONT_H2 "\2"
-#define FONT_H3 "\3"
-#define FONT_H4 "\4"
-#define FONT_H5 "\5"
-#define FONT_H6 "\6" // smallest
-
-// font color tags
-#define FONT_COLOR1  "\x10"
-#define FONT_COLOR2  "\x11"
-#define FONT_COLOR3  "\x12"
-#define FONT_COLOR4  "\x13"
-#define FONT_COLOR5  "\x14"
-#define FONT_COLOR6  "\x15"
-#define FONT_COLOR7  "\x16"
-#define FONT_COLOR8  "\x17"
-#define FONT_COLOR9  "\x18"
-#define FONT_COLOR10 "\x19"
-
-// font face tags
-#define FONT_FACE1   "\x1a"
-#define FONT_FACE2   "\x1b"
-#define FONT_FACE3   "\x1c"
-#define FONT_FACE4   "\x1d"
-#define FONT_FACE5   "\x1e"
-#define FONT_FACE6   "\x1f"
-
-// font align tags
-#define FONT_LEFT     "\\<"
-#define FONT_CENTER   "\\|"
-#define FONT_RIGHT    "\\>"
-#define FONT_TOP      "\\^"
-#define FONT_MIDDLE   "\\-"
-#define FONT_BASELINE "\\_"
-#define FONT_BOTTOM   "\\v"
-
-// font flags
-enum FONT_FLAGS {
-    // font atlas size
-    FONT_512 = 0x0,
-    FONT_1024 = 0x1,
-    FONT_2048 = 0x2,
-    FONT_4096 = 0x4,
-
-    // font oversampling
-    FONT_NO_OVERSAMPLE = 0x0,
-    FONT_OVERSAMPLE_X = 0x08,
-    FONT_OVERSAMPLE_Y = 0x10,
-
-    // unicode ranges
-    FONT_ASCII = 0x800, // Compatible charset
-    FONT_AR = 0x001000, // Arabic and Arabic-Indic digits
-    FONT_ZH = 0x002000, // Chinese Simplified (@todo: add ZH_FULL)
-    FONT_EL = 0x004000, // Greek, Coptic, modern Georgian, Svan, Mingrelian, Ancient Greek
-    FONT_EM = 0x008000, // Emoji
-    FONT_EU = 0x010000, // Eastern/western Europe, IPA, Latin ext A/B
-    FONT_HE = 0x020000, // Hebrew, Yiddish, Ladino, and other diaspora languages
-    FONT_JP = 0x040000, // Hiragana, Katakana, Punctuations, Half-width chars
-    FONT_KR = 0x080000, // Korean, Hangul
-    FONT_RU = 0x100000, // Cyrillic + ext A/B
-    FONT_TH = 0x200000, // Thai
-    FONT_VI = 0x400000, // Vietnamese
-    FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
-
-    // FONT_DEFAULTS = FONT_512 | FONT_NO_OVERSAMPLE | FONT_ASCII,
-};
-
-// configures
-API void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
-API void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
-API void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
-API void  font_color(const char *color_tag, uint32_t color);
-
-// commands
-API vec2  font_xy();
-API void  font_goto(float x, float y);
-API vec2  font_print(const char *text);
-API vec2  font_rect(const char *text);
-//  void  font_clip(vec2 topleft, vec2 bottomright);
-//  void  font_wrap(vec2 topleft, vec2 bottomright);
-
-// syntax highlighting
-API void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords); // comma separated tokens. expensive, please cache result.
-API vec2  font_highlight(const char *text, const void *colors);
-#line 0
-
-#line 1 "engine/split/v4k_id.h"
-// -----------------------------------------------------------------------------
-// factory of handle ids, based on code by randy gaul (PD/Zlib licensed)
-// - rlyeh, public domain
-//
-// [src] http://www.randygaul.net/wp-content/uploads/2021/04/handle_table.cpp
-// [ref] http://bitsquid.blogspot.com.es/2011/09/managing-decoupling-part-4-id-lookup.html
-// [ref] http://glampert.com/2016/05-04/dissecting-idhashindex/
-// [ref] https://github.com/nlguillemot/dof/blob/master/viewer/packed_freelist.h
-// [ref] https://gist.github.com/pervognsen/ffd89e45b5750e9ce4c6c8589fc7f253
-
-// convert between hard refs (pointers) and weak refs (ids)
-uintptr_t id_make(void *ptr);
-void *     id_handle(uintptr_t id);
-void       id_dispose(uintptr_t id);
-bool        id_valid(uintptr_t id);
-
-// configuration:
-// ideally, these two should be 32 each. they were changed to fit our OBJHEADER bits
-#ifndef ID_INDEX_BITS
-#define ID_INDEX_BITS 16
-#endif
-#ifndef ID_COUNT_BITS
-#define ID_COUNT_BITS  3
-#endif
-// you cannot change this one: the number of ID_DATA_BITS you can store in a handle depends on ID_COUNT_BITS
-#define ID_DATA_BITS (64-ID_COUNT_BITS)
-#line 0
-
-#line 1 "engine/split/v4k_pack.h"
-// -----------------------------------------------------------------------------
-// semantic versioning in a single byte (octal)
-// - rlyeh, public domain.
-//
-// - single octal byte that represents semantic versioning (major.minor.patch).
-// - allowed range [0000..0377] ( <-> [0..255] decimal )
-// - comparison checks only major.minor tuple as per convention.
-
-API int semver( int major, int minor, int patch );
-API int semvercmp( int v1, int v2 );
-
-#define SEMVER(major,minor,patch) (0100 * (major) + 010 * (minor) + (patch))
-#define SEMVERCMP(v1,v2) (((v1) & 0110) - ((v2) & 0110))
-#define SEMVERFMT "%03o"
-
-// -----------------------------------------------------------------------------
-// storage types. refer to vec2i/3i, vec2/3/4 if you plan to do math operations
-
-typedef struct byte2 { uint8_t x,y; } byte2;
-typedef struct byte3 { uint8_t x,y,z; } byte3;
-typedef struct byte4 { uint8_t x,y,z,w; } byte4;
-
-typedef struct int2 { int x,y; } int2;
-typedef struct int3 { int x,y,z; } int3;
-typedef struct int4 { int x,y,z,w; } int4;
-
-typedef struct uint2 { unsigned int x,y; } uint2;
-typedef struct uint3 { unsigned int x,y,z; } uint3;
-typedef struct uint4 { unsigned int x,y,z,w; } uint4;
-
-typedef struct float2 { float x,y; } float2;
-typedef struct float3 { float x,y,z; } float3;
-typedef struct float4 { float x,y,z,w; } float4;
-
-typedef struct double2 { double x,y; } double2;
-typedef struct double3 { double x,y,z; } double3;
-typedef struct double4 { double x,y,z,w; } double4;
-
-#define byte2(x,y)       M_CAST(byte2, (uint8_t)(x), (uint8_t)(y) )
-#define byte3(x,y,z)     M_CAST(byte3, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z) )
-#define byte4(x,y,z,w)   M_CAST(byte4, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z), (uint8_t)(w) )
-
-#define int2(x,y)        M_CAST(int2, (int)(x), (int)(y) )
-#define int3(x,y,z)      M_CAST(int3, (int)(x), (int)(y), (int)(z) )
-#define int4(x,y,z,w)    M_CAST(int4, (int)(x), (int)(y), (int)(z), (int)(w) )
-
-#define uint2(x,y)       M_CAST(uint2, (unsigned)(x), (unsigned)(y) )
-#define uint3(x,y,z)     M_CAST(uint3, (unsigned)(x), (unsigned)(y), (unsigned)(z) )
-#define uint4(x,y,z,w)   M_CAST(uint4, (unsigned)(x), (unsigned)(y), (unsigned)(z), (unsigned)(w) )
-
-#define float2(x,y)      M_CAST(float2, (float)(x), (float)(y) )
-#define float3(x,y,z)    M_CAST(float3, (float)(x), (float)(y), (float)(z) )
-#define float4(x,y,z,w)  M_CAST(float4, (float)(x), (float)(y), (float)(z), (float)(w) )
-
-#define double2(x,y)     M_CAST(double2, (double)(x), (double)(y) )
-#define double3(x,y,z)   M_CAST(double3, (double)(x), (double)(y), (double)(z) )
-#define double4(x,y,z,w) M_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )
-
-// -----------------------------------------------------------------------------
-// compile-time fourcc, eightcc
-
-API char *cc4str(unsigned cc);
-API char *cc8str(uint64_t cc);
-
-enum {
-#   define _(a,b,c,d,e) cc__##a, cc__##b, cc__##c, cc__##d, cc__##e
-    cc__1 = '1', _(2,3,4,5,6),_(7,8,9,0,_), cc__ = ' ',
-    cc__A = 'A', _(B,C,D,E,F),_(G,H,I,J,K),_(L,M,N,O,P),_(Q,R,S,T,U),_(V,W,X,Y,Z),
-    cc__a = 'a', _(b,c,d,e,f),_(g,h,i,j,k),_(l,m,n,o,p),_(q,r,s,t,u),_(v,w,x,y,z),
-#   undef _
-};
-
-#ifdef BIG
-#define cc4(a,b,c,d) ((uint32_t)(cc__##a<<24) | (cc__##b<<16) | (cc__##c<<8) | (cc__##d<<0))
-#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(a,b,c,d) << 32ULL) | cc4(e,f,g,h))
-#else
-#define cc4(a,b,c,d) ((uint32_t)(cc__##d<<24) | (cc__##c<<16) | (cc__##b<<8) | (cc__##a<<0))
-#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(e,f,g,h) << 32ULL) | cc4(a,b,c,d))
-#endif
-
-#define cc3(a,b,c) cc4(,a,b,c)
-#define cc5(a,b,c,d,e) cc6(,a,b,c,d,e)
-#define cc6(a,b,c,d,e,f) cc7(,a,b,c,d,e,f)
-#define cc7(a,b,c,d,e,f,g) cc8(,a,b,c,d,e,f,g)
-
-// ----------------------------------------------------------------------------
-// text conversions
-
-API char* ftoa1(float v);
-API char* ftoa2(vec2  v);
-API char* ftoa3(vec3  v);
-API char* ftoa4(vec4  v);
-
-API float atof1(const char *s);
-API vec2 atof2(const char *s);
-API vec3 atof3(const char *s);
-API vec4 atof4(const char *s);
-
-API char* itoa1(int   v);
-API char* itoa2(vec2i v);
-API char* itoa3(vec3i v);
-
-API int   atoi1(const char *s);
-API vec2i atoi2(const char *s);
-API vec3i atoi3(const char *s);
-
-// ----------------------------------------------------------------------------
-// endianness
-
-API int is_big();
-API int is_little();
-
-API uint16_t swap16( uint16_t x );
-API uint32_t swap32( uint32_t x );
-API uint64_t swap64( uint64_t x );
-API float    swap32f(float n);
-API double   swap64f(double n);
-API void        swapf(float *a, float *b);
-API void        swapf2(vec2 *a, vec2 *b);
-API void        swapf3(vec3 *a, vec3 *b);
-API void        swapf4(vec4 *a, vec4 *b);
-
-API uint16_t    lil16(uint16_t n); // swap16 as lil
-API uint32_t    lil32(uint32_t n); // swap32 as lil
-API uint64_t    lil64(uint64_t n); // swap64 as lil
-API float       lil32f(float n);   // swap32 as lil
-API double      lil64f(double n);  // swap64 as lil
-
-API uint16_t    big16(uint16_t n); // swap16 as big
-API uint32_t    big32(uint32_t n); // swap32 as big
-API uint64_t    big64(uint64_t n); // swap64 as big
-API float       big32f(float n);   // swap32 as big
-API double      big64f(double n);  // swap64 as big
-
-API uint16_t* lil16p(void *p, int sz);
-API uint32_t* lil32p(void *p, int sz);
-API uint64_t* lil64p(void *p, int sz);
-API float   * lil32pf(void *p, int sz);
-API double  * lil64pf(void *p, int sz);
-
-API uint16_t*   big16p(void *p, int sz);
-API uint32_t*   big32p(void *p, int sz);
-API uint64_t*   big64p(void *p, int sz);
-API float   *   big32pf(void *p, int sz);
-API double  * big64pf(void *p, int sz);
-
-#if is(cl)
-#define swap16 _byteswap_ushort
-#define swap32 _byteswap_ulong
-#define swap64 _byteswap_uint64
-#elif is(gcc)
-#define swap16 __builtin_bswap16
-#define swap32 __builtin_bswap32
-#define swap64 __builtin_bswap64
-#endif
-
-#define hton16 big16
-#define ntoh16 big16
-#define hton32 big32
-#define ntoh32 big32
-#define hton64 big64
-#define ntoh64 big64
-
-#define IS_BIG    ((*(uint16_t *)"\0\1") == 1)
-#define IS_LITTLE ((*(uint16_t *)"\0\1") != 1)
-
-// ----------------------------------------------------------------------------
-// half packing
-
-typedef uint16_t half;
-API float half_to_float(half value);
-API half  float_to_half(float value);
-
-// ----------------------------------------------------------------------------
-// int packing
-
-// pack16i() -- store a 16-bit int into a char buffer (like htons())
-// pack32i() -- store a 32-bit int into a char buffer (like htonl())
-// pack64i() -- store a 64-bit int into a char buffer (like htonl())
-
-API void pack16i(uint8_t *buf, uint16_t i, int swap);
-API void pack32i(uint8_t *buf, uint32_t i, int swap);
-API void pack64i(uint8_t *buf, uint64_t i, int swap);
-
-// unpack16i() -- unpack a 16-bit int from a char buffer (like ntohs())
-// unpack32i() -- unpack a 32-bit int from a char buffer (like ntohl())
-// unpack64i() -- unpack a 64-bit int from a char buffer (like ntohl())
-// changes unsigned numbers to signed if needed.
-
-API int16_t unpack16i(const uint8_t *buf, int swap);
-API int32_t unpack32i(const uint8_t *buf, int swap);
-API int64_t unpack64i(const uint8_t *buf, int swap);
-
-// ----------------------------------------------------------------------------
-// float un/packing: 8 (micro), 16 (half), 32 (float), 64 (double) types
-
-#define pack754_8(f)    (  pack754((f),  8,  4))
-#define pack754_16(f)   (  pack754((f), 16,  5))
-#define pack754_32(f)   (  pack754((f), 32,  8))
-#define pack754_64(f)   (  pack754((f), 64, 11))
-#define unpack754_8(u)  (unpack754((u),  8,  4))
-#define unpack754_16(u) (unpack754((u), 16,  5))
-#define unpack754_32(u) (unpack754((u), 32,  8))
-#define unpack754_64(u) (unpack754((u), 64, 11))
-
-API    uint64_t pack754(long double f, unsigned bits, unsigned expbits);
-API long double unpack754(uint64_t i, unsigned bits, unsigned expbits);
-
-// ----------------------------------------------------------------------------
-// variable-length integer packing
-
-API uint64_t pack64uv( uint8_t *buffer, uint64_t value );
-API uint64_t unpack64uv( const uint8_t *buffer, uint64_t *value );
-API uint64_t pack64iv( uint8_t *buffer, int64_t value_ );
-API uint64_t unpack64iv( const uint8_t *buffer, int64_t *value );
-
-// ----------------------------------------------------------------------------
-// msgpack v5, schema based struct/buffer bitpacking
-
-// api v2
-
-API int  msgpack(const char *fmt, ... );                // va arg pack "n,b,u,d/i,s,p,f/g,e,[,{". returns number of written bytes
-API int  msgunpack(const char *fmt, ... );              // va arg pack "n,b,u,d/i,s,p,f/g,e,[,{". returns number of parsed args
-
-// api v1
-
-API int msgpack_new(uint8_t *w, size_t l);
-API int msgpack_nil();                                  // write null
-API int msgpack_chr(bool n);                            // write boolean
-API int msgpack_uns(uint64_t n);                        // write unsigned integer
-API int msgpack_int(int64_t n);                         // write integer
-API int msgpack_str(const char *s);                     // write string
-API int msgpack_bin(const char *s, size_t n);           // write binary pointer
-API int msgpack_flt(double g);                          // write real
-API int msgpack_ext(uint8_t key, void *val, size_t n);  // write extension type
-API int msgpack_arr(uint32_t n);                        // write array mark for next N items
-API int msgpack_map(uint32_t n);                        // write map mark for next N pairs (N keys + N values)
-API int msgpack_eof();                                  // write full?
-API int msgpack_err();                                  // write error?
-
-API bool msgunpack_new( const void *opaque_or_FILE, size_t bytes );
-API bool msgunpack_nil();
-API bool msgunpack_chr(bool *chr);
-API bool msgunpack_uns(uint64_t *uns);
-API bool msgunpack_int(int64_t *sig);
-API bool msgunpack_str(char **str);
-API bool msgunpack_bin(void **bin, uint64_t *len);
-API bool msgunpack_flt(float *flt);
-API bool msgunpack_dbl(double *dbl);
-API bool msgunpack_ext(uint8_t *key, void **val, uint64_t *len);
-API bool msgunpack_arr(uint64_t *len);
-API bool msgunpack_map(uint64_t *len);
-API bool msgunpack_eof();
-API bool msgunpack_err();
-
-// ----------------------------------------------------------------------------
-// Based on code by Brian "Beej Jorgensen" Hall (public domain) [1].
-// Based on code by Ginger Bill's half<->float (public domain) [2].
-// - rlyeh, public domain.
-//
-// pack.c  -- perl/python-ish pack/unpack functions
-// like printf and scanf, but for binary data.
-//
-// format flags:
-//  (<) little endian       (>) big endian (! also)     (=) native endian
-//  (c) 8-bit  char         (b) 8-bit  byte
-//  (h) 16-bit half         (w) 16-bit word
-//  (i) 32-bit integer      (u) 32-bit unsigned         (f) 32-bit float
-//  (l) 64-bit long         (q) 64-bit quad             (d) 64-bit double
-//  (v) varint
-//  (s) string   (64-bit varint length prepended)
-//  (S) string   (32-bit fixed  length prepended)
-//  (m) memblock (64-bit varint length prepended)
-//  (M) memblock (32-bit fixed  length prepended)
-//  (z) memblock (zeroed)
-//  (#) number of arguments processed (only when unpacking)
-//
-// @todo:
-// - (x) document & test flag
-// @totest:
-// - (s) string   (64-bit variable length automatically prepended)
-// - (S) string   (32-bit fixed    length automatically prepended)
-// - (m) memblock (64-bit variable length automatically prepended)
-// - (M) memblock (32-bit fixed    length automatically prepended)
-// - (z) memblock (zeroed)
-// - (#) number of arguments processed (only when unpacking)
-
-// - save data dictated by the format string from the buffer. return: number of bytes written, or 0 if error.
-//   if first argument is zero, returns number of bytes required for packing.
-
-API int savef(FILE *file, const char *format, ...);
-API int saveb(unsigned char *buf, const char *format, ...);
-
-// - load data dictated by the format string into the buffer. return: number of bytes read, or 0 if error.
-//   if first argument is zero, returns number of bytes required for unpacking.
-
-API int loadf(FILE *file, const char *format, ...);
-API int loadb(const unsigned char *buf, const char *format, ...);
 #line 0
 
 #line 1 "engine/split/v4k_input.h"
@@ -2753,322 +2593,395 @@ API int64_t  client_join(const char *ip, int port);
 #define LOCALHOST_IPV6 "::1"
 #line 0
 
-#line 1 "engine/split/v4k_obj.h"
-// C objects framework
+#line 1 "engine/split/v4k_pack.h"
+// ----------------------------------------------------------------------------
+// compression api
+
+enum COMPRESS_FLAGS {
+    COMPRESS_RAW     = 0,
+    COMPRESS_PPP     = (1<<4),
+    COMPRESS_ULZ     = (2<<4),
+    COMPRESS_LZ4     = (3<<4),
+    COMPRESS_CRUSH   = (4<<4),
+    COMPRESS_DEFLATE = (5<<4),
+    COMPRESS_LZP1    = (6<<4),
+    COMPRESS_LZMA    = (7<<4),
+    COMPRESS_BALZ    = (8<<4),
+    COMPRESS_LZW3    = (9<<4),
+    COMPRESS_LZSS    = (10<<4),
+    COMPRESS_BCM     = (11<<4),
+    COMPRESS_ZLIB    = (12<<4), // same as deflate with header
+};
+
+API unsigned zbounds(unsigned inlen, unsigned flags);
+API unsigned zencode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
+API unsigned zexcess(unsigned flags);
+API unsigned zdecode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
+
+// ----------------------------------------------------------------------------
+// array de/interleaving
+//
+// results:
+// R0G0B0   R1G1B1   R2G2B2...   -> R0R1R2... B0B1B2... G0G1G2...
+// R0G0B0A0 R1G1B1A1 R2G2B2A2... -> R0R1R2... A0A1A2... B0B1B2... G0G1G2...
+
+API void *interleave( void *out, const void *list, int list_count, int sizeof_item, unsigned columns );
+
+// ----------------------------------------------------------------------------
+// cobs en/decoder
+
+API unsigned cobs_bounds(unsigned len);
+API unsigned cobs_encode(const void *in, unsigned inlen, void *out, unsigned outlen);
+API unsigned cobs_decode(const void *in, unsigned inlen, void *out, unsigned outlen);
+
+// ----------------------------------------------------------------------------
+// base92 en/decoder
+
+API unsigned base92_encode(const void *in, unsigned inlen, void* out, unsigned outlen);
+API unsigned base92_decode(const void *in, unsigned inlen, void* out, unsigned outlen);
+API unsigned base92_bounds(unsigned inlen);
+
+// ----------------------------------------------------------------------------
+// netstring en/decoder
+
+API unsigned netstring_bounds(unsigned inlen);
+API unsigned netstring_encode(const char *in, unsigned inlen, char *out, unsigned outlen);
+API unsigned netstring_decode(const char *in, unsigned inlen, char *out, unsigned outlen);
+
+// ----------------------------------------------------------------------------
+// delta en/decoder
+
+API void delta8_encode(void *buffer, unsigned count);
+API void delta8_decode(void *buffer, unsigned count);
+
+API void delta16_encode(void *buffer, unsigned count);
+API void delta16_decode(void *buffer, unsigned count);
+
+API void delta32_encode(void *buffer, unsigned count);
+API void delta32_decode(void *buffer, unsigned count);
+
+API void delta64_encode(void *buffer, unsigned count);
+API void delta64_decode(void *buffer, unsigned count);
+
+// ----------------------------------------------------------------------------
+// zigzag en/decoder
+
+API uint64_t zig64( int64_t value ); // convert sign|magnitude to magnitude|sign
+API int64_t zag64( uint64_t value ); // convert magnitude|sign to sign|magnitude
+
+API uint32_t enczig32u( int32_t n);
+API uint64_t enczig64u( int64_t n);
+API  int32_t deczig32i(uint32_t n);
+API  int64_t deczig64i(uint64_t n);
+
+// ----------------------------------------------------------------------------
+// arc4 en/decryptor
+
+API void *arc4( void *buffer, unsigned buflen, const void *pass, unsigned passlen );
+
+// ----------------------------------------------------------------------------
+// crc64
+
+API uint64_t crc64(uint64_t h, const void *ptr, uint64_t len);
+
+// ----------------------------------------------------------------------------
+// entropy encoder
+
+API void entropy( void *buf, unsigned n );
+
+// -----------------------------------------------------------------------------
+// semantic versioning in a single byte (octal)
+
+API int semver( int major, int minor, int patch );
+API int semvercmp( int v1, int v2 );
+
+#define SEMVER(major,minor,patch) (0100 * (major) + 010 * (minor) + (patch))
+#define SEMVERCMP(v1,v2) (((v1) & 0110) - ((v2) & 0110))
+#define SEMVERFMT "%03o"
+
+// -----------------------------------------------------------------------------
+// storage types. refer to vec2i/3i, vec2/3/4 if you plan to do math operations
+
+typedef struct byte2 { uint8_t x,y; } byte2;
+typedef struct byte3 { uint8_t x,y,z; } byte3;
+typedef struct byte4 { uint8_t x,y,z,w; } byte4;
+
+typedef struct int2 { int x,y; } int2;
+typedef struct int3 { int x,y,z; } int3;
+typedef struct int4 { int x,y,z,w; } int4;
+
+typedef struct uint2 { unsigned int x,y; } uint2;
+typedef struct uint3 { unsigned int x,y,z; } uint3;
+typedef struct uint4 { unsigned int x,y,z,w; } uint4;
+
+typedef struct float2 { float x,y; } float2;
+typedef struct float3 { float x,y,z; } float3;
+typedef struct float4 { float x,y,z,w; } float4;
+
+typedef struct double2 { double x,y; } double2;
+typedef struct double3 { double x,y,z; } double3;
+typedef struct double4 { double x,y,z,w; } double4;
+
+#define byte2(x,y)       M_CAST(byte2, (uint8_t)(x), (uint8_t)(y) )
+#define byte3(x,y,z)     M_CAST(byte3, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z) )
+#define byte4(x,y,z,w)   M_CAST(byte4, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z), (uint8_t)(w) )
+
+#define int2(x,y)        M_CAST(int2, (int)(x), (int)(y) )
+#define int3(x,y,z)      M_CAST(int3, (int)(x), (int)(y), (int)(z) )
+#define int4(x,y,z,w)    M_CAST(int4, (int)(x), (int)(y), (int)(z), (int)(w) )
+
+#define uint2(x,y)       M_CAST(uint2, (unsigned)(x), (unsigned)(y) )
+#define uint3(x,y,z)     M_CAST(uint3, (unsigned)(x), (unsigned)(y), (unsigned)(z) )
+#define uint4(x,y,z,w)   M_CAST(uint4, (unsigned)(x), (unsigned)(y), (unsigned)(z), (unsigned)(w) )
+
+#define float2(x,y)      M_CAST(float2, (float)(x), (float)(y) )
+#define float3(x,y,z)    M_CAST(float3, (float)(x), (float)(y), (float)(z) )
+#define float4(x,y,z,w)  M_CAST(float4, (float)(x), (float)(y), (float)(z), (float)(w) )
+
+#define double2(x,y)     M_CAST(double2, (double)(x), (double)(y) )
+#define double3(x,y,z)   M_CAST(double3, (double)(x), (double)(y), (double)(z) )
+#define double4(x,y,z,w) M_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )
+
+// -----------------------------------------------------------------------------
+// compile-time fourcc, eightcc
+
+API char *cc4str(unsigned cc);
+API char *cc8str(uint64_t cc);
+
+enum {
+#   define _(a,b,c,d,e) cc__##a, cc__##b, cc__##c, cc__##d, cc__##e
+    cc__1 = '1', _(2,3,4,5,6),_(7,8,9,0,_), cc__ = ' ',
+    cc__A = 'A', _(B,C,D,E,F),_(G,H,I,J,K),_(L,M,N,O,P),_(Q,R,S,T,U),_(V,W,X,Y,Z),
+    cc__a = 'a', _(b,c,d,e,f),_(g,h,i,j,k),_(l,m,n,o,p),_(q,r,s,t,u),_(v,w,x,y,z),
+#   undef _
+};
+
+#ifdef BIG
+#define cc4(a,b,c,d) ((uint32_t)(cc__##a<<24) | (cc__##b<<16) | (cc__##c<<8) | (cc__##d<<0))
+#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(a,b,c,d) << 32ULL) | cc4(e,f,g,h))
+#else
+#define cc4(a,b,c,d) ((uint32_t)(cc__##d<<24) | (cc__##c<<16) | (cc__##b<<8) | (cc__##a<<0))
+#define cc8(a,b,c,d,e,f,g,h) (((uint64_t)cc4(e,f,g,h) << 32ULL) | cc4(a,b,c,d))
+#endif
+
+#define cc3(a,b,c) cc4(,a,b,c)
+#define cc5(a,b,c,d,e) cc6(,a,b,c,d,e)
+#define cc6(a,b,c,d,e,f) cc7(,a,b,c,d,e,f)
+#define cc7(a,b,c,d,e,f,g) cc8(,a,b,c,d,e,f,g)
+
+// ----------------------------------------------------------------------------
+// text conversions
+
+API char* ftoa1(float v);
+API char* ftoa2(vec2  v);
+API char* ftoa3(vec3  v);
+API char* ftoa4(vec4  v);
+
+API float atof1(const char *s);
+API vec2 atof2(const char *s);
+API vec3 atof3(const char *s);
+API vec4 atof4(const char *s);
+
+API char* itoa1(int   v);
+API char* itoa2(vec2i v);
+API char* itoa3(vec3i v);
+
+API int   atoi1(const char *s);
+API vec2i atoi2(const char *s);
+API vec3i atoi3(const char *s);
+
+// ----------------------------------------------------------------------------
+// endianness
+
+API int is_big();
+API int is_little();
+
+API uint16_t swap16( uint16_t x );
+API uint32_t swap32( uint32_t x );
+API uint64_t swap64( uint64_t x );
+API float    swap32f(float n);
+API double   swap64f(double n);
+API void        swapf(float *a, float *b);
+API void        swapf2(vec2 *a, vec2 *b);
+API void        swapf3(vec3 *a, vec3 *b);
+API void        swapf4(vec4 *a, vec4 *b);
+
+API uint16_t    lil16(uint16_t n); // swap16 as lil
+API uint32_t    lil32(uint32_t n); // swap32 as lil
+API uint64_t    lil64(uint64_t n); // swap64 as lil
+API float       lil32f(float n);   // swap32 as lil
+API double      lil64f(double n);  // swap64 as lil
+
+API uint16_t    big16(uint16_t n); // swap16 as big
+API uint32_t    big32(uint32_t n); // swap32 as big
+API uint64_t    big64(uint64_t n); // swap64 as big
+API float       big32f(float n);   // swap32 as big
+API double      big64f(double n);  // swap64 as big
+
+API uint16_t* lil16p(void *p, int sz);
+API uint32_t* lil32p(void *p, int sz);
+API uint64_t* lil64p(void *p, int sz);
+API float   * lil32pf(void *p, int sz);
+API double  * lil64pf(void *p, int sz);
+
+API uint16_t*   big16p(void *p, int sz);
+API uint32_t*   big32p(void *p, int sz);
+API uint64_t*   big64p(void *p, int sz);
+API float   *   big32pf(void *p, int sz);
+API double  * big64pf(void *p, int sz);
+
+#if is(cl)
+#define swap16 _byteswap_ushort
+#define swap32 _byteswap_ulong
+#define swap64 _byteswap_uint64
+#elif is(gcc)
+#define swap16 __builtin_bswap16
+#define swap32 __builtin_bswap32
+#define swap64 __builtin_bswap64
+#endif
+
+#define hton16 big16
+#define ntoh16 big16
+#define hton32 big32
+#define ntoh32 big32
+#define hton64 big64
+#define ntoh64 big64
+
+#define IS_BIG    ((*(uint16_t *)"\0\1") == 1)
+#define IS_LITTLE ((*(uint16_t *)"\0\1") != 1)
+
+// ----------------------------------------------------------------------------
+// half packing
+
+typedef uint16_t half;
+API float half_to_float(half value);
+API half  float_to_half(float value);
+
+// ----------------------------------------------------------------------------
+// int packing
+
+// pack16i() -- store a 16-bit int into a char buffer (like htons())
+// pack32i() -- store a 32-bit int into a char buffer (like htonl())
+// pack64i() -- store a 64-bit int into a char buffer (like htonl())
+
+API void pack16i(uint8_t *buf, uint16_t i, int swap);
+API void pack32i(uint8_t *buf, uint32_t i, int swap);
+API void pack64i(uint8_t *buf, uint64_t i, int swap);
+
+// unpack16i() -- unpack a 16-bit int from a char buffer (like ntohs())
+// unpack32i() -- unpack a 32-bit int from a char buffer (like ntohl())
+// unpack64i() -- unpack a 64-bit int from a char buffer (like ntohl())
+// changes unsigned numbers to signed if needed.
+
+API int16_t unpack16i(const uint8_t *buf, int swap);
+API int32_t unpack32i(const uint8_t *buf, int swap);
+API int64_t unpack64i(const uint8_t *buf, int swap);
+
+// ----------------------------------------------------------------------------
+// float un/packing: 8 (micro), 16 (half), 32 (float), 64 (double) types
+
+#define pack754_8(f)    (  pack754((f),  8,  4))
+#define pack754_16(f)   (  pack754((f), 16,  5))
+#define pack754_32(f)   (  pack754((f), 32,  8))
+#define pack754_64(f)   (  pack754((f), 64, 11))
+#define unpack754_8(u)  (unpack754((u),  8,  4))
+#define unpack754_16(u) (unpack754((u), 16,  5))
+#define unpack754_32(u) (unpack754((u), 32,  8))
+#define unpack754_64(u) (unpack754((u), 64, 11))
+
+API    uint64_t pack754(long double f, unsigned bits, unsigned expbits);
+API long double unpack754(uint64_t i, unsigned bits, unsigned expbits);
+
+// ----------------------------------------------------------------------------
+// variable-length integer packing
+
+API uint64_t pack64uv( uint8_t *buffer, uint64_t value );
+API uint64_t unpack64uv( const uint8_t *buffer, uint64_t *value );
+API uint64_t pack64iv( uint8_t *buffer, int64_t value_ );
+API uint64_t unpack64iv( const uint8_t *buffer, int64_t *value );
+
+// ----------------------------------------------------------------------------
+// msgpack v5, schema based struct/buffer bitpacking
+
+// api v2
+
+API int  msgpack(const char *fmt, ... );                // va arg pack "n,b,u,d/i,s,p,f/g,e,[,{". returns number of written bytes
+API int  msgunpack(const char *fmt, ... );              // va arg pack "n,b,u,d/i,s,p,f/g,e,[,{". returns number of parsed args
+
+// api v1
+
+API int msgpack_new(uint8_t *w, size_t l);
+API int msgpack_nil();                                  // write null
+API int msgpack_chr(bool n);                            // write boolean
+API int msgpack_uns(uint64_t n);                        // write unsigned integer
+API int msgpack_int(int64_t n);                         // write integer
+API int msgpack_str(const char *s);                     // write string
+API int msgpack_bin(const char *s, size_t n);           // write binary pointer
+API int msgpack_flt(double g);                          // write real
+API int msgpack_ext(uint8_t key, void *val, size_t n);  // write extension type
+API int msgpack_arr(uint32_t n);                        // write array mark for next N items
+API int msgpack_map(uint32_t n);                        // write map mark for next N pairs (N keys + N values)
+API int msgpack_eof();                                  // write full?
+API int msgpack_err();                                  // write error?
+
+API bool msgunpack_new( const void *opaque_or_FILE, size_t bytes );
+API bool msgunpack_nil();
+API bool msgunpack_chr(bool *chr);
+API bool msgunpack_uns(uint64_t *uns);
+API bool msgunpack_int(int64_t *sig);
+API bool msgunpack_str(char **str);
+API bool msgunpack_bin(void **bin, uint64_t *len);
+API bool msgunpack_flt(float *flt);
+API bool msgunpack_dbl(double *dbl);
+API bool msgunpack_ext(uint8_t *key, void **val, uint64_t *len);
+API bool msgunpack_arr(uint64_t *len);
+API bool msgunpack_map(uint64_t *len);
+API bool msgunpack_eof();
+API bool msgunpack_err();
+
+// ----------------------------------------------------------------------------
+// Based on code by Brian "Beej Jorgensen" Hall (public domain) [1].
+// Based on code by Ginger Bill's half<->float (public domain) [2].
 // - rlyeh, public domain.
 //
-// ## object limitations
-// - 8-byte overhead per object
-// - XX-byte overhead per object-entity
-// - 32 components max per object-entity
-// - 256 classes max per game
-// - 256 references max per object
-// - 1024K bytes max per object
-// - 8 generations + 64K IDs per running instance (19-bit IDs)
-// - support for pragma pack(1) structs not enabled by default.
-
-/* /!\ if you plan to use pragma pack(1) on any struct, you need #define OBJ_MIN_PRAGMAPACK_BITS 0 at the expense of max class size /!\ */
-#ifndef   OBJ_MIN_PRAGMAPACK_BITS
-//#define OBJ_MIN_PRAGMAPACK_BITS 3 // allows pragma packs >= 8. objsizew becomes 8<<3, so 2048 bytes max per class (default)
-#define   OBJ_MIN_PRAGMAPACK_BITS 2 // allows pragma packs >= 4. objsizew becomes 8<<2, so 1024 bytes max per class
-//#define OBJ_MIN_PRAGMAPACK_BITS 1 // allows pragma packs >= 2. objsizew becomes 8<<1, so  512 bytes max per class
-//#define OBJ_MIN_PRAGMAPACK_BITS 0 // allows pragma packs >= 1. objsizew becomes 8<<0, so  256 bytes max per class
-#endif
-
-#define OBJHEADER \
-    struct { \
-        ifdef(debug, const char *objname;) \
-    union { \
-        uintptr_t objheader; \
-        struct {  \
-        uintptr_t objtype:8; \
-        uintptr_t objsizew:8; \
-        uintptr_t objrefs:8; \
-        uintptr_t objheap:1; \
-        uintptr_t objcomps:1; /* << can be removed? check payload ptr instead? */ \
-        uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
-        uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
-        }; \
-        }; \
-        array(struct obj*) objchildren; \
-    };
-
-#define OBJ \
-    OBJHEADER
-
-// ----------------------------------------------------------------------------
-// syntax sugars
-
-#ifdef OBJTYPE
-#undef OBJTYPE
-#endif
-
-#define OBJTYPE(T) \
-    OBJTYPE_##T
-
-#define OBJTYPEDEF(NAME,N) \
-     enum { OBJTYPE(NAME) = N }; \
-     STATIC_ASSERT( N <= 255 ); \
-     STATIC_ASSERT( sizeof(NAME) == ((sizeof(NAME)>>OBJ_MIN_PRAGMAPACK_BITS)<<OBJ_MIN_PRAGMAPACK_BITS) ); // (sizeof(NAME) & ((1<<OBJ_MIN_PRAGMAPACK_BITS)-1)) == 0 );
-
-// ----------------------------------------------------------------------------
-// objects
-
-#define TYPEDEF_STRUCT(NAME,N,...) \
-    typedef struct NAME { OBJ \
-        __VA_ARGS__ \
-        char payload[0]; \
-    } NAME; OBJTYPEDEF(NAME,N);
-
-// TYPEDEF_STRUCT(obj,0);
-    typedef struct obj { OBJ } obj;
-
-// ----------------------------------------------------------------------------
-// entities
-
-#define OBJCOMPONENTS_MAX 32
-#define OBJCOMPONENTS_ALL_ENABLED 0xAAAAAAAAAAAAAAAAULL
-#define OBJCOMPONENTS_ALL_FLAGGED 0x5555555555555555ULL
-#define COMPONENTS_ONLY(x) ((x) & ~OBJCOMPONENTS_ALL_FLAGGED)
-
-#define ENTITY \
-    struct { OBJHEADER union { struct { uintptr_t objenabled:OBJCOMPONENTS_MAX, objflagged:OBJCOMPONENTS_MAX; }; uintptr_t cflags; }; void *c[OBJCOMPONENTS_MAX]; };
-
-#define TYPEDEF_ENTITY(NAME,N,...) \
-    typedef struct NAME { ENTITY \
-        __VA_ARGS__ \
-        char payload[0]; \
-    } NAME; OBJTYPEDEF(NAME,N);
-
-// OBJTYPEDEF(entity,1)
-    typedef struct entity { ENTITY } entity;
-
-#define entity_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, 0, __VA_ARGS__)
-#define entity_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE,  NAME, 1, 0, __VA_ARGS__)
-
-// ----------------------------------------------------------------------------
-// heap/stack ctor/dtor
-
-static __thread obj *objtmp;
-#define OBJ_CTOR_HDR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE) ( \
-        (PTR)->objheader = HEAP ? id_make(PTR) : 0, /*should assign to .objid instead. however, id_make() returns shifted bits already*/ \
-        (PTR)->objtype = (OBJ_TYPE), \
-        (PTR)->objheap = (HEAP), \
-        (PTR)->objsizew = (SIZEOF_OBJ>>OBJ_MIN_PRAGMAPACK_BITS))
-#define OBJ_CTOR_PTR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE) ( \
-        OBJ_CTOR_HDR(PTR,HEAP,SIZEOF_OBJ,OBJ_TYPE), \
-        obj_ctor(PTR))
-#define OBJ_CTOR(TYPE, NAME, HEAP, PAYLOAD_SIZE, ...) (TYPE*)( \
-        objtmp = (HEAP ? MALLOC(sizeof(TYPE)+(PAYLOAD_SIZE)) : ALLOCA(sizeof(TYPE)+(PAYLOAD_SIZE))), \
-        *(TYPE*)objtmp = ((TYPE){ {0,}, __VA_ARGS__}), \
-        ((PAYLOAD_SIZE) ? memset((char*)objtmp + sizeof(TYPE), 0, (PAYLOAD_SIZE)) : objtmp), \
-        ( OBJTYPES[ OBJTYPE(TYPE) ] = #TYPE ), \
-        OBJ_CTOR_PTR(objtmp, HEAP,sizeof(TYPE),OBJTYPE(TYPE)), \
-        ifdef(debug, (obj_printf)(objtmp, va("%s", callstack(+16))), 0), \
-        obj_setname(objtmp, NAME))
-
-#define obj(TYPE, ...)                *OBJ_CTOR(TYPE, #TYPE, 0, 0, __VA_ARGS__)
-#define obj_new(TYPE, ...)             OBJ_CTOR(TYPE, #TYPE, 1, 0, __VA_ARGS__)
-#define obj_new_ext(TYPE, NAME, ...)   OBJ_CTOR(TYPE,  NAME, 1, 0, __VA_ARGS__)
-
-void*   obj_malloc(unsigned sz);
-void*   obj_free(void *o);
-
-// ----------------------------------------------------------------------------
-// obj generics. can be extended.
-
-#define obj_ctor(o,...) obj_method(ctor, o, ##__VA_ARGS__)
-#define obj_dtor(o,...) obj_method(dtor, o, ##__VA_ARGS__)
-
-#define obj_save(o,...) obj_method(save, o, ##__VA_ARGS__)
-#define obj_load(o,...) obj_method(load, o, ##__VA_ARGS__)
-
-#define obj_test(o,...) obj_method(test, o, ##__VA_ARGS__)
-
-#define obj_init(o,...) obj_method(init, o, ##__VA_ARGS__)
-#define obj_quit(o,...) obj_method(quit, o, ##__VA_ARGS__)
-#define obj_tick(o,...) obj_method(tick, o, ##__VA_ARGS__)
-#define obj_draw(o,...) obj_method(draw, o, ##__VA_ARGS__)
-
-#define obj_lerp(o,...) obj_method(lerp, o, ##__VA_ARGS__)
-#define obj_edit(o,...) obj_method(edit, o, ##__VA_ARGS__)
-#define obj_menu(o,...) obj_method(menu, o, ##__VA_ARGS__)
-#define obj_aabb(o,...) obj_method(aabb, o, ##__VA_ARGS__)
-#define obj_icon(o,...) obj_method(icon, o, ##__VA_ARGS__)
-
-// --- syntax sugars
-
-#define EXTEND obj_extend
-#define obj_extend(T,func)               (obj_##func[OBJTYPE(T)] = (void*)T##_##func)
-#define obj_method(method,o,...)         (obj_##method[((obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((obj*)(o))->objtype]((o), ##__VA_ARGS__))
-
-#define obj_vtable(func,RC,...)          RC macro(obj_##func)(){ __VA_ARGS__ }; RC (*obj_##func[256])() = { REPEAT256(macro(obj_##func)) };
-#define obj_vtable_null(func,RC)         RC (*obj_##func[256])() = { 0 }; // null virtual table. will crash unless obj_extend'ed
-
-#define REPEAT16(f)  f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f
-#define REPEAT64(f)  REPEAT16(f),REPEAT16(f),REPEAT16(f),REPEAT16(f)
-#define REPEAT256(f) REPEAT64(f),REPEAT64(f),REPEAT64(f),REPEAT64(f)
-
-// --- declare vtables
-
-API extern void  (*obj_ctor[256])(); ///-
-API extern void  (*obj_dtor[256])(); ///-
-
-API extern char* (*obj_save[256])(); ///-
-API extern bool  (*obj_load[256])(); ///-
-API extern int   (*obj_test[256])(); ///-
-
-API extern int   (*obj_init[256])(); ///-
-API extern int   (*obj_quit[256])(); ///-
-API extern int   (*obj_tick[256])(); ///-
-API extern int   (*obj_draw[256])(); ///-
-
-API extern int   (*obj_lerp[256])(); ///-
-API extern int   (*obj_edit[256])(); ///-
-API extern int   (*obj_aabb[256])(); ///-
-
-// ----------------------------------------------------------------------------
-// core
-
-API uintptr_t   obj_header(const void *o);
-API uintptr_t   obj_id(const void *o);
-
-API const char* obj_type(const void *o);
-API unsigned    obj_typeid(const void *o);
-
-API int         obj_sizeof(const void *o);
-API int         obj_size(const void *o); // size of all members together in struct. may include padding bytes.
-
-API char*       obj_data(void *o); // pointer to the first member in struct
-API const char* obj_datac(const void *o); // const pointer to the first struct member
-
-API void*       obj_payload(const void *o); // pointer right after last member in struct
-API void*       obj_zero(void *o); // reset all object members
-
-// ----------------------------------------------------------------------------
-// refcounting
-
-API void*       obj_ref(void *oo);
-API void*       obj_unref(void *oo);
-
-// ----------------------------------------------------------------------------
-// scene tree
-
-#define each_objchild(p,T,o) /*non-recursive*/ \
-    (array(obj*)* children = obj_children(p); children; children = 0) \
-        for(int _i = 1, _end = array_count(*children); _i < _end; ++_i) \
-            for(T o = (T)((*children)[_i]); o && (obj_parent(o) == p); o = 0)
-
-API obj*        obj_detach(void *c);
-API obj*        obj_attach(void *o, void *c);
-
-API obj*        obj_root(const void *o);
-API obj*        obj_parent(const void *o);
-API array(obj*)*obj_children(const void *o); // child[0]: parent, child[1]: 1st child, child[2]: 2nd child...
-API array(obj*)*obj_siblings(const void *o); // child[0]: grandpa, child[1]: sibling1, child[2]: sibling2...
-
-API int         obj_dumptree(const void *o);
-
-// ----------------------------------------------------------------------------
-// metadata
-
-API void*       obj_setmeta(void *o, const char *key, const char *value);
-API const char* obj_meta(const void *o, const char *key);
-
-API void*       obj_setname(void *o, const char *name);
-API const char* obj_name(const void *o);
-
-// ----------------------------------------------------------------------------
-// stl
-
-API void*       obj_swap(void *dst, void *src);
-API void*       obj_copy_fast(void *dst, const void *src);
-API void*       obj_copy(void *dst, const void *src);
-
-API int         obj_comp_fast(const void *a, const void *b);
-API int         obj_comp(const void *a, const void *b);
-API int         obj_lesser(const void *a, const void *b);
-API int         obj_greater(const void *a, const void *b);
-API int         obj_equal(const void *a, const void *b);
-
-API uint64_t    obj_hash(const void *o);
-
-// ----------------------------------------------------------------------------
-// debug
-
-API bool        obj_hexdump(const void *oo);
-API int         obj_print(const void *o);
-
-API int         obj_printf(const void *o, const char *text);
-API int         obj_console(const void *o); // obj_output() ?
-
-#define         obj_printf(o, ...) obj_printf(o, va(__VA_ARGS__))
-
-// ----------------------------------------------------------------------------
-// serialization
-
-API char*       obj_saveini(const void *o);
-API obj*        obj_mergeini(void *o, const char *ini);
-API obj*        obj_loadini(void *o, const char *ini);
-
-API char*       obj_savejson(const void *o);
-API obj*        obj_mergejson(void *o, const char *json);
-API obj*        obj_loadjson(void *o, const char *json);
-
-API char*       obj_savebin(const void *o);
-API obj*        obj_mergebin(void *o, const char *sav);
-API obj*        obj_loadbin(void *o, const char *sav);
-
-API char*       obj_savempack(const void *o); // @todo
-API obj*        obj_mergempack(void *o, const char *sav); // @todo
-API obj*        obj_loadmpack(void *o, const char *sav); // @todo
-
-API int         obj_push(const void *o);
-API int         obj_pop(void *o);
-
-// ----------------------------------------------------------------------------
-// components
-
-API bool        obj_addcomponent(entity *e, unsigned c, void *ptr);
-API bool        obj_hascomponent(entity *e, unsigned c);
-API void*       obj_getcomponent(entity *e, unsigned c);
-API bool        obj_delcomponent(entity *e, unsigned c);
-API bool        obj_usecomponent(entity *e, unsigned c);
-API bool        obj_offcomponent(entity *e, unsigned c);
-
-API char*       entity_save(entity *self);
-
-// ----------------------------------------------------------------------------
-// reflection
-
-#define each_objmember(oo,TYPE,NAME,PTR) \
-    (array(reflect_t) *found_ = members_find(obj_type(oo)); found_; found_ = 0) \
-        for(int it_ = 0, end_ = array_count(*found_); it_ != end_; ++it_ ) \
-            for(reflect_t *R = &(*found_)[it_]; R; R = 0 ) \
-                for(const char *NAME = R->name, *TYPE = R->type; NAME || TYPE; ) \
-                    for(void *PTR = ((char*)oo) + R->sz ; NAME || TYPE ; NAME = TYPE = 0 )
-
-API void*       obj_clone(const void *src);
-API void*       obj_merge(void *dst, const void *src); // @testme
-API void*       obj_mutate(void *dst, const void *src);
-API void*       obj_make(const char *str);
-
-// built-ins
-
-typedef enum OBJTYPE_BUILTINS {
-    OBJTYPE_obj    =  0,
-    OBJTYPE_entity =  1,
-    OBJTYPE_vec2   =  2,
-    OBJTYPE_vec3   =  3,
-    OBJTYPE_vec4   =  4,
-    OBJTYPE_quat   =  5,
-    OBJTYPE_mat33  =  6,
-    OBJTYPE_mat34  =  7,
-    OBJTYPE_mat44  =  8,
-    OBJTYPE_vec2i  =  9,
-    OBJTYPE_vec3i  = 10,
-} OBJTYPE_BUILTINS;
-
+// pack.c  -- perl/python-ish pack/unpack functions
+// like printf and scanf, but for binary data.
+//
+// format flags:
+//  (<) little endian       (>) big endian (! also)     (=) native endian
+//  (c) 8-bit  char         (b) 8-bit  byte
+//  (h) 16-bit half         (w) 16-bit word
+//  (i) 32-bit integer      (u) 32-bit unsigned         (f) 32-bit float
+//  (l) 64-bit long         (q) 64-bit quad             (d) 64-bit double
+//  (v) varint
+//  (s) string   (64-bit varint length prepended)
+//  (S) string   (32-bit fixed  length prepended)
+//  (m) memblock (64-bit varint length prepended)
+//  (M) memblock (32-bit fixed  length prepended)
+//  (z) memblock (zeroed)
+//  (#) number of arguments processed (only when unpacking)
+//
+// @todo:
+// - (x) document & test flag
+// @totest:
+// - (s) string   (64-bit variable length automatically prepended)
+// - (S) string   (32-bit fixed    length automatically prepended)
+// - (m) memblock (64-bit variable length automatically prepended)
+// - (M) memblock (32-bit fixed    length automatically prepended)
+// - (z) memblock (zeroed)
+// - (#) number of arguments processed (only when unpacking)
+
+// - save data dictated by the format string from the buffer. return: number of bytes written, or 0 if error.
+//   if first argument is zero, returns number of bytes required for packing.
+
+API int savef(FILE *file, const char *format, ...);
+API int saveb(unsigned char *buf, const char *format, ...);
+
+// - load data dictated by the format string into the buffer. return: number of bytes read, or 0 if error.
+//   if first argument is zero, returns number of bytes required for unpacking.
+
+API int loadf(FILE *file, const char *format, ...);
+API int loadb(const unsigned char *buf, const char *format, ...);
 #line 0
 
 #line 1 "engine/split/v4k_profile.h"
@@ -3165,6 +3078,7 @@ API void               enum_inscribe(const char *E,unsigned Eval,const char *inf
 API void               struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTYPEid, const char *infos);
 API void               member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes);
 API void               function_inscribe(const char *F,void *func,const char *infos);
+API const char*        symbol_naked(const char *s);
 
 API int                ui_reflect(const char *mask); // *, model* or NULL
 #line 0
@@ -4064,22 +3978,6 @@ API unsigned  scene_count_light();
 API light_t*  scene_index_light(unsigned index);
 #line 0
 
-#line 1 "engine/split/v4k_script.h"
-// -----------------------------------------------------------------------------
-// script framework
-// - rlyeh, public domain
-
-API void script_init();
-API void script_run(const char *script);
-API void script_runfile(const char *pathfile);
-
-API void script_bind_class(const char *objname, int num_methods, const char **c_names, void **c_functions);
-API void script_bind_function(const char *c_name, void *c_function);
-API void script_call(const char *lua_function);
-
-API bool script_tests();
-#line 0
-
 #line 1 "engine/split/v4k_string.h"
 // string framework
 // - rlyeh, public domain
@@ -4177,7 +4075,6 @@ API const char *quark_string( quarks_db*, unsigned key );
 #line 1 "engine/split/v4k_time.h"
 // -----------------------------------------------------------------------------
 // time framework utils
-// - rlyeh, public domain.
 
 API uint64_t    date();        // YYYYMMDDhhmmss
 API uint64_t    date_epoch();  // linux epoch
@@ -4219,6 +4116,102 @@ AUTORUN {
     hexdump(&g2, sizeof(g2));
 }
 */
+
+// ----------------------------------------------------------------------------
+// ease
+
+API float ease_nop(float t);
+API float ease_linear(float t);
+
+API float ease_out_sine(float t);
+API float ease_out_quad(float t);
+API float ease_out_cubic(float t);
+API float ease_out_quart(float t);
+API float ease_out_quint(float t);
+API float ease_out_expo(float t);
+API float ease_out_circ(float t);
+API float ease_out_back(float t);
+API float ease_out_elastic(float t);
+API float ease_out_bounce(float t);
+
+API float ease_in_sine(float t);
+API float ease_in_quad(float t);
+API float ease_in_cubic(float t);
+API float ease_in_quart(float t);
+API float ease_in_quint(float t);
+API float ease_in_expo(float t);
+API float ease_in_circ(float t);
+API float ease_in_back(float t);
+API float ease_in_elastic(float t);
+API float ease_in_bounce(float t);
+
+API float ease_inout_sine(float t);
+API float ease_inout_quad(float t);
+API float ease_inout_cubic(float t);
+API float ease_inout_quart(float t);
+API float ease_inout_quint(float t);
+API float ease_inout_expo(float t);
+API float ease_inout_circ(float t);
+API float ease_inout_back(float t);
+API float ease_inout_elastic(float t);
+API float ease_inout_bounce(float t);
+
+API float ease_inout_perlin(float t);
+
+enum EASE_FLAGS {
+    EASE_SINE,
+    EASE_QUAD,
+    EASE_CUBIC,
+    EASE_QUART,
+    EASE_QUINT,
+    EASE_EXPO,
+    EASE_CIRC,
+    EASE_BACK,
+    EASE_ELASTIC,
+    EASE_BOUNCE,
+
+    EASE_IN,
+    EASE_OUT = 0,
+    EASE_INOUT = EASE_IN * 2,
+
+    EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
+    EASE_LINEAR,
+    EASE_INOUT_PERLIN,
+
+    EASE_NUM
+};
+
+API float ease(float t01, unsigned fn); // / 0-to-1
+API float ease_pong(float t01, unsigned fn); // \ 1-to-0
+API float ease_ping_pong(float t, unsigned fn1, unsigned fn2); // /\ 0-to-1-to-0
+API float ease_pong_ping(float t, unsigned fn1, unsigned fn2); // \/ 1-to-0-to-1
+
+API const char *ease_enum(unsigned fn);
+API const char**ease_enums();
+
+// ----------------------------------------------------------------------------
+// tween
+
+typedef struct tween_keyframe_t {
+    float t;
+    vec3 v;
+    unsigned ease;
+} tween_keyframe_t;
+
+typedef struct tween_t {
+    array(tween_keyframe_t) keyframes;
+
+    vec3 result;
+    float time;
+    float duration;
+} tween_t;
+
+API tween_t tween();
+API void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+API void        tween_delkey(tween_t *tw, float t);
+API float     tween_update(tween_t *tw, float dt);
+API void      tween_reset(tween_t *tw);
+API void    tween_destroy(tween_t *tw);
 #line 0
 
 #line 1 "engine/split/v4k_system.h"

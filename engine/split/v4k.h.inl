@@ -101,33 +101,26 @@ extern "C" {
 
 {{FILE:v4k_math.h}}
 
-{{FILE:v4k_tween.h}}
+{{FILE:v4k_obj.h}}
+
 
 {{FILE:v4k_ai.h}}
 
-{{FILE:v4k_bt.h}}
-
 {{FILE:v4k_audio.h}}
-
-{{FILE:v4k_buffer.h}}
 
 {{FILE:v4k_collide.h}}
 
-{{FILE:v4k_cooker.h}}
+{{FILE:v4k_cook.h}}
 
 {{FILE:v4k_data.h}}
 
-{{FILE:v4k_dll.h}}
+{{FILE:v4k_extend.h}}
 
 {{FILE:v4k_editor.h}}
 
-{{FILE:v4k_file.h}}
-
 {{FILE:v4k_font.h}}
 
-{{FILE:v4k_id.h}}
-
-{{FILE:v4k_pack.h}}
+{{FILE:v4k_file.h}}
 
 {{FILE:v4k_input.h}}
 
@@ -139,7 +132,7 @@ extern "C" {
 
 {{FILE:v4k_netsync.h}}
 
-{{FILE:v4k_obj.h}}
+{{FILE:v4k_pack.h}}
 
 {{FILE:v4k_profile.h}}
 
@@ -150,8 +143,6 @@ extern "C" {
 {{FILE:v4k_renderdd.h}}
 
 {{FILE:v4k_scene.h}}
-
-{{FILE:v4k_script.h}}
 
 {{FILE:v4k_string.h}}
 

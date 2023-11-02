@@ -962,13 +962,10 @@ void window_focus() {
 int window_has_focus() {
     return !!glfwGetWindowAttrib(window, GLFW_FOCUSED);
 }
-void window_cursor(int visible) {
-    glfwSetInputMode(window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
-}
-int window_has_cursor() {
-    return glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL;
-}
+static int cursorshape = 1;
 void window_cursor_shape(unsigned mode) {
+    cursorshape = (mode &= 7);
+
     static GLFWcursor* cursors[7] = { 0 };
     static unsigned enums[7] = {
         0,
@@ -996,6 +993,14 @@ void window_cursor_shape(unsigned mode) {
         glfwSetCursor(window, mode < countof(enums) ? cursors[mode] : NULL);
     }
 }
+void window_cursor(int visible) {
+    (cursorshape == CURSOR_SW_AUTO && visible ? nk_style_show_cursor : nk_style_hide_cursor)(ui_handle());
+    glfwSetInputMode(window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+int window_has_cursor() {
+    return glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL;
+}
+
 void window_visible(int visible) {
     if(!window) return;
     //if(window) (visible ? glfwRestoreWindow : glfwIconifyWindow)(window);

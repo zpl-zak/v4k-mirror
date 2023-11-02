@@ -8,7 +8,7 @@ int ui_tween(const char *label, tween_t *t) {
 
     int expand_keys = label[0] == '!'; label += expand_keys;
     const char *id = label;
-    if( strchr(id, '@') ) *strchr(((char*)id = va("%s", label)), '@') = '\0';
+    if( strchr(id, '@') ) *strchr((char*)(id = (const char*)va("%s", label)), '@') = '\0';
 
     enum { LABEL_SPACING = 250 };
     enum { ROUNDING = 0 };

@@ -21,6 +21,12 @@ pushd tools\editor
             echo Skipping %%f
         )
     )
+    for %%f in (".\fwk*") do (
+        set "filename=%%~nf"
+        set "newname=v4k!filename:fwk=!%%~xf"
+        echo Renaming "%%f" to "!newname!"
+        copy "%%f" "!newname!"
+    )
     echo All done.
     endlocal
 popd

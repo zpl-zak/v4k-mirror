@@ -1,23 +1,3 @@
-#undef  EXTEND
-#define EXTEND(...) EXPAND(EXTEND, __VA_ARGS__)
-#define EXTEND2(o,F1) obj_extend(o,F1)
-#define EXTEND3(o,F1,F2) obj_extend(o,F1), obj_extend(o,F2)
-#define EXTEND4(o,F1,F2,F3) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3)
-#define EXTEND5(o,F1,F2,F3,F4) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4)
-#define EXTEND6(o,F1,F2,F3,F4,F5) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5)
-#define EXTEND7(o,F1,F2,F3,F4,F5,F6) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6)
-#define EXTEND8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7)
-#define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8)
-#define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9)
-
-#define obj_hasmethod(o,func) (obj_typeid(o)[obj_##func])
-
-
-#ifndef ICON_MD_LIGHT_OFF
-#define ICON_MD_LIGHT_OFF "\xEE\xA6\xB8"
-#endif
-
-
 // ## Editor long-term plan
 // - editor = tree of nodes. levels and objects are nodes, and their widgets are also nodes
 // - you can perform actions on nodes, with or without descendants, top-bottom or bottom-top
@@ -186,8 +166,8 @@ int editor_begin(const char *title, int mode) {
     if( mode == 0 ) return ui_panel(title, PANEL_OPEN);
     if( mode == 1 ) return ui_window(title, 0);
 
-    int ww = window_width();  int w = ww * 0.66;
-    int hh = window_height(); int h = hh * 0.66;
+    int ww = window_width(),  w = ww * 0.66;
+    int hh = window_height(), h = hh * 0.66;
 
     struct nk_rect position = { (ww-w)/2,(hh-h)/2, w,h };
     nk_flags win_flags = NK_WINDOW_TITLE | NK_WINDOW_BORDER |
@@ -200,7 +180,7 @@ int editor_begin(const char *title, int mode) {
     if( mode == 3 ) {
         mode = 2, position.x = input(MOUSE_X), position.w = w/3, win_flags =
             NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE|
-            NK_WINDOW_SCALABLE|NK_WINDOW_MOVABLE| //< nuklear requires these two to `remember` popup pos
+            NK_WINDOW_SCALABLE|NK_WINDOW_MOVABLE| //< nuklear requires these two to `remember` popup rects
             0;
     }
 
@@ -277,8 +257,8 @@ void editor_select_aabb(aabb box) {
 
     aabb item = {0};
     for each_set_ptr( editor.world, obj*, o ) {
-        if( obj_hasmethod(*o,aabb) ) {
-            if( obj_aabb(*o, &item) && aabb_test_aabb(item, box) ) {
+        if( obj_hasmethod(*o,aabb) && obj_aabb(*o, &item) ) {
+            if( aabb_test_aabb(item, box) ) {
                 if( is_inv )
                 editor_altselected(*o);
                 else
@@ -431,6 +411,7 @@ void editor_inspect(obj *o) {
         char *label = va(ICON_MD_UNDO "%s", NAME);
         int changed = 0;
         /**/ if( !strcmp(TYPE,"float") ) changed = ui_float(label, PTR);
+        else if( !strcmp(TYPE,"int") )   changed = ui_int(label, PTR);
         else if( !strcmp(TYPE,"vec2") )  changed = ui_float2(label, PTR);
         else if( !strcmp(TYPE,"vec3") )  changed = ui_float3(label, PTR);
         else if( !strcmp(TYPE,"vec4") )  changed = ui_float4(label, PTR);
@@ -546,7 +527,7 @@ void editor_symbol(int x, int y, const char *sym) {
     #define FONT_ORANGE    FONT_COLOR3
     #define FONT_CYAN      FONT_COLOR4
     // style: atlas size, unicode ranges and 6 font faces max
-    do_once font_face(FONT_SYMBOLS, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_1024);
+    do_once font_face(FONT_SYMBOLS, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
     // style: 10 colors max
     do_once font_color(FONT_WHITE,  WHITE);
     do_once font_color(FONT_YELLOW, YELLOW);
@@ -555,71 +536,6 @@ void editor_symbol(int x, int y, const char *sym) {
     font_goto(x,y);
     font_print(va(FONT_SYMBOLS FONT_WHITE FONT_H1 "%s", sym));
 }
-
-#if 0
-void editor_gizmos() {
-    // draw gizmos, aabbs, markers, etc
-    for each_map_ptr(*editor_selected_map(),void*,o,int,selected) {
-        if(*selected && obj_draw[obj_typeid(*o)]) {} else continue;
-
-        void *obj = *o;
-
-        // get transform
-        vec3 *p = NULL;
-        vec3 *r = NULL;
-        vec3 *s = NULL;
-        aabb *a = NULL;
-
-        for each_objmember(o,TYPE,NAME,PTR) {
-            /**/ if( !strcmp(NAME, "position") ) p = PTR;
-            else if( !strcmp(NAME, "rotation") ) r = PTR;
-            else if( !strcmp(NAME, "scale") ) s = PTR;
-            else if( !strcmp(NAME, "aabb") ) a = PTR;
-        }
-
-        // debugdraw
-        ddraw_ontop_push(0);
-
-#if 0
-            // bounding box
-            aabb *box = obj_aabb(obj);
-            if( box ) {
-                ddraw_color_push(YELLOW);
-                ddraw_aabb(box->min, box->max);
-                ddraw_color_pop();
-            }
-#endif
-
-            // position marker
-            if( p ) {
-                static map(void*, vec3) prev_dir = 0;
-                do_once map_init_ptr(prev_dir);
-                vec3* dir = map_find_or_add(prev_dir, obj, vec3(1,0,0));
-
-                static map(void*, vec3) prev_pos = 0;
-                do_once map_init_ptr(prev_pos);
-                vec3* found = map_find_or_add(prev_pos, obj, *p), fwd = sub3(*p, *found);
-                if( (fwd.y = 0, len3sq(fwd)) ) {
-                    *found = *p;
-                    *dir = norm3(fwd);
-                }
-
-                // float diameter = len2( sub2(vec2(box->max.x,box->max.z), vec2(box->min.x,box->min.z) ));
-                // float radius = diameter * 0.5;
-                ddraw_position_dir(*p, *dir, 1);
-            }
-
-        ddraw_ontop(1);
-
-            // transform gizmo
-            if( p && r && s ) {
-                gizmo(p,r,s);
-            }
-
-        ddraw_ontop_pop();
-    }
-}
-#endif
 
 void editor_frame( void (*game)(unsigned, float, double) ) {
     do_once {
@@ -684,22 +600,23 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     const char *ICON_SKIP = window_has_pause() ? ICON_MDI_STEP_FORWARD/*ICON_MDI_SKIP_NEXT*/ : ICON_MDI_FAST_FORWARD;
 
     int ingame = !editor.active;
-    UI_MENU(13, \
+    UI_MENU(14, \
         if(ingame) ui_disable(); \
-        UI_MENU_POPUP(ICON_MD_SETTINGS, vec2(0.33,1.00), ui_debug()) \
+        UI_MENU_ITEM(ICON_MDI_FILE_TREE, editor_send("scene")) \
         if(ingame) ui_enable(); \
         UI_MENU_ITEM(ICON_PL4Y, if(editor.t == 0) editor_send("eject"); editor_send(window_has_pause() ? "play" : "pause")) \
         UI_MENU_ITEM(ICON_SKIP, editor_send(window_has_pause() ? "frame" : "slomo")) \
         UI_MENU_ITEM(ICON_MDI_STOP, editor_send("stop")) \
         UI_MENU_ITEM(ICON_MDI_EJECT, editor_send("eject")) \
         UI_MENU_ITEM(STATS, stats_mode = (++stats_mode) % 3) \
-        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+34) \
+        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+34) \
         if(ingame) ui_disable(); \
-        UI_MENU_ITEM(ICON_MDI_FILE_TREE, editor_send("scene")) \
         UI_MENU_ITEM(ICON_MD_FOLDER_SPECIAL, editor_send("browser")) \
         UI_MENU_ITEM(ICON_MDI_CHART_TIMELINE, editor_send("timeline")) \
         UI_MENU_ITEM(ICON_MDI_CONSOLE, editor_send("console")) \
+        UI_MENU_ITEM(ICON_MDI_GRAPH, editor_send("nodes")) \
         UI_MENU_ITEM(ICON_MD_SEARCH, editor_send("filter")) \
+        UI_MENU_POPUP(ICON_MD_SETTINGS, vec2(0.33,1.00), ui_debug()) \
         if(ingame) ui_enable(); \
         UI_MENU_ITEM(ICON_MD_CLOSE, editor_send("quit")) \
     );
@@ -711,42 +628,22 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         if( obj_hasmethod(*o,edit) ) {
             obj_edit(*o);
         }
-        if( obj_hasmethod(*o,icon) ) {
-            obj_icon(*o);
-        }
     }
-
-#if 0
-    font_print(FONT_CENTER FONT_MIDDLE FONT_H1 FONT_SYMBOLS FONT_WHITE ""
-        ICON_MD_WB_IRIDESCENT
-        ICON_MD_WB_INCANDESCENT
-        ICON_MD_FLARE
-        ICON_MD_WB_SUNNY
-
-        ICON_MD_LIGHT_MODE
-        ICON_MD_LIGHT
-
-        ICON_MD_FLASHLIGHT_OFF
-        ICON_MD_FLASHLIGHT_ON
-        ICON_MD_HIGHLIGHT
-        ICON_MD_HIGHLIGHT_ALT
-        ICON_MD_LIGHTBULB
-        ICON_MD_LIGHTBULB_OUTLINE
-        ICON_MD_NIGHTLIGHT
-        ICON_MD_NIGHTLIGHT_ROUND
-    );
-#endif
 
     // draw silhouettes
     sprite_flush();
+    fx_begin();
     for each_map_ptr(*editor_selected_map(),void*,o,int,selected) {
-        if( *selected && obj_hasmethod(*o,draw) ) {
-            fx_begin();
+        if( !*selected ) continue;
+        if( obj_hasmethod(*o,draw) ) {
             obj_draw(*o);
-            sprite_flush();
-            fx_end();
+        }
+        if( obj_hasmethod(*o,edit) ) {
+            obj_edit(*o);
         }
     }
+    sprite_flush();
+    fx_end();
 
     // draw box selection
     if( !ui_active() ) { //< check that we're not moving a window
@@ -772,35 +669,34 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         }
     }
 
-    //
-    aabb box = {0};
+    // draw mouse aabb
     aabb mouse = { vec3(input(MOUSE_X),input(MOUSE_Y),0), vec3(input(MOUSE_X),input(MOUSE_Y),1)};
+    if( 1 ) {
+        ddraw_color_push(YELLOW);
+        ddraw_push_2d();
+        ddraw_aabb(mouse.min, mouse.max);
+        ddraw_pop_2d();
+        ddraw_color_pop();
+    }
+
+    // tick mouse aabb selection and contextual tab (RMB)
+    aabb box = {0};
     for each_set(editor.world,obj*,o) {
         if( !obj_hasmethod(o, aabb) ) continue;
         if( !obj_aabb(o, &box) ) continue;
 
-        // draw aabb
-        if( 1 ) {
-            ddraw_color_push(YELLOW);
-            ddraw_push_2d();
-            ddraw_aabb(box.min, box.max);
-            ddraw_aabb(mouse.min, mouse.max);
-            ddraw_pop_2d();
-            ddraw_color_pop();
-        }
-
         // trigger contextual inspector
         if( input_down(MOUSE_R) ) {
-            int selected = editor_selected(o);
-            editor_setpopup(o, selected);
+            int is_selected = editor_selected(o);
+            editor_setpopup(o, is_selected);
         }
 
         // draw contextual inspector
         if( editor_popup(o) ) {
-            if( editor_begin(va("%s (%s)", obj_name(o), obj_type(o)),3) ) {
+            if( editor_begin(va("%s (%s)", obj_name(o), obj_type(o)),EDITOR_WINDOW_NK_SMALL) ) {
                 ui_label2(obj_name(o), obj_type(o));
                 editor_inspect(o);
-                editor_end(3);
+                editor_end(EDITOR_WINDOW_NK_SMALL);
             } else {
                 editor_setpopup(o, 0);
             }
@@ -809,7 +705,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
 
 
     // draw subeditors
-    static int preferred_window_mode = 1; // panel(0), window(1), nk_window(2), nk_popup(3)
+    static int preferred_window_mode = EDITOR_WINDOW;
     static struct nk_color bak, *on = 0; do_once bak = ui_ctx->style.window.fixed_background.data.color; // ui_ctx->style.window.fixed_background.data.color = !!(on = (on ? NULL : &bak)) ? AS_NKCOLOR(0) : bak;  };
     if( editor.transparent ) ui_ctx->style.window.fixed_background.data.color = AS_NKCOLOR(0);
     for each_array(editor.subeditors, subeditor, fn) {
@@ -825,3 +721,4 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
 #include "v4k_editor2_browser.h"
 #include "v4k_editor3_timeline.h"
 #include "v4k_editor4_console.h"
+#include "v4k_editor5_nodes.h"

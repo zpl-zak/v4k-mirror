@@ -4,7 +4,7 @@
 EDITOR_BIND(browser, "held(CTRL)&down(2)", { ui_show(BROWSER_TITLE, ui_visible(BROWSER_TITLE) ^ true); });
 
 int editor_browser(int window_mode) {
-    window_mode = 1; // force window
+    window_mode = EDITOR_WINDOW; // force window
     if( editor_begin(BROWSER_TITLE, window_mode) ) {
         const char *file = 0;
         if( ui_browse(&file, NULL) ) {

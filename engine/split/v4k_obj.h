@@ -1,3 +1,21 @@
+// -----------------------------------------------------------------------------
+// factory of handle ids
+
+// convert between hard refs (pointers) and weak refs (ids)
+uintptr_t id_make(void *ptr);
+void *     id_handle(uintptr_t id);
+void       id_dispose(uintptr_t id);
+bool        id_valid(uintptr_t id);
+
+// configuration:
+// ideally, these two should be 32 each. they were changed to fit our OBJHEADER bits
+#ifndef ID_INDEX_BITS
+#define ID_INDEX_BITS 16
+#endif
+#ifndef ID_COUNT_BITS
+#define ID_COUNT_BITS  3
+#endif
+
 // C objects framework
 // - rlyeh, public domain.
 //
@@ -142,16 +160,28 @@ void*   obj_free(void *o);
 
 // --- syntax sugars
 
-#define EXTEND obj_extend
-#define obj_extend(T,func)               (obj_##func[OBJTYPE(T)] = (void*)T##_##func)
-#define obj_method(method,o,...)         (obj_##method[((obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((obj*)(o))->objtype]((o), ##__VA_ARGS__))
+#define obj_extend(T,method)       (obj_##method[OBJTYPE(T)] = (void*)T##_##method)
+#define obj_method(method,o,...)   (obj_##method[((struct obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((struct obj*)(o))->objtype]((o), ##__VA_ARGS__))
+#define obj_hasmethod(o,method)    (obj_typeid(o)[obj_##method])
 
-#define obj_vtable(func,RC,...)          RC macro(obj_##func)(){ __VA_ARGS__ }; RC (*obj_##func[256])() = { REPEAT256(macro(obj_##func)) };
-#define obj_vtable_null(func,RC)         RC (*obj_##func[256])() = { 0 }; // null virtual table. will crash unless obj_extend'ed
+#define obj_vtable(method,RC,...)   RC macro(obj_##method)(){ __VA_ARGS__ }; RC (*obj_##method[256])() = { REPEAT256(macro(obj_##method)) };
+#define obj_vtable_null(method,RC)  RC (*obj_##method[256])() = { 0 }; // null virtual table. will crash unless obj_extend'ed
 
 #define REPEAT16(f)  f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f
 #define REPEAT64(f)  REPEAT16(f),REPEAT16(f),REPEAT16(f),REPEAT16(f)
 #define REPEAT256(f) REPEAT64(f),REPEAT64(f),REPEAT64(f),REPEAT64(f)
+
+#undef  EXTEND
+#define EXTEND(...) EXPAND(EXTEND, __VA_ARGS__)
+#define EXTEND2(o,F1) obj_extend(o,F1)
+#define EXTEND3(o,F1,F2) obj_extend(o,F1), obj_extend(o,F2)
+#define EXTEND4(o,F1,F2,F3) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3)
+#define EXTEND5(o,F1,F2,F3,F4) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4)
+#define EXTEND6(o,F1,F2,F3,F4,F5) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5)
+#define EXTEND7(o,F1,F2,F3,F4,F5,F6) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6)
+#define EXTEND8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7)
+#define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8)
+#define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9)
 
 // --- declare vtables
 
@@ -199,7 +229,7 @@ API void*       obj_unref(void *oo);
 // scene tree
 
 #define each_objchild(p,T,o) /*non-recursive*/ \
-    (array(obj*)* children = obj_children(p); children; children = 0) \
+    (array(struct obj*)* children = obj_children(p); children; children = 0) \
         for(int _i = 1, _end = array_count(*children); _i < _end; ++_i) \
             for(T o = (T)((*children)[_i]); o && (obj_parent(o) == p); o = 0)
 

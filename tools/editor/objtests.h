@@ -33,9 +33,7 @@ AUTOTEST {
     obj_extend(boy, ctor);
     obj_extend(boy, tick);
     obj_extend(boy, save);
-}
 
-AUTOTEST {
     // instance gameobjs
 
     boy *obj1 = obj_new(boy, "boy", 123);

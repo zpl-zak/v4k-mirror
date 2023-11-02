@@ -957,23 +957,6 @@ ffi.cdef([[
 //lcpp INF [0000] quat: macro name but used as C declaration in:API void printq( quat q );
 //lcpp INF [0000] quat: macro name but used as C declaration in:STATIC void printq( quat q );
 //lcpp INF [0000] quat: macro name but used as C declaration in: void printq( quat q );
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 v;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 result;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 velocity;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 acceleration;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 prev_position;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3* steering_targets;
-//lcpp INF [0000] map: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; array(boid_t*) val; } tmp, *ptr; array(boid_t*)* tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; array(boid_t*) val; } tmp, *ptr; array(boid_t*)* tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
-//lcpp INF [0000] map: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
 //lcpp INF [0000] map: macro name but used as C declaration in:API int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:API int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:API int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
@@ -986,6 +969,18 @@ ffi.cdef([[
 //lcpp INF [0000] vec2i: macro name but used as C declaration in: int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in: int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in: int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 velocity;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 acceleration;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 prev_position;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3* steering_targets;
+//lcpp INF [0000] map: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; array(boid_t*) val; } tmp, *ptr; array(boid_t*)* tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; array(boid_t*) val; } tmp, *ptr; array(boid_t*)* tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
+//lcpp INF [0000] map: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:struct { map base; struct { pair p; vec3* key; boid_t** val; } tmp, *ptr; boid_t*** tmpval;          int (*typed_cmp)(vec3*, vec3*); uint64_t (*typed_hash)(vec3*); } * voxel_cache_;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 a;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 b;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 a;
@@ -1135,7 +1130,6 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] map: macro name but used as C declaration in:typedef struct { map base; struct { pair p; char* key; char* val; } tmp, *ptr; char** tmpval;          int (*typed_cmp)(char*, char*); uint64_t (*typed_hash)(char*); } * ini_t;
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2  font_xy();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2  font_xy();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2  font_xy();
@@ -1148,6 +1142,49 @@ ffi.cdef([[
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2  font_highlight(const char *text, const void *colors);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2  font_highlight(const char *text, const void *colors);
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2  font_highlight(const char *text, const void *colors);
+//lcpp INF [0000] map: macro name but used as C declaration in:typedef struct { map base; struct { pair p; char* key; char* val; } tmp, *ptr; char** tmpval;          int (*typed_cmp)(char*, char*); uint64_t (*typed_hash)(char*); } * ini_t;
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input2( int vk );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input2( int vk );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input2( int vk );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_diff2( int vk );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_diff2( int vk );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_diff2( int vk );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_frame2( int vk, int Nth_frame );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_frame2( int vk, int Nth_frame );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_frame2( int vk, int Nth_frame );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_positive2( vec2 v );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_positive2( vec2 v );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_positive2( vec2 v );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_positive2( vec2 v );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_positive2( vec2 v );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_positive2( vec2 v );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
+//lcpp INF [0000] vec2: macro name but used as C declaration in: void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
+//lcpp INF [0000] vec2: macro name but used as C declaration in: void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_touch(unsigned button, float sensitivity);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_touch(unsigned button, float sensitivity);
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_touch(unsigned button, float sensitivity);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_touch_delta(unsigned button, float sensitivity);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_touch_delta(unsigned button, float sensitivity);
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_touch_delta(unsigned button, float sensitivity);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_touch_delta_from_origin(unsigned button, float sensitivity);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_touch_delta_from_origin(unsigned button, float sensitivity);
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_touch_delta_from_origin(unsigned button, float sensitivity);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API char* ftoa2(vec2  v);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC char* ftoa2(vec2  v);
 //lcpp INF [0000] vec2: macro name but used as C declaration in: char* ftoa2(vec2  v);
@@ -1196,48 +1233,6 @@ ffi.cdef([[
 //lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC void        swapf4(vec4 *a, vec4 *b);
 //lcpp INF [0000] vec4: macro name but used as C declaration in: void        swapf4(vec4 *a, vec4 *b);
 //lcpp INF [0000] vec4: macro name but used as C declaration in: void        swapf4(vec4 *a, vec4 *b);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input2( int vk );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input2( int vk );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input2( int vk );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_diff2( int vk );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_diff2( int vk );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_diff2( int vk );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_frame2( int vk, int Nth_frame );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_frame2( int vk, int Nth_frame );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_frame2( int vk, int Nth_frame );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_positive2( vec2 v );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_positive2( vec2 v );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_positive2( vec2 v );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_positive2( vec2 v );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_positive2( vec2 v );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_positive2( vec2 v );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_deadzone( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_filter_deadzone_4way( vec2 v, float deadzone_treshold );
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
-//lcpp INF [0000] vec2: macro name but used as C declaration in: void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
-//lcpp INF [0000] vec2: macro name but used as C declaration in: void        input_touch_area(unsigned button, vec2 begin_coord_ndc, vec2 end_coord_ndc);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_touch(unsigned button, float sensitivity);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_touch(unsigned button, float sensitivity);
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_touch(unsigned button, float sensitivity);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_touch_delta(unsigned button, float sensitivity);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_touch_delta(unsigned button, float sensitivity);
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_touch_delta(unsigned button, float sensitivity);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input_touch_delta_from_origin(unsigned button, float sensitivity);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input_touch_delta_from_origin(unsigned button, float sensitivity);
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input_touch_delta_from_origin(unsigned button, float sensitivity);
 //lcpp INF [0000] map: macro name but used as C declaration in:typedef struct { map base; struct { pair p; char * key; struct profile_t val; } tmp, *ptr; struct profile_t* tmpval;          int (*typed_cmp)(char *, char *); uint64_t (*typed_hash)(char *); } * profiler_t;
 //lcpp INF [0000] vec4: macro name but used as C declaration in:vec4 color;
 //lcpp INF [0000] vec4: macro name but used as C declaration in:API void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
@@ -1514,6 +1509,11 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:vec2i* entries;
 //lcpp INF [0000] vec3i: macro name but used as C declaration in:typedef vec3i guid;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 v;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 result;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
 //lcpp INF [0000] test: macro name but used as C declaration in:API int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] test: macro name but used as C declaration in:STATIC int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] test: macro name but used as C declaration in: int (test)(const char *file, int line, const char *expr, bool result);
@@ -1790,81 +1790,118 @@ typedef float mat44[16];
  void print33( float *m );
  void print34( float *m );
  void print44( float *m );
- float ease_nop(float t);
- float ease_linear(float t);
- float ease_out_sine(float t);
- float ease_out_quad(float t);
- float ease_out_cubic(float t);
- float ease_out_quart(float t);
- float ease_out_quint(float t);
- float ease_out_expo(float t);
- float ease_out_circ(float t);
- float ease_out_back(float t);
- float ease_out_elastic(float t);
- float ease_out_bounce(float t);
- float ease_in_sine(float t);
- float ease_in_quad(float t);
- float ease_in_cubic(float t);
- float ease_in_quart(float t);
- float ease_in_quint(float t);
- float ease_in_expo(float t);
- float ease_in_circ(float t);
- float ease_in_back(float t);
- float ease_in_elastic(float t);
- float ease_in_bounce(float t);
- float ease_inout_sine(float t);
- float ease_inout_quad(float t);
- float ease_inout_cubic(float t);
- float ease_inout_quart(float t);
- float ease_inout_quint(float t);
- float ease_inout_expo(float t);
- float ease_inout_circ(float t);
- float ease_inout_back(float t);
- float ease_inout_elastic(float t);
- float ease_inout_bounce(float t);
- float ease_inout_perlin(float t);
-enum EASE_FLAGS {
-EASE_SINE,
-EASE_QUAD,
-EASE_CUBIC,
-EASE_QUART,
-EASE_QUINT,
-EASE_EXPO,
-EASE_CIRC,
-EASE_BACK,
-EASE_ELASTIC,
-EASE_BOUNCE,
-EASE_IN,
-EASE_OUT = 0,
-EASE_INOUT = EASE_IN * 2,
-EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
-EASE_LINEAR,
-EASE_INOUT_PERLIN,
-EASE_NUM
+uintptr_t id_make(void *ptr);
+void *     id_handle(uintptr_t id);
+void       id_dispose(uintptr_t id);
+bool        id_valid(uintptr_t id);
+typedef struct obj { struct {          ifdef(debug, const char *objname;)      union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };          };          struct obj** objchildren;      }; } obj;
+typedef struct entity { struct { struct {          ifdef(debug, const char *objname;)      union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };          };          struct obj** objchildren;      }; union { struct { uintptr_t objenabled:32, objflagged:32; }; uintptr_t cflags; }; void *c[32]; }; } entity;
+  obj *objtmp;
+void*   obj_malloc(unsigned sz);
+void*   obj_free(void *o);
+ extern void  (*obj_ctor[256])();
+ extern void  (*obj_dtor[256])();
+ extern char* (*obj_save[256])();
+ extern bool  (*obj_load[256])();
+ extern int   (*obj_test[256])();
+ extern int   (*obj_init[256])();
+ extern int   (*obj_quit[256])();
+ extern int   (*obj_tick[256])();
+ extern int   (*obj_draw[256])();
+ extern int   (*obj_lerp[256])();
+ extern int   (*obj_edit[256])();
+ extern int   (*obj_aabb[256])();
+ uintptr_t   obj_header(const void *o);
+ uintptr_t   obj_id(const void *o);
+ const char* obj_type(const void *o);
+ unsigned    obj_typeid(const void *o);
+ int         obj_sizeof(const void *o);
+ int         obj_size(const void *o);
+ char*       obj_data(void *o);
+ const char* obj_datac(const void *o);
+ void*       obj_payload(const void *o);
+ void*       obj_zero(void *o);
+ void*       obj_ref(void *oo);
+ void*       obj_unref(void *oo);
+ obj*        obj_detach(void *c);
+ obj*        obj_attach(void *o, void *c);
+ obj*        obj_root(const void *o);
+ obj*        obj_parent(const void *o);
+ obj***obj_children(const void *o);
+ obj***obj_siblings(const void *o);
+ int         obj_dumptree(const void *o);
+ void*       obj_setmeta(void *o, const char *key, const char *value);
+ const char* obj_meta(const void *o, const char *key);
+ void*       obj_setname(void *o, const char *name);
+ const char* obj_name(const void *o);
+ void*       obj_swap(void *dst, void *src);
+ void*       obj_copy_fast(void *dst, const void *src);
+ void*       obj_copy(void *dst, const void *src);
+ int         obj_comp_fast(const void *a, const void *b);
+ int         obj_comp(const void *a, const void *b);
+ int         obj_lesser(const void *a, const void *b);
+ int         obj_greater(const void *a, const void *b);
+ int         obj_equal(const void *a, const void *b);
+ uint64_t    obj_hash(const void *o);
+ bool        obj_hexdump(const void *oo);
+ int         obj_print(const void *o);
+ int         obj_printf(const void *o, const char *text);
+ int         obj_console(const void *o);
+ char*       obj_saveini(const void *o);
+ obj*        obj_mergeini(void *o, const char *ini);
+ obj*        obj_loadini(void *o, const char *ini);
+ char*       obj_savejson(const void *o);
+ obj*        obj_mergejson(void *o, const char *json);
+ obj*        obj_loadjson(void *o, const char *json);
+ char*       obj_savebin(const void *o);
+ obj*        obj_mergebin(void *o, const char *sav);
+ obj*        obj_loadbin(void *o, const char *sav);
+ char*       obj_savempack(const void *o);
+ obj*        obj_mergempack(void *o, const char *sav);
+ obj*        obj_loadmpack(void *o, const char *sav);
+ int         obj_push(const void *o);
+ int         obj_pop(void *o);
+ bool        obj_addcomponent(entity *e, unsigned c, void *ptr);
+ bool        obj_hascomponent(entity *e, unsigned c);
+ void*       obj_getcomponent(entity *e, unsigned c);
+ bool        obj_delcomponent(entity *e, unsigned c);
+ bool        obj_usecomponent(entity *e, unsigned c);
+ bool        obj_offcomponent(entity *e, unsigned c);
+ char*       entity_save(entity *self);
+ void*       obj_clone(const void *src);
+ void*       obj_merge(void *dst, const void *src);
+ void*       obj_mutate(void *dst, const void *src);
+ void*       obj_make(const char *str);
+typedef enum OBJTYPE_BUILTINS {
+OBJTYPE_obj    =  0,
+OBJTYPE_entity =  1,
+OBJTYPE_vec2   =  2,
+OBJTYPE_vec3   =  3,
+OBJTYPE_vec4   =  4,
+OBJTYPE_quat   =  5,
+OBJTYPE_mat33  =  6,
+OBJTYPE_mat34  =  7,
+OBJTYPE_mat44  =  8,
+OBJTYPE_vec2i  =  9,
+OBJTYPE_vec3i  = 10,
+} OBJTYPE_BUILTINS;
+ int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
+typedef int (*bt_func)();
+typedef struct bt_t {
+uint64_t type;
+int (*action)();
+union {
+int argi;
+float argf;
 };
- float ease(float t01, unsigned fn);
- float ease_pong(float t01, unsigned fn);
- float ease_ping_pong(float t, unsigned fn1, unsigned fn2);
- float ease_pong_ping(float t, unsigned fn1, unsigned fn2);
- const char *ease_enum(unsigned fn);
- const char**ease_enums();
-typedef struct tween_keyframe_t {
-float t;
-vec3 v;
-unsigned ease;
-} tween_keyframe_t;
-typedef struct tween_t {
-tween_keyframe_t* keyframes;
-vec3 result;
-float time;
-float duration;
-} tween_t;
- tween_t tween();
- void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
- void        tween_delkey(tween_t *tw, float t);
- float     tween_update(tween_t *tw, float dt);
- void      tween_reset(tween_t *tw);
- void    tween_destroy(tween_t *tw);
+struct bt_t* children;
+} bt_t;
+ bt_t    bt(const char *ini_file, unsigned flags);
+ int     bt_run(bt_t *b);
+ void    bt_addfun(const char *name, int(*func)());
+ bt_func bt_findfun(const char *name);
+ char   *bt_funcname(bt_func fn);
+ int ui_bt(bt_t *b);
 typedef enum SWARM_DISTANCE {
 SWARM_DISTANCE_LINEAR,
 SWARM_DISTANCE_INVERSE_LINEAR,
@@ -1898,23 +1935,6 @@ float blindspot_angledeg_compare_value_;
  void    swarm_update_acceleration_only(swarm_t *self);
  void    swarm_update_acceleration_and_velocity_only(swarm_t *self, float delta);
  int     ui_swarm(swarm_t *self);
- int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i dst, vec2i* path, size_t maxpath);
-typedef int (*bt_func)();
-typedef struct bt_t {
-uint64_t type;
-int (*action)();
-union {
-int argi;
-float argf;
-};
-struct bt_t* children;
-} bt_t;
- bt_t    bt(const char *ini_file, unsigned flags);
- int     bt_run(bt_t *b);
- void    bt_addfun(const char *name, int(*func)());
- bt_func bt_findfun(const char *name);
- char   *bt_funcname(bt_func fn);
- int ui_bt(bt_t *b);
  void    midi_send(unsigned midi_msg);
 typedef struct audio_handle* audio_t;
  audio_t audio_clip( const char *pathfile );
@@ -1948,52 +1968,6 @@ AUDIO_MULTIPLE_INSTANCES = 0,
 AUDIO_SINGLE_INSTANCE = 512,
 };
  int audio_queue( const void *samples, int num_samples, int flags );
-enum COMPRESS_FLAGS {
-COMPRESS_RAW     = 0,
-COMPRESS_PPP     = (1<<4),
-COMPRESS_ULZ     = (2<<4),
-COMPRESS_LZ4     = (3<<4),
-COMPRESS_CRUSH   = (4<<4),
-COMPRESS_DEFLATE = (5<<4),
-COMPRESS_LZP1    = (6<<4),
-COMPRESS_LZMA    = (7<<4),
-COMPRESS_BALZ    = (8<<4),
-COMPRESS_LZW3    = (9<<4),
-COMPRESS_LZSS    = (10<<4),
-COMPRESS_BCM     = (11<<4),
-COMPRESS_ZLIB    = (12<<4),
-};
- unsigned zbounds(unsigned inlen, unsigned flags);
- unsigned zencode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
- unsigned zexcess(unsigned flags);
- unsigned zdecode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
- void *interleave( void *out, const void *list, int list_count, int sizeof_item, unsigned columns );
- unsigned cobs_bounds(unsigned len);
- unsigned cobs_encode(const void *in, unsigned inlen, void *out, unsigned outlen);
- unsigned cobs_decode(const void *in, unsigned inlen, void *out, unsigned outlen);
- unsigned base92_encode(const void *in, unsigned inlen, void* out, unsigned outlen);
- unsigned base92_decode(const void *in, unsigned inlen, void* out, unsigned outlen);
- unsigned base92_bounds(unsigned inlen);
- unsigned netstring_bounds(unsigned inlen);
- unsigned netstring_encode(const char *in, unsigned inlen, char *out, unsigned outlen);
- unsigned netstring_decode(const char *in, unsigned inlen, char *out, unsigned outlen);
- void delta8_encode(void *buffer, unsigned count);
- void delta8_decode(void *buffer, unsigned count);
- void delta16_encode(void *buffer, unsigned count);
- void delta16_decode(void *buffer, unsigned count);
- void delta32_encode(void *buffer, unsigned count);
- void delta32_decode(void *buffer, unsigned count);
- void delta64_encode(void *buffer, unsigned count);
- void delta64_decode(void *buffer, unsigned count);
- uint64_t zig64( int64_t value );
- int64_t zag64( uint64_t value );
- uint32_t enczig32u( int32_t n);
- uint64_t enczig64u( int64_t n);
-  int32_t deczig32i(uint32_t n);
-  int64_t deczig64i(uint64_t n);
- void *arc4( void *buffer, unsigned buflen, const void *pass, unsigned passlen );
- uint64_t crc64(uint64_t h, const void *ptr, uint64_t len);
- void entropy( void *buf, unsigned n );
 typedef struct gjk_support {
 int aid, bid;
 vec3 a;
@@ -2128,6 +2102,13 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  void            xml_pop();
  bool data_tests();
  void* dll(const char *filename, const char *symbol);
+ void script_init();
+ void script_run(const char *script);
+ void script_runfile(const char *pathfile);
+ void script_bind_class(const char *objname, int num_methods, const char **c_names, void **c_functions);
+ void script_bind_function(const char *c_name, void *c_function);
+ void script_call(const char *lua_function);
+ bool script_tests();
  vec3  editor_pick(float mouse_x, float mouse_y);
  char* editor_path(const char *path);
  float* engine_getf(const char *key);
@@ -2150,6 +2131,38 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  char* kit_translate2( const char *id, const char *langcode_iso639_1 );
  void  kit_locale( const char *langcode_iso639_1 );
  char* kit_translate( const char *id );
+enum FONT_FLAGS {
+FONT_512 =0,
+FONT_1024 =1,
+FONT_2048 =2,
+FONT_4096 =4,
+FONT_NO_OVERSAMPLE =0,
+FONT_OVERSAMPLE_X =8,
+FONT_OVERSAMPLE_Y =16,
+FONT_ASCII =2048,
+FONT_AR =4096,
+FONT_ZH =8192,
+FONT_EL =16384,
+FONT_EM =32768,
+FONT_EU =65536,
+FONT_HE =131072,
+FONT_JP =262144,
+FONT_KR =524288,
+FONT_RU =1048576,
+FONT_TH =2097152,
+FONT_VI =4194304,
+FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
+};
+ void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
+ void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
+ void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
+ void  font_color(const char *color_tag, uint32_t color);
+ vec2  font_xy();
+ void  font_goto(float x, float y);
+ vec2  font_print(const char *text);
+ vec2  font_rect(const char *text);
+ void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords);
+ vec2  font_highlight(const char *text, const void *colors);
  char** file_list( const char *pathmasks );
  bool         file_write( const char *file, const void *ptr, int len );
  bool         file_append( const char *file, const void *ptr, int len );
@@ -2197,159 +2210,6 @@ typedef struct { map base; struct { pair p; char* key; char* val; } tmp, *ptr; c
  ini_t        ini_from_mem(const char *data);
  void         ini_destroy(ini_t);
  bool         ini_write(const char *filename, const char *section, const char *key, const char *value);
-enum FONT_FLAGS {
-FONT_512 =0,
-FONT_1024 =1,
-FONT_2048 =2,
-FONT_4096 =4,
-FONT_NO_OVERSAMPLE =0,
-FONT_OVERSAMPLE_X =8,
-FONT_OVERSAMPLE_Y =16,
-FONT_ASCII =2048,
-FONT_AR =4096,
-FONT_ZH =8192,
-FONT_EL =16384,
-FONT_EM =32768,
-FONT_EU =65536,
-FONT_HE =131072,
-FONT_JP =262144,
-FONT_KR =524288,
-FONT_RU =1048576,
-FONT_TH =2097152,
-FONT_VI =4194304,
-FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
-};
- void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
- void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
- void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
- void  font_color(const char *color_tag, uint32_t color);
- vec2  font_xy();
- void  font_goto(float x, float y);
- vec2  font_print(const char *text);
- vec2  font_rect(const char *text);
- void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords);
- vec2  font_highlight(const char *text, const void *colors);
-uintptr_t id_make(void *ptr);
-void *     id_handle(uintptr_t id);
-void       id_dispose(uintptr_t id);
-bool        id_valid(uintptr_t id);
- int semver( int major, int minor, int patch );
- int semvercmp( int v1, int v2 );
-typedef struct byte2 { uint8_t x,y; } byte2;
-typedef struct byte3 { uint8_t x,y,z; } byte3;
-typedef struct byte4 { uint8_t x,y,z,w; } byte4;
-typedef struct int2 { int x,y; } int2;
-typedef struct int3 { int x,y,z; } int3;
-typedef struct int4 { int x,y,z,w; } int4;
-typedef struct uint2 { unsigned int x,y; } uint2;
-typedef struct uint3 { unsigned int x,y,z; } uint3;
-typedef struct uint4 { unsigned int x,y,z,w; } uint4;
-typedef struct float2 { float x,y; } float2;
-typedef struct float3 { float x,y,z; } float3;
-typedef struct float4 { float x,y,z,w; } float4;
-typedef struct double2 { double x,y; } double2;
-typedef struct double3 { double x,y,z; } double3;
-typedef struct double4 { double x,y,z,w; } double4;
- char *cc4str(unsigned cc);
- char *cc8str(uint64_t cc);
-enum {
-cc__1 = '1', cc__2, cc__3, cc__4, cc__5, cc__6,cc__7, cc__8, cc__9, cc__0, cc___, cc__ = ' ',
-cc__A = 'A', cc__B, cc__C, cc__D, cc__E, cc__F,cc__G, cc__H, cc__I, cc__J, cc__K,cc__L, cc__M, cc__N, cc__O, cc__P,cc__Q, cc__R, cc__S, cc__T, cc__U,cc__V, cc__W, cc__X, cc__Y, cc__Z,
-cc__a = 'a', cc__b, cc__c, cc__d, cc__e, cc__f,cc__g, cc__h, cc__i, cc__j, cc__k,cc__l, cc__m, cc__n, cc__o, cc__p,cc__q, cc__r, cc__s, cc__t, cc__u,cc__v, cc__w, cc__x, cc__y, cc__z,
-};
- char* ftoa1(float v);
- char* ftoa2(vec2  v);
- char* ftoa3(vec3  v);
- char* ftoa4(vec4  v);
- float atof1(const char *s);
- vec2 atof2(const char *s);
- vec3 atof3(const char *s);
- vec4 atof4(const char *s);
- char* itoa1(int   v);
- char* itoa2(vec2i v);
- char* itoa3(vec3i v);
- int   atoi1(const char *s);
- vec2i atoi2(const char *s);
- vec3i atoi3(const char *s);
- int is_big();
- int is_little();
- uint16_t swap16( uint16_t x );
- uint32_t swap32( uint32_t x );
- uint64_t swap64( uint64_t x );
- float    swap32f(float n);
- double   swap64f(double n);
- void        swapf(float *a, float *b);
- void        swapf2(vec2 *a, vec2 *b);
- void        swapf3(vec3 *a, vec3 *b);
- void        swapf4(vec4 *a, vec4 *b);
- uint16_t    lil16(uint16_t n);
- uint32_t    lil32(uint32_t n);
- uint64_t    lil64(uint64_t n);
- float       lil32f(float n);
- double      lil64f(double n);
- uint16_t    big16(uint16_t n);
- uint32_t    big32(uint32_t n);
- uint64_t    big64(uint64_t n);
- float       big32f(float n);
- double      big64f(double n);
- uint16_t* lil16p(void *p, int sz);
- uint32_t* lil32p(void *p, int sz);
- uint64_t* lil64p(void *p, int sz);
- float   * lil32pf(void *p, int sz);
- double  * lil64pf(void *p, int sz);
- uint16_t*   big16p(void *p, int sz);
- uint32_t*   big32p(void *p, int sz);
- uint64_t*   big64p(void *p, int sz);
- float   *   big32pf(void *p, int sz);
- double  * big64pf(void *p, int sz);
-typedef uint16_t half;
- float half_to_float(half value);
- half  float_to_half(float value);
- void pack16i(uint8_t *buf, uint16_t i, int swap);
- void pack32i(uint8_t *buf, uint32_t i, int swap);
- void pack64i(uint8_t *buf, uint64_t i, int swap);
- int16_t unpack16i(const uint8_t *buf, int swap);
- int32_t unpack32i(const uint8_t *buf, int swap);
- int64_t unpack64i(const uint8_t *buf, int swap);
-    uint64_t pack754(long double f, unsigned bits, unsigned expbits);
- long double unpack754(uint64_t i, unsigned bits, unsigned expbits);
- uint64_t pack64uv( uint8_t *buffer, uint64_t value );
- uint64_t unpack64uv( const uint8_t *buffer, uint64_t *value );
- uint64_t pack64iv( uint8_t *buffer, int64_t value_ );
- uint64_t unpack64iv( const uint8_t *buffer, int64_t *value );
- int  msgpack(const char *fmt, ... );
- int  msgunpack(const char *fmt, ... );
- int msgpack_new(uint8_t *w, size_t l);
- int msgpack_nil();
- int msgpack_chr(bool n);
- int msgpack_uns(uint64_t n);
- int msgpack_int(int64_t n);
- int msgpack_str(const char *s);
- int msgpack_bin(const char *s, size_t n);
- int msgpack_flt(double g);
- int msgpack_ext(uint8_t key, void *val, size_t n);
- int msgpack_arr(uint32_t n);
- int msgpack_map(uint32_t n);
- int msgpack_eof();
- int msgpack_err();
- bool msgunpack_new( const void *opaque_or_FILE, size_t bytes );
- bool msgunpack_nil();
- bool msgunpack_chr(bool *chr);
- bool msgunpack_uns(uint64_t *uns);
- bool msgunpack_int(int64_t *sig);
- bool msgunpack_str(char **str);
- bool msgunpack_bin(void **bin, uint64_t *len);
- bool msgunpack_flt(float *flt);
- bool msgunpack_dbl(double *dbl);
- bool msgunpack_ext(uint8_t *key, void **val, uint64_t *len);
- bool msgunpack_arr(uint64_t *len);
- bool msgunpack_map(uint64_t *len);
- bool msgunpack_eof();
- bool msgunpack_err();
- int savef(FILE *file, const char *format, ...);
- int saveb(unsigned char *buf, const char *format, ...);
- int loadf(FILE *file, const char *format, ...);
- int loadb(const unsigned char *buf, const char *format, ...);
  int         input_use( int controller_id );
  float       input( int vk );
  vec2        input2( int vk );
@@ -2499,97 +2359,169 @@ enum { NETWORK_USERID = 7,  NETWORK_COUNT , NETWORK_CAPACITY };
  void   server_send_bin(int64_t handle, const void *ptr, int len);
  void   server_drop(int64_t handle);
  int64_t  client_join(const char *ip, int port);
-typedef struct obj { struct {          ifdef(debug, const char *objname;)      union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };          };          struct obj** objchildren;      }; } obj;
-typedef struct entity { struct { struct {          ifdef(debug, const char *objname;)      union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };          };          struct obj** objchildren;      }; union { struct { uintptr_t objenabled:32, objflagged:32; }; uintptr_t cflags; }; void *c[32]; }; } entity;
-  obj *objtmp;
-void*   obj_malloc(unsigned sz);
-void*   obj_free(void *o);
- extern void  (*obj_ctor[256])();
- extern void  (*obj_dtor[256])();
- extern char* (*obj_save[256])();
- extern bool  (*obj_load[256])();
- extern int   (*obj_test[256])();
- extern int   (*obj_init[256])();
- extern int   (*obj_quit[256])();
- extern int   (*obj_tick[256])();
- extern int   (*obj_draw[256])();
- extern int   (*obj_lerp[256])();
- extern int   (*obj_edit[256])();
- extern int   (*obj_aabb[256])();
- uintptr_t   obj_header(const void *o);
- uintptr_t   obj_id(const void *o);
- const char* obj_type(const void *o);
- unsigned    obj_typeid(const void *o);
- int         obj_sizeof(const void *o);
- int         obj_size(const void *o);
- char*       obj_data(void *o);
- const char* obj_datac(const void *o);
- void*       obj_payload(const void *o);
- void*       obj_zero(void *o);
- void*       obj_ref(void *oo);
- void*       obj_unref(void *oo);
- obj*        obj_detach(void *c);
- obj*        obj_attach(void *o, void *c);
- obj*        obj_root(const void *o);
- obj*        obj_parent(const void *o);
- obj***obj_children(const void *o);
- obj***obj_siblings(const void *o);
- int         obj_dumptree(const void *o);
- void*       obj_setmeta(void *o, const char *key, const char *value);
- const char* obj_meta(const void *o, const char *key);
- void*       obj_setname(void *o, const char *name);
- const char* obj_name(const void *o);
- void*       obj_swap(void *dst, void *src);
- void*       obj_copy_fast(void *dst, const void *src);
- void*       obj_copy(void *dst, const void *src);
- int         obj_comp_fast(const void *a, const void *b);
- int         obj_comp(const void *a, const void *b);
- int         obj_lesser(const void *a, const void *b);
- int         obj_greater(const void *a, const void *b);
- int         obj_equal(const void *a, const void *b);
- uint64_t    obj_hash(const void *o);
- bool        obj_hexdump(const void *oo);
- int         obj_print(const void *o);
- int         obj_printf(const void *o, const char *text);
- int         obj_console(const void *o);
- char*       obj_saveini(const void *o);
- obj*        obj_mergeini(void *o, const char *ini);
- obj*        obj_loadini(void *o, const char *ini);
- char*       obj_savejson(const void *o);
- obj*        obj_mergejson(void *o, const char *json);
- obj*        obj_loadjson(void *o, const char *json);
- char*       obj_savebin(const void *o);
- obj*        obj_mergebin(void *o, const char *sav);
- obj*        obj_loadbin(void *o, const char *sav);
- char*       obj_savempack(const void *o);
- obj*        obj_mergempack(void *o, const char *sav);
- obj*        obj_loadmpack(void *o, const char *sav);
- int         obj_push(const void *o);
- int         obj_pop(void *o);
- bool        obj_addcomponent(entity *e, unsigned c, void *ptr);
- bool        obj_hascomponent(entity *e, unsigned c);
- void*       obj_getcomponent(entity *e, unsigned c);
- bool        obj_delcomponent(entity *e, unsigned c);
- bool        obj_usecomponent(entity *e, unsigned c);
- bool        obj_offcomponent(entity *e, unsigned c);
- char*       entity_save(entity *self);
- void*       obj_clone(const void *src);
- void*       obj_merge(void *dst, const void *src);
- void*       obj_mutate(void *dst, const void *src);
- void*       obj_make(const char *str);
-typedef enum OBJTYPE_BUILTINS {
-OBJTYPE_obj    =  0,
-OBJTYPE_entity =  1,
-OBJTYPE_vec2   =  2,
-OBJTYPE_vec3   =  3,
-OBJTYPE_vec4   =  4,
-OBJTYPE_quat   =  5,
-OBJTYPE_mat33  =  6,
-OBJTYPE_mat34  =  7,
-OBJTYPE_mat44  =  8,
-OBJTYPE_vec2i  =  9,
-OBJTYPE_vec3i  = 10,
-} OBJTYPE_BUILTINS;
+enum COMPRESS_FLAGS {
+COMPRESS_RAW     = 0,
+COMPRESS_PPP     = (1<<4),
+COMPRESS_ULZ     = (2<<4),
+COMPRESS_LZ4     = (3<<4),
+COMPRESS_CRUSH   = (4<<4),
+COMPRESS_DEFLATE = (5<<4),
+COMPRESS_LZP1    = (6<<4),
+COMPRESS_LZMA    = (7<<4),
+COMPRESS_BALZ    = (8<<4),
+COMPRESS_LZW3    = (9<<4),
+COMPRESS_LZSS    = (10<<4),
+COMPRESS_BCM     = (11<<4),
+COMPRESS_ZLIB    = (12<<4),
+};
+ unsigned zbounds(unsigned inlen, unsigned flags);
+ unsigned zencode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
+ unsigned zexcess(unsigned flags);
+ unsigned zdecode(void *out, unsigned outlen, const void *in, unsigned inlen, unsigned flags);
+ void *interleave( void *out, const void *list, int list_count, int sizeof_item, unsigned columns );
+ unsigned cobs_bounds(unsigned len);
+ unsigned cobs_encode(const void *in, unsigned inlen, void *out, unsigned outlen);
+ unsigned cobs_decode(const void *in, unsigned inlen, void *out, unsigned outlen);
+ unsigned base92_encode(const void *in, unsigned inlen, void* out, unsigned outlen);
+ unsigned base92_decode(const void *in, unsigned inlen, void* out, unsigned outlen);
+ unsigned base92_bounds(unsigned inlen);
+ unsigned netstring_bounds(unsigned inlen);
+ unsigned netstring_encode(const char *in, unsigned inlen, char *out, unsigned outlen);
+ unsigned netstring_decode(const char *in, unsigned inlen, char *out, unsigned outlen);
+ void delta8_encode(void *buffer, unsigned count);
+ void delta8_decode(void *buffer, unsigned count);
+ void delta16_encode(void *buffer, unsigned count);
+ void delta16_decode(void *buffer, unsigned count);
+ void delta32_encode(void *buffer, unsigned count);
+ void delta32_decode(void *buffer, unsigned count);
+ void delta64_encode(void *buffer, unsigned count);
+ void delta64_decode(void *buffer, unsigned count);
+ uint64_t zig64( int64_t value );
+ int64_t zag64( uint64_t value );
+ uint32_t enczig32u( int32_t n);
+ uint64_t enczig64u( int64_t n);
+  int32_t deczig32i(uint32_t n);
+  int64_t deczig64i(uint64_t n);
+ void *arc4( void *buffer, unsigned buflen, const void *pass, unsigned passlen );
+ uint64_t crc64(uint64_t h, const void *ptr, uint64_t len);
+ void entropy( void *buf, unsigned n );
+ int semver( int major, int minor, int patch );
+ int semvercmp( int v1, int v2 );
+typedef struct byte2 { uint8_t x,y; } byte2;
+typedef struct byte3 { uint8_t x,y,z; } byte3;
+typedef struct byte4 { uint8_t x,y,z,w; } byte4;
+typedef struct int2 { int x,y; } int2;
+typedef struct int3 { int x,y,z; } int3;
+typedef struct int4 { int x,y,z,w; } int4;
+typedef struct uint2 { unsigned int x,y; } uint2;
+typedef struct uint3 { unsigned int x,y,z; } uint3;
+typedef struct uint4 { unsigned int x,y,z,w; } uint4;
+typedef struct float2 { float x,y; } float2;
+typedef struct float3 { float x,y,z; } float3;
+typedef struct float4 { float x,y,z,w; } float4;
+typedef struct double2 { double x,y; } double2;
+typedef struct double3 { double x,y,z; } double3;
+typedef struct double4 { double x,y,z,w; } double4;
+ char *cc4str(unsigned cc);
+ char *cc8str(uint64_t cc);
+enum {
+cc__1 = '1', cc__2, cc__3, cc__4, cc__5, cc__6,cc__7, cc__8, cc__9, cc__0, cc___, cc__ = ' ',
+cc__A = 'A', cc__B, cc__C, cc__D, cc__E, cc__F,cc__G, cc__H, cc__I, cc__J, cc__K,cc__L, cc__M, cc__N, cc__O, cc__P,cc__Q, cc__R, cc__S, cc__T, cc__U,cc__V, cc__W, cc__X, cc__Y, cc__Z,
+cc__a = 'a', cc__b, cc__c, cc__d, cc__e, cc__f,cc__g, cc__h, cc__i, cc__j, cc__k,cc__l, cc__m, cc__n, cc__o, cc__p,cc__q, cc__r, cc__s, cc__t, cc__u,cc__v, cc__w, cc__x, cc__y, cc__z,
+};
+ char* ftoa1(float v);
+ char* ftoa2(vec2  v);
+ char* ftoa3(vec3  v);
+ char* ftoa4(vec4  v);
+ float atof1(const char *s);
+ vec2 atof2(const char *s);
+ vec3 atof3(const char *s);
+ vec4 atof4(const char *s);
+ char* itoa1(int   v);
+ char* itoa2(vec2i v);
+ char* itoa3(vec3i v);
+ int   atoi1(const char *s);
+ vec2i atoi2(const char *s);
+ vec3i atoi3(const char *s);
+ int is_big();
+ int is_little();
+ uint16_t swap16( uint16_t x );
+ uint32_t swap32( uint32_t x );
+ uint64_t swap64( uint64_t x );
+ float    swap32f(float n);
+ double   swap64f(double n);
+ void        swapf(float *a, float *b);
+ void        swapf2(vec2 *a, vec2 *b);
+ void        swapf3(vec3 *a, vec3 *b);
+ void        swapf4(vec4 *a, vec4 *b);
+ uint16_t    lil16(uint16_t n);
+ uint32_t    lil32(uint32_t n);
+ uint64_t    lil64(uint64_t n);
+ float       lil32f(float n);
+ double      lil64f(double n);
+ uint16_t    big16(uint16_t n);
+ uint32_t    big32(uint32_t n);
+ uint64_t    big64(uint64_t n);
+ float       big32f(float n);
+ double      big64f(double n);
+ uint16_t* lil16p(void *p, int sz);
+ uint32_t* lil32p(void *p, int sz);
+ uint64_t* lil64p(void *p, int sz);
+ float   * lil32pf(void *p, int sz);
+ double  * lil64pf(void *p, int sz);
+ uint16_t*   big16p(void *p, int sz);
+ uint32_t*   big32p(void *p, int sz);
+ uint64_t*   big64p(void *p, int sz);
+ float   *   big32pf(void *p, int sz);
+ double  * big64pf(void *p, int sz);
+typedef uint16_t half;
+ float half_to_float(half value);
+ half  float_to_half(float value);
+ void pack16i(uint8_t *buf, uint16_t i, int swap);
+ void pack32i(uint8_t *buf, uint32_t i, int swap);
+ void pack64i(uint8_t *buf, uint64_t i, int swap);
+ int16_t unpack16i(const uint8_t *buf, int swap);
+ int32_t unpack32i(const uint8_t *buf, int swap);
+ int64_t unpack64i(const uint8_t *buf, int swap);
+    uint64_t pack754(long double f, unsigned bits, unsigned expbits);
+ long double unpack754(uint64_t i, unsigned bits, unsigned expbits);
+ uint64_t pack64uv( uint8_t *buffer, uint64_t value );
+ uint64_t unpack64uv( const uint8_t *buffer, uint64_t *value );
+ uint64_t pack64iv( uint8_t *buffer, int64_t value_ );
+ uint64_t unpack64iv( const uint8_t *buffer, int64_t *value );
+ int  msgpack(const char *fmt, ... );
+ int  msgunpack(const char *fmt, ... );
+ int msgpack_new(uint8_t *w, size_t l);
+ int msgpack_nil();
+ int msgpack_chr(bool n);
+ int msgpack_uns(uint64_t n);
+ int msgpack_int(int64_t n);
+ int msgpack_str(const char *s);
+ int msgpack_bin(const char *s, size_t n);
+ int msgpack_flt(double g);
+ int msgpack_ext(uint8_t key, void *val, size_t n);
+ int msgpack_arr(uint32_t n);
+ int msgpack_map(uint32_t n);
+ int msgpack_eof();
+ int msgpack_err();
+ bool msgunpack_new( const void *opaque_or_FILE, size_t bytes );
+ bool msgunpack_nil();
+ bool msgunpack_chr(bool *chr);
+ bool msgunpack_uns(uint64_t *uns);
+ bool msgunpack_int(int64_t *sig);
+ bool msgunpack_str(char **str);
+ bool msgunpack_bin(void **bin, uint64_t *len);
+ bool msgunpack_flt(float *flt);
+ bool msgunpack_dbl(double *dbl);
+ bool msgunpack_ext(uint8_t *key, void **val, uint64_t *len);
+ bool msgunpack_arr(uint64_t *len);
+ bool msgunpack_map(uint64_t *len);
+ bool msgunpack_eof();
+ bool msgunpack_err();
+ int savef(FILE *file, const char *format, ...);
+ int saveb(unsigned char *buf, const char *format, ...);
+ int loadf(FILE *file, const char *format, ...);
+ int loadb(const unsigned char *buf, const char *format, ...);
  int profiler_enable(bool on);
 struct profile_t { double stat; int32_t cost, avg; };
 typedef struct { map base; struct { pair p; char * key; struct profile_t val; } tmp, *ptr; struct profile_t* tmpval;          int (*typed_cmp)(char *, char *); uint64_t (*typed_hash)(char *); } * profiler_t;
@@ -2619,6 +2551,7 @@ unsigned bytes;
  void               struct_inscribe(const char *T,unsigned Tsz,unsigned OBJTYPEid, const char *infos);
  void               member_inscribe(const char *T, const char *M,unsigned Msz, const char *infos, const char *type, unsigned bytes);
  void               function_inscribe(const char *F,void *func,const char *infos);
+ const char*        symbol_naked(const char *s);
  int                ui_reflect(const char *mask);
 typedef unsigned handle;
  unsigned rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a );
@@ -3155,13 +3088,6 @@ int u_coefficients_sh;
  light_t*  scene_spawn_light();
  unsigned  scene_count_light();
  light_t*  scene_index_light(unsigned index);
- void script_init();
- void script_run(const char *script);
- void script_runfile(const char *pathfile);
- void script_bind_class(const char *objname, int num_methods, const char **c_names, void **c_functions);
- void script_bind_function(const char *c_name, void *c_function);
- void script_call(const char *lua_function);
- bool script_tests();
  char*   tempvl(const char *fmt, va_list);
  char*   tempva(const char *fmt, ...);
  char*   strcatf(char **s, const char *buf);
@@ -3211,6 +3137,81 @@ vec2i* entries;
  void        timer_destroy(unsigned timer_handle);
 typedef vec3i guid;
  guid        guid_create();
+ float ease_nop(float t);
+ float ease_linear(float t);
+ float ease_out_sine(float t);
+ float ease_out_quad(float t);
+ float ease_out_cubic(float t);
+ float ease_out_quart(float t);
+ float ease_out_quint(float t);
+ float ease_out_expo(float t);
+ float ease_out_circ(float t);
+ float ease_out_back(float t);
+ float ease_out_elastic(float t);
+ float ease_out_bounce(float t);
+ float ease_in_sine(float t);
+ float ease_in_quad(float t);
+ float ease_in_cubic(float t);
+ float ease_in_quart(float t);
+ float ease_in_quint(float t);
+ float ease_in_expo(float t);
+ float ease_in_circ(float t);
+ float ease_in_back(float t);
+ float ease_in_elastic(float t);
+ float ease_in_bounce(float t);
+ float ease_inout_sine(float t);
+ float ease_inout_quad(float t);
+ float ease_inout_cubic(float t);
+ float ease_inout_quart(float t);
+ float ease_inout_quint(float t);
+ float ease_inout_expo(float t);
+ float ease_inout_circ(float t);
+ float ease_inout_back(float t);
+ float ease_inout_elastic(float t);
+ float ease_inout_bounce(float t);
+ float ease_inout_perlin(float t);
+enum EASE_FLAGS {
+EASE_SINE,
+EASE_QUAD,
+EASE_CUBIC,
+EASE_QUART,
+EASE_QUINT,
+EASE_EXPO,
+EASE_CIRC,
+EASE_BACK,
+EASE_ELASTIC,
+EASE_BOUNCE,
+EASE_IN,
+EASE_OUT = 0,
+EASE_INOUT = EASE_IN * 2,
+EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
+EASE_LINEAR,
+EASE_INOUT_PERLIN,
+EASE_NUM
+};
+ float ease(float t01, unsigned fn);
+ float ease_pong(float t01, unsigned fn);
+ float ease_ping_pong(float t, unsigned fn1, unsigned fn2);
+ float ease_pong_ping(float t, unsigned fn1, unsigned fn2);
+ const char *ease_enum(unsigned fn);
+ const char**ease_enums();
+typedef struct tween_keyframe_t {
+float t;
+vec3 v;
+unsigned ease;
+} tween_keyframe_t;
+typedef struct tween_t {
+tween_keyframe_t* keyframes;
+vec3 result;
+float time;
+float duration;
+} tween_t;
+ tween_t tween();
+ void      tween_setkey(tween_t *tw, float t, vec3 v, unsigned easing_mode);
+ void        tween_delkey(tween_t *tw, float t);
+ float     tween_update(tween_t *tw, float dt);
+ void      tween_reset(tween_t *tw);
+ void    tween_destroy(tween_t *tw);
  void*       thread( int (*thread_func)(void* user_data), void* user_data );
  void        thread_destroy( void *thd );
  int         argc();
