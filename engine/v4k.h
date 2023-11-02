@@ -4212,6 +4212,23 @@ API void        tween_delkey(tween_t *tw, float t);
 API float     tween_update(tween_t *tw, float dt);
 API void      tween_reset(tween_t *tw);
 API void    tween_destroy(tween_t *tw);
+
+// ----------------------------------------------------------------------------
+// curve
+
+typedef struct curve_t {
+    array(float) lengths;
+    array(unsigned) colors;
+    array(vec3)  samples;
+    array(vec3)  points;
+    array(int)   indices;
+} curve_t;
+
+API curve_t curve();
+API void      curve_add(curve_t *c, vec3 p);
+API void      curve_finish(curve_t *c, int num_points);
+API vec3      curve_eval(curve_t *c, float dt, unsigned *color);
+API void    curve_destroy(curve_t *c);
 #line 0
 
 #line 1 "engine/split/v4k_system.h"
