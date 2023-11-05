@@ -24,6 +24,7 @@
 #define JO_MPEG_COMPONENTS 3                  // jo_mpeg
 #define JSON5_C                               // json5
 #define LUA_IMPL                              // lua544
+#define LUA_USE_POPEN 1                       // for lite editor
 #define MINIAUDIO_IMPLEMENTATION              // miniaudio
 #define MA_NO_FLAC                            // miniaudio
 #define NK_GLFW_GL3_IMPLEMENTATION            // nuklear
@@ -52,7 +53,7 @@
 #define BQ_WEBSOCKET_IMPLEMENTATION           // websocket
 #define XML_C                                 // xml
 #ifdef __APPLE__
-#define MA_NO_RUNTIME_LINKING                 // miniaudio
+#define MA_NO_RUNTIME_LINKING                 // miniaudio osx
 #define _GLFW_COCOA                           // glfw osx
 #elif defined _WIN32
 #define _GLFW_WIN32                           // glfw win32
@@ -100,7 +101,6 @@ errno_t fopen_s(
    const char *mode
 );
 #endif
-
 
 //---
 {{FILE:3rd_glfw3.h}}
@@ -171,18 +171,28 @@ static char *ui_filter = 0;
 #undef g
 {{FILE:3rd_polychop.h}}
 #define expr expr2 // 3rd_lua.h
+#define EVAL_EXTEND_CONSTANTS \
+   for( int vk = input_enum(id), *once = &vk; once; once = 0) \
+      if( vk >= 0 ) push(ev, vk);
+#define EVAL_EXTEND_FUNCTIONS \
+   /**/ if(!strcmp(id, "input") && nargs ==1) push(ev, input(pop(ev))); \
+   else if(!strcmp(id, "down")  && nargs ==1) push(ev, input_down(pop(ev))); \
+   else if(!strcmp(id, "held")  && nargs ==1) push(ev, input_held(pop(ev))); \
+   else if(!strcmp(id, "up")    && nargs ==1) push(ev, input_up(pop(ev))); \
+   else if(!strcmp(id, "idle")  && nargs ==1) push(ev, input_idle(pop(ev)));
 {{FILE:3rd_eval.h}}
-// #define SQLITE_OMIT_LOAD_EXTENSION
-// #define SQLITE_CORE 1
-// #define SQLITE_DEBUG 1
-// #define Token SQToken
-// #define Table SQTable
-// #define rehash sqlite3__rehash
-// #undef NB
-//{{FILE/*:*/3rd_sqlite3.c}}
-// #undef Token
-// #undef Table
-// #undef rehash
-// #undef NB
-// #undef threadid
+{{FILE:3rd_luadebugger.h}}
+//#define SQLITE_OMIT_LOAD_EXTENSION
+//#define SQLITE_CORE 1
+//#define SQLITE_DEBUG 1
+//#define Token SQToken
+//#define Table SQTable
+//#define rehash sqlite3__rehash
+//#undef NB
+//{ {FILE:3rd_sqlite3.c}}
+//#undef Token
+//#undef Table
+//#undef rehash
+//#undef NB
+//#undef threadid
 #endif // V4K_3RD

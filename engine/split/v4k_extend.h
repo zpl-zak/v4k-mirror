@@ -22,3 +22,13 @@ API void script_bind_function(const char *c_name, void *c_function);
 API void script_call(const char *lua_function);
 
 API bool script_tests();
+
+// -----------------------------------------------------------------------------
+// script framework
+
+enum {
+    SCRIPT_LUA = 1,
+    SCRIPT_DEBUGGER = 2,
+};
+
+API void *script_init_env(unsigned flags);

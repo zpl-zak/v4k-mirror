@@ -118,9 +118,9 @@ extern "C" {
 
 {{FILE:v4k_editor.h}}
 
-{{FILE:v4k_font.h}}
-
 {{FILE:v4k_file.h}}
+
+{{FILE:v4k_font.h}}
 
 {{FILE:v4k_input.h}}
 
@@ -146,9 +146,9 @@ extern "C" {
 
 {{FILE:v4k_string.h}}
 
-{{FILE:v4k_time.h}}
-
 {{FILE:v4k_system.h}}
+
+{{FILE:v4k_time.h}}
 
 {{FILE:v4k_ui.h}}
 
@@ -170,7 +170,7 @@ extern "C" {
     #include <emscripten/html5.h>
     #define gladLoadGL(func) (glewExperimental = true, glewInit() == GLEW_OK)
 #else
-    #if is(win32) /*&& is(tcc)*/ // && WITH_DLL
+    #if is(win32) /*&& is(tcc)*/ // && ENABLE_DLL
     #ifdef GLAD_API_CALL
     #undef GLAD_API_CALL
     #endif

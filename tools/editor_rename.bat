@@ -1,5 +1,5 @@
 @echo off
-
+setlocal enabledelayedexpansion
 cd %~dp0\..
 
 pushd tools\editor

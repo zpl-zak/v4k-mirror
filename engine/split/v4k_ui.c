@@ -2503,7 +2503,7 @@ int ui_browse(const char **output, bool *inlined) {
         // if(ui_ctx->current) bounds = nk_window_get_bounds(ui_ctx), P(bounds);
         // if(ui_ctx->current) bounds = nk_window_get_content_region(ui_ctx), P(bounds);
         // if(ui_ctx->current) nk_layout_peek(&bounds, ui_ctx), P(bounds);
-        // // if(ui_ctx->current) nk_layout_widget_space(&bounds, ui_ctx, ui_ctx->current, nk_false), P(bounds); // note: cant be used within a panel
+        // if(ui_ctx->current) nk_layout_widget_space(&bounds, ui_ctx, ui_ctx->current, nk_false), P(bounds); // note: cant be used within a panel
         // #undef P
 
         // panel

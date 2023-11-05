@@ -13,7 +13,7 @@ char* tempvl(const char *fmt, va_list vl) {
     static __thread char buf[STACK_ALLOC];
 #else
     int heap = 1;
-    static __thread int STACK_ALLOC = 128*1024;
+    static __thread int STACK_ALLOC = 512*1024;
     static __thread char *buf = 0; if(!buf) buf = REALLOC(0, STACK_ALLOC); // @leak
 #endif
     static __thread int cur = 0; //printf("string stack %d/%d\n", cur, STACK_ALLOC);

@@ -98,18 +98,6 @@
 #include "v4k"
 #endif
 
-#define do_threadlock(mutexptr) \
-	for( int init_ = !!(mutexptr) || (thread_mutex_init( (mutexptr) = CALLOC(1, sizeof(thread_mutex_t)) ), 1); init_; init_ = 0) \
-	for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mutex_unlock( mutexptr ), 0) )
-
-API void *ui_handle();
-#define ui_push_hspace(px) \
-    (int xx = px; xx; xx = 0) \
-    for(struct nk_context *ctx = (struct nk_context*)ui_handle(); ctx; ctx = 0 ) \
-        for(struct nk_panel *layout = ui_ctx->current->layout; layout; ) \
-            for( xx = (layout->at_x += px, layout->bounds.w -= px, 0); layout; layout->at_x -= px, layout->bounds.w += px, layout = 0 )
-
-
 //-----------------------------------------------------------------------------
 // C files
 
@@ -160,9 +148,9 @@ API void *ui_handle();
 
 {{FILE:v4k_scene.c}}
 
-{{FILE:v4k_time.c}}
-
 {{FILE:v4k_system.c}}
+
+{{FILE:v4k_time.c}}
 
 {{FILE:v4k_profile.c}}
 

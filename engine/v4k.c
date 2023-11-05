@@ -98,18 +98,6 @@
 #include "v4k"
 #endif
 
-#define do_threadlock(mutexptr) \
-	for( int init_ = !!(mutexptr) || (thread_mutex_init( (mutexptr) = CALLOC(1, sizeof(thread_mutex_t)) ), 1); init_; init_ = 0) \
-	for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mutex_unlock( mutexptr ), 0) )
-
-API void *ui_handle();
-#define ui_push_hspace(px) \
-    (int xx = px; xx; xx = 0) \
-    for(struct nk_context *ctx = (struct nk_context*)ui_handle(); ctx; ctx = 0 ) \
-        for(struct nk_panel *layout = ui_ctx->current->layout; layout; ) \
-            for( xx = (layout->at_x += px, layout->bounds.w -= px, 0); layout; layout->at_x -= px, layout->bounds.w += px, layout = 0 )
-
-
 //-----------------------------------------------------------------------------
 // C files
 
@@ -528,7 +516,7 @@ char* tempvl(const char *fmt, va_list vl) {
     static __thread char buf[STACK_ALLOC];
 #else
     int heap = 1;
-    static __thread int STACK_ALLOC = 128*1024;
+    static __thread int STACK_ALLOC = 512*1024;
     static __thread char *buf = 0; if(!buf) buf = REALLOC(0, STACK_ALLOC); // @leak
 #endif
     static __thread int cur = 0; //printf("string stack %d/%d\n", cur, STACK_ALLOC);
@@ -3558,7 +3546,7 @@ int ui_browse(const char **output, bool *inlined) {
         // if(ui_ctx->current) bounds = nk_window_get_bounds(ui_ctx), P(bounds);
         // if(ui_ctx->current) bounds = nk_window_get_content_region(ui_ctx), P(bounds);
         // if(ui_ctx->current) nk_layout_peek(&bounds, ui_ctx), P(bounds);
-        // // if(ui_ctx->current) nk_layout_widget_space(&bounds, ui_ctx, ui_ctx->current, nk_false), P(bounds); // note: cant be used within a panel
+        // if(ui_ctx->current) nk_layout_widget_space(&bounds, ui_ctx, ui_ctx->current, nk_false), P(bounds); // note: cant be used within a panel
         // #undef P
 
         // panel
@@ -6946,29 +6934,36 @@ bool data_tests() {
 #line 1 "engine/split/v4k_extend.c"
 // dll ------------------------------------------------------------------------
 
+/* deprecated
 #if is(win32)
 #   include <winsock2.h>
-#   define dlopen(name,mode)    (void*)( (name) ? LoadLibraryA(name) : GetModuleHandle(NULL))
-#   define dlsym(handle,symbol) GetProcAddress((HMODULE)handle, symbol )
+#   define dlopen(name,flags)   (void*)( (name) ? LoadLibraryA(name) : GetModuleHandleA(NULL))
+#   define dlsym(handle,symbol) GetProcAddress((HMODULE)(handle), symbol )
 #   define dlclose(handle)      0
 #else
 #   include <dlfcn.h>
+#   define dlopen(name,flags)   (void*)( (name) ? dlopen(name, flags) : NULL )
+#   define dlsym(handle,symbol) dlsym( (handle) ? (handle) : ifdef(osx,RTLD_SELF,NULL), symbol )
 #endif
-
-void* dll(const char *filename, const char *symbol) {
-/*
-    char *buf, *base = file_name(filename);
-    if( file_exists(buf = va("%s", base)) ||
-        file_exists(buf = va("%s.dll", base)) ||
-        file_exists(buf = va("%s.so", base)) ||
-        file_exists(buf = va("lib%s.so", base)) ||
-        file_exists(buf = va("%s.dylib", base)) ) {
-        filename = buf;
-    }
 */
-    void *dll = dlopen(filename, RTLD_NOW | RTLD_LOCAL);
-    dll = dll ? dlsym(dll, symbol) : 0;
-    return dll;
+
+void* dll(const char *fname, const char *symbol) {
+    if( fname && !file_exist(fname) ) {
+        char *buf, *path = file_path(fname), *base = file_base(fname);
+        if( file_exist(buf = va("%s%s.dll", path, base)) ||
+            file_exist(buf = va("%s%s.so", path, base)) ||
+            file_exist(buf = va("%slib%s.so", path, base)) ||
+            file_exist(buf = va("%s%s.dylib", path, base)) ) {
+            fname = (const char *)buf;
+        } else {
+            return NULL;
+    }
+    }
+#if is(win32)
+    return (void*)GetProcAddress(fname ? LoadLibraryA(fname) : GetModuleHandleA(NULL), symbol);
+#else
+    return dlsym(fname ? dlopen(fname, RTLD_NOW|RTLD_LOCAL) : ifdef(osx, RTLD_SELF, NULL), symbol);
+#endif
 }
 
 #if 0 // demo: cl demo.c /LD && REM dll
@@ -7156,6 +7151,75 @@ bool script_tests() {
 }
 
 #undef XMACRO
+
+// script v2 ------------------------------------------------------------------
+
+#define luaL_dostringsafe(L, str) \
+    luaL_dostring(L, \
+        "xpcall(function()\n" \
+            str \
+        "end, function(err)\n" \
+        "  print('Error: ' .. tostring(err))\n" \
+        "  print(debug.traceback(nil, 2))\n" \
+        "  if core and core.on_error then\n" \
+        "    pcall(core.on_error, err)\n" \
+        "  end\n" \
+        "  os.exit(1)\n" \
+        "end)" \
+    );
+
+static int f_vfs_read(lua_State *L) {
+    char *file = file_normalize(luaL_checkstring(L, 1));
+    if( strbegi(file, app_path()) ) file += strlen(app_path());
+    strswap(file+1, ".", "/");
+    strswap(file+1, "/lua", ".lua");
+    int len; char *data = vfs_load(file, &len);
+    if( len ) {
+        data = memcpy(MALLOC(len+1), data, len), data[len] = 0;
+        //tty_color(data ? GREEN : RED);
+        //printf("%s (%s)\n%s", file, data ? "ok" : "failed", data);
+        //tty_color(0);
+    }
+    return lua_pushstring(L, data), 1; // "\n\tcannot find `%s` within mounted zipfiles", file), 1;
+}
+
+// add our zip loader at the end of package.loaders
+void lua_add_ziploader(lua_State* L) {
+    lua_pushcfunction( L, f_vfs_read );
+    lua_setglobal( L, "vfs_read" );
+
+    luaL_dostringsafe(L,
+//    "package.path = [[;<?>;<<?.lua>>;]]\n" // .. package.path\n"
+    "package.searchers[#package.searchers + 1] = function(libraryname)\n"
+    "    for pattern in string.gmatch( package.path, '[^;]+' ) do\n"
+    "        local proper_path = string.gsub(pattern, '?', libraryname)\n"
+    "        local f = vfs_read(proper_path)\n"
+    "        if f ~= nil then\n"
+    "           return load(f, proper_path)\n"
+    "        end\n"
+    "    end\n"
+    "    return nil\n"
+    "end\n"
+    );
+}
+
+void *script_init_env(unsigned flags) {
+    if( flags & SCRIPT_LUA ) {
+        lua_State *L = luaL_newstate();
+        luaL_openlibs(L);
+
+        if( flags & SCRIPT_DEBUGGER ) {
+            // Register debuggers/inspectors
+            // luaL_dostringsafe(L, "I = require('inspect').inspect\n");
+            dbg_setup_default(L);
+        }
+
+        lua_add_ziploader(L);
+        return L;
+    }
+
+    return 0;
+}
 #line 0
 
 #line 1 "engine/split/v4k_file.c"
@@ -7322,7 +7386,7 @@ char *file_id(const char *pathfile) {
 char *ext = strchr(base, '.'); if (ext) ext[0] = '\0'; // remove all extensions
 #else // extensionless for audio/images only (materials: diffuse.tga and diffuse.png will match)
 char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensions
-    if(ext) if( strstr(".jpg.png.bmp.tga"".", ext) || strstr(".ogg.mp3.wav.mod.xm.flac"".", ext) || strstr(".mp4.ogv.avi.mkv.wmv.mpg.mpeg"".", ext) ) {
+    if(ext) if( strstr(".jpg.png.bmp.tga.hdr"".", ext) || strstr(".ogg.mp3.wav.mod.xm.flac"".", ext) || strstr(".mp4.ogv.avi.mkv.wmv.mpg.mpeg"".", ext) ) {
         ext = strchr(base, '.');
         ext[0] = '\0'; //strcpy(ext, "_xxx");
     }
@@ -22306,646 +22370,6 @@ void scene_render(int flags) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_time.c"
-// ----------------------------------------------------------------------------
-// time
-
-#if 0
-uint64_t time_gpu() {
-    GLint64 t = 123456789;
-    glGetInteger64v(GL_TIMESTAMP, &t);
-    return (uint64_t)t;
-}
-#endif
-uint64_t date() {
-    time_t epoch = time(0);
-    struct tm *ti = localtime(&epoch);
-    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
-}
-char *date_string() {
-    time_t epoch = time(0);
-    struct tm *ti = localtime(&epoch);
-    return va("%04d-%02d-%02d %02d:%02d:%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec);
-}
-uint64_t date_epoch() {
-    time_t epoch = time(0);
-    return epoch;
-}
-#if 0
-double time_ss() {
-    return glfwGetTime();
-}
-double time_ms() {
-    return glfwGetTime() * 1000.0;
-}
-uint64_t time_us() {
-    return (uint64_t)(glfwGetTime() * 1000000.0); // @fixme: use a high resolution timer instead, or time_gpu below
-}
-uint64_t sleep_us(uint64_t us) { // @fixme: use a high resolution sleeper instead
-    return sleep_ms( us / 1000.0 );
-}
-double sleep_ms(double ms) {
-    double now = time_ms();
-    if( ms <= 0 ) {
-#if is(win32)
-        Sleep(0); // yield
-#else
-        usleep(0);
-#endif
-    } else {
-#if is(win32)
-        Sleep(ms);
-#else
-        usleep(ms * 1000);
-#endif
-    }
-    return time_ms() - now;
-}
-double sleep_ss(double ss) {
-    return sleep_ms( ss * 1000 ) / 1000.0;
-}
-#endif
-
-// high-perf functions
-
-#define TIMER_E3 1000ULL
-#define TIMER_E6 1000000ULL
-#define TIMER_E9 1000000000ULL
-
-#ifdef CLOCK_MONOTONIC_RAW
-#define TIME_MONOTONIC CLOCK_MONOTONIC_RAW
-#elif defined CLOCK_MONOTONIC
-#define TIME_MONOTONIC CLOCK_MONOTONIC
-#else
-// #define TIME_MONOTONIC CLOCK_REALTIME // untested
-#endif
-
-static uint64_t nanotimer(uint64_t *out_freq) {
-    if( out_freq ) {
-#if is(win32)
-        LARGE_INTEGER li;
-        QueryPerformanceFrequency(&li);
-        *out_freq = li.QuadPart;
-//#elif is(ANDROID)
-//      *out_freq = CLOCKS_PER_SEC;
-#elif defined TIME_MONOTONIC
-        *out_freq = TIMER_E9;
-#else
-        *out_freq = TIMER_E6;
-#endif
-    }
-#if is(win32)
-    LARGE_INTEGER li;
-    QueryPerformanceCounter(&li);
-    return (uint64_t)li.QuadPart;
-//#elif is(ANDROID)
-//    return (uint64_t)clock();
-#elif defined TIME_MONOTONIC
-    struct timespec ts;
-    clock_gettime(TIME_MONOTONIC, &ts);
-    return (TIMER_E9 * (uint64_t)ts.tv_sec) + ts.tv_nsec;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (TIMER_E6 * (uint64_t)tv.tv_sec) + tv.tv_usec;
-#endif
-}
-
-uint64_t time_ns() {
-    static uint64_t epoch = 0;
-    static uint64_t freq = 0;
-    if( !freq ) {
-        epoch = nanotimer(&freq);
-    }
-
-    uint64_t a = nanotimer(NULL) - epoch;
-    uint64_t b = TIMER_E9;
-    uint64_t c = freq;
-
-    // Computes (a*b)/c without overflow, as long as both (a*b) and the overall result fit into 64-bits.
-    // [ref] https://github.com/rust-lang/rust/blob/3809bbf47c8557bd149b3e52ceb47434ca8378d5/src/libstd/sys_common/mod.rs#L124
-    uint64_t q = a / c;
-    uint64_t r = a % c;
-    return q * b + r * b / c;
-}
-uint64_t time_us() {
-    return time_ns() / TIMER_E3;
-}
-uint64_t time_ms() {
-    return time_ns() / TIMER_E6;
-}
-double time_ss() {
-    return time_ns() / 1e9; // TIMER_E9;
-}
-double time_mm() {
-    return time_ss() / 60;
-}
-double time_hh() {
-    return time_mm() / 60;
-}
-
-void sleep_ns( double ns ) {
-#if is(win32)
-    if( ns >= 100 ) {
-        LARGE_INTEGER li;      // Windows sleep in 100ns units
-        HANDLE timer = CreateWaitableTimer(NULL, TRUE, NULL);
-        li.QuadPart = (LONGLONG)(__int64)(-ns/100); // Negative for relative time
-        SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE);
-        WaitForSingleObject(timer, INFINITE);
-        CloseHandle(timer);
-#else
-    if( ns > 0 ) {
-        struct timespec wait = {0};
-        wait.tv_sec = ns / 1e9;
-        wait.tv_nsec = ns - wait.tv_sec * 1e9;
-        nanosleep(&wait, NULL);
-#endif
-    } else {
-#if is(win32)
-        Sleep(0); // yield, Sleep(0), SwitchToThread
-#else
-        usleep(0);
-#endif
-    }
-}
-void sleep_us( double us ) {
-    sleep_ns(us * 1e3);
-}
-void sleep_ms( double ms ) {
-    sleep_ns(ms * 1e6);
-}
-void sleep_ss( double ss ) {
-    sleep_ns(ss * 1e9);
-}
-
-// ----------------------------------------------------------------------------
-// timer
-
-struct timer_internal_t {
-    unsigned ms;
-    unsigned (*callback)(unsigned interval, void *arg);
-    void *arg;
-    thread_ptr_t thd;
-};
-
-static int timer_func(void *arg) {
-    struct timer_internal_t *p = (struct timer_internal_t*)arg;
-
-    sleep_ms( p->ms );
-
-    for( ;; ) {
-        unsigned then = time_ms();
-
-            p->ms = p->callback(p->ms, p->arg);
-            if( !p->ms ) break;
-
-        unsigned now = time_ms();
-        unsigned lapse = now - then;
-        int diff = p->ms - lapse;
-        sleep_ms( diff <= 0 ? 0 : diff );
-    }
-
-    thread_exit(0);
-    return 0;
-}
-
-static __thread array(struct timer_internal_t *) timers;
-
-unsigned timer(unsigned ms, unsigned (*callback)(unsigned ms, void *arg), void *arg) {
-    struct timer_internal_t *p = MALLOC( sizeof(struct timer_internal_t) );
-    p->ms = ms;
-    p->callback = callback;
-    p->arg = arg;
-    p->thd = thread_init( timer_func, p, "", 0 );
-
-    array_push(timers, p);
-    return array_count(timers);
-}
-void timer_destroy(unsigned i) {
-    if( i-- ) {
-        thread_join(timers[i]->thd);
-        thread_term(timers[i]->thd);
-        FREE(timers[i]);
-        timers[i] = 0;
-    }
-}
-
-// ----------------------------------------------------------------------------
-// guid
-
-//typedef vec3i guid;
-
-guid guid_create() {
-    static __thread unsigned counter = 0;
-    static uint64_t appid = 0; do_once appid = hash_str(app_name());
-
-    union conv {
-        struct {
-            unsigned timestamp : 32;
-            unsigned threadid  : 16; // inverted order in LE
-            unsigned appid     : 16; //
-            unsigned counter   : 32;
-        };
-        vec3i v3;
-    } c;
-    c.timestamp = date_epoch() - 0x65000000;
-    c.appid = (unsigned)appid;
-    c.threadid = (unsigned)(uintptr_t)thread_current_thread_id();
-    c.counter = ++counter;
-
-    return c.v3;
-}
-
-// ----------------------------------------------------------------------------
-// ease
-
-float ease_nop(float t) { return 0; }
-float ease_linear(float t) { return t; }
-
-float ease_out_sine(float t) { return sinf(t*(C_PI*0.5f)); }
-float ease_out_quad(float t) { return -(t*(t-2)); }
-float ease_out_cubic(float t) { float f=t-1; return f*f*f+1; }
-float ease_out_quart(float t) { float f=t-1; return f*f*f*(1-t)+1; }
-float ease_out_quint(float t) { float f=(t-1); return f*f*f*f*f+1; }
-float ease_out_expo(float t) { return (t >= 1) ? t : 1-powf(2,-10*t); }
-float ease_out_circ(float t) { return sqrtf((2-t)*t); }
-float ease_out_back(float t) { float f=1-t; return 1-(f*f*f-f*sinf(f*C_PI)); }
-float ease_out_elastic(float t) { return sinf(-13*(C_PI*0.5f)*(t+1))*powf(2,-10*t)+1; }
-float ease_out_bounce(float t) { return (t < 4.f/11) ? (121.f*t*t)/16 : (t < 8.f/11) ? (363.f/40*t*t)-(99.f/10*t)+17.f/5 : (t < 9.f/10) ? (4356.f/361*t*t)-(35442.f/1805*t)+16061.f/1805 : (54.f/5*t*t)-(513.f/25*t)+268.f/25; }
-
-float ease_in_sine(float t) { return 1+sinf((t-1)*(C_PI*0.5f)); }
-float ease_in_quad(float t) { return t*t; }
-float ease_in_cubic(float t) { return t*t*t; }
-float ease_in_quart(float t) { return t*t*t*t; }
-float ease_in_quint(float t) { return t*t*t*t*t; }
-float ease_in_expo(float t) { return (t <= 0) ? t : powf(2,10*(t-1)); }
-float ease_in_circ(float t) { return 1-sqrtf(1-(t*t)); }
-float ease_in_back(float t) { return t*t*t-t*sinf(t*C_PI); }
-float ease_in_elastic(float t) { return sinf(13*(C_PI*0.5f)*t)*powf(2,10*(t-1)); }
-float ease_in_bounce(float t) { return 1-ease_out_bounce(1-t); }
-
-float ease_inout_sine(float t) { return 0.5f*(1-cosf(t*C_PI)); }
-float ease_inout_quad(float t) { return (t < 0.5f) ? 2*t*t : (-2*t*t)+(4*t)-1; }
-float ease_inout_cubic(float t) { float f; return (t < 0.5f) ? 4*t*t*t : (f=(2*t)-2,0.5f*f*f*f+1); }
-float ease_inout_quart(float t) { float f; return (t < 0.5f) ? 8*t*t*t*t : (f=(t-1),-8*f*f*f*f+1); }
-float ease_inout_quint(float t) { float f; return (t < 0.5f) ? 16*t*t*t*t*t : (f=((2*t)-2),0.5f*f*f*f*f*f+1); }
-float ease_inout_expo(float t) { return (t <= 0 || t >= 1) ? t : t < 0.5f ? 0.5f*powf(2,(20*t)-10) : -0.5f*powf(2,(-20*t)+10)+1; }
-float ease_inout_circ(float t) { return t < 0.5f ? 0.5f*(1-sqrtf(1-4*(t*t))) : 0.5f*(sqrtf(-((2*t)-3)*((2*t)-1))+1); }
-float ease_inout_back(float t) { float f; return t < 0.5f ? (f=2*t,0.5f*(f*f*f-f*sinf(f*C_PI))) : (f=(1-(2*t-1)),0.5f*(1-(f*f*f-f*sinf(f*C_PI)))+0.5f); }
-float ease_inout_elastic(float t) { return t < 0.5f ? 0.5f*sinf(13*(C_PI*0.5f)*(2*t))*powf(2,10*((2*t)-1)) : 0.5f*(sinf(-13*(C_PI*0.5f)*((2*t-1)+1))*powf(2,-10*(2*t-1))+2); }
-float ease_inout_bounce(float t) { return t < 0.5f ? 0.5f*ease_in_bounce(t*2) : 0.5f*ease_out_bounce(t*2-1)+0.5f; }
-
-float ease_inout_perlin(float t) { float t3=t*t*t,t4=t3*t,t5=t4*t; return 6*t5-15*t4+10*t3; }
-
-float ease(float t01, unsigned mode) {
-    typedef float (*easing)(float);
-    easing modes[] = {
-        ease_out_sine,
-        ease_out_quad,
-        ease_out_cubic,
-        ease_out_quart,
-        ease_out_quint,
-        ease_out_expo,
-        ease_out_circ,
-        ease_out_back,
-        ease_out_elastic,
-        ease_out_bounce,
-
-        ease_in_sine,
-        ease_in_quad,
-        ease_in_cubic,
-        ease_in_quart,
-        ease_in_quint,
-        ease_in_expo,
-        ease_in_circ,
-        ease_in_back,
-        ease_in_elastic,
-        ease_in_bounce,
-
-        ease_inout_sine,
-        ease_inout_quad,
-        ease_inout_cubic,
-        ease_inout_quart,
-        ease_inout_quint,
-        ease_inout_expo,
-        ease_inout_circ,
-        ease_inout_back,
-        ease_inout_elastic,
-        ease_inout_bounce,
-
-        ease_nop,
-        ease_linear,
-        ease_inout_perlin,
-    };
-    return modes[clampi(mode, 0, countof(modes))](clampf(t01,0,1));
-}
-
-float ease_pong(float t, unsigned fn) { return 1 - ease(t, fn); }
-float ease_ping_pong(float t, unsigned fn1, unsigned fn2) { return t < 0.5 ? ease(t*2,fn1) : ease(1-(t-0.5)*2,fn2); }
-float ease_pong_ping(float t, unsigned fn1, unsigned fn2) { return 1 - ease_ping_pong(t,fn1,fn2); }
-
-
-const char **ease_enums() {
-    static const char *list[] = {
-        "ease_out_sine",
-        "ease_out_quad",
-        "ease_out_cubic",
-        "ease_out_quart",
-        "ease_out_quint",
-        "ease_out_expo",
-        "ease_out_circ",
-        "ease_out_back",
-        "ease_out_elastic",
-        "ease_out_bounce",
-
-        "ease_in_sine",
-        "ease_in_quad",
-        "ease_in_cubic",
-        "ease_in_quart",
-        "ease_in_quint",
-        "ease_in_expo",
-        "ease_in_circ",
-        "ease_in_back",
-        "ease_in_elastic",
-        "ease_in_bounce",
-
-        "ease_inout_sine",
-        "ease_inout_quad",
-        "ease_inout_cubic",
-        "ease_inout_quart",
-        "ease_inout_quint",
-        "ease_inout_expo",
-        "ease_inout_circ",
-        "ease_inout_back",
-        "ease_inout_elastic",
-        "ease_inout_bounce",
-
-        "ease_nop",
-        "ease_linear",
-        "ease_inout_perlin",
-
-        0
-    };
-    return list;
-}
-
-const char *ease_enum(unsigned mode) {
-    return mode[ ease_enums() ];
-}
-
-/*AUTORUN {
-    ENUM(EASE_LINEAR|EASE_OUT);
-    ENUM(EASE_SINE|EASE_OUT);
-    ENUM(EASE_QUAD|EASE_OUT);
-    ENUM(EASE_CUBIC|EASE_OUT);
-    ENUM(EASE_QUART|EASE_OUT);
-    ENUM(EASE_QUINT|EASE_OUT);
-    ENUM(EASE_EXPO|EASE_OUT);
-    ENUM(EASE_CIRC|EASE_OUT);
-    ENUM(EASE_BACK|EASE_OUT);
-    ENUM(EASE_ELASTIC|EASE_OUT);
-    ENUM(EASE_BOUNCE|EASE_OUT);
-
-    ENUM(EASE_SINE|EASE_IN);
-    ENUM(EASE_QUAD|EASE_IN);
-    ENUM(EASE_CUBIC|EASE_IN);
-    ENUM(EASE_QUART|EASE_IN);
-    ENUM(EASE_QUINT|EASE_IN);
-    ENUM(EASE_EXPO|EASE_IN);
-    ENUM(EASE_CIRC|EASE_IN);
-    ENUM(EASE_BACK|EASE_IN);
-    ENUM(EASE_ELASTIC|EASE_IN);
-    ENUM(EASE_BOUNCE|EASE_IN);
-
-    ENUM(EASE_SINE|EASE_INOUT);
-    ENUM(EASE_QUAD|EASE_INOUT);
-    ENUM(EASE_CUBIC|EASE_INOUT);
-    ENUM(EASE_QUART|EASE_INOUT);
-    ENUM(EASE_QUINT|EASE_INOUT);
-    ENUM(EASE_EXPO|EASE_INOUT);
-    ENUM(EASE_CIRC|EASE_INOUT);
-    ENUM(EASE_BACK|EASE_INOUT);
-    ENUM(EASE_ELASTIC|EASE_INOUT);
-    ENUM(EASE_BOUNCE|EASE_INOUT);
-
-    ENUM(EASE_NOP);
-    ENUM(EASE_LINEAR);
-    ENUM(EASE_INOUT_PERLIN);
-};*/
-
-// ----------------------------------------------------------------------------
-// tween
-
-tween_t tween() {
-    tween_t tw = {0};
-    return tw;
-}
-
-float tween_update(tween_t *tw, float dt) {
-    if( !array_count(tw->keyframes) ) return 0.0f;
-
-    for( int i = 0, end = array_count(tw->keyframes) - 1; i < end; ++i ) {
-        tween_keyframe_t *kf1 = &tw->keyframes[i];
-        tween_keyframe_t *kf2 = &tw->keyframes[i + 1];
-        if (tw->time >= kf1->t && tw->time <= kf2->t) {
-            float localT = (tw->time - kf1->t) / (kf2->t - kf1->t);
-            float easedT = ease(localT, kf1->ease);
-            tw->result = mix3(kf1->v, kf2->v, easedT);
-            break;
-        }
-    }
-
-    float done = (tw->time / tw->duration);
-    tw->time += dt;
-    return clampf(done, 0.0f, 1.0f);
-}
-
-void tween_reset(tween_t *tw) {
-    tw->time = 0.0f;
-}
-
-void tween_destroy(tween_t *tw) {
-    tween_t tw_ = {0};
-    array_free(tw->keyframes);
-    *tw = tw_;
-}
-
-static INLINE
-int tween_comp_keyframes(const void *a, const void *b) {
-    float t1 = ((const tween_keyframe_t*)a)->t;
-    float t2 = ((const tween_keyframe_t*)b)->t;
-    return (t1 > t2) - (t1 < t2);
-}
-
-void tween_setkey(tween_t *tw, float t, vec3 v, unsigned mode) {
-    tween_keyframe_t keyframe = { t, v, mode };
-    array_push(tw->keyframes, keyframe);
-    array_sort(tw->keyframes, tween_comp_keyframes);
-    tw->duration = array_back(tw->keyframes)->t;
-}
-
-void tween_delkey(tween_t *tw, float t) { // @todo: untested
-    for( int i = 0, end = array_count(tw->keyframes); i < end; i++ ) {
-        if( tw->keyframes[i].t == t ) {
-            array_erase_slow(tw->keyframes, i);
-            tw->duration = array_back(tw->keyframes)->t;
-            return;
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-// curve
-
-curve_t curve() {
-    curve_t c = {0};
-    return c;
-}
-
-static INLINE
-vec3 catmull( vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t ) {
-    float t2 = t*t;
-    float t3 = t*t*t;
-
-    vec3 c;
-    c.x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
-    c.y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
-    c.z = 0.5 * ((2 * p1.z) + (-p0.z + p2.z) * t + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 + (-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3);
-    return c;
-}
-
-void curve_add(curve_t *c, vec3 p) {
-    array_push(c->points, p);
-}
-
-void curve_finish( curve_t *c, int k ) {
-    assert( k > 0 );
-
-    array_free(c->lengths);
-    array_free(c->samples);
-    array_free(c->indices);
-    array_free(c->colors);
-
-    // refit points[N] to samples[K]
-    int N = array_count(c->points);
-    if( k < N ) {
-        // truncate: expected k-points lesser or equal than existing N points
-        for( int i = 0; i <= k; ++i ) {
-            float s = (float)i / k;
-            int t = s * (N-1);
-            array_push(c->samples, c->points[t]);
-
-            float p = fmod(i, N-1) / (N-1); // [0..1)
-            int is_control_point = p <= 0 || p >= 1;
-            array_push(c->colors, is_control_point ? ORANGE: BLUE);
-        }
-
-    } else {
-        // interpolate: expected k-points greater than existing N-points
-        --N;
-        int upper = N - (k%N);
-        int lower = (k%N);
-        if(upper < lower)
-        k += upper;
-        else
-        k -= lower;
-
-        int points_per_segment = (k / N);
-        ++N;
-
-        int looped = len3sq(sub3(c->points[0], *array_back(c->points))) < 0.1;
-
-        for( int i = 0; i <= k; ++i ) {
-            int point = i % points_per_segment;
-            float p = point / (float)points_per_segment; // [0..1)
-            int t = i / points_per_segment;
-
-            // linear
-            vec3 l = mix3(c->points[t], c->points[t+(i!=k)], p);
-
-            // printf("%d) %d>%d %f\n", i, t, t+(i!=k), p);
-            ASSERT(p <= 1);
-
-            // catmull
-            int p0 = t - 1;
-            int p1 = t + 0;
-            int p2 = t + 1;
-            int p3 = t + 2;
-            if( looped )
-            {
-                int M = N-1;
-                if(p0<0) p0+=M; else if(p0>=M) p0-=M;
-                if(p1<0) p1+=M; else if(p1>=M) p1-=M;
-                if(p2<0) p2+=M; else if(p2>=M) p2-=M;
-                if(p3<0) p3+=M; else if(p3>=M) p3-=M;
-            }
-            else
-            {
-                int M = N-1;
-                if(p0<0) p0=0; else if(p0>=M) p0=M;
-                if(p1<0) p1=0; else if(p1>=M) p1=M;
-                if(p2<0) p2=0; else if(p2>=M) p2=M;
-                if(p3<0) p3=0; else if(p3>=M) p3=M;
-            }
-            vec3 m = catmull(c->points[p0],c->points[p1],c->points[p2],c->points[p3],p);
-            l = m;
-
-            array_push(c->samples, l);
-
-            int is_control_point = p <= 0 || p >= 1;
-            array_push(c->colors, is_control_point ? ORANGE: BLUE);
-        }
-    }
-
-    array_push(c->lengths, 0 );
-    for( int i = 1; i <= k; ++i ) {
-        // approximate curve length at every sample point
-        array_push(c->lengths, len3(sub3(c->samples[i], c->samples[i-1])) + c->lengths[i-1] );
-    }
-    // normalize lengths to be between 0 and 1
-    float maxv = c->lengths[k];
-    for( int i = 1; i <= k; ++i ) c->lengths[i] /= maxv;
-
-    array_push(c->indices, 0 );
-    for( int i = 0/*1*/; i </*=*/ k; ++i ) {
-        float s = (float)i / (k-1); //k;
-        int j; // j = so that lengths[j] <= s < lengths[j+1];
-
-        // j = Index of the highest length that is less or equal to s
-        // Can be optimized with a binary search instead
-        for( j = *array_back(c->indices) + 1; j </*=*/ k; ++j ) {
-            if( c->lengths[j] </*=*/ s ) continue;
-            break;
-        }
-
-        if (c->lengths[j] > 0.01)
-        array_push(c->indices, j );
-    }
-}
-
-vec3 curve_eval(curve_t *c, float dt, unsigned *color) {
-    unsigned nil; if(!color) color = &nil;
-    dt = clampf(dt, 0.0f, 1.0f);
-    int l = (int)(array_count(c->indices) - 1);
-    int p = (int)(dt * l);
-    int t = c->indices[p];
-
-    t %= (array_count(c->indices)-1);
-    vec3 pos = mix3(c->samples[t], c->samples[t+1], dt * l - p);
-    *color = c->colors[t];
-
-    return pos;
-}
-
-void curve_destroy(curve_t *c) {
-    array_free(c->lengths);
-    array_free(c->colors);
-    array_free(c->samples);
-    array_free(c->points);
-    array_free(c->indices);
-}
-#line 0
-
 #line 1 "engine/split/v4k_system.c"
 #if (is(tcc) && is(linux)) || (is(gcc) && !is(mingw)) // || is(clang)
 int __argc; char **__argv;
@@ -23871,6 +23295,646 @@ int (test)(const char *file, int line, const char *expr, bool result) {
     test_once = test_once || !(atexit)(test_exit);
     test_oks += result, test_errors += !result;
     return (result || (tty_color(RED), fprintf(stderr, "(Test `%s` failed %s:%d)\n", expr, file, line), tty_color(0), 0) );
+}
+#line 0
+
+#line 1 "engine/split/v4k_time.c"
+// ----------------------------------------------------------------------------
+// time
+
+#if 0
+uint64_t time_gpu() {
+    GLint64 t = 123456789;
+    glGetInteger64v(GL_TIMESTAMP, &t);
+    return (uint64_t)t;
+}
+#endif
+uint64_t date() {
+    time_t epoch = time(0);
+    struct tm *ti = localtime(&epoch);
+    return atoi64(va("%04d%02d%02d%02d%02d%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec));
+}
+char *date_string() {
+    time_t epoch = time(0);
+    struct tm *ti = localtime(&epoch);
+    return va("%04d-%02d-%02d %02d:%02d:%02d",ti->tm_year+1900,ti->tm_mon+1,ti->tm_mday,ti->tm_hour,ti->tm_min,ti->tm_sec);
+}
+uint64_t date_epoch() {
+    time_t epoch = time(0);
+    return epoch;
+}
+#if 0
+double time_ss() {
+    return glfwGetTime();
+}
+double time_ms() {
+    return glfwGetTime() * 1000.0;
+}
+uint64_t time_us() {
+    return (uint64_t)(glfwGetTime() * 1000000.0); // @fixme: use a high resolution timer instead, or time_gpu below
+}
+uint64_t sleep_us(uint64_t us) { // @fixme: use a high resolution sleeper instead
+    return sleep_ms( us / 1000.0 );
+}
+double sleep_ms(double ms) {
+    double now = time_ms();
+    if( ms <= 0 ) {
+#if is(win32)
+        Sleep(0); // yield
+#else
+        usleep(0);
+#endif
+    } else {
+#if is(win32)
+        Sleep(ms);
+#else
+        usleep(ms * 1000);
+#endif
+    }
+    return time_ms() - now;
+}
+double sleep_ss(double ss) {
+    return sleep_ms( ss * 1000 ) / 1000.0;
+}
+#endif
+
+// high-perf functions
+
+#define TIMER_E3 1000ULL
+#define TIMER_E6 1000000ULL
+#define TIMER_E9 1000000000ULL
+
+#ifdef CLOCK_MONOTONIC_RAW
+#define TIME_MONOTONIC CLOCK_MONOTONIC_RAW
+#elif defined CLOCK_MONOTONIC
+#define TIME_MONOTONIC CLOCK_MONOTONIC
+#else
+// #define TIME_MONOTONIC CLOCK_REALTIME // untested
+#endif
+
+static uint64_t nanotimer(uint64_t *out_freq) {
+    if( out_freq ) {
+#if is(win32)
+        LARGE_INTEGER li;
+        QueryPerformanceFrequency(&li);
+        *out_freq = li.QuadPart;
+//#elif is(ANDROID)
+//      *out_freq = CLOCKS_PER_SEC;
+#elif defined TIME_MONOTONIC
+        *out_freq = TIMER_E9;
+#else
+        *out_freq = TIMER_E6;
+#endif
+    }
+#if is(win32)
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    return (uint64_t)li.QuadPart;
+//#elif is(ANDROID)
+//    return (uint64_t)clock();
+#elif defined TIME_MONOTONIC
+    struct timespec ts;
+    clock_gettime(TIME_MONOTONIC, &ts);
+    return (TIMER_E9 * (uint64_t)ts.tv_sec) + ts.tv_nsec;
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (TIMER_E6 * (uint64_t)tv.tv_sec) + tv.tv_usec;
+#endif
+}
+
+uint64_t time_ns() {
+    static uint64_t epoch = 0;
+    static uint64_t freq = 0;
+    if( !freq ) {
+        epoch = nanotimer(&freq);
+    }
+
+    uint64_t a = nanotimer(NULL) - epoch;
+    uint64_t b = TIMER_E9;
+    uint64_t c = freq;
+
+    // Computes (a*b)/c without overflow, as long as both (a*b) and the overall result fit into 64-bits.
+    // [ref] https://github.com/rust-lang/rust/blob/3809bbf47c8557bd149b3e52ceb47434ca8378d5/src/libstd/sys_common/mod.rs#L124
+    uint64_t q = a / c;
+    uint64_t r = a % c;
+    return q * b + r * b / c;
+}
+uint64_t time_us() {
+    return time_ns() / TIMER_E3;
+}
+uint64_t time_ms() {
+    return time_ns() / TIMER_E6;
+}
+double time_ss() {
+    return time_ns() / 1e9; // TIMER_E9;
+}
+double time_mm() {
+    return time_ss() / 60;
+}
+double time_hh() {
+    return time_mm() / 60;
+}
+
+void sleep_ns( double ns ) {
+#if is(win32)
+    if( ns >= 100 ) {
+        LARGE_INTEGER li;      // Windows sleep in 100ns units
+        HANDLE timer = CreateWaitableTimer(NULL, TRUE, NULL);
+        li.QuadPart = (LONGLONG)(__int64)(-ns/100); // Negative for relative time
+        SetWaitableTimer(timer, &li, 0, NULL, NULL, FALSE);
+        WaitForSingleObject(timer, INFINITE);
+        CloseHandle(timer);
+#else
+    if( ns > 0 ) {
+        struct timespec wait = {0};
+        wait.tv_sec = ns / 1e9;
+        wait.tv_nsec = ns - wait.tv_sec * 1e9;
+        nanosleep(&wait, NULL);
+#endif
+    } else {
+#if is(win32)
+        Sleep(0); // yield, Sleep(0), SwitchToThread
+#else
+        usleep(0);
+#endif
+    }
+}
+void sleep_us( double us ) {
+    sleep_ns(us * 1e3);
+}
+void sleep_ms( double ms ) {
+    sleep_ns(ms * 1e6);
+}
+void sleep_ss( double ss ) {
+    sleep_ns(ss * 1e9);
+}
+
+// ----------------------------------------------------------------------------
+// timer
+
+struct timer_internal_t {
+    unsigned ms;
+    unsigned (*callback)(unsigned interval, void *arg);
+    void *arg;
+    thread_ptr_t thd;
+};
+
+static int timer_func(void *arg) {
+    struct timer_internal_t *p = (struct timer_internal_t*)arg;
+
+    sleep_ms( p->ms );
+
+    for( ;; ) {
+        unsigned then = time_ms();
+
+            p->ms = p->callback(p->ms, p->arg);
+            if( !p->ms ) break;
+
+        unsigned now = time_ms();
+        unsigned lapse = now - then;
+        int diff = p->ms - lapse;
+        sleep_ms( diff <= 0 ? 0 : diff );
+    }
+
+    thread_exit(0);
+    return 0;
+}
+
+static __thread array(struct timer_internal_t *) timers;
+
+unsigned timer(unsigned ms, unsigned (*callback)(unsigned ms, void *arg), void *arg) {
+    struct timer_internal_t *p = MALLOC( sizeof(struct timer_internal_t) );
+    p->ms = ms;
+    p->callback = callback;
+    p->arg = arg;
+    p->thd = thread_init( timer_func, p, "", 0 );
+
+    array_push(timers, p);
+    return array_count(timers);
+}
+void timer_destroy(unsigned i) {
+    if( i-- ) {
+        thread_join(timers[i]->thd);
+        thread_term(timers[i]->thd);
+        FREE(timers[i]);
+        timers[i] = 0;
+    }
+}
+
+// ----------------------------------------------------------------------------
+// guid
+
+//typedef vec3i guid;
+
+guid guid_create() {
+    static __thread unsigned counter = 0;
+    static uint64_t appid = 0; do_once appid = hash_str(app_name());
+
+    union conv {
+        struct {
+            unsigned timestamp : 32;
+            unsigned threadid  : 16; // inverted order in LE
+            unsigned appid     : 16; //
+            unsigned counter   : 32;
+        };
+        vec3i v3;
+    } c;
+    c.timestamp = date_epoch() - 0x65000000;
+    c.appid = (unsigned)appid;
+    c.threadid = (unsigned)(uintptr_t)thread_current_thread_id();
+    c.counter = ++counter;
+
+    return c.v3;
+}
+
+// ----------------------------------------------------------------------------
+// ease
+
+float ease_nop(float t) { return 0; }
+float ease_linear(float t) { return t; }
+
+float ease_out_sine(float t) { return sinf(t*(C_PI*0.5f)); }
+float ease_out_quad(float t) { return -(t*(t-2)); }
+float ease_out_cubic(float t) { float f=t-1; return f*f*f+1; }
+float ease_out_quart(float t) { float f=t-1; return f*f*f*(1-t)+1; }
+float ease_out_quint(float t) { float f=(t-1); return f*f*f*f*f+1; }
+float ease_out_expo(float t) { return (t >= 1) ? t : 1-powf(2,-10*t); }
+float ease_out_circ(float t) { return sqrtf((2-t)*t); }
+float ease_out_back(float t) { float f=1-t; return 1-(f*f*f-f*sinf(f*C_PI)); }
+float ease_out_elastic(float t) { return sinf(-13*(C_PI*0.5f)*(t+1))*powf(2,-10*t)+1; }
+float ease_out_bounce(float t) { return (t < 4.f/11) ? (121.f*t*t)/16 : (t < 8.f/11) ? (363.f/40*t*t)-(99.f/10*t)+17.f/5 : (t < 9.f/10) ? (4356.f/361*t*t)-(35442.f/1805*t)+16061.f/1805 : (54.f/5*t*t)-(513.f/25*t)+268.f/25; }
+
+float ease_in_sine(float t) { return 1+sinf((t-1)*(C_PI*0.5f)); }
+float ease_in_quad(float t) { return t*t; }
+float ease_in_cubic(float t) { return t*t*t; }
+float ease_in_quart(float t) { return t*t*t*t; }
+float ease_in_quint(float t) { return t*t*t*t*t; }
+float ease_in_expo(float t) { return (t <= 0) ? t : powf(2,10*(t-1)); }
+float ease_in_circ(float t) { return 1-sqrtf(1-(t*t)); }
+float ease_in_back(float t) { return t*t*t-t*sinf(t*C_PI); }
+float ease_in_elastic(float t) { return sinf(13*(C_PI*0.5f)*t)*powf(2,10*(t-1)); }
+float ease_in_bounce(float t) { return 1-ease_out_bounce(1-t); }
+
+float ease_inout_sine(float t) { return 0.5f*(1-cosf(t*C_PI)); }
+float ease_inout_quad(float t) { return (t < 0.5f) ? 2*t*t : (-2*t*t)+(4*t)-1; }
+float ease_inout_cubic(float t) { float f; return (t < 0.5f) ? 4*t*t*t : (f=(2*t)-2,0.5f*f*f*f+1); }
+float ease_inout_quart(float t) { float f; return (t < 0.5f) ? 8*t*t*t*t : (f=(t-1),-8*f*f*f*f+1); }
+float ease_inout_quint(float t) { float f; return (t < 0.5f) ? 16*t*t*t*t*t : (f=((2*t)-2),0.5f*f*f*f*f*f+1); }
+float ease_inout_expo(float t) { return (t <= 0 || t >= 1) ? t : t < 0.5f ? 0.5f*powf(2,(20*t)-10) : -0.5f*powf(2,(-20*t)+10)+1; }
+float ease_inout_circ(float t) { return t < 0.5f ? 0.5f*(1-sqrtf(1-4*(t*t))) : 0.5f*(sqrtf(-((2*t)-3)*((2*t)-1))+1); }
+float ease_inout_back(float t) { float f; return t < 0.5f ? (f=2*t,0.5f*(f*f*f-f*sinf(f*C_PI))) : (f=(1-(2*t-1)),0.5f*(1-(f*f*f-f*sinf(f*C_PI)))+0.5f); }
+float ease_inout_elastic(float t) { return t < 0.5f ? 0.5f*sinf(13*(C_PI*0.5f)*(2*t))*powf(2,10*((2*t)-1)) : 0.5f*(sinf(-13*(C_PI*0.5f)*((2*t-1)+1))*powf(2,-10*(2*t-1))+2); }
+float ease_inout_bounce(float t) { return t < 0.5f ? 0.5f*ease_in_bounce(t*2) : 0.5f*ease_out_bounce(t*2-1)+0.5f; }
+
+float ease_inout_perlin(float t) { float t3=t*t*t,t4=t3*t,t5=t4*t; return 6*t5-15*t4+10*t3; }
+
+float ease(float t01, unsigned mode) {
+    typedef float (*easing)(float);
+    easing modes[] = {
+        ease_out_sine,
+        ease_out_quad,
+        ease_out_cubic,
+        ease_out_quart,
+        ease_out_quint,
+        ease_out_expo,
+        ease_out_circ,
+        ease_out_back,
+        ease_out_elastic,
+        ease_out_bounce,
+
+        ease_in_sine,
+        ease_in_quad,
+        ease_in_cubic,
+        ease_in_quart,
+        ease_in_quint,
+        ease_in_expo,
+        ease_in_circ,
+        ease_in_back,
+        ease_in_elastic,
+        ease_in_bounce,
+
+        ease_inout_sine,
+        ease_inout_quad,
+        ease_inout_cubic,
+        ease_inout_quart,
+        ease_inout_quint,
+        ease_inout_expo,
+        ease_inout_circ,
+        ease_inout_back,
+        ease_inout_elastic,
+        ease_inout_bounce,
+
+        ease_nop,
+        ease_linear,
+        ease_inout_perlin,
+    };
+    return modes[clampi(mode, 0, countof(modes))](clampf(t01,0,1));
+}
+
+float ease_pong(float t, unsigned fn) { return 1 - ease(t, fn); }
+float ease_ping_pong(float t, unsigned fn1, unsigned fn2) { return t < 0.5 ? ease(t*2,fn1) : ease(1-(t-0.5)*2,fn2); }
+float ease_pong_ping(float t, unsigned fn1, unsigned fn2) { return 1 - ease_ping_pong(t,fn1,fn2); }
+
+
+const char **ease_enums() {
+    static const char *list[] = {
+        "ease_out_sine",
+        "ease_out_quad",
+        "ease_out_cubic",
+        "ease_out_quart",
+        "ease_out_quint",
+        "ease_out_expo",
+        "ease_out_circ",
+        "ease_out_back",
+        "ease_out_elastic",
+        "ease_out_bounce",
+
+        "ease_in_sine",
+        "ease_in_quad",
+        "ease_in_cubic",
+        "ease_in_quart",
+        "ease_in_quint",
+        "ease_in_expo",
+        "ease_in_circ",
+        "ease_in_back",
+        "ease_in_elastic",
+        "ease_in_bounce",
+
+        "ease_inout_sine",
+        "ease_inout_quad",
+        "ease_inout_cubic",
+        "ease_inout_quart",
+        "ease_inout_quint",
+        "ease_inout_expo",
+        "ease_inout_circ",
+        "ease_inout_back",
+        "ease_inout_elastic",
+        "ease_inout_bounce",
+
+        "ease_nop",
+        "ease_linear",
+        "ease_inout_perlin",
+
+        0
+    };
+    return list;
+}
+
+const char *ease_enum(unsigned mode) {
+    return mode[ ease_enums() ];
+}
+
+/*AUTORUN {
+    ENUM(EASE_LINEAR|EASE_OUT);
+    ENUM(EASE_SINE|EASE_OUT);
+    ENUM(EASE_QUAD|EASE_OUT);
+    ENUM(EASE_CUBIC|EASE_OUT);
+    ENUM(EASE_QUART|EASE_OUT);
+    ENUM(EASE_QUINT|EASE_OUT);
+    ENUM(EASE_EXPO|EASE_OUT);
+    ENUM(EASE_CIRC|EASE_OUT);
+    ENUM(EASE_BACK|EASE_OUT);
+    ENUM(EASE_ELASTIC|EASE_OUT);
+    ENUM(EASE_BOUNCE|EASE_OUT);
+
+    ENUM(EASE_SINE|EASE_IN);
+    ENUM(EASE_QUAD|EASE_IN);
+    ENUM(EASE_CUBIC|EASE_IN);
+    ENUM(EASE_QUART|EASE_IN);
+    ENUM(EASE_QUINT|EASE_IN);
+    ENUM(EASE_EXPO|EASE_IN);
+    ENUM(EASE_CIRC|EASE_IN);
+    ENUM(EASE_BACK|EASE_IN);
+    ENUM(EASE_ELASTIC|EASE_IN);
+    ENUM(EASE_BOUNCE|EASE_IN);
+
+    ENUM(EASE_SINE|EASE_INOUT);
+    ENUM(EASE_QUAD|EASE_INOUT);
+    ENUM(EASE_CUBIC|EASE_INOUT);
+    ENUM(EASE_QUART|EASE_INOUT);
+    ENUM(EASE_QUINT|EASE_INOUT);
+    ENUM(EASE_EXPO|EASE_INOUT);
+    ENUM(EASE_CIRC|EASE_INOUT);
+    ENUM(EASE_BACK|EASE_INOUT);
+    ENUM(EASE_ELASTIC|EASE_INOUT);
+    ENUM(EASE_BOUNCE|EASE_INOUT);
+
+    ENUM(EASE_NOP);
+    ENUM(EASE_LINEAR);
+    ENUM(EASE_INOUT_PERLIN);
+};*/
+
+// ----------------------------------------------------------------------------
+// tween
+
+tween_t tween() {
+    tween_t tw = {0};
+    return tw;
+}
+
+float tween_update(tween_t *tw, float dt) {
+    if( !array_count(tw->keyframes) ) return 0.0f;
+
+    for( int i = 0, end = array_count(tw->keyframes) - 1; i < end; ++i ) {
+        tween_keyframe_t *kf1 = &tw->keyframes[i];
+        tween_keyframe_t *kf2 = &tw->keyframes[i + 1];
+        if (tw->time >= kf1->t && tw->time <= kf2->t) {
+            float localT = (tw->time - kf1->t) / (kf2->t - kf1->t);
+            float easedT = ease(localT, kf1->ease);
+            tw->result = mix3(kf1->v, kf2->v, easedT);
+            break;
+        }
+    }
+
+    float done = (tw->time / tw->duration);
+    tw->time += dt;
+    return clampf(done, 0.0f, 1.0f);
+}
+
+void tween_reset(tween_t *tw) {
+    tw->time = 0.0f;
+}
+
+void tween_destroy(tween_t *tw) {
+    tween_t tw_ = {0};
+    array_free(tw->keyframes);
+    *tw = tw_;
+}
+
+static INLINE
+int tween_comp_keyframes(const void *a, const void *b) {
+    float t1 = ((const tween_keyframe_t*)a)->t;
+    float t2 = ((const tween_keyframe_t*)b)->t;
+    return (t1 > t2) - (t1 < t2);
+}
+
+void tween_setkey(tween_t *tw, float t, vec3 v, unsigned mode) {
+    tween_keyframe_t keyframe = { t, v, mode };
+    array_push(tw->keyframes, keyframe);
+    array_sort(tw->keyframes, tween_comp_keyframes);
+    tw->duration = array_back(tw->keyframes)->t;
+}
+
+void tween_delkey(tween_t *tw, float t) { // @todo: untested
+    for( int i = 0, end = array_count(tw->keyframes); i < end; i++ ) {
+        if( tw->keyframes[i].t == t ) {
+            array_erase_slow(tw->keyframes, i);
+            tw->duration = array_back(tw->keyframes)->t;
+            return;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+// curve
+
+curve_t curve() {
+    curve_t c = {0};
+    return c;
+}
+
+static INLINE
+vec3 catmull( vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t ) {
+    float t2 = t*t;
+    float t3 = t*t*t;
+
+    vec3 c;
+    c.x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+    c.y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+    c.z = 0.5 * ((2 * p1.z) + (-p0.z + p2.z) * t + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 + (-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3);
+    return c;
+}
+
+void curve_add(curve_t *c, vec3 p) {
+    array_push(c->points, p);
+}
+
+void curve_end( curve_t *c, int k ) {
+    ASSERT( k > 0 );
+
+    array_free(c->lengths);
+    array_free(c->samples);
+    array_free(c->indices);
+    array_free(c->colors);
+
+    // refit points[N] to samples[K]
+    int N = array_count(c->points);
+    if( k < N ) {
+        // truncate: expected k-points lesser or equal than existing N points
+        for( int i = 0; i <= k; ++i ) {
+            float s = (float)i / k;
+            int t = s * (N-1);
+            array_push(c->samples, c->points[t]);
+
+            float p = fmod(i, N-1) / (N-1); // [0..1)
+            int is_control_point = p <= 0 || p >= 1;
+            array_push(c->colors, is_control_point ? ORANGE: BLUE);
+        }
+
+    } else {
+        // interpolate: expected k-points greater than existing N-points
+        --N;
+        int upper = N - (k%N);
+        int lower = (k%N);
+        if(upper < lower)
+        k += upper;
+        else
+        k -= lower;
+
+        int points_per_segment = (k / N);
+        ++N;
+
+        int looped = len3sq(sub3(c->points[0], *array_back(c->points))) < 0.1;
+
+        for( int i = 0; i <= k; ++i ) {
+            int point = i % points_per_segment;
+            float p = point / (float)points_per_segment; // [0..1)
+            int t = i / points_per_segment;
+
+            // linear
+            vec3 l = mix3(c->points[t], c->points[t+(i!=k)], p);
+
+            // printf("%d) %d>%d %f\n", i, t, t+(i!=k), p);
+            ASSERT(p <= 1);
+
+            // catmull
+            int p0 = t - 1;
+            int p1 = t + 0;
+            int p2 = t + 1;
+            int p3 = t + 2;
+            if( looped )
+            {
+                int M = N-1;
+                if(p0<0) p0+=M; else if(p0>=M) p0-=M;
+                if(p1<0) p1+=M; else if(p1>=M) p1-=M;
+                if(p2<0) p2+=M; else if(p2>=M) p2-=M;
+                if(p3<0) p3+=M; else if(p3>=M) p3-=M;
+            }
+            else
+            {
+                int M = N-1;
+                if(p0<0) p0=0; else if(p0>=M) p0=M;
+                if(p1<0) p1=0; else if(p1>=M) p1=M;
+                if(p2<0) p2=0; else if(p2>=M) p2=M;
+                if(p3<0) p3=0; else if(p3>=M) p3=M;
+            }
+            vec3 m = catmull(c->points[p0],c->points[p1],c->points[p2],c->points[p3],p);
+            l = m;
+
+            array_push(c->samples, l);
+
+            int is_control_point = p <= 0 || p >= 1;
+            array_push(c->colors, is_control_point ? ORANGE: BLUE);
+        }
+    }
+
+    array_push(c->lengths, 0 );
+    for( int i = 1; i <= k; ++i ) {
+        // approximate curve length at every sample point
+        array_push(c->lengths, len3(sub3(c->samples[i], c->samples[i-1])) + c->lengths[i-1] );
+    }
+    // normalize lengths to be between 0 and 1
+    float maxv = c->lengths[k];
+    for( int i = 1; i <= k; ++i ) c->lengths[i] /= maxv;
+
+    array_push(c->indices, 0 );
+    for( int i = 0/*1*/; i </*=*/ k; ++i ) {
+        float s = (float)i / (k-1); //k;
+        int j; // j = so that lengths[j] <= s < lengths[j+1];
+
+        // j = Index of the highest length that is less or equal to s
+        // Can be optimized with a binary search instead
+        for( j = *array_back(c->indices) + 1; j </*=*/ k; ++j ) {
+            if( c->lengths[j] </*=*/ s ) continue;
+            break;
+        }
+
+        if (c->lengths[j] > 0.01)
+        array_push(c->indices, j );
+    }
+}
+
+vec3 curve_eval(curve_t *c, float dt, unsigned *color) {
+    unsigned nil; if(!color) color = &nil;
+    dt = clampf(dt, 0.0f, 1.0f);
+    int l = (int)(array_count(c->indices) - 1);
+    int p = (int)(dt * l);
+    int t = c->indices[p];
+
+    t %= (array_count(c->indices)-1);
+    vec3 pos = mix3(c->samples[t], c->samples[t+1], dt * l - p);
+    *color = c->colors[t];
+
+    return pos;
+}
+
+void curve_destroy(curve_t *c) {
+    array_free(c->lengths);
+    array_free(c->colors);
+    array_free(c->samples);
+    array_free(c->points);
+    array_free(c->indices);
 }
 #line 0
 
@@ -25139,10 +25203,10 @@ void window_cursor_shape(unsigned mode) {
         0,
         GLFW_ARROW_CURSOR,
         GLFW_IBEAM_CURSOR,
-        GLFW_CROSSHAIR_CURSOR,
-        GLFW_HAND_CURSOR,
         GLFW_HRESIZE_CURSOR,
         GLFW_VRESIZE_CURSOR,
+        GLFW_HAND_CURSOR,
+        GLFW_CROSSHAIR_CURSOR,
     };
     do_once {
         static unsigned pixels[16 * 16] = { 0x01000000 }; // ABGR(le) glfw3 note: A(0x00) means 0xFF for some reason
@@ -25235,7 +25299,20 @@ int window_has_maximize() {
     return ifdef(ems, 0, glfwGetWindowAttrib(window, GLFW_MAXIMIZED) == GLFW_TRUE);
 }
 
+const char *window_clipboard() {
+    return glfwGetClipboardString(window);
+}
+void window_setclipboard(const char *text) {
+    glfwSetClipboardString(window, text);
+}
 
+static
+double window_scale() { // ok? @testme
+    float xscale, yscale;
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    glfwGetMonitorContentScale(monitor, &xscale, &yscale);
+    return maxi(xscale, yscale);
+}
 #line 0
 
 #line 1 "engine/split/v4k_obj.c"
@@ -26590,7 +26667,7 @@ int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i 
         #error ASTAR_POS_INDEX(p) should specify macro to map position to index
         #endif
 
-        #ifndef ASTAR_MAX_INDEX 
+        #ifndef ASTAR_MAX_INDEX
         #error ASTAR_MAX_INDEX should specify max count of indices the position can map to
         #endif
 
@@ -26681,7 +26758,7 @@ int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i 
                 i = p;                                    \
                 p = (i - 1) / 2;                          \
             }                                             \
-        } while (0) 
+        } while (0)
 
         #define ASTAR_HEAP_POP()                                          \
         do {                                                              \
@@ -26872,7 +26949,7 @@ int pathfind_astar(int width, int height, const unsigned* map, vec2i src, vec2i 
 // [ ]     CompareKeys(keyVar1, operator < <= > >= == !=, keyVar2)
 // [ ]     SetTags(names=blank,cooldownTime=inf,bIsCooldownAdditive=false)
 // [ ]     HasTags(names=blank,bAllRequired=true)
-// [ ]     PushToStack(keyVar,itemObj): creates a new stack if one doesn’t exist, and stores it in the passed variable name, and then pushes ‘item’ object onto it.
+// [ ]     PushToStack(keyVar,itemObj): creates a new stack if one doesnt exist, and stores it in the passed variable name, and then pushes item object onto it.
 // [ ]     PopFromStack(keyVar,itemVar): pop pops an item off the stack, and stores it in the itemVar variable, failing if the stack is already empty.
 // [ ]     IsEmptyStack(keyVar): checks if the stack passed is empty and returns success if it is, and failure if its not.
 // [ ] Communication Node: This is a type of action node that allows an AI agent to communicate with other agents or entities in the game world. The node takes an input specifying the message to be communicated and the recipient(s) of the message (wildmask,l/p/f/g prefixes). The node then sends the message to the designated recipient(s) and returns success when the communication is completed. This node can be useful for implementing behaviors that require the AI agent to coordinate with other agents or to convey information to the player. It could use a radius argument to specify the maximum allowed distance for the recipients.

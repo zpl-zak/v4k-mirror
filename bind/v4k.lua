@@ -1130,6 +1130,7 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] map: macro name but used as C declaration in:typedef struct { map base; struct { pair p; char* key; char* val; } tmp, *ptr; char** tmpval;          int (*typed_cmp)(char*, char*); uint64_t (*typed_hash)(char*); } * ini_t;
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2  font_xy();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2  font_xy();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2  font_xy();
@@ -1142,7 +1143,6 @@ ffi.cdef([[
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2  font_highlight(const char *text, const void *colors);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2  font_highlight(const char *text, const void *colors);
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2  font_highlight(const char *text, const void *colors);
-//lcpp INF [0000] map: macro name but used as C declaration in:typedef struct { map base; struct { pair p; char* key; char* val; } tmp, *ptr; char** tmpval;          int (*typed_cmp)(char*, char*); uint64_t (*typed_hash)(char*); } * ini_t;
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2        input2( int vk );
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2        input2( int vk );
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2        input2( int vk );
@@ -1508,6 +1508,9 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:vec2i* entries;
+//lcpp INF [0000] test: macro name but used as C declaration in:API int (test)(const char *file, int line, const char *expr, bool result);
+//lcpp INF [0000] test: macro name but used as C declaration in:STATIC int (test)(const char *file, int line, const char *expr, bool result);
+//lcpp INF [0000] test: macro name but used as C declaration in: int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] vec3i: macro name but used as C declaration in:typedef vec3i guid;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 v;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 result;
@@ -1522,9 +1525,6 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3      curve_eval(curve_t *c, float dt, unsigned *color);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3      curve_eval(curve_t *c, float dt, unsigned *color);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: vec3      curve_eval(curve_t *c, float dt, unsigned *color);
-//lcpp INF [0000] test: macro name but used as C declaration in:API int (test)(const char *file, int line, const char *expr, bool result);
-//lcpp INF [0000] test: macro name but used as C declaration in:STATIC int (test)(const char *file, int line, const char *expr, bool result);
-//lcpp INF [0000] test: macro name but used as C declaration in: int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 ui_get_dims();
@@ -2117,6 +2117,11 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  void script_bind_function(const char *c_name, void *c_function);
  void script_call(const char *lua_function);
  bool script_tests();
+enum {
+SCRIPT_LUA = 1,
+SCRIPT_DEBUGGER = 2,
+};
+ void *script_init_env(unsigned flags);
  vec3  editor_pick(float mouse_x, float mouse_y);
  char* editor_path(const char *path);
  float* engine_getf(const char *key);
@@ -2139,38 +2144,6 @@ typedef union json_t { char* s; double f; int64_t i; uintptr_t p; union json_t* 
  char* kit_translate2( const char *id, const char *langcode_iso639_1 );
  void  kit_locale( const char *langcode_iso639_1 );
  char* kit_translate( const char *id );
-enum FONT_FLAGS {
-FONT_512 =0,
-FONT_1024 =1,
-FONT_2048 =2,
-FONT_4096 =4,
-FONT_NO_OVERSAMPLE =0,
-FONT_OVERSAMPLE_X =8,
-FONT_OVERSAMPLE_Y =16,
-FONT_ASCII =2048,
-FONT_AR =4096,
-FONT_ZH =8192,
-FONT_EL =16384,
-FONT_EM =32768,
-FONT_EU =65536,
-FONT_HE =131072,
-FONT_JP =262144,
-FONT_KR =524288,
-FONT_RU =1048576,
-FONT_TH =2097152,
-FONT_VI =4194304,
-FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
-};
- void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
- void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
- void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
- void  font_color(const char *color_tag, uint32_t color);
- vec2  font_xy();
- void  font_goto(float x, float y);
- vec2  font_print(const char *text);
- vec2  font_rect(const char *text);
- void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords);
- vec2  font_highlight(const char *text, const void *colors);
  char** file_list( const char *pathmasks );
  bool         file_write( const char *file, const void *ptr, int len );
  bool         file_append( const char *file, const void *ptr, int len );
@@ -2218,6 +2191,38 @@ typedef struct { map base; struct { pair p; char* key; char* val; } tmp, *ptr; c
  ini_t        ini_from_mem(const char *data);
  void         ini_destroy(ini_t);
  bool         ini_write(const char *filename, const char *section, const char *key, const char *value);
+enum FONT_FLAGS {
+FONT_512 =0,
+FONT_1024 =1,
+FONT_2048 =2,
+FONT_4096 =4,
+FONT_NO_OVERSAMPLE =0,
+FONT_OVERSAMPLE_X =8,
+FONT_OVERSAMPLE_Y =16,
+FONT_ASCII =2048,
+FONT_AR =4096,
+FONT_ZH =8192,
+FONT_EL =16384,
+FONT_EM =32768,
+FONT_EU =65536,
+FONT_HE =131072,
+FONT_JP =262144,
+FONT_KR =524288,
+FONT_RU =1048576,
+FONT_TH =2097152,
+FONT_VI =4194304,
+FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
+};
+ void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
+ void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
+ void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
+ void  font_color(const char *color_tag, uint32_t color);
+ vec2  font_xy();
+ void  font_goto(float x, float y);
+ vec2  font_print(const char *text);
+ vec2  font_rect(const char *text);
+ void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords);
+ vec2  font_highlight(const char *text, const void *colors);
  int         input_use( int controller_id );
  float       input( int vk );
  vec2        input2( int vk );
@@ -2605,6 +2610,7 @@ TEXTURE_RGBA = IMAGE_RGBA,
 TEXTURE_FLIP = IMAGE_FLIP,
 TEXTURE_SRGB = 1 << 24,
 TEXTURE_BGR = 1 << 25,
+TEXTURE_BGRA = TEXTURE_BGR,
 TEXTURE_ARRAY = 1 << 26,
 };
 typedef struct texture_t {
@@ -3128,6 +3134,51 @@ vec2i* entries;
 } quarks_db;
  unsigned    quark_intern( quarks_db*, const char *string );
  const char *quark_string( quarks_db*, unsigned key );
+ void*       thread( int (*thread_func)(void* user_data), void* user_data );
+ void        thread_destroy( void *thd );
+ int         argc();
+ char*       argv(int);
+ int         flag(const char *commalist);
+ const char* option(const char *commalist, const char *defaults);
+ int         optioni(const char *commalist, int defaults);
+ float       optionf(const char *commalist, float defaults);
+ void        tty_attach();
+ void        tty_detach();
+ void        tty_color(unsigned color);
+ void        tty_reset();
+ const char* app_exec(const char *command);
+ int         app_spawn(const char *command);
+ int         app_cores();
+ int         app_battery();
+ const char* app_name();
+ const char* app_path();
+ const char* app_cache();
+ const char* app_temp();
+ const char* app_cmdline();
+ void        app_beep();
+ void        app_hang();
+ void        app_crash();
+ void        app_singleton(const char *guid);
+ bool        app_open(const char *folder_file_or_url);
+ const char* app_loadfile();
+ const char* app_savefile();
+ char*       callstack( int traces );
+ int         callstackf( FILE *fp, int traces );
+ void        die(const char *message);
+ void        alert(const char *message);
+ void        hexdump( const void *ptr, unsigned len );
+ void        hexdumpf( FILE *fp, const void *ptr, unsigned len, int width );
+ void        breakpoint();
+ bool        has_debugger();
+ void        trap_install(void);
+ const char *trap_name(int signal);
+ void        trap_on_ignore(int signal);
+ void        trap_on_quit(int signal);
+ void        trap_on_abort(int signal);
+ void        trap_on_debug(int signal);
+ int (PANIC)(const char *error, const char *file, int line);
+ int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
+ int (test)(const char *file, int line, const char *expr, bool result);
  uint64_t    date();
  uint64_t    date_epoch();
  char*       date_string();
@@ -3229,54 +3280,9 @@ int*   indices;
 } curve_t;
  curve_t curve();
  void      curve_add(curve_t *c, vec3 p);
- void      curve_finish(curve_t *c, int num_points);
+ void      curve_end(curve_t *c, int num_points);
  vec3      curve_eval(curve_t *c, float dt, unsigned *color);
  void    curve_destroy(curve_t *c);
- void*       thread( int (*thread_func)(void* user_data), void* user_data );
- void        thread_destroy( void *thd );
- int         argc();
- char*       argv(int);
- int         flag(const char *commalist);
- const char* option(const char *commalist, const char *defaults);
- int         optioni(const char *commalist, int defaults);
- float       optionf(const char *commalist, float defaults);
- void        tty_attach();
- void        tty_detach();
- void        tty_color(unsigned color);
- void        tty_reset();
- const char* app_exec(const char *command);
- int         app_spawn(const char *command);
- int         app_cores();
- int         app_battery();
- const char* app_name();
- const char* app_path();
- const char* app_cache();
- const char* app_temp();
- const char* app_cmdline();
- void        app_beep();
- void        app_hang();
- void        app_crash();
- void        app_singleton(const char *guid);
- bool        app_open(const char *folder_file_or_url);
- const char* app_loadfile();
- const char* app_savefile();
- char*       callstack( int traces );
- int         callstackf( FILE *fp, int traces );
- void        die(const char *message);
- void        alert(const char *message);
- void        hexdump( const void *ptr, unsigned len );
- void        hexdumpf( FILE *fp, const void *ptr, unsigned len, int width );
- void        breakpoint();
- bool        has_debugger();
- void        trap_install(void);
- const char *trap_name(int signal);
- void        trap_on_ignore(int signal);
- void        trap_on_quit(int signal);
- void        trap_on_abort(int signal);
- void        trap_on_debug(int signal);
- int (PANIC)(const char *error, const char *file, int line);
- int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
- int (test)(const char *file, int line, const char *expr, bool result);
 enum PANEL_FLAGS {
 PANEL_OPEN = 1,
 };
@@ -3438,13 +3444,15 @@ enum CURSOR_SHAPES {
 CURSOR_NONE,
 CURSOR_HW_ARROW,
 CURSOR_HW_IBEAM,
-CURSOR_HW_CROSS,
-CURSOR_HW_HAND,
 CURSOR_HW_HDRAG,
 CURSOR_HW_VDRAG,
+CURSOR_HW_HAND,
+CURSOR_HW_CROSS,
 CURSOR_SW_AUTO,
 };
  void     window_cursor_shape(unsigned shape);
+ const char *window_clipboard();
+ void        window_setclipboard(const char *text);
 ]])
 local _M = {}
 function _M.vec2(x,y)

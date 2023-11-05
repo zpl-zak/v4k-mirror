@@ -1328,7 +1328,7 @@ STBI_EXTERN __declspec(dllimport) int __stdcall WideCharToMultiByte(unsigned int
 #if defined(_WIN32) && defined(STBI_WINDOWS_UTF8)
 STBIDEF int stbi_convert_wchar_to_utf8(char *buffer, size_t bufferlen, const wchar_t* input)
 {
-  return WideCharToMultiByte(65001 /* UTF8 */, 0, input, -1, buffer, (int) bufferlen, NULL, NULL);
+   return WideCharToMultiByte(65001 /* UTF8 */, 0, input, -1, buffer, (int) bufferlen, NULL, NULL);
 }
 #endif
 
@@ -1345,8 +1345,8 @@ static FILE *stbi__fopen(char const *filename, char const *mode)
       return 0;
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-  if (0 != _wfopen_s(&f, wFilename, wMode))
-    f = 0;
+   if (0 != _wfopen_s(&f, wFilename, wMode))
+      f = 0;
 #else
    f = _wfopen(wFilename, wMode);
 #endif
@@ -3436,8 +3436,8 @@ static int stbi__decode_jpeg_image(stbi__jpeg *j)
          m = stbi__get_marker(j);
       } else {
          if (!stbi__process_marker(j, m)) return 1;
-      m = stbi__get_marker(j);
-   }
+         m = stbi__get_marker(j);
+      }
    }
    if (j->progressive)
       stbi__jpeg_finish(j);
@@ -5330,7 +5330,7 @@ static int stbi__png_is16(stbi__context *s)
    stbi__png p;
    p.s = s;
    if (!stbi__png_info_raw(&p, NULL, NULL, NULL))
-     return 0;
+      return 0;
    if (p.depth != 16) {
       stbi__rewind(p.s);
       return 0;
@@ -5574,7 +5574,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
       // negative, and guarantees that info.offset >= bytes_read_so_far > 0. this in turn
       // ensures the number computed in the second half of the test can't overflow.
       if (info.offset < bytes_read_so_far || info.offset - bytes_read_so_far > extra_data_limit) {
-        return stbi__errpuc("bad offset", "Corrupt BMP");
+         return stbi__errpuc("bad offset", "Corrupt BMP");
       } else {
          stbi__skip(s, info.offset - bytes_read_so_far);
       }
@@ -7339,7 +7339,7 @@ static int stbi__bmp_info(stbi__context *s, int *x, int *y, int *comp)
    info.all_a = 255;
    p = stbi__bmp_parse_header(s, &info);
    if (p == NULL) {
-   stbi__rewind( s );
+      stbi__rewind( s );
       return 0;
    }
    if (x) *x = s->img_x;
@@ -7532,7 +7532,7 @@ static void *stbi__pnm_load(stbi__context *s, int *x, int *y, int *comp, int req
       if (ri->bits_per_channel == 16) {
          out = (stbi_uc *) stbi__convert_format16((stbi__uint16 *) out, s->img_n, req_comp, s->img_x, s->img_y);
       } else {
-      out = stbi__convert_format(out, s->img_n, req_comp, s->img_x, s->img_y);
+         out = stbi__convert_format(out, s->img_n, req_comp, s->img_x, s->img_y);
       }
       if (out == NULL) return out; // stbi__convert_format frees input on failure
    }

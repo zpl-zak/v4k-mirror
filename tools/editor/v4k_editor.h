@@ -612,6 +612,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+34) \
         if(ingame) ui_disable(); \
         UI_MENU_ITEM(ICON_MD_FOLDER_SPECIAL, editor_send("browser")) \
+        UI_MENU_ITEM(ICON_MDI_SCRIPT_TEXT, editor_send("script")) \
         UI_MENU_ITEM(ICON_MDI_CHART_TIMELINE, editor_send("timeline")) \
         UI_MENU_ITEM(ICON_MDI_CONSOLE, editor_send("console")) \
         UI_MENU_ITEM(ICON_MDI_GRAPH, editor_send("nodes")) \
@@ -722,3 +723,4 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
 #include "v4k_editor3_timeline.h"
 #include "v4k_editor4_console.h"
 #include "v4k_editor5_nodes.h"
+#include "v4k_editor6_script.h"

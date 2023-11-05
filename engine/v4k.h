@@ -1986,6 +1986,16 @@ API void script_bind_function(const char *c_name, void *c_function);
 API void script_call(const char *lua_function);
 
 API bool script_tests();
+
+// -----------------------------------------------------------------------------
+// script framework
+
+enum {
+    SCRIPT_LUA = 1,
+    SCRIPT_DEBUGGER = 2,
+};
+
+API void *script_init_env(unsigned flags);
 #line 0
 
 #line 1 "engine/split/v4k_editor.h"
@@ -2033,98 +2043,6 @@ API char* kit_translate2( const char *id, const char *langcode_iso639_1 ); // pe
 
 API void  kit_locale( const char *langcode_iso639_1 ); // set current locale: enUS, ptBR, esES, ...
 API char* kit_translate( const char *id ); // perform a translation, given current locale
-#line 0
-
-#line 1 "engine/split/v4k_font.h"
-// -----------------------------------------------------------------------------
-// font framework
-// - rlyeh, public domain
-
-// font size tags
-#define FONT_H1 "\1" // largest
-#define FONT_H2 "\2"
-#define FONT_H3 "\3"
-#define FONT_H4 "\4"
-#define FONT_H5 "\5"
-#define FONT_H6 "\6" // smallest
-
-// font color tags
-#define FONT_COLOR1  "\x10"
-#define FONT_COLOR2  "\x11"
-#define FONT_COLOR3  "\x12"
-#define FONT_COLOR4  "\x13"
-#define FONT_COLOR5  "\x14"
-#define FONT_COLOR6  "\x15"
-#define FONT_COLOR7  "\x16"
-#define FONT_COLOR8  "\x17"
-#define FONT_COLOR9  "\x18"
-#define FONT_COLOR10 "\x19"
-
-// font face tags
-#define FONT_FACE1   "\x1a"
-#define FONT_FACE2   "\x1b"
-#define FONT_FACE3   "\x1c"
-#define FONT_FACE4   "\x1d"
-#define FONT_FACE5   "\x1e"
-#define FONT_FACE6   "\x1f"
-
-// font align tags
-#define FONT_LEFT     "\\<"
-#define FONT_CENTER   "\\|"
-#define FONT_RIGHT    "\\>"
-#define FONT_TOP      "\\^"
-#define FONT_MIDDLE   "\\-"
-#define FONT_BASELINE "\\_"
-#define FONT_BOTTOM   "\\v"
-
-// font flags
-enum FONT_FLAGS {
-    // font atlas size
-    FONT_512 = 0x0,
-    FONT_1024 = 0x1,
-    FONT_2048 = 0x2,
-    FONT_4096 = 0x4,
-
-    // font oversampling
-    FONT_NO_OVERSAMPLE = 0x0,
-    FONT_OVERSAMPLE_X = 0x08,
-    FONT_OVERSAMPLE_Y = 0x10,
-
-    // unicode ranges
-    FONT_ASCII = 0x800, // Compatible charset
-    FONT_AR = 0x001000, // Arabic and Arabic-Indic digits
-    FONT_ZH = 0x002000, // Chinese Simplified (@todo: add ZH_FULL)
-    FONT_EL = 0x004000, // Greek, Coptic, modern Georgian, Svan, Mingrelian, Ancient Greek
-    FONT_EM = 0x008000, // Emoji
-    FONT_EU = 0x010000, // Eastern/western Europe, IPA, Latin ext A/B
-    FONT_HE = 0x020000, // Hebrew, Yiddish, Ladino, and other diaspora languages
-    FONT_JP = 0x040000, // Hiragana, Katakana, Punctuations, Half-width chars
-    FONT_KR = 0x080000, // Korean, Hangul
-    FONT_RU = 0x100000, // Cyrillic + ext A/B
-    FONT_TH = 0x200000, // Thai
-    FONT_VI = 0x400000, // Vietnamese
-    FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
-
-    // FONT_DEFAULTS = FONT_512 | FONT_NO_OVERSAMPLE | FONT_ASCII,
-};
-
-// configures
-API void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
-API void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
-API void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
-API void  font_color(const char *color_tag, uint32_t color);
-
-// commands
-API vec2  font_xy();
-API void  font_goto(float x, float y);
-API vec2  font_print(const char *text);
-API vec2  font_rect(const char *text);
-//  void  font_clip(vec2 topleft, vec2 bottomright);
-//  void  font_wrap(vec2 topleft, vec2 bottomright);
-
-// syntax highlighting
-API void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords); // comma separated tokens. expensive, please cache result.
-API vec2  font_highlight(const char *text, const void *colors);
 #line 0
 
 #line 1 "engine/split/v4k_file.h"
@@ -2225,6 +2143,98 @@ API ini_t        ini_from_mem(const char *data);
 API void         ini_destroy(ini_t);
 
 API bool         ini_write(const char *filename, const char *section, const char *key, const char *value);
+#line 0
+
+#line 1 "engine/split/v4k_font.h"
+// -----------------------------------------------------------------------------
+// font framework
+// - rlyeh, public domain
+
+// font size tags
+#define FONT_H1 "\1" // largest
+#define FONT_H2 "\2"
+#define FONT_H3 "\3"
+#define FONT_H4 "\4"
+#define FONT_H5 "\5"
+#define FONT_H6 "\6" // smallest
+
+// font color tags
+#define FONT_COLOR1  "\x10"
+#define FONT_COLOR2  "\x11"
+#define FONT_COLOR3  "\x12"
+#define FONT_COLOR4  "\x13"
+#define FONT_COLOR5  "\x14"
+#define FONT_COLOR6  "\x15"
+#define FONT_COLOR7  "\x16"
+#define FONT_COLOR8  "\x17"
+#define FONT_COLOR9  "\x18"
+#define FONT_COLOR10 "\x19"
+
+// font face tags
+#define FONT_FACE1   "\x1a"
+#define FONT_FACE2   "\x1b"
+#define FONT_FACE3   "\x1c"
+#define FONT_FACE4   "\x1d"
+#define FONT_FACE5   "\x1e"
+#define FONT_FACE6   "\x1f"
+
+// font align tags
+#define FONT_LEFT     "\\<"
+#define FONT_CENTER   "\\|"
+#define FONT_RIGHT    "\\>"
+#define FONT_TOP      "\\^"
+#define FONT_MIDDLE   "\\-"
+#define FONT_BASELINE "\\_"
+#define FONT_BOTTOM   "\\v"
+
+// font flags
+enum FONT_FLAGS {
+    // font atlas size
+    FONT_512 = 0x0,
+    FONT_1024 = 0x1,
+    FONT_2048 = 0x2,
+    FONT_4096 = 0x4,
+
+    // font oversampling
+    FONT_NO_OVERSAMPLE = 0x0,
+    FONT_OVERSAMPLE_X = 0x08,
+    FONT_OVERSAMPLE_Y = 0x10,
+
+    // unicode ranges
+    FONT_ASCII = 0x800, // Compatible charset
+    FONT_AR = 0x001000, // Arabic and Arabic-Indic digits
+    FONT_ZH = 0x002000, // Chinese Simplified (@todo: add ZH_FULL)
+    FONT_EL = 0x004000, // Greek, Coptic, modern Georgian, Svan, Mingrelian, Ancient Greek
+    FONT_EM = 0x008000, // Emoji
+    FONT_EU = 0x010000, // Eastern/western Europe, IPA, Latin ext A/B
+    FONT_HE = 0x020000, // Hebrew, Yiddish, Ladino, and other diaspora languages
+    FONT_JP = 0x040000, // Hiragana, Katakana, Punctuations, Half-width chars
+    FONT_KR = 0x080000, // Korean, Hangul
+    FONT_RU = 0x100000, // Cyrillic + ext A/B
+    FONT_TH = 0x200000, // Thai
+    FONT_VI = 0x400000, // Vietnamese
+    FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
+
+    // FONT_DEFAULTS = FONT_512 | FONT_NO_OVERSAMPLE | FONT_ASCII,
+};
+
+// configures
+API void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
+API void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
+API void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
+API void  font_color(const char *color_tag, uint32_t color);
+
+// commands
+API vec2  font_xy();
+API void  font_goto(float x, float y);
+API vec2  font_print(const char *text);
+API vec2  font_rect(const char *text);
+//  void  font_clip(vec2 topleft, vec2 bottomright);
+//  void  font_wrap(vec2 topleft, vec2 bottomright);
+
+// syntax highlighting
+API void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords); // comma separated tokens. expensive, please cache result.
+API vec2  font_highlight(const char *text, const void *colors);
 #line 0
 
 #line 1 "engine/split/v4k_input.h"
@@ -2329,7 +2339,7 @@ enum INPUT_ENUMS {
     KEY_PAD1,KEY_PAD2,KEY_PAD3,KEY_PAD4,KEY_PAD5,KEY_PAD6,KEY_PAD7,KEY_PAD8,KEY_PAD9,KEY_PAD0, // beware: complicated on laptops
     KEY_PADADD,KEY_PADSUB,KEY_PADMUL,KEY_PADDIV,KEY_PADDOT,KEY_PADENTER, // beware: complicated on laptops
 
-    MOUSE_L, MOUSE_M, MOUSE_R,
+    MOUSE_L, MOUSE_M, MOUSE_R, // @todo: MOUSE_CLICKS,
     GAMEPAD_CONNECTED, GAMEPAD_A, GAMEPAD_B, GAMEPAD_X, GAMEPAD_Y,
     GAMEPAD_UP, GAMEPAD_DOWN, GAMEPAD_LEFT, GAMEPAD_RIGHT, GAMEPAD_MENU, GAMEPAD_START,
     GAMEPAD_LB, GAMEPAD_RB, GAMEPAD_LTHUMB, GAMEPAD_RTHUMB,
@@ -3192,6 +3202,7 @@ enum TEXTURE_FLAGS {
     // @fixme
     TEXTURE_SRGB = 1 << 24,
     TEXTURE_BGR = 1 << 25,
+    TEXTURE_BGRA = TEXTURE_BGR,
     TEXTURE_ARRAY = 1 << 26,
 };
 
@@ -3986,6 +3997,7 @@ API light_t*  scene_index_light(unsigned index);
 API char*   tempvl(const char *fmt, va_list);
 API char*   tempva(const char *fmt, ...);
 #define     va(...) (((&printf) || printf(__VA_ARGS__), tempva(__VA_ARGS__)))  // vs2015 check trick
+#define     vac (const char*)va
 
 // string: allocated api (heap). FREE() after use
 API char*   strcatf(char **s, const char *buf);
@@ -4070,6 +4082,93 @@ typedef struct quarks_db {
 
 API unsigned    quark_intern( quarks_db*, const char *string );
 API const char *quark_string( quarks_db*, unsigned key );
+#line 0
+
+#line 1 "engine/split/v4k_system.h"
+// -----------------------------------------------------------------------------
+// system framework utils
+// - rlyeh, public domain.
+//
+// Note: Windows users add `/Zi` compilation flags, else add `-g` and/or `-ldl` flags
+// Note: If you are linking your binary using GNU ld you need to add --export-dynamic
+
+API void*       thread( int (*thread_func)(void* user_data), void* user_data );
+API void        thread_destroy( void *thd );
+
+API int         argc();
+API char*       argv(int);
+
+API int         flag(const char *commalist); // --arg // app_flag?
+API const char* option(const char *commalist, const char *defaults); // --arg=string or --arg string
+API int         optioni(const char *commalist, int defaults); // --arg=integer or --arg integer  // argvi() ?
+API float       optionf(const char *commalist, float defaults); // --arg=float or --arg float    // flagf() ?
+
+API void        tty_attach();
+API void        tty_detach();
+API void        tty_color(unsigned color);
+API void        tty_reset();
+
+API const char* app_exec(const char *command); // returns ("%15d %s", retcode, output_last_line)
+API int         app_spawn(const char *command);
+API int         app_cores();
+API int         app_battery(); /// returns battery level [1..100]. also positive if charging (+), negative if discharging (-), and 0 if no battery is present.
+
+API const char* app_name();
+API const char* app_path();
+API const char* app_cache();
+API const char* app_temp();
+API const char* app_cmdline();
+
+API void        app_beep();
+API void        app_hang();
+API void        app_crash();
+API void        app_singleton(const char *guid);
+API bool        app_open(const char *folder_file_or_url);
+
+API const char* app_loadfile();
+API const char* app_savefile();
+
+
+API char*       callstack( int traces ); // write callstack into a temporary string. <0 traces to invert order. do not free().
+API int         callstackf( FILE *fp, int traces ); // write callstack to file. <0 traces to invert order.
+
+API void        die(const char *message);
+API void        alert(const char *message);
+API void        hexdump( const void *ptr, unsigned len );
+API void        hexdumpf( FILE *fp, const void *ptr, unsigned len, int width );
+API void        breakpoint();
+API bool        has_debugger();
+
+API void        trap_install(void);
+API const char *trap_name(int signal);      // helper util
+API void        trap_on_ignore(int signal); // helper util
+API void        trap_on_quit(int signal);   // helper util
+API void        trap_on_abort(int signal);  // helper util
+API void        trap_on_debug(int signal);  // helper util
+
+#define PANIC(...)   PANIC(va(__VA_ARGS__), strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__) // die() ?
+API int (PANIC)(const char *error, const char *file, int line);
+
+#define PRINTF(...)  PRINTF(va(__VA_ARGS__), 1[#__VA_ARGS__] == '!' ? callstack(+48) : "", strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__, __FUNCTION__)
+API int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
+
+#define test(expr) test(strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__,__LINE__,#expr,!!(expr))
+API int (test)(const char *file, int line, const char *expr, bool result);
+
+#if ENABLE_AUTOTESTS
+#define AUTOTEST AUTORUN
+#else
+#define AUTOTEST static void concat(concat(concat(disabled_test_, __LINE__), _), __COUNTER__)()
+#endif
+
+// AUTOTEST { test(1<2); }
+
+#if ENABLE_RETAIL
+#undef  PRINTF
+#define PRINTF(...) 0
+#undef  test
+#define test(expr)  0
+#endif
 #line 0
 
 #line 1 "engine/split/v4k_time.h"
@@ -4226,96 +4325,9 @@ typedef struct curve_t {
 
 API curve_t curve();
 API void      curve_add(curve_t *c, vec3 p);
-API void      curve_finish(curve_t *c, int num_points);
+API void      curve_end(curve_t *c, int num_points);
 API vec3      curve_eval(curve_t *c, float dt, unsigned *color);
 API void    curve_destroy(curve_t *c);
-#line 0
-
-#line 1 "engine/split/v4k_system.h"
-// -----------------------------------------------------------------------------
-// system framework utils
-// - rlyeh, public domain.
-//
-// Note: Windows users add `/Zi` compilation flags, else add `-g` and/or `-ldl` flags
-// Note: If you are linking your binary using GNU ld you need to add --export-dynamic
-
-API void*       thread( int (*thread_func)(void* user_data), void* user_data );
-API void        thread_destroy( void *thd );
-
-API int         argc();
-API char*       argv(int);
-
-API int         flag(const char *commalist); // --arg // app_flag?
-API const char* option(const char *commalist, const char *defaults); // --arg=string or --arg string
-API int         optioni(const char *commalist, int defaults); // --arg=integer or --arg integer  // argvi() ?
-API float       optionf(const char *commalist, float defaults); // --arg=float or --arg float    // flagf() ?
-
-API void        tty_attach();
-API void        tty_detach();
-API void        tty_color(unsigned color);
-API void        tty_reset();
-
-API const char* app_exec(const char *command); // returns ("%15d %s", retcode, output_last_line)
-API int         app_spawn(const char *command);
-API int         app_cores();
-API int         app_battery(); /// returns battery level [1..100]. also positive if charging (+), negative if discharging (-), and 0 if no battery is present.
-
-API const char* app_name();
-API const char* app_path();
-API const char* app_cache();
-API const char* app_temp();
-API const char* app_cmdline();
-
-API void        app_beep();
-API void        app_hang();
-API void        app_crash();
-API void        app_singleton(const char *guid);
-API bool        app_open(const char *folder_file_or_url);
-
-API const char* app_loadfile();
-API const char* app_savefile();
-
-
-API char*       callstack( int traces ); // write callstack into a temporary string. <0 traces to invert order. do not free().
-API int         callstackf( FILE *fp, int traces ); // write callstack to file. <0 traces to invert order.
-
-API void        die(const char *message);
-API void        alert(const char *message);
-API void        hexdump( const void *ptr, unsigned len );
-API void        hexdumpf( FILE *fp, const void *ptr, unsigned len, int width );
-API void        breakpoint();
-API bool        has_debugger();
-
-API void        trap_install(void);
-API const char *trap_name(int signal);      // helper util
-API void        trap_on_ignore(int signal); // helper util
-API void        trap_on_quit(int signal);   // helper util
-API void        trap_on_abort(int signal);  // helper util
-API void        trap_on_debug(int signal);  // helper util
-
-#define PANIC(...)   PANIC(va(__VA_ARGS__), strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__) // die() ?
-API int (PANIC)(const char *error, const char *file, int line);
-
-#define PRINTF(...)  PRINTF(va(__VA_ARGS__), 1[#__VA_ARGS__] == '!' ? callstack(+48) : "", strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__, __FUNCTION__)
-API int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
-
-#define test(expr) test(strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__,__LINE__,#expr,!!(expr))
-API int (test)(const char *file, int line, const char *expr, bool result);
-
-#if ENABLE_AUTOTESTS
-#define AUTOTEST AUTORUN
-#else
-#define AUTOTEST static void concat(concat(concat(disabled_test_, __LINE__), _), __COUNTER__)()
-#endif
-
-// AUTOTEST { test(1<2); }
-
-#if ENABLE_RETAIL
-#undef  PRINTF
-#define PRINTF(...) 0
-#undef  test
-#define test(expr)  0
-#endif
 #line 0
 
 #line 1 "engine/split/v4k_ui.h"
@@ -4541,14 +4553,17 @@ enum CURSOR_SHAPES {
     CURSOR_NONE,
     CURSOR_HW_ARROW,  // default
     CURSOR_HW_IBEAM,  // i-beam text cursor
-    CURSOR_HW_CROSS,  // crosshair
-    CURSOR_HW_HAND,   // hand, clickable
     CURSOR_HW_HDRAG,  // horizontal drag/resize
     CURSOR_HW_VDRAG,  // vertical drag/resize
+    CURSOR_HW_HAND,   // hand, clickable
+    CURSOR_HW_CROSS,  // crosshair
     CURSOR_SW_AUTO,   // software cursor, ui driven. note: this is the only icon that may be recorded or snapshotted
 };
 
 API void     window_cursor_shape(unsigned shape);
+
+API const char *window_clipboard();
+API void        window_setclipboard(const char *text);
 #line 0
 
 // ----
@@ -4565,7 +4580,7 @@ API void     window_cursor_shape(unsigned shape);
     #include <emscripten/html5.h>
     #define gladLoadGL(func) (glewExperimental = true, glewInit() == GLEW_OK)
 #else
-    #if is(win32) /*&& is(tcc)*/ // && WITH_DLL
+    #if is(win32) /*&& is(tcc)*/ // && ENABLE_DLL
     #ifdef GLAD_API_CALL
     #undef GLAD_API_CALL
     #endif

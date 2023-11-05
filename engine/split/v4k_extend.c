@@ -1,28 +1,35 @@
 // dll ------------------------------------------------------------------------
 
+/* deprecated
 #if is(win32)
 #   include <winsock2.h>
-#   define dlopen(name,mode)    (void*)( (name) ? LoadLibraryA(name) : GetModuleHandle(NULL))
-#   define dlsym(handle,symbol) GetProcAddress((HMODULE)handle, symbol )
+#   define dlopen(name,flags)   (void*)( (name) ? LoadLibraryA(name) : GetModuleHandleA(NULL))
+#   define dlsym(handle,symbol) GetProcAddress((HMODULE)(handle), symbol )
 #   define dlclose(handle)      0
 #else
 #   include <dlfcn.h>
+#   define dlopen(name,flags)   (void*)( (name) ? dlopen(name, flags) : NULL )
+#   define dlsym(handle,symbol) dlsym( (handle) ? (handle) : ifdef(osx,RTLD_SELF,NULL), symbol )
 #endif
-
-void* dll(const char *filename, const char *symbol) {
-/*
-    char *buf, *base = file_name(filename);
-    if( file_exists(buf = va("%s", base)) ||
-        file_exists(buf = va("%s.dll", base)) ||
-        file_exists(buf = va("%s.so", base)) ||
-        file_exists(buf = va("lib%s.so", base)) ||
-        file_exists(buf = va("%s.dylib", base)) ) {
-        filename = buf;
-    }
 */
-    void *dll = dlopen(filename, RTLD_NOW | RTLD_LOCAL);
-    dll = dll ? dlsym(dll, symbol) : 0;
-    return dll;
+
+void* dll(const char *fname, const char *symbol) {
+    if( fname && !file_exist(fname) ) {
+        char *buf, *path = file_path(fname), *base = file_base(fname);
+        if( file_exist(buf = va("%s%s.dll", path, base)) ||
+            file_exist(buf = va("%s%s.so", path, base)) ||
+            file_exist(buf = va("%slib%s.so", path, base)) ||
+            file_exist(buf = va("%s%s.dylib", path, base)) ) {
+            fname = (const char *)buf;
+        } else {
+            return NULL;
+    }
+    }
+#if is(win32)
+    return (void*)GetProcAddress(fname ? LoadLibraryA(fname) : GetModuleHandleA(NULL), symbol);
+#else
+    return dlsym(fname ? dlopen(fname, RTLD_NOW|RTLD_LOCAL) : ifdef(osx, RTLD_SELF, NULL), symbol);
+#endif
 }
 
 #if 0 // demo: cl demo.c /LD && REM dll
@@ -210,3 +217,72 @@ bool script_tests() {
 }
 
 #undef XMACRO
+
+// script v2 ------------------------------------------------------------------
+
+#define luaL_dostringsafe(L, str) \
+    luaL_dostring(L, \
+        "xpcall(function()\n" \
+            str \
+        "end, function(err)\n" \
+        "  print('Error: ' .. tostring(err))\n" \
+        "  print(debug.traceback(nil, 2))\n" \
+        "  if core and core.on_error then\n" \
+        "    pcall(core.on_error, err)\n" \
+        "  end\n" \
+        "  os.exit(1)\n" \
+        "end)" \
+    );
+
+static int f_vfs_read(lua_State *L) {
+    char *file = file_normalize(luaL_checkstring(L, 1));
+    if( strbegi(file, app_path()) ) file += strlen(app_path());
+    strswap(file+1, ".", "/");
+    strswap(file+1, "/lua", ".lua");
+    int len; char *data = vfs_load(file, &len);
+    if( len ) {
+        data = memcpy(MALLOC(len+1), data, len), data[len] = 0;
+        //tty_color(data ? GREEN : RED);
+        //printf("%s (%s)\n%s", file, data ? "ok" : "failed", data);
+        //tty_color(0);
+    }
+    return lua_pushstring(L, data), 1; // "\n\tcannot find `%s` within mounted zipfiles", file), 1;
+}
+
+// add our zip loader at the end of package.loaders
+void lua_add_ziploader(lua_State* L) {
+    lua_pushcfunction( L, f_vfs_read );
+    lua_setglobal( L, "vfs_read" );
+
+    luaL_dostringsafe(L,
+//    "package.path = [[;<?>;<<?.lua>>;]]\n" // .. package.path\n"
+    "package.searchers[#package.searchers + 1] = function(libraryname)\n"
+    "    for pattern in string.gmatch( package.path, '[^;]+' ) do\n"
+    "        local proper_path = string.gsub(pattern, '?', libraryname)\n"
+    "        local f = vfs_read(proper_path)\n"
+    "        if f ~= nil then\n"
+    "           return load(f, proper_path)\n"
+    "        end\n"
+    "    end\n"
+    "    return nil\n"
+    "end\n"
+    );
+}
+
+void *script_init_env(unsigned flags) {
+    if( flags & SCRIPT_LUA ) {
+        lua_State *L = luaL_newstate();
+        luaL_openlibs(L);
+
+        if( flags & SCRIPT_DEBUGGER ) {
+            // Register debuggers/inspectors
+            // luaL_dostringsafe(L, "I = require('inspect').inspect\n");
+            dbg_setup_default(L);
+        }
+
+        lua_add_ziploader(L);
+        return L;
+    }
+
+    return 0;
+}

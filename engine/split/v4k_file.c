@@ -161,7 +161,7 @@ char *file_id(const char *pathfile) {
 char *ext = strchr(base, '.'); if (ext) ext[0] = '\0'; // remove all extensions
 #else // extensionless for audio/images only (materials: diffuse.tga and diffuse.png will match)
 char *ext = strrchr(base, '.'); //if (ext) ext[0] = '\0'; // remove all extensions
-    if(ext) if( strstr(".jpg.png.bmp.tga"".", ext) || strstr(".ogg.mp3.wav.mod.xm.flac"".", ext) || strstr(".mp4.ogv.avi.mkv.wmv.mpg.mpeg"".", ext) ) {
+    if(ext) if( strstr(".jpg.png.bmp.tga.hdr"".", ext) || strstr(".ogg.mp3.wav.mod.xm.flac"".", ext) || strstr(".mp4.ogv.avi.mkv.wmv.mpg.mpeg"".", ext) ) {
         ext = strchr(base, '.');
         ext[0] = '\0'; //strcpy(ext, "_xxx");
     }

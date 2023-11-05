@@ -509,8 +509,8 @@ void curve_add(curve_t *c, vec3 p) {
     array_push(c->points, p);
 }
 
-void curve_finish( curve_t *c, int k ) {
-    assert( k > 0 );
+void curve_end( curve_t *c, int k ) {
+    ASSERT( k > 0 );
 
     array_free(c->lengths);
     array_free(c->samples);

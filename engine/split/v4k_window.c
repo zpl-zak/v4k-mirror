@@ -971,10 +971,10 @@ void window_cursor_shape(unsigned mode) {
         0,
         GLFW_ARROW_CURSOR,
         GLFW_IBEAM_CURSOR,
-        GLFW_CROSSHAIR_CURSOR,
-        GLFW_HAND_CURSOR,
         GLFW_HRESIZE_CURSOR,
         GLFW_VRESIZE_CURSOR,
+        GLFW_HAND_CURSOR,
+        GLFW_CROSSHAIR_CURSOR,
     };
     do_once {
         static unsigned pixels[16 * 16] = { 0x01000000 }; // ABGR(le) glfw3 note: A(0x00) means 0xFF for some reason
@@ -1067,4 +1067,17 @@ int window_has_maximize() {
     return ifdef(ems, 0, glfwGetWindowAttrib(window, GLFW_MAXIMIZED) == GLFW_TRUE);
 }
 
+const char *window_clipboard() {
+    return glfwGetClipboardString(window);
+}
+void window_setclipboard(const char *text) {
+    glfwSetClipboardString(window, text);
+}
 
+static
+double window_scale() { // ok? @testme
+    float xscale, yscale;
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    glfwGetMonitorContentScale(monitor, &xscale, &yscale);
+    return maxi(xscale, yscale);
+}

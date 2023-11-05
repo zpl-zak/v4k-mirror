@@ -85,11 +85,14 @@ enum CURSOR_SHAPES {
     CURSOR_NONE,
     CURSOR_HW_ARROW,  // default
     CURSOR_HW_IBEAM,  // i-beam text cursor
-    CURSOR_HW_CROSS,  // crosshair
-    CURSOR_HW_HAND,   // hand, clickable
     CURSOR_HW_HDRAG,  // horizontal drag/resize
     CURSOR_HW_VDRAG,  // vertical drag/resize
+    CURSOR_HW_HAND,   // hand, clickable
+    CURSOR_HW_CROSS,  // crosshair
     CURSOR_SW_AUTO,   // software cursor, ui driven. note: this is the only icon that may be recorded or snapshotted
 };
 
 API void     window_cursor_shape(unsigned shape);
+
+API const char *window_clipboard();
+API void        window_setclipboard(const char *text);

@@ -2594,14 +2594,14 @@ static void imdct_step3_inner_s_loop_ld654(int n, float *e, int i_off, float *A,
       float k00,k11;
       float l00,l11;
 
-      k00   = z[-0] - z[-8];
-      k11   = z[-1] - z[-9];
+      k00    = z[-0] - z[ -8];
+      k11    = z[-1] - z[ -9];
       l00    = z[-2] - z[-10];
       l11    = z[-3] - z[-11];
-      z[-0] = z[-0] + z[-8];
-      z[-1] = z[-1] + z[-9];
-      z[ -2] = z[ -2] + z[-10];
-      z[ -3] = z[ -3] + z[-11];
+      z[ -0] = z[-0] + z[ -8];
+      z[ -1] = z[-1] + z[ -9];
+      z[ -2] = z[-2] + z[-10];
+      z[ -3] = z[-3] + z[-11];
       z[ -8] = k00;
       z[ -9] = k11;
       z[-10] = (l00+l11) * A2;
@@ -3661,7 +3661,7 @@ static int start_decoder(vorb *f)
    f->comment_list = NULL;
    if (f->comment_list_length > 0)
    {
-   f->comment_list = (char**)setup_malloc(f, sizeof(char*) * (f->comment_list_length));
+      f->comment_list = (char**) setup_malloc(f, sizeof(char*) * (f->comment_list_length));
       if (f->comment_list == NULL)                  return error(f, VORBIS_outofmem);
    }
 

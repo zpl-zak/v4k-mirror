@@ -410,6 +410,51 @@ if "%1"=="back" (
     exit /b
 )
 
+if "%1"=="fwk_mir" (
+    rd/q/s _fwk
+    rd/q/s ..\_fwk
+    mkdir ..\_fwk
+    setlocal enabledelayedexpansion
+    xcopy /y/E "*" "..\_fwk"
+    move "..\_fwk" _fwk
+    for %%f in ("engine\split\v4k*") do (
+        set "filename=%%~nf"
+        set "newname=fwk!filename:v4k=!%%~xf"
+        echo Copying and renaming "%%f" to "_fwk\engine\split\!newname!"
+        copy "%%f" "_fwk\engine\split\!newname!"
+    )
+    for %%f in (_fwk\engine\split\*) do (
+        set "filename=%%~nxf"
+        if /i not "!filename:~0,4!"=="3rd_" (
+            echo Processing: %%f
+            tools\fwkren.exe %%f from
+        ) else (
+            echo Skipping %%f
+        )
+    )
+    for %%f in (_fwk\demos\*.c) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f from
+    )
+    for %%f in (_fwk\tools\*) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f from
+    )
+    for %%f in (_fwk\tools\editor\*.c) do (
+        set "filename=%%~nxf"
+        echo Processing: %%f
+        tools\fwkren.exe %%f from
+    )
+
+    tools\fwkren.exe _fwk\tools\cook.ini from
+
+    echo All done.
+    endlocal
+    exit /b
+)
+
 rem copy demos to root folder. local changes are preserved
 rem echo n | copy /-y demos\*.c 1> nul 2> nul
 
@@ -757,10 +802,10 @@ if "!v4k!"=="yes" (
 
 rem editor
 if "!editor!"=="yes" (
-set edit=-DCOOK_ON_DEMAND -DUI_LESSER_SPACING -DUI_ICONS_SMALL
-if "!vis!"=="yes" echo !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args!
-!echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
+set edit=-DCOOK_ON_DEMAND
 !echo! editor3      && !cc! !o! editor3.exe tools\editor\editor3.c !edit! -Iengine/joint !args! || set rc=1
+set edit=-DUI_LESSER_SPACING -DUI_ICONS_SMALL !edit!
+!echo! editor       && !cc! !o! editor.exe  tools\editor\editor.c  !edit! !import! !args! || set rc=1
 
 rem if "!cc!"=="cl" (
 rem set plug_export=/LD

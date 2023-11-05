@@ -5,6 +5,7 @@
 API char*   tempvl(const char *fmt, va_list);
 API char*   tempva(const char *fmt, ...);
 #define     va(...) (((&printf) || printf(__VA_ARGS__), tempva(__VA_ARGS__)))  // vs2015 check trick
+#define     vac (const char*)va
 
 // string: allocated api (heap). FREE() after use
 API char*   strcatf(char **s, const char *buf);
