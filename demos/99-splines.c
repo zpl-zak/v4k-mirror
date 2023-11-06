@@ -12,7 +12,7 @@ int main() {
         curve_add(&cv, vec3(cos(t*TO_RAD)*5,0,sin(t*TO_RAD)*5));
     }
     int num_points = 11; // beware with these: 8,11,17,20,61,100,200
-    curve_finish(&cv, num_points);
+    curve_end(&cv, num_points);
 
     while(window_swap() && !input_down(KEY_ESC)) {
         // fps camera
@@ -44,7 +44,7 @@ int main() {
         ddraw_sphere(pos, 0.5);
 
         if( ui_panel("Path",PANEL_OPEN)) {
-            if(ui_int("Points", &num_points)) { if(num_points < 6) num_points = 6; curve_finish(&cv, num_points); }
+            if(ui_int("Points", &num_points)) { if(num_points < 6) num_points = 6; curve_end(&cv, num_points); }
             if(ui_int("Delay", &delay)) { if(delay <= 0) delay = 1; }
             ui_panel_end();
         }

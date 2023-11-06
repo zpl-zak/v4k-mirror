@@ -824,28 +824,20 @@ rem !echo! workbench && !cc! !o! workbench.exe workbench\workbench.c -Iworkbench
 
 rem demos
 if "!demos!"=="yes" (
-!echo! 00-ui             && !cc! !o! 00-ui.exe         demos\00-ui.c              !import! !args! || set rc=1
-!echo! 00-script         && !cc! !o! 00-script.exe     demos\00-script.c          !import! !args! || set rc=1
-!echo! 00-hello          && !cc! !o! 00-hello.exe      demos\00-hello.c           !import! !args! || set rc=1
-!echo! 01-sprite         && !cc! !o! 01-sprite.exe     demos\01-sprite.c          !import! !args! || set rc=1
-!echo! 01-demo2d         && !cc! !o! 01-demo2d.exe     demos\01-demo2d.c          !import! !args! || set rc=1
-!echo! 01-easing         && !cc! !o! 01-easing.exe     demos\01-easing.c          !import! !args! || set rc=1
-!echo! 01-font           && !cc! !o! 01-font.exe       demos\01-font.c            !import! !args! || set rc=1
-!echo! 02-ddraw          && !cc! !o! 02-ddraw.exe      demos\02-ddraw.c           !import! !args! || set rc=1
-!echo! 02-frustum        && !cc! !o! 02-frustum.exe    demos\02-frustum.c         !import! !args! || set rc=1
-!echo! 03-anims          && !cc! !o! 03-anims.exe      demos\03-anims.c           !import! !args! || set rc=1
-!echo! 04-actor          && !cc! !o! 04-actor.exe      demos\04-actor.c           !import! !args! || set rc=1
-!echo! 04-lod            && !cc! !o! 04-lod.exe        demos\04-lod.c             !import! !args! || set rc=1
-!echo! 05-scene          && !cc! !o! 05-scene.exe      demos\05-scene.c           !import! !args! || set rc=1
-!echo! 06-controller     && !cc! !o! 06-controller.exe demos\06-controller.c      !import! !args! || set rc=1
-!echo! 06-material       && !cc! !o! 06-material.exe   demos\06-material.c        !import! !args! || set rc=1
-!echo! 07-network        && !cc! !o! 07-network.exe    demos\07-network.c         !import! !args! || set rc=1
-!echo! 07-netsync        && !cc! !o! 07-netsync.exe    demos\07-netsync.c         !import! !args! || set rc=1
-!echo! 08-audio          && !cc! !o! 08-audio.exe      demos\08-audio.c           !import! !args! || set rc=1
-!echo! 08-video          && !cc! !o! 08-video.exe      demos\08-video.c           !import! !args! || set rc=1
-!echo! 09-cubemap        && !cc! !o! 09-cubemap.exe    demos\09-cubemap.c         !import! !args! || set rc=1
-!echo! 09-shadertoy      && !cc! !o! 09-shadertoy.exe  demos\09-shadertoy.c       !import! !args! || set rc=1
+    for %%f in ("demos\??-*") do (
+        set "fname=%%~nf"
+        echo !fname!| findstr /R "^[0-9][0-9]-" >nul && (
+            if not "!fname:~0,2!"=="99" (
+                set limport=!import!
+                >nul find "V4K_IMPLEMENTATION" "demos\!fname!.c" && (
+                    set limport=
+                )
+                !echo! !fname! && !cc! !o! !fname!.exe "demos\!fname!.c" !limport! !args! || set rc=1
+            )
+        )
+    )
 )
+
 
 rem lab
 if "!lab!"=="yes" (
