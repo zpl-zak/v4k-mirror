@@ -4672,14 +4672,7 @@ void model_render_instanced(model_t m, mat44 proj, mat44 view, mat44* models, in
     if(!m.iqm) return;
     iqm_t *q = m.iqm;
 
-    // @fixme: instanced billboards
     mat44 mv; multiply44x2(mv, view, models[0]);
-    if( m.billboard ) {
-        float d = sqrt(mv[4*0+0] * mv[4*0+0] + mv[4*1+1] * mv[4*1+1] + mv[4*2+2] * mv[4*2+2]);
-        if(m.billboard & 4) mv[4*0+0] = d, mv[4*0+1] =  0, mv[4*0+2] = 0;
-        if(m.billboard & 2) mv[4*1+0] = 0, mv[4*1+1] = -d, mv[4*1+2] = 0;
-        if(m.billboard & 1) mv[4*2+0] = 0, mv[4*2+1] =  0, mv[4*2+2] = d;
-    }
 
     if( count != m.num_instances ) {
         m.num_instances = count;
