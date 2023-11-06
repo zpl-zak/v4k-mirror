@@ -5,7 +5,8 @@ uniform mat3x4 vsBoneMatrix[MAX_BONES];
 uniform bool SKINNED = false;
 uniform mat4 M; // RIM
 uniform mat4 VP;
-
+uniform mat4 P;
+uniform int u_billboard;
 
 #if 0
 // Fetch blend channels from all attached blend deformers.
@@ -109,16 +110,37 @@ void main() {
         v_normal = vec4(att_normal, 0.0) * m;
         //@todo: tangents
     }
-        
-        //   vec3 tangent = att_tangent.xyz;
-        //   vec3 bitangent = cross(att_normal, att_tangent.xyz) * att_tangent.w;
-        
-        v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
-        v_normal = normalize(v_normal);
-        v_position_ws = (att_instanced_matrix * vec4( objPos, 1.0 )).xyz;
-        v_position = att_position;
-        v_texcoord = att_texcoord;
-        v_color = att_color;
-        gl_Position = VP * att_instanced_matrix * vec4( objPos, 1.0 );
-        do_shadow();
+    
+    //   vec3 tangent = att_tangent.xyz;
+    //   vec3 bitangent = cross(att_normal, att_tangent.xyz) * att_tangent.w;
+    mat4 modelView = view * att_instanced_matrix;
+    if(u_billboard > 0) {
+        float sx = length(vec3(modelView[0][0], modelView[1][0], modelView[2][0]));
+        float sy = length(vec3(modelView[0][1], modelView[1][1], modelView[2][1]));
+        float sz = length(vec3(modelView[0][2], modelView[1][2], modelView[2][2]));
+
+        if((u_billboard & 4) != 0) {
+            modelView[0][0] = sx;
+            modelView[0][1] = 0.0;
+            modelView[0][2] = 0.0;
+        }
+        if((u_billboard & 2) != 0) {
+            modelView[1][0] = 0.0;
+            modelView[1][1] = sy;
+            modelView[1][2] = 0.0;
+        }
+        if((u_billboard & 1) != 0) {
+            modelView[2][0] = 0.0;
+            modelView[2][1] = 0.0;
+            modelView[2][2] = sz;
+        }
     }
+    v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
+    v_normal = normalize(v_normal);
+    v_position_ws = (att_instanced_matrix * vec4( objPos, 1.0 )).xyz;
+    v_position = att_position;
+    v_texcoord = att_texcoord;
+    v_color = att_color;
+    gl_Position = P * modelView * vec4( objPos, 1.0 );
+    do_shadow();
+}

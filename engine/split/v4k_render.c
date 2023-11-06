@@ -3947,6 +3947,13 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         vec3 dir = norm3(vec3(view[2], view[6], view[10]));
         glUniform3fv( loc, 1, &dir.x );
     }
+    if( (loc = glGetUniformLocation(shader, "billboard")) >= 0 ) {
+        glUniform1i( loc, m.billboard );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "u_billboard")) >= 0 ) {
+        glUniform1i( loc, m.billboard );
+    }
 #if 0
     // @todo: mat44 projview (useful?)
 #endif
@@ -4391,6 +4398,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
             va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
     // }
+    // ASSERT(shaderprog > 0);
 
     iqm_t *q = CALLOC(1, sizeof(iqm_t));
     m.program = shaderprog;

@@ -576,7 +576,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     game(editor.frame, editor.dt, editor.t);
 
     // timing
-    editor.dt = clampf(window_delta(), 0, 1/60.f) * !window_has_pause() * editor.slomo;
+    editor.dt = window_delta() /*clampf(window_delta(), 0, 1/60.f)*/ * !window_has_pause() * editor.slomo;
     editor.t += editor.dt;
     editor.frame += !window_has_pause();
     editor.frame += !editor.frame;
