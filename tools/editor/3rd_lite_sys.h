@@ -109,6 +109,7 @@ char* lt_key_name(char *dst, int key, int vk, int mods) {
     if( key == GLFW_KEY_RIGHT_CONTROL ) return "right ctrl";
     if( key == GLFW_KEY_LEFT_SUPER ) return "left windows";
     if( key == GLFW_KEY_RIGHT_SUPER ) return "left windows";
+    if( key == GLFW_KEY_MENU ) return "menu";
 
     if( key == GLFW_KEY_ESCAPE ) return "escape";
     if( key == GLFW_KEY_BACKSPACE ) return "backspace";

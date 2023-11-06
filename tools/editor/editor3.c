@@ -395,7 +395,7 @@ void game(unsigned frame, float dt, double t) {
 int main(){
     window_title("Editor " EDITOR_VERSION);
     window_create(flag("--transparent") ? 101 : 80,0);
-    window_icon("logo.png");
+    window_icon("scale-ruler-icon.png");
 
     while( window_swap() ) {
         editor_frame(game);

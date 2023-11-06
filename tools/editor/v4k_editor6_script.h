@@ -7,6 +7,15 @@
 #include "3rd_lite.h"
 // }
 
+TODO("bug: lite key bindings are being sent to editor")
+TODO("eval: https://github.com/Jipok/lite-plugins")
+TODO("eval:  https://github.com/drmargarido/linters")
+TODO("eval:  https://github.com/monolifed/theme16")
+TODO("eval:  https://github.com/takase1121/lite-contextmenu ")
+TODO("eval:  https://github.com/drmargarido/TodoTreeView")
+TODO("eval:  https://github.com/takase1121/lite-nagbar")
+TODO("eval:  https://github.com/rxi/console")
+
 int ui_texture_fit(texture_t t, struct nk_rect bounds) {
     // allocate complete window space
     struct nk_rect total_space = nk_window_get_content_region(ui_ctx);

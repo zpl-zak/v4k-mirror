@@ -2,7 +2,7 @@ local style = require "core.style"
 local common = require "core.common"
 
 style.background = { common.color "#242424" } -- main background
-style.background2 = { common.color "#202020" } -- sidebar backgrounds
+style.background2 = { common.color "#1a1a1a" } -- sidebar background and inactive tabs
 style.background3 = { common.color "#202020" } -- bottombar background prompts
 style.text = { common.color "#9ea191" }
 style.caret = { common.color "#F8F8F0" }
