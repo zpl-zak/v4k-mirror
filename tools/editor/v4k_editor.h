@@ -545,6 +545,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
 
         window_pause( true );
         window_cursor_shape(CURSOR_SW_AUTO);
+        editor.hz_high = window_fps_target();
 
         fx_load("editorOutline.fs");
         fx_enable(0, 1);
