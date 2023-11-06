@@ -2905,6 +2905,13 @@ unsigned billboard;
 float *instanced_matrices;
 unsigned num_instances;
 } model_t;
+enum BILLBOARD_MODE {
+BILLBOARD_X =1,
+BILLBOARD_Y =2,
+BILLBOARD_Z =4,
+BILLBOARD_CYLINDRICAL = BILLBOARD_X|BILLBOARD_Z,
+BILLBOARD_SPHERICAL = BILLBOARD_X|BILLBOARD_Y|BILLBOARD_Z
+};
  model_t  model(const char *filename, int flags);
  model_t  model_from_mem(const void *mem, int sz, int flags);
  float    model_animate(model_t, float curframe);

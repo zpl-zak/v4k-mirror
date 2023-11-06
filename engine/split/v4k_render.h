@@ -611,6 +611,15 @@ typedef struct model_t {
     unsigned num_instances;
 } model_t;
 
+enum BILLBOARD_MODE {
+    BILLBOARD_X = 0x1,
+    BILLBOARD_Y = 0x2,
+    BILLBOARD_Z = 0x4,
+
+    BILLBOARD_CYLINDRICAL = BILLBOARD_X|BILLBOARD_Z,
+    BILLBOARD_SPHERICAL = BILLBOARD_X|BILLBOARD_Y|BILLBOARD_Z
+};
+
 API model_t  model(const char *filename, int flags);
 API model_t  model_from_mem(const void *mem, int sz, int flags);
 API float    model_animate(model_t, float curframe);
