@@ -7,7 +7,7 @@ int main() {
     // options
     bool  do_twosided = 1;
     bool  do_wireframe = 0;
-    bool  do_billboard_x = 0, do_billboard_y = 0, do_billboard_z = 0;
+    bool  do_billboard_x = 1, do_billboard_y = 1, do_billboard_z = 1;
 
     // window (80% sized, MSAA x4 flag)
     window_create(80, WINDOW_MSAA4);

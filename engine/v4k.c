@@ -20562,7 +20562,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
             va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
     // }
-    // ASSERT(shaderprog > 0);
+    ASSERT(shaderprog > 0);
 
     iqm_t *q = CALLOC(1, sizeof(iqm_t));
     m.program = shaderprog;

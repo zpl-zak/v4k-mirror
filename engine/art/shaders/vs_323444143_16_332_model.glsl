@@ -126,14 +126,17 @@ void main() {
         vec3 cameraPosition = -transpose(mat3(view)) * view[3].xyz;
         vec3 lookDir = normalize(cameraPosition - v_position_ws);
 
-        vec3 up = vec3(view[0][1], view[1][1], view[2][1]);
+        vec3 up = vec3(modelView[0][1], modelView[1][1], modelView[2][1]);
         vec3 right = normalize(cross(up, lookDir));
         up = cross(lookDir, right);
 
         vec3 scale;
-        scale.x = length(vec3(att_instanced_matrix[0]));
-        scale.y = length(vec3(att_instanced_matrix[1]));
-        scale.z = length(vec3(att_instanced_matrix[2]));            
+        scale.x = length(vec3(l_model[0]));
+        scale.y = length(vec3(l_model[1]));
+        scale.z = length(vec3(l_model[2]));
+        // scale.x *= sign(l_model[0][0]);
+        // scale.y *= sign(l_model[1][1]);
+        // scale.z *= sign(l_model[2][2]);
 
         mat4 billboardRotation = mat4(
             vec4(right * scale.x, 0.0),
