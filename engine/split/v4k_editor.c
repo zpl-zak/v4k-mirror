@@ -185,7 +185,7 @@ int engine_tick() {
         window_fps_lock( hz < 5 ? 5 : hz );
     } else {
         // window_fps_lock( editor_hz );
-        } 
+    }
 
     return 0;
 }
@@ -532,7 +532,7 @@ int gizmo(vec3 *pos, vec3 *rot, vec3 *sca) {
 
 // -- localization kit
 
-static const char *kit_lang = "enUS", *kit_langs = 
+static const char *kit_lang = "enUS", *kit_langs =
     "enUS,enGB,"
     "frFR,"
     "esES,esAR,esMX,"
@@ -547,7 +547,7 @@ static const char *kit_lang = "enUS", *kit_langs =
 static map(char*,char*) kit_ids;
 static map(char*,char*) kit_vars;
 
-#ifndef KIT_FMT_ID2 
+#ifndef KIT_FMT_ID2
 #define KIT_FMT_ID2 "%s.%s"
 #endif
 

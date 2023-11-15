@@ -221,29 +221,29 @@ array(char*) file_list(const char *pathmasks) {
 
         ASSERT(strend(cwd, "/"), "Error: dirs like '%s' must end with slash", cwd);
 
-    dir *d = dir_open(cwd, strstr(masks,"**") ? "r"  : "");
-    if( d ) {
-        for( int i = 0; i < dir_count(d); ++i ) {
-            if( dir_file(d,i) ) {
-                // dir_name() should return full normalized paths "C:/prj/v4k/demos/art/fx/fxBloom.fs". should exclude system dirs as well
-                char *entry = dir_name(d,i);
-                char *fname = file_name(entry);
+        dir *d = dir_open(cwd, strstr(masks,"**") ? "r" : "");
+        if( d ) {
+            for( int i = 0; i < dir_count(d); ++i ) {
+                if( dir_file(d,i) ) {
+                    // dir_name() should return full normalized paths "C:/prj/v4k/demos/art/fx/fxBloom.fs". should exclude system dirs as well
+                    char *entry = dir_name(d,i);
+                    char *fname = file_name(entry);
 
-                int allowed = 0;
-                for each_substring(masks,";",mask) {
-                    allowed |= strmatch(fname, mask);
+                    int allowed = 0;
+                    for each_substring(masks,";",mask) {
+                        allowed |= strmatch(fname, mask);
+                    }
+                    if( !allowed ) continue;
+
+                    // if( strstr(fname, "/.") ) continue; // @fixme: still needed? useful?
+
+                    // insert copy
+                    char *copy = STRDUP(entry);
+                    array_push(list, copy);
                 }
-                if( !allowed ) continue;
-
-                // if( strstr(fname, "/.") ) continue; // @fixme: still needed? useful?
-
-                // insert copy
-                char *copy = STRDUP(entry);
-                array_push(list, copy);
             }
+            dir_close(d);
         }
-        dir_close(d);
-    }
     }
 
     array_sort(list, strcmp);
@@ -295,7 +295,7 @@ char *file_counter(const char *name) {
     static __thread map(char*, int) ext_counters;
     if(!init) map_init(ext_counters, less_str, hash_str), init = '\1';
 
-    char *base = va("%s",name), *ext = file_ext(name); 
+    char *base = va("%s",name), *ext = file_ext(name);
     if(ext && ext[0]) *strstr(base, ext) = '\0';
 
     int *counter = map_find_or_add(ext_counters, ext, 0);
@@ -318,7 +318,7 @@ void* file_sha1(const char *file) { // 20bytes
     sha1_init(&hs);
     for( FILE *fp = fopen(file, "rb"); fp; fclose(fp), fp = 0) {
         char buf[8192];
-        for( int inlen; (inlen = fread(buf, 1, sizeof(buf), fp)) > 0; ) {
+        for( int inlen; (inlen = sizeof(buf) * fread(buf, sizeof(buf), 1, fp)); ) {
             sha1_process(&hs, (const unsigned char *)buf, inlen);
         }
     }
@@ -332,7 +332,7 @@ void* file_md5(const char *file) { // 16bytes
     md5_init(&hs);
     for( FILE *fp = fopen(file, "rb"); fp; fclose(fp), fp = 0) {
         char buf[8192];
-        for( int inlen; (inlen = fread(buf, 1, sizeof(buf), fp)) > 0; ) {
+        for( int inlen; (inlen = sizeof(buf) * fread(buf, sizeof(buf), 1, fp)); ) {
             md5_process(&hs, (const unsigned char *)buf, inlen);
         }
     }
@@ -345,7 +345,7 @@ void* file_crc32(const char *file) { // 4bytes
     unsigned crc = 0;
     for( FILE *fp = fopen(file, "rb"); fp; fclose(fp), fp = 0) {
         char buf[8192];
-        for( int inlen; (inlen = fread(buf, 1, sizeof(buf), fp)) > 0; ) {
+        for( int inlen; (inlen = sizeof(buf) * fread(buf, sizeof(buf), 1, fp)); ) {
             crc = zip__crc32(crc, buf, inlen); // unsigned int stbiw__crc32(unsigned char *buffer, int len)
         }
     }
@@ -566,7 +566,7 @@ typedef struct archive_dir {
 } archive_dir;
 
 static archive_dir *dir_mount;
-static archive_dir *dir_cache; 
+static archive_dir *dir_cache;
 
 #ifndef MAX_CACHED_FILES    // @todo: should this be MAX_CACHED_SIZE (in MiB) instead?
 #define MAX_CACHED_FILES 32 // @todo: should we cache the cooked contents instead? ie, stbi() result instead of file.png?
@@ -615,7 +615,7 @@ void vfs_reload() {
 #define ARK_SWAP32(x) (x)
 #define ARK_SWAP64(x) (x)
 #define ARK_REALLOC   REALLOC
-static uint64_t   ark_fget64( FILE *in ) { uint64_t v; fread( &v, 1, 8, in ); return ARK_SWAP64(v); }
+static uint64_t ark_fget64( FILE *in ) { uint64_t v; fread( &v, 8, 1, in ); return ARK_SWAP64(v); }
 void ark_list( const char *infile, zip **z ) {
     for( FILE *in = fopen(infile, "rb"); in; fclose(in), in = 0 )
     while(!feof(in)) {
@@ -789,13 +789,13 @@ char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_u
     while( pathfile[0] == '.' && (pathfile[1] == '/' || pathfile[1] == '\\') ) pathfile += 2;
     // if (pathfile[0] == '/' || pathfile[1] == ':') return file_load(pathfile, size_out); // @fixme: handle current cooked /home/V4K or C:/V4K path cases within zipfiles
 
-    if( size_out ) *size_out = 0;
-    if( strend(pathfile, "/") ) return 0; // it's a dir
-    static __thread map(char*,int) misses = 0, *init = 0; if(!init) init = misses, map_init(misses, less_str, hash_str);
-    int *found = map_find_or_add_allocated_key(misses, STRDUP(pathfile), -1); // [-1]non-init,[false]could not cook,[true]cooked
-    if( found && *found == 0 ) {
-        return 0;
-    }
+if( size_out ) *size_out = 0;
+if( strend(pathfile, "/") ) return 0; // it's a dir
+static __thread map(char*,int) misses = 0, *init = 0; if(!init) init = misses, map_init(misses, less_str, hash_str);
+int *found = map_find_or_add_allocated_key(misses, STRDUP(pathfile), -1); // [-1]non-init,[false]could not cook,[true]cooked
+if( found && *found == 0 ) {
+    return 0;
+}
 
     //{
     // exclude garbage from material names
@@ -841,7 +841,7 @@ char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_u
     }
 
     // search (cache)
-    if( !ptr && ! is(osx) ) {
+    if( !ptr && !is(osx) ) { // @todo: remove silicon mac M1 hack
         ptr = cache_lookup(lookup_id, &size);
     }
 
@@ -884,7 +884,7 @@ char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_u
                 char *cmd = va("%scook" ifdef(osx,".osx",ifdef(linux,".linux",".exe"))" %s %s --cook-ini=%s --cook-additive --cook-jobs=1 --quiet", TOOLS, group1, group2, COOK_INI);
 
                 // cook groups
-                int rc = system(cmd);
+                int rc = atoi(app_exec(cmd));
                 if(rc < 0) PANIC("cannot invoke `%scook` (return code %d)", TOOLS, rc);
 
                 vfs_reload(); // @todo: optimize me. it is waaay inefficent to reload the whole VFS layout after cooking a single asset
@@ -999,33 +999,33 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
     // keep cached files within limits
     thread_mutex_lock(&cache_mutex);
 
-    // append to cache
-    archive_dir zero = {0}, *old = dir_cache;
-    *(dir_cache = REALLOC(0, sizeof(archive_dir))) = zero;
-    dir_cache->next = old;
-    dir_cache->path = STRDUP(pathfile);
-    dir_cache->size = size;
-    dir_cache->data = REALLOC(0, size+1);
-    memcpy(dir_cache->data, ptr, size); size[(char*)dir_cache->data] = 0; // copy+terminator
+        // append to cache
+        archive_dir zero = {0}, *old = dir_cache;
+        *(dir_cache = REALLOC(0, sizeof(archive_dir))) = zero;
+        dir_cache->next = old;
+        dir_cache->path = STRDUP(pathfile);
+        dir_cache->size = size;
+        dir_cache->data = REALLOC(0, size+1);
+        memcpy(dir_cache->data, ptr, size); size[(char*)dir_cache->data] = 0; // copy+terminator
 
         void *found = 0;
 
-    static int added = 0;
-    if( added < MAX_CACHED_FILES ) {
-        ++added;
-    } else {
-        // remove oldest cache entry
-        for( archive_dir *prev = dir_cache, *dir = prev; dir ; prev = dir, dir = dir->next ) {
-            if( !dir->next ) {
-                prev->next = 0; // break link
+        static int added = 0;
+        if( added < MAX_CACHED_FILES ) {
+            ++added;
+        } else {
+            // remove oldest cache entry
+            for( archive_dir *prev = dir_cache, *dir = prev; dir ; prev = dir, dir = dir->next ) {
+                if( !dir->next ) {
+                    prev->next = 0; // break link
                     found = dir->data;
-                dir->path = REALLOC(dir->path, 0);
-                dir->data = REALLOC(dir->data, 0);
-                dir = REALLOC(dir, 0);
+                    dir->path = REALLOC(dir->path, 0);
+                    dir->data = REALLOC(dir->data, 0);
+                    dir = REALLOC(dir, 0);
                     break;
+                }
             }
         }
-    }
 
     thread_mutex_unlock(&cache_mutex);
 
@@ -1126,7 +1126,9 @@ ini_t ini_from_mem(const char *data) {
 }
 
 ini_t ini(const char *filename) {
-    return ini_from_mem(file_read(filename));    
+    char *kv = file_read(filename);
+    if(!kv) kv = vfs_read(filename);
+    return ini_from_mem(kv);
 }
 
 bool ini_write(const char *filename, const char *section, const char *key, const char *value) {

@@ -215,7 +215,7 @@ void *obj_free(void *o) {
             FREE(o);
         }
         return 0;
-}
+    }
     return o; // cannot destroy: object is still referenced
 }
 
@@ -463,21 +463,23 @@ void test_obj_scene() {
 static map(int,int) oms;
 static thread_mutex_t *oms_lock;
 void *obj_setmeta(void *o, const char *key, const char *value) {
+    void *ret = 0;
     do_threadlock(oms_lock) {
         if(!oms) map_init_int(oms);
         int *q = map_find_or_add(oms, intern(va("%llu-%s",obj_id((obj*)o),key)), 0);
         if(!*q && !value[0]) {} else *q = intern(value);
-        return quark(*q), o;
+        quark(*q), ret = o;
     }
-    return 0; // unreachable
+    return ret;
 }
 const char* obj_meta(const void *o, const char *key) {
+    const char *ret = 0;
     do_threadlock(oms_lock) {
         if(!oms) map_init_int(oms);
         int *q = map_find_or_add(oms, intern(va("%llu-%s",obj_id((obj*)o),key)), 0);
-        return quark(*q);
+        ret = quark(*q);
     }
-    return 0; // unreachable
+    return ret;
 }
 
 void *obj_setname(void *o, const char *name) {
@@ -637,6 +639,8 @@ const char *p2s(const char *type, void *p) {
     else if( !strcmp(type, "vec2") ) return ftoa2(*(vec2*)p);
     else if( !strcmp(type, "vec3") ) return ftoa3(*(vec3*)p);
     else if( !strcmp(type, "vec4") ) return ftoa4(*(vec4*)p);
+    else if( !strcmp(type, "rgb") ) return rgbatoa(*(unsigned*)p);
+    else if( !strcmp(type, "rgba") ) return rgbatoa(*(unsigned*)p);
     else if( !strcmp(type, "char*") || !strcmp(type, "string") ) return va("%s", *(char**)p);
     // @todo: if strchr('*') assume obj, if reflected save guid: obj_id();
     return tty_color(YELLOW), printf("p2s: cannot serialize `%s` type\n", type), tty_color(0), "";
@@ -653,6 +657,8 @@ bool s2p(void *P, const char *type, const char *str) {
     else if( !strcmp(type, "vec2") )      return !!memcpy(P, (v2 = atof2(str), &v2), sizeof(v2));
     else if( !strcmp(type, "vec3") )      return !!memcpy(P, (v3 = atof3(str), &v3), sizeof(v3));
     else if( !strcmp(type, "vec4") )      return !!memcpy(P, (v4 = atof4(str), &v4), sizeof(v4));
+    else if( !strcmp(type, "rgb") )       return !!memcpy(P, (u = atorgba(str), &u), sizeof(u));
+    else if( !strcmp(type, "rgba") )      return !!memcpy(P, (u = atorgba(str), &u), sizeof(u));
     else if( !strcmp(type, "uintptr_t") ) return !!memcpy(P, (p = strtol(str, NULL, 16), &p), sizeof(p));
     else if( !strcmp(type, "char*") || !strcmp(type, "string") ) {
         char substring[128] = {0};
@@ -905,9 +911,9 @@ char *entity_save(entity *self) {
 static
 void entity_register() {
     do_once {
-    STRUCT(entity, uintptr_t, cflags);
-    obj_extend(entity, save);
-}
+        STRUCT(entity, uintptr_t, cflags);
+        obj_extend(entity, save);
+    }
 }
 
 AUTORUN{

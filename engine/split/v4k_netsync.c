@@ -508,7 +508,7 @@ char** server_poll(unsigned timeout_ms) {
                     }
                 } break;
                 case MSG_RPC: {
-                    event.type = NETWORK_EVENT_RPC; 
+                    event.type = NETWORK_EVENT_RPC;
                     unsigned id = *(uint32_t*)ptr; ptr += 4;
                     char *cmdline = ptr;
                     char *resp = rpc(id, cmdline);
@@ -519,7 +519,7 @@ char** server_poll(unsigned timeout_ms) {
                     msg = va("%d req:%s res:%s", 0, cmdline, resp);
                 } break;
                 case MSG_RPC_RESP: {
-                    event.type = NETWORK_EVENT_RPC_RESP; 
+                    event.type = NETWORK_EVENT_RPC_RESP;
                     msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
@@ -604,7 +604,7 @@ char** client_poll(unsigned timeout_ms) {
                     }
                 } break;
                 case MSG_RPC: {
-                    event.type = NETWORK_EVENT_RPC; 
+                    event.type = NETWORK_EVENT_RPC;
                     unsigned id = *(uint32_t*)ptr; ptr += 4;
                     char *cmdline = ptr;
                     char *resp = rpc(id, cmdline);
@@ -615,7 +615,7 @@ char** client_poll(unsigned timeout_ms) {
                     msg = va("%d req:%s res:%s", 0, cmdline, resp);
                 } break;
                 case MSG_RPC_RESP: {
-                    event.type = NETWORK_EVENT_RPC_RESP; 
+                    event.type = NETWORK_EVENT_RPC_RESP;
                     msg = va("%d %s", 0, ptr);
                 } break;
                 default:
@@ -639,7 +639,7 @@ char** client_poll(unsigned timeout_ms) {
                 msg = va( "%d timeout", 0);
                 FREE(event.peer->data);
                 event.peer->data = NULL;
-                network_put(NETWORK_RANK, -1); 
+                network_put(NETWORK_RANK, -1);
                 network_put(NETWORK_LIVE, 0);
                 break;
         }

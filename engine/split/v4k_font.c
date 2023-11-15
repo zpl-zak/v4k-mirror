@@ -1667,7 +1667,6 @@ void font_scales(const char *tag, float h1, float h2, float h3, float h4, float 
 // 1. Calculate and save a bunch of useful variables and put them in the global font variable.
 void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len, float font_size, unsigned flags) {
     unsigned index = *tag - FONT_FACE1[0];
-
     if( index >= 8 ) return;
     if( font_size <= 0 || font_size > 72 ) return;
     if( !ttf_data || !ttf_len ) return;

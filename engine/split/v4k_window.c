@@ -168,7 +168,7 @@ void window_drop_callback(GLFWwindow* window, int count, const char** paths) {
 void window_hints(unsigned flags) {
     #ifdef __APPLE__
     //glfwInitHint( GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE );
-    glfwWindowHint( GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE );
+    glfwWindowHint( GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE ); // @todo: remove silicon mac M1 hack
     //glfwWindowHint( GLFW_COCOA_GRAPHICS_SWITCHING, GLFW_FALSE );
     //glfwWindowHint( GLFW_COCOA_MENUBAR, GLFW_FALSE );
     #endif
@@ -317,6 +317,9 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
             //glfwWindowHint(GLFW_FLOATING, GLFW_TRUE); // always on top
             glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
         }
+        if( flags & WINDOW_BORDERLESS ) {
+            glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        }
         #endif
         // windowed
         float ratio = (float)winWidth / (winHeight + !winHeight);
@@ -363,10 +366,10 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     #endif
 
     glDebugEnable();
-    
+
     // setup nuklear ui
     ui_ctx = nk_glfw3_init(&nk_glfw, window, NK_GLFW3_INSTALL_CALLBACKS);
-   
+
     //glEnable(GL_TEXTURE_2D);
 
     // 0:disable vsync, 1:enable vsync, <0:adaptive (allow vsync when framerate is higher than syncrate and disable vsync when framerate drops below syncrate)
@@ -387,7 +390,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     PRINTF("GPU OpenGL: %d.%d\n", GLAD_VERSION_MAJOR(gl_version), GLAD_VERSION_MINOR(gl_version));
 
     if( FLAGS_TRANSPARENT ) { // @transparent
-        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE); // @todo: is decorated an attrib or a hint?
         if( scale >= 1 ) glfwMaximizeWindow(window);
     }
     #endif
@@ -546,7 +549,7 @@ int window_frame_begin() {
         engine_tick();
     }
 #endif // ENABLE_RETAIL
- 
+
 #if 0 // deprecated
     // run user-defined hooks
     for(int i = 0; i < 64; ++i) {
@@ -567,7 +570,7 @@ int window_frame_begin() {
         timer = 0;
     }
 #else
-        glfwSetWindowTitle(window, title);
+    glfwSetWindowTitle(window, title);
 #endif
 
     void input_update();
@@ -579,7 +582,7 @@ int window_frame_begin() {
 void window_frame_end() {
     // flush batching systems that need to be rendered before frame swapping. order matters.
     {
-        font_goto(0,0);        
+        font_goto(0,0);
         touch_flush();
         sprite_flush();
 
@@ -640,7 +643,7 @@ void window_shutdown() {
 
         #endif
 
-        window_loop_exit(); // finish emscripten loop automatically        
+        window_loop_exit(); // finish emscripten loop automatically
     }
 }
 
@@ -780,17 +783,17 @@ void window_icon(const char *file_icon) {
     if( !data ) data = file_read(file_icon), len = file_size(file_icon);
 
     if( data && len ) {
-            image_t img = image_from_mem(data, len, IMAGE_RGBA);
-            if( img.w && img.h && img.pixels ) {
-                GLFWimage images[1];
-                images[0].width = img.w;
-                images[0].height = img.h;
-                images[0].pixels = img.pixels;
-                glfwSetWindowIcon(window, 1, images);
+        image_t img = image_from_mem(data, len, IMAGE_RGBA);
+        if( img.w && img.h && img.pixels ) {
+            GLFWimage images[1];
+            images[0].width = img.w;
+            images[0].height = img.h;
+            images[0].pixels = img.pixels;
+            glfwSetWindowIcon(window, 1, images);
             has_icon = 1;
-                return;
-            }
+            return;
         }
+    }
 #if 0 // is(win32)
     HANDLE hIcon = LoadImageA(0, file_icon, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE);
     if( hIcon ) {
@@ -825,7 +828,7 @@ int window_record(const char *outfile_mp4) {
 
 vec2 window_dpi() {
     vec2 dpi = vec2(1,1);
-#if !defined(__EMSCRIPTEN__) && !defined(__APPLE__)
+#if !is(ems) && !is(osx) // @todo: remove silicon mac M1 hack
     glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &dpi.x, &dpi.y);
 #endif
     return dpi;
@@ -914,9 +917,9 @@ void window_fullscreen(int enabled) {
     }
 #else
     if( enabled )
-    EM_ASM(Module.requestFullscreen(1, 1)); 
+    EM_ASM(Module.requestFullscreen(1, 1));
     else
-    EM_ASM(Module.exitFullscreen()); 
+    EM_ASM(Module.exitFullscreen());
 #endif
 
 #else
@@ -926,7 +929,7 @@ void window_fullscreen(int enabled) {
         /*glfwGetWindowPos(g->window, &g->window_xpos, &g->window_ypos);*/
         glfwGetWindowSize(g->window, &g->width, &g->height);
         glfwSetWindowMonitor(g->window, glfwGetPrimaryMonitor(), 0, 0, g->width, g->height, GLFW_DONT_CARE);
-    } else {            
+    } else {
         glfwSetWindowMonitor(g->window, NULL, 0, 0, g->width, g->height, GLFW_DONT_CARE);
     }
 #else

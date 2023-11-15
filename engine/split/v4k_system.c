@@ -90,28 +90,72 @@ const char *app_cache() {
 
 const char * app_exec( const char *cmd ) {
     static __thread char output[4096+16] = {0};
+    char *buf = output + 16; buf[0] = 0; // memset(buf, 0, 4096);
 
     if( !cmd[0] ) return "0               ";
     cmd = file_normalize(cmd);
 
     int rc = -1;
-    char *buf = output + 16; buf[0] = 0; // memset(buf, 0, 4096);
+
+    // pick the fastest code path per platform
+#if is(osx)
     for( FILE *fp = popen( cmd, "r" ); fp; rc = pclose(fp), fp = 0) {
-        while( fgets(buf, 4096 - 1, fp) ) {
-        }
+        // while( fgets(buf, 4096 - 1, fp) ) {}
     }
-    if( rc != 0 ) {
-        char *r = strrchr(buf, '\r'); if(r) *r = 0;
-        char *n = strrchr(buf, '\n'); if(n) *n = 0;
+    // if( rc != 0 ) {
+    //     char *r = strrchr(buf, '\r'); if(r) *r = 0;
+    //     char *n = strrchr(buf, '\n'); if(n) *n = 0;
+    // }
+#elif is(win32)
+    STARTUPINFOA si = {0}; si.cb = sizeof(si);
+    PROCESS_INFORMATION pi = {0};
+
+    snprintf(output+16, 4096, "cmd /c \"%s\"", cmd);
+
+    int prio = //strstr(cmd, "ffmpeg") || strstr(cmd, "furnace") || strstr(cmd, "ass2iqe") ?
+    REALTIME_PRIORITY_CLASS; //: 0;
+
+//prio |= DETACHED_PROCESS;
+//si.dwFlags = STARTF_USESTDHANDLES;
+
+    if( CreateProcessA(
+        NULL, output+16, // cmdline
+        NULL,
+        NULL,
+        FALSE, // FALSE: dont inherit handles
+        prio /*CREATE_DEFAULT_ERROR_MODE|CREATE_NO_WINDOW*/, // 0|HIGH_PRIORITY_CLASS
+        NULL, // "", // NULL would inherit env
+        NULL, // current dir
+        &si, &pi) )
+    {
+        // Wait for process
+        DWORD dwExitCode2 = WaitForSingleObject(pi.hProcess, INFINITE);
+        DWORD dwExitCode; GetExitCodeProcess(pi.hProcess, &dwExitCode);
+        rc = dwExitCode;
     }
+    else
+    {
+        // CreateProcess() failed
+        rc = GetLastError();
+    }
+#else
+    rc = system(cmd);
+#endif
+
     return snprintf(output, 16, "%-15d", rc), buf[-1] = ' ', output;
 }
 
 int app_spawn( const char *cmd ) {
-    if( !cmd[0] ) return -1;
+    if( !cmd[0] ) return false;
     cmd = file_normalize(cmd);
 
-    return system(cmd);
+#if _WIN32
+    bool ok = WinExec(va("cmd /c \"%s\"", cmd), SW_HIDE) > 31;
+#else
+    bool ok = system(va("%s &", cmd)) == 0;
+#endif
+
+    return ok;
 }
 
 #if is(osx)
@@ -215,7 +259,7 @@ char *callstack( int traces ) {
         // should concat addresses into a multi-address line
 
         char *binary = symbols[i];
-        char *address = strchr( symbols[i], '(' ) + 1; 
+        char *address = strchr( symbols[i], '(' ) + 1;
         *strrchr( address, ')') = '\0'; *(address - 1) = '\0';
 
         for( FILE *fp = popen(va("addr2line -e %s %s", binary, address), "r" ); fp ; pclose(fp), fp = 0 ) { //addr2line -e binary -f -C address
@@ -610,8 +654,8 @@ void tty_attach() {
     // in order to have a Windows gui application with console:
     // - use WinMain() then AllocConsole(), but that may require supporintg different entry points for different platforms.
     // - /link /SUBSYSTEM:CONSOLE and then call FreeConsole() if no console is needed, but feels naive to flash the terminal for a second.
-    // - /link /SUBSYSTEM:WINDOWS /entry:mainCRTStartup, then AllocConsole() as follows. Quoting @pmttavara: 
-    //   "following calls are the closest i'm aware you can get to /SUBSYSTEM:CONSOLE in a gui program 
+    // - /link /SUBSYSTEM:WINDOWS /entry:mainCRTStartup, then AllocConsole() as follows. Quoting @pmttavara:
+    //   "following calls are the closest i'm aware you can get to /SUBSYSTEM:CONSOLE in a gui program
     //   while cleanly handling existing consoles (cmd.exe), pipes (ninja) and no console (VS/RemedyBG; double-clicking the game)"
     do_once {
         if( !AttachConsole(ATTACH_PARENT_PROCESS) && GetLastError() != ERROR_ACCESS_DENIED ) { bool ok = !!AllocConsole(); ASSERT( ok ); }
@@ -694,7 +738,7 @@ void alert(const char *message) { // @todo: move to app_, besides die()
 #endif
 
     window_visible(true);
-    }
+}
 
 void breakpoint() {
     debugbreak();
@@ -807,9 +851,9 @@ void app_crash() {
     *p = 42;
 }
 void app_beep() {
-    ifdef(win32, system("rundll32 user32.dll,MessageBeep"); return; );
-    ifdef(linux, system("paplay /usr/share/sounds/freedesktop/stereo/message.oga"); return; );
-    ifdef(osx,   system("tput bel"); return; );
+    ifdef(win32, app_spawn("rundll32 user32.dll,MessageBeep"); return; );
+    ifdef(linux, app_spawn("paplay /usr/share/sounds/freedesktop/stereo/message.oga"); return; );
+    ifdef(osx,   app_spawn("tput bel"); return; );
 
     //fallback:
     fputc('\x7', stdout);
@@ -864,7 +908,7 @@ bool app_open_folder(const char *file) {
 #else
     snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
 #endif
-    return system(buf) == 0;
+    return app_spawn(buf);
 }
 
 static
@@ -877,7 +921,7 @@ bool app_open_file(const char *file) {
 #else
     snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
 #endif
-    return system(buf) == 0;
+    return app_spawn(buf);
 }
 
 static

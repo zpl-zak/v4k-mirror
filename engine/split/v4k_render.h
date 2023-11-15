@@ -37,6 +37,9 @@ API unsigned alpha( unsigned rgba );
 
 #define BLUE    RGBX(0xB55A06,255)
 
+API unsigned atorgba(const char *s);
+API char *   rgbatoa(unsigned rgba);
+
 // -----------------------------------------------------------------------------
 // images
 
@@ -121,6 +124,7 @@ typedef struct texture_t {
     char* filename;
     bool transparent;
     unsigned fbo; // for texture recording
+    union { unsigned userdata, delay; };
 } texture_t;
 
 API texture_t texture_compressed(const char *filename, unsigned flags);
@@ -185,8 +189,8 @@ API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma 
 // texture id, position(x,y,depth sort), tint color, rotation angle
 API void sprite( texture_t texture, float position[3], float rotation /*0*/, uint32_t color /*~0u*/);
 
-// texture id, rect(x,y,w,h) is [0..1] normalized, z-index, pos(xy,scale), rotation (degrees), color (rgba)
-API void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
+// texture id, rect(x,y,w,h) is [0..1] normalized, z-index, pos(xy,scale.xy), rotation (degrees), color (rgba)
+API void sprite_rect( texture_t t, vec4 rect, float zindex, vec4 pos, float tilt_deg, unsigned tint_rgba);
 
 // texture id, sheet(frameNumber,X,Y) (frame in a X*Y spritesheet), position(x,y,depth sort), rotation angle, offset(x,y), scale(x,y), is_additive, tint color
 API void sprite_sheet( texture_t texture, float sheet[3], float position[3], float rotation, float offset[2], float scale[2], int is_additive, uint32_t rgba, int resolution_independant);
@@ -204,7 +208,8 @@ typedef struct tileset_t {
 } tileset_t;
 
 API tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols, unsigned rows);
-API int       tileset_ui( tileset_t t );
+
+API int       ui_tileset( tileset_t t );
 
 typedef struct tilemap_t {
     int blank_chr;                // transparent tile
@@ -239,7 +244,8 @@ typedef struct tiled_t {
 
 API tiled_t tiled(const char *file_tmx);
 API void    tiled_render(tiled_t tmx, vec3 pos);
-API void    tiled_ui(tiled_t *t);
+
+API void    ui_tiled(tiled_t *t);
 
 // -----------------------------------------------------------------------------
 // spines
@@ -250,7 +256,8 @@ API spine_t*spine(const char *file_json, const char *file_atlas, unsigned flags)
 API void    spine_skin(spine_t *p, unsigned skin);
 API void    spine_render(spine_t *p, vec3 offset, unsigned flags);
 API void    spine_animate(spine_t *p, float delta);
-API void    spine_ui(spine_t *p);
+
+API void    ui_spine(spine_t *p);
 
 // -----------------------------------------------------------------------------
 // cubemaps

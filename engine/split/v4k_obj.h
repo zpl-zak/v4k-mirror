@@ -40,17 +40,17 @@ bool        id_valid(uintptr_t id);
 #define OBJHEADER \
     struct { \
         ifdef(debug, const char *objname;) \
-    union { \
-        uintptr_t objheader; \
-        struct {  \
-        uintptr_t objtype:8; \
-        uintptr_t objsizew:8; \
-        uintptr_t objrefs:8; \
-        uintptr_t objheap:1; \
-        uintptr_t objcomps:1; /* << can be removed? check payload ptr instead? */ \
-        uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
-        uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
-        }; \
+        union { \
+            uintptr_t objheader; \
+            struct {  \
+            uintptr_t objtype:8; \
+            uintptr_t objsizew:8; \
+            uintptr_t objrefs:8; \
+            uintptr_t objheap:1; \
+            uintptr_t objcomps:1; /* << can be removed? check payload ptr instead? */ \
+            uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
+            uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
+            }; \
         }; \
         array(struct obj*) objchildren; \
     };
@@ -342,4 +342,3 @@ typedef enum OBJTYPE_BUILTINS {
     OBJTYPE_vec2i  =  9,
     OBJTYPE_vec3i  = 10,
 } OBJTYPE_BUILTINS;
-

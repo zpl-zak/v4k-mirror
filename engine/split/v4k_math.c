@@ -615,9 +615,9 @@ void transpose44(mat44 m, const mat44 a) { // M[i][j] = A[j][i];
 // @todo: test me
 // float det33 = M[0,0]*((M[1,1]*M[2,2])-(M[2,1]*M[1,2]))-M[0,1]*(M[1,0]*M[2,2]-M[2,0]*M[1,2])+M[0,2]*(M[1,0]*M[2,1]-M[2,0]*M[1,1]);
 //
-// float det33 = 
+// float det33 =
 //   rgt.x * fwd.y * upv.z - rgt.z * fwd.y * upv.x +
-//   rgt.y * fwd.z * upv.x - rgt.y * fwd.x * upv.z + 
+//   rgt.y * fwd.z * upv.x - rgt.y * fwd.x * upv.z +
 //   rgt.z * fwd.x * upv.y - rgt.x * fwd.z * upv.y;
 //
 // void transpose33(mat33 m, const mat33 a) { // M[i][j] = A[j][i];
@@ -853,7 +853,7 @@ void printi_( int *m, int ii, int jj ) {
 }
 void print_( float *m, int ii, int jj ) {
     for( int j = 0; j < jj; ++j ) {
-        for( int i = 0; i < ii; ++i ) printf("%8.3f ", *m++);
+        for( int i = 0; i < ii; ++i ) printf("%8.3f", *m++);
         puts("");
     }
 //    puts("---");

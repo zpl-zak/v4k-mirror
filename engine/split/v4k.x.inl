@@ -15,6 +15,7 @@
 // 3rd party libs
 
 #define ARCHIVE_C                             // archive.c
+#define BASE64_C                              // base64.c
 #define COMPRESS_C                            // compress.c
 #define ENET_IMPLEMENTATION                   // enet
 #define GJK_C                                 // gjk
@@ -182,6 +183,7 @@ static char *ui_filter = 0;
    else if(!strcmp(id, "idle")  && nargs ==1) push(ev, input_idle(pop(ev)));
 {{FILE:3rd_eval.h}}
 {{FILE:3rd_luadebugger.h}}
+{{FILE:3rd_base64.h}}
 //#define SQLITE_OMIT_LOAD_EXTENSION
 //#define SQLITE_CORE 1
 //#define SQLITE_DEBUG 1

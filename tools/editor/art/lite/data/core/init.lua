@@ -108,6 +108,8 @@ function core.init()
   core.docs = {}
   core.threads = setmetatable({}, { __mode = "k" })
   core.project_files = {}
+  core.blink_start = system.get_time()
+  core.blink_timer = core.blink_start
   core.redraw = true
 
   core.root_view = RootView()
@@ -252,6 +254,7 @@ function core.add_thread(f, weak_ref)
   local key = weak_ref or #core.threads + 1
   local fn = function() return core.try(f) end
   core.threads[key] = { cr = coroutine.create(fn), wake = 0 }
+  return key
 end
 
 
@@ -492,6 +495,10 @@ function core.run()
   end
 end
 --< @r-lyeh } split core.run() into core.run1()
+
+function core.blink_reset()
+  core.blink_start = system.get_time()
+end
 
 function core.on_error(err)
   -- write error to file

@@ -764,11 +764,12 @@ const char *strlerp(unsigned numpairs, const char **pairs, const char *str) { //
 }
 
 array(char*) strsplit(const char *str, const char *separators) {
+    enum { SLOTS = 32 };
     static __thread int slot = 0;
-    static __thread char *buf[16] = {0};
-    static __thread array(char*) list[16] = {0};
+    static __thread char *buf[SLOTS] = {0};
+    static __thread array(char*) list[SLOTS] = {0};
 
-    slot = (slot+1) % 16;
+    slot = (slot+1) % SLOTS;
     array_resize(list[slot], 0);
     *(buf[slot] = REALLOC(buf[slot], strlen(str)*2+1)) = '\0'; // *2 to backup pathological case where input str is only separators && include == 1
 
@@ -800,10 +801,11 @@ array(char*) strsplit(const char *str, const char *separators) {
     return list[slot];
 }
 char* strjoin(array(char*) list, const char *separator) {
+    enum { SLOTS = 16 };
     static __thread int slot = 0;
-    static __thread char* mems[16] = {0};
+    static __thread char* mems[SLOTS] = {0};
 
-    slot = (slot+1) % 16;
+    slot = (slot+1) % SLOTS;
 
     int num_list = array_count(list);
     int len = 0, inc = 0, seplen = strlen(separator);
@@ -1150,10 +1152,11 @@ static int ui_using_v2_menubar = 0;
         nk_menu_close(ui_ctx); \
         nk_menu_end(ui_ctx); \
     }}
-#define UI_MENU_ALIGN_RIGHT(px) { \
+#define UI_MENU_ALIGN_RIGHT(px, ...) { \
     int hspace = total_space.w - span - (px) - 1.5 * ITEM_WIDTH; \
     nk_layout_row_push(ui_ctx, hspace); span += hspace; \
     if (nk_menu_begin_label(ui_ctx, (title), align = NK_TEXT_RIGHT, nk_vec2(1,1))) { \
+        __VA_ARGS__; \
         nk_menu_close(ui_ctx); \
         nk_menu_end(ui_ctx); \
     }}
@@ -1167,9 +1170,9 @@ static int ui_using_v2_menubar = 0;
 
 #define UI_FONT_ENUM(carlito,b612) b612 // carlito
 
-#define UI_FONT_REGULAR  UI_FONT_ENUM("Carlito",     "B612")     "-Regular.ttf"
-#define UI_FONT_HEADING  UI_FONT_ENUM("Carlito",     "B612")     "-BoldItalic.ttf"
-#define UI_FONT_TERMINAL UI_FONT_ENUM("Inconsolata", "B612Mono") "-Regular.ttf"
+#define UI_FONT_REGULAR    UI_FONT_ENUM("Carlito",     "B612")     "-Regular.ttf"
+#define UI_FONT_HEADING    UI_FONT_ENUM("Carlito",     "B612")     "-BoldItalic.ttf"
+#define UI_FONT_TERMINAL   UI_FONT_ENUM("Inconsolata", "B612Mono") "-Regular.ttf"
 
 #if UI_LESSER_SPACING
     enum { UI_SEPARATOR_HEIGHT = 5, UI_MENUBAR_ICON_HEIGHT = 20, UI_ROW_HEIGHT = 22, UI_MENUROW_HEIGHT = 32 };
@@ -1264,7 +1267,7 @@ static void nk_config_custom_fonts() {
         // Monospaced font. Used in terminals or consoles.
 
         for( char *data = vfs_load(UI_FONT_TERMINAL, &datalen); data; data = 0 ) {
-            const float font_size = UI_FONT_REGULAR_SIZE; 
+            const float font_size = UI_FONT_REGULAR_SIZE;
             static const nk_rune icon_range[] = {32, 127, 0};
 
             struct nk_font_config cfg = nk_font_config(font_size);
@@ -1561,10 +1564,10 @@ vec2 ui_toolbar_(array(ui_item_t) ui_items, vec2 ui_results) {
                     if( nk_menu_item_text(ui_ctx, item, lens[j], NK_TEXT_LEFT) ) {
                         ui_results = vec2(i+1, j+1-1);
                     }
-                }                    
+                }
 
                 nk_menu_end(ui_ctx);
-            }            
+            }
         }
     }
 
@@ -1948,7 +1951,7 @@ int ui_set_enable_(int enabled) {
     static struct nk_input input;
     if (!enabled) {
         ui_alpha_push(0.5);
-        ui_ctx->style = off; // .button = off.button; 
+        ui_ctx->style = off; // .button = off.button;
         input = ui_ctx->input;
         memset(&ui_ctx->input, 0, sizeof(ui_ctx->input));
     } else {
@@ -2259,7 +2262,7 @@ int ui_layout_all_load_disk(const char *mask) {
         const char *title = ui_layout_load_disk(k, mask, i, &out);
         if( title ) {
             struct nk_window *win = nk_window_find(ui_ctx, title);
-            if( win ) {            
+            if( win ) {
                 win->bounds.x = out.x;
                 win->bounds.y = out.y;
                 win->bounds.w = out.w;
@@ -2383,7 +2386,7 @@ if( win ) {
 
     if( group1_any || !group2_interacting || anim_in_progress ) {
         struct nk_rect target = ui_layout_load_mem(idx, desktop, is_panel);
-        float alpha = len2sq(sub2(s->desktop, desktop)) ? 0 : UI_ANIM_ALPHA; // smooth unless we're restoring a desktop change 
+        float alpha = len2sq(sub2(s->desktop, desktop)) ? 0 : UI_ANIM_ALPHA; // smooth unless we're restoring a desktop change
 #if 1
         if( is_window && win->flags & NK_WINDOW_FULLSCREEN ) {
             target.x = 1;
@@ -2399,7 +2402,7 @@ if( win ) {
             target.y = ((desktop.h - workarea_h) - target.h) / 2;
         }
 #endif
-        win->bounds = nk_rect( 
+        win->bounds = nk_rect(
             win->bounds.x * alpha + target.x * (1 - alpha),
             win->bounds.y * alpha + target.y * (1 - alpha),
             win->bounds.w * alpha + target.w * (1 - alpha),
@@ -2454,7 +2457,7 @@ if( is_notify ) {
     if( nk_begin(ui_ctx, title, start_coords, window_flags) ) {
 
 // set width for all inactive panels
-struct nk_rect bounds = nk_window_get_bounds(ui_ctx); 
+struct nk_rect bounds = nk_window_get_bounds(ui_ctx);
 if( mouse_pressed && win && win->is_window_resizing ) {
     edge = vec2(bounds.w, bounds.h);
 
@@ -2476,7 +2479,7 @@ if( mouse_pressed && win && win->is_window_resizing ) {
     } else {
 
 if(is_panel) {
-   ui_panel_end(); 
+   ui_panel_end();
 } else ui_window_end();
 
         return 0;
@@ -2551,7 +2554,7 @@ int ui_panel(const char *title, int flags) {
         if(!ui_window_has_menubar) nk_layout_row_push(ui_ctx, 70);
         ui_window_has_menubar = 1;
 
-        return nk_menu_begin_text_styled(ui_ctx, title, strlen(title), NK_TEXT_ALIGN_CENTERED|NK_TEXT_ALIGN_MIDDLE, nk_vec2(220, 200), &transparent_style);    
+        return nk_menu_begin_text_styled(ui_ctx, title, strlen(title), NK_TEXT_ALIGN_CENTERED|NK_TEXT_ALIGN_MIDDLE, nk_vec2(220, 200), &transparent_style);
     }
 
     return ui_begin_panel_or_window_(title, flags, false);
@@ -2698,7 +2701,7 @@ if( !has_icon ) {
 } else {
     char *icon_glyph = va("%.*s", icon_len, icon);
 
-// @todo: implement nk_push_layout() 
+// @todo: implement nk_push_layout()
 //  nk_rect bounds = {..}; nk_panel_alloc_space(bounds, ctx);
     struct nk_window *win = ui_ctx->current;
     struct nk_panel *layout = win->layout, copy = *layout;
@@ -2729,7 +2732,7 @@ if( font )  nk_style_pop_font(ui_ctx);
     // old way
     // ui_labeicon_l_icked_L.x = is_hovering ? nk_input_has_mouse_click_down_in_rect(input, NK_BUTTON_LEFT, layout->bounds, nk_true) : 0;
     // new way
-    // this is an ugly hack to detect which icon (within a label) we're clicking on. 
+    // this is an ugly hack to detect which icon (within a label) we're clicking on.
     // @todo: figure out a better way to detect this... would it be better to have a ui_label_toolbar(lbl,bar) helper function instead?
     ui_label_icon_clicked_L.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x) - (alignment == NK_TEXT_RIGHT ? bounds.w : 0) ) * nk_input_is_mouse_released(input, NK_BUTTON_LEFT)) : 0;
 
@@ -2745,20 +2748,20 @@ int ui_label(const char *label) {
 }
 
 static int nk_label_(struct nk_context *ui_ctx, const char *text_, int align2 ) {
-const struct nk_input *input = &ui_ctx->input;
-struct nk_rect bounds = nk_widget_bounds(ui_ctx);
-int is_hovering = nk_input_is_mouse_hovering_rect(input, bounds) && !ui_has_active_popups;
-if( is_hovering ) {
-    struct nk_rect winbounds = nk_window_get_bounds(ui_ctx);
-    is_hovering &= nk_input_is_mouse_hovering_rect(input, winbounds);
-    is_hovering &= nk_window_has_focus(ui_ctx);
-}
+    const struct nk_input *input = &ui_ctx->input;
+    struct nk_rect bounds = nk_widget_bounds(ui_ctx);
+    int is_hovering = nk_input_is_mouse_hovering_rect(input, bounds) && !ui_has_active_popups;
+    if( is_hovering ) {
+        struct nk_rect winbounds = nk_window_get_bounds(ui_ctx);
+        is_hovering &= nk_input_is_mouse_hovering_rect(input, winbounds);
+        is_hovering &= nk_window_has_focus(ui_ctx);
+    }
 
-    nk_label(ui_ctx, text_, align2);
+        nk_label(ui_ctx, text_, align2);
 
-// this is an ugly hack to detect which icon (within a label) we're clicking on. 
-// @todo: figure out a better way to detect this... would it be better to have a ui_label_toolbar(lbl,bar) helper function instead?
-ui_label_icon_clicked_R.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x) - (align2 == NK_TEXT_RIGHT ? bounds.w : 0) ) * nk_input_is_mouse_released(input, NK_BUTTON_LEFT)) : 0;
+    // this is an ugly hack to detect which icon (within a label) we're clicking on.
+    // @todo: figure out a better way to detect this... would it be better to have a ui_label_toolbar(lbl,bar) helper function instead?
+    ui_label_icon_clicked_R.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x) - (align2 == NK_TEXT_RIGHT ? bounds.w : 0) ) * nk_input_is_mouse_released(input, NK_BUTTON_LEFT)) : 0;
 
     return ui_label_icon_clicked_R.x;
 }
@@ -2935,24 +2938,60 @@ int ui_toggle(const char *label, bool *value) {
     return rc ? (*value ^= 1), rc : rc;
 }
 
-int ui_color4f(const char *label, float *color4) {
-    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
-
-    float c[4] = { color4[0]*255, color4[1]*255, color4[2]*255, color4[3]*255 };
-    int ret = ui_color4(label, c);
-    for( int i = 0; i < 4; ++i ) color4[i] = c[i] / 255.0f;
-    return ret;
-}
-
 static enum color_mode {COL_RGB, COL_HSV} ui_color_mode = COL_RGB;
 
-int ui_color4(const char *label, float *color4) {
+int ui_color4f(const char *label, float *color) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color4[0]*ui_alpha/255, color4[1]*ui_alpha/255, color4[2]*ui_alpha/255, color4[3]/255 }, before = after;
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3] }, before = after;
+    struct nk_colorf clamped = { clampf(color[0],0,1), clampf(color[1],0,1), clampf(color[2],0,1), clampf(color[3],0,1) };
+    if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
+        nk_layout_row_dynamic(ui_ctx, 120, 1);
+        after = nk_color_picker(ui_ctx, after, NK_RGB);
+
+        nk_layout_row_dynamic(ui_ctx, 0, 2);
+        ui_color_mode = nk_option_label(ui_ctx, "RGB", ui_color_mode == COL_RGB) ? COL_RGB : ui_color_mode;
+        ui_color_mode = nk_option_label(ui_ctx, "HSV", ui_color_mode == COL_HSV) ? COL_HSV : ui_color_mode;
+
+        nk_layout_row_dynamic(ui_ctx, 0, 1);
+        if (ui_color_mode == COL_RGB) {
+            after.r = nk_propertyf(ui_ctx, "#R:", -FLT_MAX, after.r, FLT_MAX, 0.01f,0.005f);
+            after.g = nk_propertyf(ui_ctx, "#G:", -FLT_MAX, after.g, FLT_MAX, 0.01f,0.005f);
+            after.b = nk_propertyf(ui_ctx, "#B:", -FLT_MAX, after.b, FLT_MAX, 0.01f,0.005f);
+        } else {
+            float hsva[4];
+            nk_colorf_hsva_fv(hsva, after);
+            hsva[0] = nk_propertyf(ui_ctx, "#H:", -FLT_MAX, hsva[0], FLT_MAX, 0.01f,0.005f);
+            hsva[1] = nk_propertyf(ui_ctx, "#S:", -FLT_MAX, hsva[1], FLT_MAX, 0.01f,0.005f);
+            hsva[2] = nk_propertyf(ui_ctx, "#V:", -FLT_MAX, hsva[2], FLT_MAX, 0.01f,0.005f);
+            after = nk_hsva_colorfv(hsva);
+        }
+        nk_label(ui_ctx, va("#%02X%02X%02X", (unsigned)clampf(after.r*255,0,255), (unsigned)clampf(after.g*255,0,255), (unsigned)clampf(after.b*255,0,255)), NK_TEXT_CENTERED);
+
+        color[0] = after.r;
+        color[1] = after.g;
+        color[2] = after.b;
+        color[3] = after.a;
+
+        nk_combo_end(ui_ctx);
+    }
+    return !!memcmp(&before.r, &after.r, sizeof(struct nk_colorf));
+}
+int ui_color4(const char *label, unsigned *color) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    unsigned a = *color >> 24;
+    unsigned b =(*color >> 16)&255;
+    unsigned g =(*color >> 8)&255;
+    unsigned r = *color & 255;
+
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+    ui_label_(label, NK_TEXT_LEFT);
+
+    struct nk_colorf after = { r*ui_alpha/255, g*ui_alpha/255, b*ui_alpha/255, a*ui_alpha/255 }, before = after;
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(after), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGBA);
@@ -2963,44 +3002,83 @@ int ui_color4(const char *label, float *color4) {
 
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         if (ui_color_mode == COL_RGB) {
-            after.r = nk_propertyf(ui_ctx, "#R:", 0, after.r, 1.0f, 0.01f,0.005f);
-            after.g = nk_propertyf(ui_ctx, "#G:", 0, after.g, 1.0f, 0.01f,0.005f);
-            after.b = nk_propertyf(ui_ctx, "#B:", 0, after.b, 1.0f, 0.01f,0.005f);
-            after.a = nk_propertyf(ui_ctx, "#A:", 0, after.a, 1.0f, 0.01f,0.005f);
+            after.r = nk_propertyi(ui_ctx, "#R:", 0, after.r * 255, 255, 1,1) / 255.f;
+            after.g = nk_propertyi(ui_ctx, "#G:", 0, after.g * 255, 255, 1,1) / 255.f;
+            after.b = nk_propertyi(ui_ctx, "#B:", 0, after.b * 255, 255, 1,1) / 255.f;
+            after.a = nk_propertyi(ui_ctx, "#A:", 0, after.a * 255, 255, 1,1) / 255.f;
         } else {
             float hsva[4];
             nk_colorf_hsva_fv(hsva, after);
-            hsva[0] = nk_propertyf(ui_ctx, "#H:", 0, hsva[0], 1.0f, 0.01f,0.05f);
-            hsva[1] = nk_propertyf(ui_ctx, "#S:", 0, hsva[1], 1.0f, 0.01f,0.05f);
-            hsva[2] = nk_propertyf(ui_ctx, "#V:", 0, hsva[2], 1.0f, 0.01f,0.05f);
-            hsva[3] = nk_propertyf(ui_ctx, "#A:", 0, hsva[3], 1.0f, 0.01f,0.05f);
+            hsva[0] = nk_propertyi(ui_ctx, "#H:", 0, hsva[0] * 255, 255, 1,1) / 255.f;
+            hsva[1] = nk_propertyi(ui_ctx, "#S:", 0, hsva[1] * 255, 255, 1,1) / 255.f;
+            hsva[2] = nk_propertyi(ui_ctx, "#V:", 0, hsva[2] * 255, 255, 1,1) / 255.f;
+            hsva[3] = nk_propertyi(ui_ctx, "#A:", 0, hsva[3] * 255, 255, 1,1) / 255.f;
             after = nk_hsva_colorfv(hsva);
         }
+        r = after.r * 255;
+        g = after.g * 255;
+        b = after.b * 255;
+        a = after.a * 255;
+        *color = rgba(r,g,b,a);
 
-        color4[0] = after.r * 255;
-        color4[1] = after.g * 255;
-        color4[2] = after.b * 255;
-        color4[3] = after.a * 255;
+        nk_label(ui_ctx, va("#%02X%02X%02X%02X", r, g, b, a), NK_TEXT_CENTERED);
 
         nk_combo_end(ui_ctx);
     }
     return !!memcmp(&before.r, &after.r, sizeof(struct nk_colorf));
 }
 
-int ui_color3f(const char *label, float *color3) {
-    float c[3] = { color3[0]*255, color3[1]*255, color3[2]*255 };
-    int ret = ui_color3(label, c);
-    for( int i = 0; i < 3; ++i ) color3[i] = c[i] / 255.0f;
-    return ret;
-}
-
-int ui_color3(const char *label, float *color3) {
+int ui_color3f(const char *label, float *color) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color3[0]*ui_alpha/255, color3[1]*ui_alpha/255, color3[2]*ui_alpha/255, 1 }, before = after;
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, ui_alpha }, before = after;
+    struct nk_colorf clamped = { clampf(color[0],0,1), clampf(color[1],0,1), clampf(color[2],0,1), 1 };
+    if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
+        nk_layout_row_dynamic(ui_ctx, 120, 1);
+        after = nk_color_picker(ui_ctx, after, NK_RGB);
+
+        nk_layout_row_dynamic(ui_ctx, 0, 2);
+        ui_color_mode = nk_option_label(ui_ctx, "RGB", ui_color_mode == COL_RGB) ? COL_RGB : ui_color_mode;
+        ui_color_mode = nk_option_label(ui_ctx, "HSV", ui_color_mode == COL_HSV) ? COL_HSV : ui_color_mode;
+
+        nk_layout_row_dynamic(ui_ctx, 0, 1);
+        if (ui_color_mode == COL_RGB) {
+            after.r = nk_propertyf(ui_ctx, "#R:", -FLT_MAX, after.r, FLT_MAX, 0.01f,0.005f);
+            after.g = nk_propertyf(ui_ctx, "#G:", -FLT_MAX, after.g, FLT_MAX, 0.01f,0.005f);
+            after.b = nk_propertyf(ui_ctx, "#B:", -FLT_MAX, after.b, FLT_MAX, 0.01f,0.005f);
+        } else {
+            float hsva[4];
+            nk_colorf_hsva_fv(hsva, after);
+            hsva[0] = nk_propertyf(ui_ctx, "#H:", -FLT_MAX, hsva[0], FLT_MAX, 0.01f,0.005f);
+            hsva[1] = nk_propertyf(ui_ctx, "#S:", -FLT_MAX, hsva[1], FLT_MAX, 0.01f,0.005f);
+            hsva[2] = nk_propertyf(ui_ctx, "#V:", -FLT_MAX, hsva[2], FLT_MAX, 0.01f,0.005f);
+            after = nk_hsva_colorfv(hsva);
+        }
+        nk_label(ui_ctx, va("#%02X%02X%02X", (unsigned)clampf(after.r*255,0,255), (unsigned)clampf(after.g*255,0,255), (unsigned)clampf(after.b*255,0,255)), NK_TEXT_CENTERED);
+
+        color[0] = after.r;
+        color[1] = after.g;
+        color[2] = after.b;
+
+        nk_combo_end(ui_ctx);
+    }
+    return !!memcmp(&before.r, &after.r, sizeof(struct nk_colorf));
+}
+int ui_color3(const char *label, unsigned *color) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    unsigned a = *color >> 24;
+    unsigned b =(*color >> 16)&255;
+    unsigned g =(*color >> 8)&255;
+    unsigned r = *color & 255;
+
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+    ui_label_(label, NK_TEXT_LEFT);
+
+    struct nk_colorf after = { r*ui_alpha, g*ui_alpha, b*ui_alpha, 1 }, before = after;
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(after), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGB);
@@ -3011,21 +3089,23 @@ int ui_color3(const char *label, float *color3) {
 
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         if (ui_color_mode == COL_RGB) {
-            after.r = nk_propertyf(ui_ctx, "#R:", 0, after.r, 1.0f, 0.01f,0.005f);
-            after.g = nk_propertyf(ui_ctx, "#G:", 0, after.g, 1.0f, 0.01f,0.005f);
-            after.b = nk_propertyf(ui_ctx, "#B:", 0, after.b, 1.0f, 0.01f,0.005f);
+            after.r = nk_propertyi(ui_ctx, "#R:", 0, after.r * 255, 255, 1,1) / 255.f;
+            after.g = nk_propertyi(ui_ctx, "#G:", 0, after.g * 255, 255, 1,1) / 255.f;
+            after.b = nk_propertyi(ui_ctx, "#B:", 0, after.b * 255, 255, 1,1) / 255.f;
         } else {
             float hsva[4];
             nk_colorf_hsva_fv(hsva, after);
-            hsva[0] = nk_propertyf(ui_ctx, "#H:", 0, hsva[0], 1.0f, 0.01f,0.05f);
-            hsva[1] = nk_propertyf(ui_ctx, "#S:", 0, hsva[1], 1.0f, 0.01f,0.05f);
-            hsva[2] = nk_propertyf(ui_ctx, "#V:", 0, hsva[2], 1.0f, 0.01f,0.05f);
+            hsva[0] = nk_propertyi(ui_ctx, "#H:", 0, hsva[0] * 255, 255, 1,1) / 255.f;
+            hsva[1] = nk_propertyi(ui_ctx, "#S:", 0, hsva[1] * 255, 255, 1,1) / 255.f;
+            hsva[2] = nk_propertyi(ui_ctx, "#V:", 0, hsva[2] * 255, 255, 1,1) / 255.f;
             after = nk_hsva_colorfv(hsva);
         }
+        r = after.r * 255;
+        g = after.g * 255;
+        b = after.b * 255;
+        *color = rgba(r,g,b,a);
 
-        color3[0] = after.r * 255;
-        color3[1] = after.g * 255;
-        color3[2] = after.b * 255;
+        nk_label(ui_ctx, va("#%02X%02X%02X", r, g, b), NK_TEXT_CENTERED);
 
         nk_combo_end(ui_ctx);
     }
@@ -3098,6 +3178,8 @@ int ui_bool(const char *label, bool *enabled ) {
     return chg;
 }
 
+static int ui_num_signs = 0;
+
 int ui_int(const char *label, int *v) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
@@ -3118,6 +3200,45 @@ int ui_unsigned(const char *label, unsigned *v) {
     unsigned prev = *v;
     *v = (unsigned)nk_propertyd(ui_ctx, "#", 0, *v, UINT_MAX, 1,1);
     return prev != *v;
+}
+int ui_unsigned2(const char *label, unsigned *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+    ui_label_(label, NK_TEXT_LEFT);
+
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+2u %+2u", v[0], v[1]) :
+        va("%2u, %2u", v[0], v[1]);
+
+    if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
+        nk_layout_row_dynamic(ui_ctx, 0, 1);
+        unsigned prev0 = v[0]; nk_property_int(ui_ctx, "#X:", 0, &v[0], INT_MAX, 1,0.5f);
+        unsigned prev1 = v[1]; nk_property_int(ui_ctx, "#Y:", 0, &v[1], INT_MAX, 1,0.5f);
+        nk_combo_end(ui_ctx);
+        return prev0 != v[0] || prev1 != v[1];
+    }
+    return 0;
+}
+int ui_unsigned3(const char *label, unsigned *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+    ui_label_(label, NK_TEXT_LEFT);
+
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+2u %+2u %+2u", v[0], v[1], v[2]) :
+        va("%2u, %2u, %2u", v[0], v[1], v[2]);
+
+    if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
+        nk_layout_row_dynamic(ui_ctx, 0, 1);
+        unsigned prev0 = v[0]; nk_property_int(ui_ctx, "#X:", 0, &v[0], INT_MAX, 1,0.5f);
+        unsigned prev1 = v[1]; nk_property_int(ui_ctx, "#Y:", 0, &v[1], INT_MAX, 1,0.5f);
+        unsigned prev2 = v[2]; nk_property_int(ui_ctx, "#Z:", 0, &v[2], INT_MAX, 1,0.5f);
+        nk_combo_end(ui_ctx);
+        return prev0 != v[0] || prev1 != v[1] || prev2 != v[2];
+    }
+    return 0;
 }
 
 int ui_short(const char *label, short *v) {
@@ -3159,16 +3280,14 @@ int ui_clampf(const char *label, float *v, float minf, float maxf) {
     return prev != v[0];
 }
 
-static bool ui_float_sign = 0;
-
 int ui_float2(const char *label, float *v) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = ui_float_sign ?
-        --ui_float_sign, va("%+.3f %+.3f", v[0], v[1]) :
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+.3f %+.3f", v[0], v[1]) :
         va("%.3f, %.3f", v[0], v[1]);
 
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
@@ -3187,8 +3306,8 @@ int ui_float3(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = ui_float_sign ?
-        --ui_float_sign, va("%+.2f %+.2f %+.2f", v[0], v[1], v[2]) :
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+.2f %+.2f %+.2f", v[0], v[1], v[2]) :
         va("%.2f, %.2f, %.2f", v[0], v[1], v[2]);
 
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
@@ -3208,8 +3327,8 @@ int ui_float4(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = ui_float_sign ?
-        --ui_float_sign, va("%+.2f %+.2f %+.2f %+.2f", v[0], v[1], v[2], v[3]) :
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+.2f %+.2f %+.2f %+.2f", v[0], v[1], v[2], v[3]) :
         va("%.2f,%.2f,%.2f,%.2f", v[0], v[1], v[2], v[3]);
 
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
@@ -3228,7 +3347,7 @@ int ui_float4(const char *label, float *v) {
 int ui_mat33(const char *label, float M[9]) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
-    ui_float_sign = 3;
+    ui_num_signs = 3;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float3(NULL, M);
@@ -3239,7 +3358,7 @@ int ui_mat33(const char *label, float M[9]) {
 int ui_mat34(const char *label, float M[12]) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
-    ui_float_sign = 3;
+    ui_num_signs = 3;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float4(NULL, M);
@@ -3250,7 +3369,7 @@ int ui_mat34(const char *label, float M[12]) {
 int ui_mat44(const char *label, float M[16]) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
-    ui_float_sign = 4;
+    ui_num_signs = 4;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float4(NULL, M);
@@ -3495,7 +3614,7 @@ int ui_browse(const char **output, bool *inlined) {
         const int W = 96, H = 96; // 2048x481 px, 21x5 cells
         texture_t i = texture("icons/suru.png", TEXTURE_RGBA|TEXTURE_MIPMAPS);
         browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H, 16, 3), BROWSER_FOLDER); // default group
-        browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H,  2, 4), BROWSER_HOME); 
+        browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H,  2, 4), BROWSER_HOME);
         browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H, 17, 3), BROWSER_COMPUTER);
         browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H,  1, 4), BROWSER_PROJECT);
         browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H,  0, 4), BROWSER_DESKTOP);
@@ -3747,7 +3866,7 @@ int ui_demo(int do_windows) {
         struct nk_window *win = nk_window_find(ui_ctx, title);
         if( win ) {
             enum { menubar_height = 65 }; // title bar (~32) + menu bounds (~25)
-            struct nk_rect bounds = win->bounds; bounds.y += menubar_height; bounds.h -= menubar_height; 
+            struct nk_rect bounds = win->bounds; bounds.y += menubar_height; bounds.h -= menubar_height;
 #if 1
             ddraw_flush();
 
@@ -3795,7 +3914,7 @@ static AudioUnit midi_out_handle = 0;
 static void midi_init() {
 #if is(win32) && !is(gcc)
     if( midiOutGetNumDevs() != 0 ) {
-        midiOutOpen(&midi_out_handle, 0, 0, 0, 0);        
+        midiOutOpen(&midi_out_handle, 0, 0, 0, 0);
     }
 #elif is(osx)
     AUGraph graph;
@@ -4074,17 +4193,17 @@ int audio_init( int flags ) {
         ma_backend_wasapi,      // WASAPI      |  Windows Vista+
         ma_backend_dsound,      // DirectSound |  Windows XP+
         ma_backend_winmm,       // WinMM       |  Windows XP+ (may work on older versions, but untested)
-        ma_backend_coreaudio,   // Core Audio  |  macOS, iOS 
+        ma_backend_coreaudio,   // Core Audio  |  macOS, iOS
         ma_backend_pulseaudio,  // PulseAudio  |  Cross Platform (disabled on Windows, BSD and Android)
-        ma_backend_alsa,        // ALSA        |  Linux 
-        ma_backend_oss,         // OSS         |  FreeBSD 
+        ma_backend_alsa,        // ALSA        |  Linux
+        ma_backend_oss,         // OSS         |  FreeBSD
         ma_backend_jack,        // JACK        |  Cross Platform (disabled on BSD and Android)
         ma_backend_opensl,      // OpenSL ES   |  Android (API level 16+)
         ma_backend_webaudio,    // Web Audio   |  Web (via Emscripten)
-        ma_backend_sndio,       // sndio       |  OpenBSD 
-        ma_backend_audio4,      // audio(4)    |  NetBSD, OpenBSD 
+        ma_backend_sndio,       // sndio       |  OpenBSD
+        ma_backend_audio4,      // audio(4)    |  NetBSD, OpenBSD
         ma_backend_aaudio,      // AAudio      |  Android 8+
-        ma_backend_custom,      // Custom      |  Cross Platform 
+        ma_backend_custom,      // Custom      |  Cross Platform
         ma_backend_null,        // Null        |  Cross Platform (not used on Web)
         // Lowest priority
 #endif
@@ -5827,12 +5946,13 @@ typedef struct cook_subscript_t {
     char *script;
     char *outname;
     int compress_level;
+    uint64_t pass_ns, gen_ns, exe_ns, zip_ns;
 } cook_subscript_t;
 
 typedef struct cook_script_t {
     cook_subscript_t cs[8];
-
     int num_passes;
+    uint64_t pass_ns, gen_ns, exe_ns, zip_ns;
 } cook_script_t;
 
 static
@@ -5846,6 +5966,7 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
         // - if no script is going to be generated, output is in fact input file.
         // - no compression is going to be required.
         cook_subscript_t cs = { 0 };
+        cs.gen_ns -= time_ns();
 
             // reuse script heap from last call if possible (optimization)
             static __thread char *script = 0;
@@ -5857,6 +5978,7 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
             static __thread set(char*) passes = 0;           if(!passes)  set_init_str(passes);
             map_clear(symbols);
             map_clear(groups);
+
 
             map_find_or_add(symbols, "INFILE", STRDUP(infile));
             map_find_or_add(symbols, "INPUT", STRDUP(infile));
@@ -5909,10 +6031,15 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
                     }
                     lines[i] = line = nl;
 
+#if 0
                 static thread_mutex_t lock, *init = 0; if(!init) thread_mutex_init(init = &lock);
                 thread_mutex_lock( &lock );
                     system(line); // strcatf(&script, "%s\n", line);
                 thread_mutex_unlock( &lock );
+#else
+                // append line
+                strcatf(&script, "%s\n", line);
+#endif
 
                 continue;
             }
@@ -6060,15 +6187,15 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
                 }
             }
             char *compression = 0;
-            for each_map(groups, char*, key, char*, val) {
-                if( isdigit(key[0]) ) {
+            for each_map_ptr_sorted(groups, char*, key, char*, val) { // sorted iteration, so hopefully '0' no compression gets evaluated first
+                if( !compression && isdigit((*key)[0]) ) {
                     char *comma = va(",%s,", ext);
-                    if( !strcmpi(val,ext) || strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
-                        compression = key;
+                    if( !strcmpi(*val,ext) || strbegi(*val, comma+1) || strstri(*val, comma) || strendi(*val, va(",%s", ext))) {
+                        compression = (*key);
                     }
                     comma = va(",%s,", belongs_to);
-                    if( !strcmpi(val,ext) || strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
-                        compression = key;
+                    if( !strcmpi(*val,ext) || strbegi(*val, comma+1) || strstri(*val, comma) || strendi(*val, va(",%s", ext))) {
+                        compression = (*key);
                     }
                 }
             }
@@ -6128,6 +6255,7 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
         }
 
         cs.outname = cs.outname ? cs.outname : (char*)infile;
+        cs.gen_ns += time_ns();
 
         ASSERT(mcs.num_passes < countof(mcs.cs));
         mcs.cs[mcs.num_passes++] = cs;
@@ -6159,8 +6287,8 @@ array(struct fs) zipscan_filter(int threadid, int numthreads) {
     array(struct fs) fs = 0;
     for( int i = 0, end = array_count(fs_now); i < end; ++i ) {
         // during workload distribution, we assign random files to specific thread buckets.
-        // we achieve this by hashing the basename of the file. we used to hash also the path 
-        // long time ago but that is less resilient to file relocations across the repository. 
+        // we achieve this by hashing the basename of the file. we used to hash also the path
+        // long time ago but that is less resilient to file relocations across the repository.
         // excluding the file extension from the hash also helps from external file conversions.
         char *fname = file_name(fs_now[i].fname);
         char *sign = strrchr(fname, '@'); if(sign) *sign = '\0'; // special char (multi-pass cooks)
@@ -6259,6 +6387,11 @@ int cook(void *userdata) {
     volatile int *progress = &job->progress;
     *progress = 0;
 
+    // preload a few large binaries
+//    dll("tools/furnace.exe", 0);
+//    dll("tools/assimp-vc143-mt.dll", 0);
+//    dll("tools/ffmpeg.exe", 0);
+
     // scan disk from fs_now snapshot
     array(struct fs) filtered = zipscan_filter(job->threadid, job->numthreads);
     //printf("Scanned: %d items found\n", array_count(now));
@@ -6297,6 +6430,13 @@ int cook(void *userdata) {
         zip_append_file/*_timeinfo*/(z, deleted[i], comment, in, 0/*, tm_now*/);
         fclose(in);
     }
+
+    // generate cook metrics. you usually do `game.exe --cook-stats && (type *.csv | sort /R > cook.csv)`
+    static __thread FILE *statsfile = 0;
+    if(flag("--cook-stats"))
+    fseek(statsfile = fopen(va("cook%d.csv",job->threadid), "a+t"), 0L, SEEK_END);
+    if(statsfile && ftell(statsfile) == 0) fprintf(statsfile,"%10s,%10s,%10s,%10s,%10s, %s\n","+total_ms","gen_ms","exe_ms","zip_ms","pass","file");
+
     // added or changed files
     for( int i = 0, end = array_count(uncooked); i < end && !cook_cancelling; ++i ) {
         *progress = ((i+1) == end ? 90 : (i * 90) / end); // (i+i>0) * 100.f / end;
@@ -6323,43 +6463,46 @@ int cook(void *userdata) {
                 }
             }
 
-            // invoke cooking script and recap status
-            const char *rc_output = app_exec(cs.script);
-            int rc = atoi(rc_output);
-            int outlen = file_size(cs.outfile);
-            int failed = cs.script[0] ? rc || !outlen : 0;
-
-            // print errors
-            if( failed ) {
-                PRINTF("Import failed: %s while executing:\n%s\nReturned:\n%s\n", cs.outname, cs.script, rc_output);
-                continue;
-            }
-
-            // special char (multi-pass cook). newly generated file: refresh values
-            // ensure newly created files by cook are also present on repo/disc for further cook passes
-            if( pass > 0 ) { // && strchr(cs.outname, '@') ) { // pass>0 is a small optimization // special char (multi-pass cooks)
-                file_delete(cs.outname);
-                file_move(cs.outfile, cs.outname);
-                inlen = file_size(infile = cs.outfile = cs.outname);
-            }
+            // invoke cooking script
+            mcs.cs[pass].exe_ns -= time_ns();
+                // invoke cooking script
+                const char *rc_output = app_exec(cs.script);
+                // recap status
+                int rc = atoi(rc_output);
+                // int outlen = file_size(cs.outfile);
+                int failed = rc; // cs.script[0] ? rc || !outlen : 0;
+                // print errors
+                if( failed ) {
+                    PRINTF("Import failed: %s while executing:\n%s\nReturned:\n%s\n", cs.outname, cs.script, rc_output);
+                    continue;
+                }
+                if( pass > 0 ) { // (multi-pass cook)
+                    // newly generated file: refresh values
+                    // ensure newly created files by cook are also present on repo/disc for further cook passes
+                    file_delete(cs.outname);
+                    file_move(cs.outfile, cs.outname);
+                    inlen = file_size(infile = cs.outfile = cs.outname);
+                }
+            mcs.cs[pass].exe_ns += time_ns();
 
             // process only if included. may include optional compression.
+            mcs.cs[pass].zip_ns -= time_ns();
             if( cs.compress_level >= 0 ) {
-                FILE *in = fopen(cs.outfile, "rb");
-
-#if 0
-                    struct stat st; stat(infile, &st);
-                    struct tm *timeinfo = localtime(&st.st_mtime);
-                    ASSERT(timeinfo);
-#endif
+                FILE *in = fopen(cs.outfile ? cs.outfile : infile, "rb");
+                if(!in) in = fopen(infile, "rb");
 
                     char *comment = va("%d", inlen);
-                    if( !zip_append_file/*_timeinfo*/(z, infile, comment, in, cs.compress_level/*, timeinfo*/) ) {
+                    if( !zip_append_file(z, infile, comment, in, cs.compress_level) ) {
                         PANIC("failed to add processed file into %s: %s(%s)", zipfile, cs.outname, infile);
                     }
 
                 fclose(in);
             }
+            mcs.cs[pass].zip_ns += time_ns();
+
+            // stats per subscript
+            mcs.cs[pass].pass_ns = mcs.cs[pass].gen_ns + mcs.cs[pass].exe_ns + mcs.cs[pass].zip_ns;
+            if(statsfile) fprintf(statsfile, "%10.f,%10.f,%10.f,%10.f,%10d, \"%s\"\n", mcs.cs[pass].pass_ns/1e6, mcs.cs[pass].gen_ns/1e6, mcs.cs[pass].exe_ns/1e6, mcs.cs[pass].zip_ns/1e6, pass+1, infile);
         }
     }
 
@@ -6388,13 +6531,13 @@ int cook_async( void *userdata ) {
 
     // tcc: only a single running thread shall pass, because of racing shared state due to missing thread_local support at compiler level
     ifdef(tcc, thread_mutex_lock( job->lock ));
-    ifdef(osx, thread_mutex_lock( job->lock ));
+    ifdef(osx, thread_mutex_lock( job->lock ));   // @todo: remove silicon mac M1 hack
 
     int ret = cook(userdata);
 
     // tcc: only a single running thread shall pass, because of racing shared state due to missing thread_local support at compiler level
+    ifdef(osx, thread_mutex_unlock( job->lock )); // @todo: remove silicon mac M1 hack
     ifdef(tcc, thread_mutex_unlock( job->lock ));
-    ifdef(osx, thread_mutex_unlock( job->lock ));
 
     thread_exit( ret );
     return ret;
@@ -6417,7 +6560,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
         HOME[ strlen(HOME) - strlen(file_name(cook_ini)) ] = '\0'; // -> tools/ @leak
     #endif
 
-        ART_LEN = 0; //strlen(app_path()); 
+        ART_LEN = 0; //strlen(app_path());
         /* = MAX_PATH;
         for each_substring(ART, ",", art_folder) {
             ART_LEN = mini(ART_LEN, strlen(art_folder));
@@ -6473,6 +6616,14 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
             EDITOR = out; // @leak
             assert( EDITOR[strlen(EDITOR) - 1] == '/' );
         }
+
+        // small optimization for upcoming parser: remove whole comments from file
+        array(char*) lines = strsplit(rules, "\r\n");
+        for( int i = 0; i < array_count(lines); ) {
+            if( lines[i][0] == ';' ) array_erase_slow(lines, i);
+            else ++i;
+        }
+        rules = STRDUP( strjoin(lines, "\n") );
     }
 
     if( !masks ) {
@@ -6519,7 +6670,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
             if( strend(fname, ".obj") ) {
                 char header[4] = {0};
                 for( FILE *in = fopen(fname, "rb"); in; fclose(in), in = NULL) {
-                    fread(header, 1, 2, in);
+                    fread(header, 2, 1, in);
                 }
                 if( !memcmp(header, "\x64\x86", 2) ) continue;
                 if( !memcmp(header, "\x00\x00", 2) ) continue;
@@ -6531,7 +6682,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
                 snprintf(extdot, 32, "%s.", dot); // .png -> .png.
                 // exclude vc/gcc/clang files
                 if( strstr(fname, ".a.o.pdb.lib.ilk.exp.dSYM.") ) // must end with dot
-                continue;
+                    continue;
             }
 
             // @todo: normalize path & rebase here (absolute to local)
@@ -6555,7 +6706,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
         fi.stamp = file_stamp10(fname); // timestamp in base10(yyyymmddhhmmss)
 
         array_push(fs_now, fi);
-    }        
+    }
 
     cook_debug = !!( flags & COOK_DEBUGLOG );
     cook_cancelable = !!( flags & COOK_CANCELABLE );
@@ -6629,79 +6780,6 @@ bool have_tools() {
 #line 0
 
 #line 1 "engine/split/v4k_data.c"
-
-static
-array(char) base64__decode(const char *in_, unsigned inlen) {
-    // from libtomcrypt
-    #define BASE64_ENCODE_OUT_SIZE(s)   (((s) + 2) / 3 * 4)
-    #define BASE64_DECODE_OUT_SIZE(s)   (((s)) / 4 * 3)
-
-#if 1
-    unsigned long outlen = BASE64_DECODE_OUT_SIZE(inlen);
-    array(char) out_ = 0; array_resize(out_, outlen);
-
-    if( base64_decode((const unsigned char *)in_, (unsigned long)inlen, (unsigned char *)out_, &outlen) != CRYPT_OK ) {
-        array_free(out_);
-        return 0;
-    }
-
-    array_resize(out_, outlen);
-    return out_;
-#else
-    unsigned outlen = BASE64_DECODE_OUT_SIZE(inlen);
-    array(char) out_ = 0; array_resize(out_, outlen);
-
-    // based on code by Jon Mayo - November 13, 2003 (PUBLIC DOMAIN)
-    uint_least32_t v;
-    unsigned ii, io, rem;
-    char *out = (char *)out_;
-    const unsigned char *in = (const unsigned char *)in_;
-    const uint8_t base64dec_tab[256]= {
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255, 62,255,255,
-         52, 53, 54, 55, 56, 57, 58, 59, 60, 61,255,255,255,  0,255,255,
-        255,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
-         15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,255,255,255,255, 63,
-        255, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-         41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-    };
-
-    for (io = 0, ii = 0,v = 0, rem = 0; ii < inlen; ii ++) {
-        unsigned char ch;
-        if (isspace(in[ii]))
-            continue;
-        if ((in[ii]=='=') || (!in[ii]))
-            break; /* stop at = or null character*/
-        ch = base64dec_tab[(unsigned char)in[ii]];
-        if (ch == 255)
-            break; /* stop at a parse error */
-        v = (v<<6) | ch;
-        rem += 6;
-        if (rem >= 8) {
-            rem -= 8;
-            if (io >= outlen)
-                return (array_free(out_), NULL); /* truncation is failure */
-            out[io ++] = (v >> rem) & 255;
-        }
-    }
-    if (rem >= 8) {
-        rem -= 8;
-        if (io >= outlen)
-            return (array_free(out_), NULL); /* truncation is failure */
-        out[io ++] = (v >> rem) & 255;
-    }
-    return (array_resize(out_, io), out_);
-#endif
-}
 
 static array(json5) roots;
 static array(char*) sources;
@@ -6838,7 +6916,7 @@ static void *xml_path(struct xml *node, char *path, int down) {
                 // Find the first sibling with the given tag name (may be the same node)
                 struct xml *next = down ? xml_find_down(node, tag) : xml_find(node, tag);
                 return xml_path(next, &path[ sep ], 1);
-            }            
+            }
         }
         if( type == '$' ) {
             return (void*)( node->down ? xml_text( node->down ) : xml_tag( node ) );
@@ -6867,7 +6945,7 @@ unsigned (xml_count)(char *key) {
     if( !node ) return 0;
     const char *tag = xml_tag(node);
     unsigned count = 1;
-    while( (node = xml_find_next(node, tag)) != 0) ++count; 
+    while( (node = xml_find_next(node, tag)) != 0) ++count;
     return count;
 }
 array(char) (xml_blob)(char *key) { // base64 blob
@@ -6875,7 +6953,7 @@ array(char) (xml_blob)(char *key) { // base64 blob
     if( !node ) return 0;
     if( !strchr(key, '$') ) return 0;
     const char *data = (const char*)node;
-    array(char) out = base64__decode(data, strlen(data)); // either array of chars (ok) or null (error)
+    array(char) out = base64_decode(data, strlen(data)); // either array of chars (ok) or null (error)
     return out;
 }
 
@@ -6957,7 +7035,7 @@ void* dll(const char *fname, const char *symbol) {
             fname = (const char *)buf;
         } else {
             return NULL;
-    }
+        }
     }
 #if is(win32)
     return (void*)GetProcAddress(fname ? LoadLibraryA(fname) : GetModuleHandleA(NULL), symbol);
@@ -7446,29 +7524,29 @@ array(char*) file_list(const char *pathmasks) {
 
         ASSERT(strend(cwd, "/"), "Error: dirs like '%s' must end with slash", cwd);
 
-    dir *d = dir_open(cwd, strstr(masks,"**") ? "r"  : "");
-    if( d ) {
-        for( int i = 0; i < dir_count(d); ++i ) {
-            if( dir_file(d,i) ) {
-                // dir_name() should return full normalized paths "C:/prj/v4k/demos/art/fx/fxBloom.fs". should exclude system dirs as well
-                char *entry = dir_name(d,i);
-                char *fname = file_name(entry);
+        dir *d = dir_open(cwd, strstr(masks,"**") ? "r" : "");
+        if( d ) {
+            for( int i = 0; i < dir_count(d); ++i ) {
+                if( dir_file(d,i) ) {
+                    // dir_name() should return full normalized paths "C:/prj/v4k/demos/art/fx/fxBloom.fs". should exclude system dirs as well
+                    char *entry = dir_name(d,i);
+                    char *fname = file_name(entry);
 
-                int allowed = 0;
-                for each_substring(masks,";",mask) {
-                    allowed |= strmatch(fname, mask);
+                    int allowed = 0;
+                    for each_substring(masks,";",mask) {
+                        allowed |= strmatch(fname, mask);
+                    }
+                    if( !allowed ) continue;
+
+                    // if( strstr(fname, "/.") ) continue; // @fixme: still needed? useful?
+
+                    // insert copy
+                    char *copy = STRDUP(entry);
+                    array_push(list, copy);
                 }
-                if( !allowed ) continue;
-
-                // if( strstr(fname, "/.") ) continue; // @fixme: still needed? useful?
-
-                // insert copy
-                char *copy = STRDUP(entry);
-                array_push(list, copy);
             }
+            dir_close(d);
         }
-        dir_close(d);
-    }
     }
 
     array_sort(list, strcmp);
@@ -7520,7 +7598,7 @@ char *file_counter(const char *name) {
     static __thread map(char*, int) ext_counters;
     if(!init) map_init(ext_counters, less_str, hash_str), init = '\1';
 
-    char *base = va("%s",name), *ext = file_ext(name); 
+    char *base = va("%s",name), *ext = file_ext(name);
     if(ext && ext[0]) *strstr(base, ext) = '\0';
 
     int *counter = map_find_or_add(ext_counters, ext, 0);
@@ -7543,7 +7621,7 @@ void* file_sha1(const char *file) { // 20bytes
     sha1_init(&hs);
     for( FILE *fp = fopen(file, "rb"); fp; fclose(fp), fp = 0) {
         char buf[8192];
-        for( int inlen; (inlen = fread(buf, 1, sizeof(buf), fp)) > 0; ) {
+        for( int inlen; (inlen = sizeof(buf) * fread(buf, sizeof(buf), 1, fp)); ) {
             sha1_process(&hs, (const unsigned char *)buf, inlen);
         }
     }
@@ -7557,7 +7635,7 @@ void* file_md5(const char *file) { // 16bytes
     md5_init(&hs);
     for( FILE *fp = fopen(file, "rb"); fp; fclose(fp), fp = 0) {
         char buf[8192];
-        for( int inlen; (inlen = fread(buf, 1, sizeof(buf), fp)) > 0; ) {
+        for( int inlen; (inlen = sizeof(buf) * fread(buf, sizeof(buf), 1, fp)); ) {
             md5_process(&hs, (const unsigned char *)buf, inlen);
         }
     }
@@ -7570,7 +7648,7 @@ void* file_crc32(const char *file) { // 4bytes
     unsigned crc = 0;
     for( FILE *fp = fopen(file, "rb"); fp; fclose(fp), fp = 0) {
         char buf[8192];
-        for( int inlen; (inlen = fread(buf, 1, sizeof(buf), fp)) > 0; ) {
+        for( int inlen; (inlen = sizeof(buf) * fread(buf, sizeof(buf), 1, fp)); ) {
             crc = zip__crc32(crc, buf, inlen); // unsigned int stbiw__crc32(unsigned char *buffer, int len)
         }
     }
@@ -7791,7 +7869,7 @@ typedef struct archive_dir {
 } archive_dir;
 
 static archive_dir *dir_mount;
-static archive_dir *dir_cache; 
+static archive_dir *dir_cache;
 
 #ifndef MAX_CACHED_FILES    // @todo: should this be MAX_CACHED_SIZE (in MiB) instead?
 #define MAX_CACHED_FILES 32 // @todo: should we cache the cooked contents instead? ie, stbi() result instead of file.png?
@@ -7840,7 +7918,7 @@ void vfs_reload() {
 #define ARK_SWAP32(x) (x)
 #define ARK_SWAP64(x) (x)
 #define ARK_REALLOC   REALLOC
-static uint64_t   ark_fget64( FILE *in ) { uint64_t v; fread( &v, 1, 8, in ); return ARK_SWAP64(v); }
+static uint64_t ark_fget64( FILE *in ) { uint64_t v; fread( &v, 8, 1, in ); return ARK_SWAP64(v); }
 void ark_list( const char *infile, zip **z ) {
     for( FILE *in = fopen(infile, "rb"); in; fclose(in), in = 0 )
     while(!feof(in)) {
@@ -8014,13 +8092,13 @@ char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_u
     while( pathfile[0] == '.' && (pathfile[1] == '/' || pathfile[1] == '\\') ) pathfile += 2;
     // if (pathfile[0] == '/' || pathfile[1] == ':') return file_load(pathfile, size_out); // @fixme: handle current cooked /home/V4K or C:/V4K path cases within zipfiles
 
-    if( size_out ) *size_out = 0;
-    if( strend(pathfile, "/") ) return 0; // it's a dir
-    static __thread map(char*,int) misses = 0, *init = 0; if(!init) init = misses, map_init(misses, less_str, hash_str);
-    int *found = map_find_or_add_allocated_key(misses, STRDUP(pathfile), -1); // [-1]non-init,[false]could not cook,[true]cooked
-    if( found && *found == 0 ) {
-        return 0;
-    }
+if( size_out ) *size_out = 0;
+if( strend(pathfile, "/") ) return 0; // it's a dir
+static __thread map(char*,int) misses = 0, *init = 0; if(!init) init = misses, map_init(misses, less_str, hash_str);
+int *found = map_find_or_add_allocated_key(misses, STRDUP(pathfile), -1); // [-1]non-init,[false]could not cook,[true]cooked
+if( found && *found == 0 ) {
+    return 0;
+}
 
     //{
     // exclude garbage from material names
@@ -8066,7 +8144,7 @@ char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_u
     }
 
     // search (cache)
-    if( !ptr && ! is(osx) ) {
+    if( !ptr && !is(osx) ) { // @todo: remove silicon mac M1 hack
         ptr = cache_lookup(lookup_id, &size);
     }
 
@@ -8109,7 +8187,7 @@ char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_u
                 char *cmd = va("%scook" ifdef(osx,".osx",ifdef(linux,".linux",".exe"))" %s %s --cook-ini=%s --cook-additive --cook-jobs=1 --quiet", TOOLS, group1, group2, COOK_INI);
 
                 // cook groups
-                int rc = system(cmd);
+                int rc = atoi(app_exec(cmd));
                 if(rc < 0) PANIC("cannot invoke `%scook` (return code %d)", TOOLS, rc);
 
                 vfs_reload(); // @todo: optimize me. it is waaay inefficent to reload the whole VFS layout after cooking a single asset
@@ -8224,33 +8302,33 @@ void* cache_insert(const char *pathfile, void *ptr, int size) { // append key/va
     // keep cached files within limits
     thread_mutex_lock(&cache_mutex);
 
-    // append to cache
-    archive_dir zero = {0}, *old = dir_cache;
-    *(dir_cache = REALLOC(0, sizeof(archive_dir))) = zero;
-    dir_cache->next = old;
-    dir_cache->path = STRDUP(pathfile);
-    dir_cache->size = size;
-    dir_cache->data = REALLOC(0, size+1);
-    memcpy(dir_cache->data, ptr, size); size[(char*)dir_cache->data] = 0; // copy+terminator
+        // append to cache
+        archive_dir zero = {0}, *old = dir_cache;
+        *(dir_cache = REALLOC(0, sizeof(archive_dir))) = zero;
+        dir_cache->next = old;
+        dir_cache->path = STRDUP(pathfile);
+        dir_cache->size = size;
+        dir_cache->data = REALLOC(0, size+1);
+        memcpy(dir_cache->data, ptr, size); size[(char*)dir_cache->data] = 0; // copy+terminator
 
         void *found = 0;
 
-    static int added = 0;
-    if( added < MAX_CACHED_FILES ) {
-        ++added;
-    } else {
-        // remove oldest cache entry
-        for( archive_dir *prev = dir_cache, *dir = prev; dir ; prev = dir, dir = dir->next ) {
-            if( !dir->next ) {
-                prev->next = 0; // break link
+        static int added = 0;
+        if( added < MAX_CACHED_FILES ) {
+            ++added;
+        } else {
+            // remove oldest cache entry
+            for( archive_dir *prev = dir_cache, *dir = prev; dir ; prev = dir, dir = dir->next ) {
+                if( !dir->next ) {
+                    prev->next = 0; // break link
                     found = dir->data;
-                dir->path = REALLOC(dir->path, 0);
-                dir->data = REALLOC(dir->data, 0);
-                dir = REALLOC(dir, 0);
+                    dir->path = REALLOC(dir->path, 0);
+                    dir->data = REALLOC(dir->data, 0);
+                    dir = REALLOC(dir, 0);
                     break;
+                }
             }
         }
-    }
 
     thread_mutex_unlock(&cache_mutex);
 
@@ -8351,7 +8429,9 @@ ini_t ini_from_mem(const char *data) {
 }
 
 ini_t ini(const char *filename) {
-    return ini_from_mem(file_read(filename));    
+    char *kv = file_read(filename);
+    if(!kv) kv = vfs_read(filename);
+    return ini_from_mem(kv);
 }
 
 bool ini_write(const char *filename, const char *section, const char *key, const char *value) {
@@ -10043,7 +10123,6 @@ void font_scales(const char *tag, float h1, float h2, float h3, float h4, float 
 // 1. Calculate and save a bunch of useful variables and put them in the global font variable.
 void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len, float font_size, unsigned flags) {
     unsigned index = *tag - FONT_FACE1[0];
-
     if( index >= 8 ) return;
     if( font_size <= 0 || font_size > 72 ) return;
     if( !ttf_data || !ttf_len ) return;
@@ -11388,15 +11467,15 @@ bool input_touch_active() {
 #endif // !is(ems)
 
 int ui_mouse() {
-        ui_label2_float("X", input(MOUSE_X));
-        ui_label2_float("Y", input(MOUSE_Y));
-        ui_label2_float("Wheel", input(MOUSE_W));
-        ui_separator();
-        ui_label2_bool("Left", input(MOUSE_L));
-        ui_label2_bool("Middle", input(MOUSE_M));
-        ui_label2_bool("Right", input(MOUSE_R));
-        ui_separator();
-        for( int i = 0; i <= CURSOR_SW_AUTO; ++i ) if(ui_button(va("Cursor shape #%d", i))) window_cursor_shape(i);
+    ui_label2_float("X", input(MOUSE_X));
+    ui_label2_float("Y", input(MOUSE_Y));
+    ui_label2_float("Wheel", input(MOUSE_W));
+    ui_separator();
+    ui_label2_bool("Left", input(MOUSE_L));
+    ui_label2_bool("Middle", input(MOUSE_M));
+    ui_label2_bool("Right", input(MOUSE_R));
+    ui_separator();
+    for( int i = 0; i <= CURSOR_SW_AUTO; ++i ) if(ui_button(va("Cursor shape #%d", i))) window_cursor_shape(i);
 
     return 0;
 }
@@ -11435,7 +11514,7 @@ int ui_keyboard() {
 }
 
 int ui_gamepad(int gamepad_id) {
-        input_use(gamepad_id);
+    input_use(gamepad_id);
 
     bool connected = !!input(GAMEPAD_CONNECTED);
 
@@ -11443,48 +11522,48 @@ int ui_gamepad(int gamepad_id) {
 
     if( !connected ) ui_disable();
 
-        ui_separator();
+    ui_separator();
 
-        ui_label2_bool("A", input(GAMEPAD_A) );
-        ui_label2_bool("B", input(GAMEPAD_B) );
-        ui_label2_bool("X", input(GAMEPAD_X) );
-        ui_label2_bool("Y", input(GAMEPAD_Y) );
-        ui_label2_bool("Up", input(GAMEPAD_UP) );
-        ui_label2_bool("Down", input(GAMEPAD_DOWN) );
-        ui_label2_bool("Left", input(GAMEPAD_LEFT) );
-        ui_label2_bool("Right", input(GAMEPAD_RIGHT) );
-        ui_label2_bool("Menu", input(GAMEPAD_MENU) );
-        ui_label2_bool("Start", input(GAMEPAD_START) );
+    ui_label2_bool("A", input(GAMEPAD_A) );
+    ui_label2_bool("B", input(GAMEPAD_B) );
+    ui_label2_bool("X", input(GAMEPAD_X) );
+    ui_label2_bool("Y", input(GAMEPAD_Y) );
+    ui_label2_bool("Up", input(GAMEPAD_UP) );
+    ui_label2_bool("Down", input(GAMEPAD_DOWN) );
+    ui_label2_bool("Left", input(GAMEPAD_LEFT) );
+    ui_label2_bool("Right", input(GAMEPAD_RIGHT) );
+    ui_label2_bool("Menu", input(GAMEPAD_MENU) );
+    ui_label2_bool("Start", input(GAMEPAD_START) );
 
-        ui_separator();
+    ui_separator();
 
-        ui_label2_float("Left pad x", input(GAMEPAD_LPADX) );
-        ui_label2_float("Left pad y", input(GAMEPAD_LPADY) );
-        ui_label2_float("Left trigger", input(GAMEPAD_LT) );
-        ui_label2_bool("Left bumper", input(GAMEPAD_LB) );
-        ui_label2_bool("Left thumb", input(GAMEPAD_LTHUMB) );
+    ui_label2_float("Left pad x", input(GAMEPAD_LPADX) );
+    ui_label2_float("Left pad y", input(GAMEPAD_LPADY) );
+    ui_label2_float("Left trigger", input(GAMEPAD_LT) );
+    ui_label2_bool("Left bumper", input(GAMEPAD_LB) );
+    ui_label2_bool("Left thumb", input(GAMEPAD_LTHUMB) );
 
-        vec2 v = input_filter_deadzone( input2(GAMEPAD_LPADX), 0.1f );
-        ui_label2_float("Filtered pad x", v.x);
-        ui_label2_float("Filtered pad y", v.y);
+    vec2 v = input_filter_deadzone( input2(GAMEPAD_LPADX), 0.1f );
+    ui_label2_float("Filtered pad x", v.x);
+    ui_label2_float("Filtered pad y", v.y);
 
-        ui_separator();
+    ui_separator();
 
-        ui_label2_float("Right pad x", input(GAMEPAD_RPADX) );
-        ui_label2_float("Right pad y", input(GAMEPAD_RPADY) );
-        ui_label2_float("Right trigger", input(GAMEPAD_RT) );
-        ui_label2_bool("Right bumper", input(GAMEPAD_RB) );
-        ui_label2_bool("Right thumb", input(GAMEPAD_RTHUMB) );
+    ui_label2_float("Right pad x", input(GAMEPAD_RPADX) );
+    ui_label2_float("Right pad y", input(GAMEPAD_RPADY) );
+    ui_label2_float("Right trigger", input(GAMEPAD_RT) );
+    ui_label2_bool("Right bumper", input(GAMEPAD_RB) );
+    ui_label2_bool("Right thumb", input(GAMEPAD_RTHUMB) );
 
-        vec2 w = input_filter_deadzone( input2(GAMEPAD_RPADX), 0.1f );
-        ui_label2_float("Filtered pad x", w.x);
-        ui_label2_float("Filtered pad y", w.y);
+    vec2 w = input_filter_deadzone( input2(GAMEPAD_RPADX), 0.1f );
+    ui_label2_float("Filtered pad x", w.x);
+    ui_label2_float("Filtered pad y", w.y);
 
     ui_enable();
 
     input_use(0);
     return 0;
-    }
+}
 
 int ui_gamepads() {
     for( int i = 0; i < 4; ++i ) ui_gamepad(i);
@@ -12111,9 +12190,9 @@ void transpose44(mat44 m, const mat44 a) { // M[i][j] = A[j][i];
 // @todo: test me
 // float det33 = M[0,0]*((M[1,1]*M[2,2])-(M[2,1]*M[1,2]))-M[0,1]*(M[1,0]*M[2,2]-M[2,0]*M[1,2])+M[0,2]*(M[1,0]*M[2,1]-M[2,0]*M[1,1]);
 //
-// float det33 = 
+// float det33 =
 //   rgt.x * fwd.y * upv.z - rgt.z * fwd.y * upv.x +
-//   rgt.y * fwd.z * upv.x - rgt.y * fwd.x * upv.z + 
+//   rgt.y * fwd.z * upv.x - rgt.y * fwd.x * upv.z +
 //   rgt.z * fwd.x * upv.y - rgt.x * fwd.z * upv.y;
 //
 // void transpose33(mat33 m, const mat33 a) { // M[i][j] = A[j][i];
@@ -12349,7 +12428,7 @@ void printi_( int *m, int ii, int jj ) {
 }
 void print_( float *m, int ii, int jj ) {
     for( int j = 0; j < jj; ++j ) {
-        for( int i = 0; i < ii; ++i ) printf("%8.3f ", *m++);
+        for( int i = 0; i < ii; ++i ) printf("%8.3f", *m++);
         puts("");
     }
 //    puts("---");
@@ -13419,7 +13498,7 @@ char** server_poll(unsigned timeout_ms) {
                     }
                 } break;
                 case MSG_RPC: {
-                    event.type = NETWORK_EVENT_RPC; 
+                    event.type = NETWORK_EVENT_RPC;
                     unsigned id = *(uint32_t*)ptr; ptr += 4;
                     char *cmdline = ptr;
                     char *resp = rpc(id, cmdline);
@@ -13430,7 +13509,7 @@ char** server_poll(unsigned timeout_ms) {
                     msg = va("%d req:%s res:%s", 0, cmdline, resp);
                 } break;
                 case MSG_RPC_RESP: {
-                    event.type = NETWORK_EVENT_RPC_RESP; 
+                    event.type = NETWORK_EVENT_RPC_RESP;
                     msg = va("%d %s", 0, va("%s", ptr));
                 } break;
                 default:
@@ -13515,7 +13594,7 @@ char** client_poll(unsigned timeout_ms) {
                     }
                 } break;
                 case MSG_RPC: {
-                    event.type = NETWORK_EVENT_RPC; 
+                    event.type = NETWORK_EVENT_RPC;
                     unsigned id = *(uint32_t*)ptr; ptr += 4;
                     char *cmdline = ptr;
                     char *resp = rpc(id, cmdline);
@@ -13526,7 +13605,7 @@ char** client_poll(unsigned timeout_ms) {
                     msg = va("%d req:%s res:%s", 0, cmdline, resp);
                 } break;
                 case MSG_RPC_RESP: {
-                    event.type = NETWORK_EVENT_RPC_RESP; 
+                    event.type = NETWORK_EVENT_RPC_RESP;
                     msg = va("%d %s", 0, ptr);
                 } break;
                 default:
@@ -13550,7 +13629,7 @@ char** client_poll(unsigned timeout_ms) {
                 msg = va( "%d timeout", 0);
                 FREE(event.peer->data);
                 event.peer->data = NULL;
-                network_put(NETWORK_RANK, -1); 
+                network_put(NETWORK_RANK, -1);
                 network_put(NETWORK_LIVE, 0);
                 break;
         }
@@ -14223,7 +14302,7 @@ static bool rd(void *buf, size_t len, size_t swap) { // return false any error a
     bool ret;
     if( in.fp ) {
         assert( !ferror(in.fp) && "invalid file handle (reader)" );
-        ret = len == fread((char*)buf, 1, len, in.fp);
+        ret = 1 == fread((char*)buf, len, 1, in.fp);
     } else {
         assert( in.membuf && "invalid memory buffer (reader)");
         assert( (in.offset + len <= in.memsize) && "memory overflow! (reader)");
@@ -15901,7 +15980,7 @@ void entropy( void *buf, unsigned n ) {
     FILE *fp = fopen( "/dev/urandom", "r" );
     if( !fp ) assert(!"/dev/urandom open failed");
 
-    size_t read = fread( buf, 1, n, fp );
+    size_t read = n * fread( buf, n, 1, fp );
     assert( read == n && "/dev/urandom read failed" );
     fclose( fp );
 }
@@ -15980,7 +16059,7 @@ static map(unsigned, array(reflect_t)) members;
 void reflect_init() {
     if(!reflects) map_init_int(reflects);
     if(!members)  map_init_int(members);
-    }
+}
 AUTORUN {
     reflect_init();
 }
@@ -15992,7 +16071,7 @@ const char* symbol_naked(const char *s) {
     if(!strstr(s, " *") ) return s;
     char *copy = va("%s", s);
     do strswap(copy," *","*"); while( strstr(copy, " *") ); // char  * -> char*
-    return (const char *)copy;
+    return (const char*)copy;
 }
 
 void type_inscribe(const char *TY,unsigned TYsz,const char *infos) {
@@ -16108,11 +16187,11 @@ int ui_reflect(const char *filter) {
         // ENUMS, then FUNCTIONS, then STRUCTS
         unsigned masks[] = { 'E', 'F', 'S' };
         for( int i = 0; i < countof(masks); ++i )
-    for each_map_ptr(reflects, unsigned, k, reflect_t, R) {
+        for each_map_ptr(reflects, unsigned, k, reflect_t, R) {
             if( strmatchi(R->name, filter)) {
                 ui_reflect_(R, filter, masks[i]);
-    }
-}
+            }
+        }
 
     if( enabled ) ui_enable();
     return 0;
@@ -16153,11 +16232,11 @@ AUTOTEST {
         //printf("+%s vec3.%s (+%x) // %s\n", R->type, R->name, R->member_offset, R->info);
     }
 
-    // reflect_print("puts");
+    //reflect_print("puts");
     //reflect_print("TEXTURE_RGBA");
     //reflect_print("vec3");
 
-    // reflect_dump("*");
+    //reflect_dump("*");
 }
 #line 0
 
@@ -16260,7 +16339,7 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
     PRINTF(/*"!"*/"Compiling shader\n");
 
     char *glsl_defines = "";
-    if (defines) {
+    if( defines ) {
         for each_substring(defines, ",", def) {
             glsl_defines = va("%s#define %s\n", glsl_defines, def);
         }
@@ -16564,7 +16643,7 @@ int ui_shaders() {
     if( !map_count(shader_reflect) ) return ui_label(ICON_MD_WARNING " No shaders with annotations loaded."), 0;
 
     int changed = 0;
-        for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
+    for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
         int open = 0, clicked_or_toggled = 0;
         char *id = va("##SHD%d", *k);
         char *title = va("Shader %d", *k);
@@ -16729,6 +16808,27 @@ unsigned rgbaf(float r, float g, float b, float a) {
 }
 unsigned bgraf(float b, float g, float r, float a) {
     return rgba(r * 255, g * 255, b * 255, a * 255);
+}
+
+unsigned atorgba(const char *s) {
+    if( s[0] != '#' ) return 0;
+    unsigned r = 0, g = 0, b = 0, a = 255;
+    int slen = strspn(s+1, "0123456789abcdefABCDEF");
+    if( slen > 8 ) slen = 8;
+    /**/ if( slen == 6 ) sscanf(s+1, "%2x%2x%2x",    &r,&g,&b);
+    else if( slen == 8 ) sscanf(s+1, "%2x%2x%2x%2x", &r,&g,&b,&a);
+    else if( slen == 3 ) sscanf(s+1, "%1x%1x%1x",    &r,&g,&b   ), r=r<<4|r,g=g<<4|g,b=b<<4|b;
+    else if( slen == 4 ) sscanf(s+1, "%1x%1x%1x%1x", &r,&g,&b,&a), r=r<<4|r,g=g<<4|g,b=b<<4|b,a=a<<4|a;
+    return rgba(r,g,b,a);
+}
+char *rgbatoa(unsigned rgba) {
+    unsigned a = rgba >> 24;
+    unsigned b =(rgba >> 16) & 255;
+    unsigned g =(rgba >>  8) & 255;
+    unsigned r = rgba        & 255;
+    char *s = va("#        ");
+    sprintf(s+1, "%02x%02x%02x%02x", r,g,b,a);
+    return s;
 }
 
 // -----------------------------------------------------------------------------
@@ -17617,16 +17717,19 @@ void sprite( texture_t texture, float position[3], float rotation, uint32_t colo
     sprite_sheet( texture, spritesheet, position, rotation, offset, scale, 0, color, false );
 }
 
-// rect(x,y,w,h) is [0..1] normalized, z-index, pos(x,y,scale), rotation (degrees), color (rgba)
-void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba) {
-    // @todo: no need to queue if alpha or scale are zero
+// rect(x,y,w,h) is [0..1] normalized, z-index, pos(x,y,scalex,scaley), rotation (degrees), color (rgba)
+void sprite_rect( texture_t t, vec4 rect, float zindex, vec4 pos, float tilt_deg, unsigned tint_rgba) {
+    // do not queue if either alpha or scale is zero
+    if( 0 == (pos.z * pos.w * ((tint_rgba>>24) & 255)) ) return;
+
     sprite_t s = {0};
 
-    s.x = rect.x, s.y = rect.y, s.w = rect.z, s.h = rect.w;
-    s.cellw = s.w * t.w, s.cellh = s.h * t.h;
-
     s.px = pos.x, s.py = pos.y, s.pz = zindex;
-    s.sx = s.sy = pos.z;
+    s.sx = pos.z, s.sy = pos.w;
+
+    s.x = rect.x, s.y = rect.y, s.w = rect.z, s.h = rect.w;
+    s.cellw = s.w * s.sx * t.w, s.cellh = s.h * s.sy * t.h;
+
     s.rgba = tint_rgba;
     s.ox = 0/*ox*/ * s.sx;
     s.oy = 0/*oy*/ * s.sy;
@@ -17972,10 +18075,10 @@ tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols
     return t;
 }
 
-int tileset_ui( tileset_t t ) {
+int ui_tileset( tileset_t t ) {
     ui_subimage(va("Selection #%d (%d,%d)", t.selected, t.selected % t.cols, t.selected / t.cols), t.tex.id, t.tex.w, t.tex.h, (t.selected % t.cols) * t.tile_w, (t.selected / t.cols) * t.tile_h, t.tile_w, t.tile_h);
     int choice;
-    if( (choice = ui_image(0, t.tex.id, t.tex.w,t.tex.h)) ) { 
+    if( (choice = ui_image(0, t.tex.id, t.tex.w,t.tex.h)) ) {
         int px = ((choice / 100) / 100.f) * t.tex.w / t.tile_w;
         int py = ((choice % 100) / 100.f) * t.tex.h / t.tile_h;
         t.selected = px + py * t.cols;
@@ -18086,7 +18189,7 @@ void tiled_render(tiled_t tmx, vec3 pos) {
     }
 }
 
-void tiled_ui(tiled_t *t) {
+void ui_tiled(tiled_t *t) {
     ui_label2("Loaded map", t->map_name ? t->map_name : "(none)");
     ui_label2("Map dimensions", va("%dx%d", t->w, t->h));
     ui_label2("Tile dimensions", va("%dx%d", t->tilew, t->tileh));
@@ -18103,7 +18206,7 @@ void tiled_ui(tiled_t *t) {
     if( ui_collapse(va("Sets: %d", array_count(t->layers)), va("%p",t))) {
         for( int i = 0; i < array_count(t->layers); ++i ) {
             if( ui_collapse(va("%d", i+1), va("%p%d",t,i)) ) {
-                t->sets[i].selected = tileset_ui( t->sets[i] );
+                t->sets[i].selected = ui_tileset( t->sets[i] );
                 ui_collapse_end();
             }
         }
@@ -18530,7 +18633,7 @@ void spine_render(spine_t *p, vec3 offset, unsigned flags) {
                     offsy = dir.y * r->sy;
                 }
 
-                sprite_rect(p->texture, rect, zindex, add3(vec3(target.x,target.y,1),vec3(offsx,offsy,0)), tilt, tint);
+                sprite_rect(p->texture, rect, zindex, add4(vec4(target.x,target.y,1,1),vec4(offsx,offsy,0,0)), tilt, tint);
             }
          }
 
@@ -18578,7 +18681,7 @@ void spine_animate(spine_t *p, float delta) {
     spine_animate_(p, &p->time, &p->maxtime, delta);
 }
 
-void spine_ui(spine_t *p) {
+void ui_spine(spine_t *p) {
     if( ui_collapse(va("Anims: %d", array_count(p->anims)), va("%p-a", p))) {
         for each_array_ptr(p->anims, spine_anim_t, q) {
             if(ui_slider2("", &p->time, va("%.2f/%.0f %.2f%%", p->time, p->maxtime, p->time * 100.f))) {
@@ -18655,7 +18758,7 @@ void spine_ui(spine_t *p) {
                             sprite_rect(p->texture,
                                 // rect: vec4(r->x*1.0/p->texture.w,r->y*1.0/p->texture.h,(r->x+r->w)*1.0/p->texture.w,(r->y+r->h)*1.0/p->texture.h),
                                 ptr4(&r->x), // atlas
-                                0, vec3(0,0,0), r->deg + tilt, tint);
+                                0, vec4(0,0,1,1), r->deg + tilt, tint);
                             sprite_flush();
                     camera_get_active()->position = vec3(+window_width()/3,window_height()/2.25,2);
                 }
@@ -18900,7 +19003,7 @@ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
         for(int i = 0; i < 6; ++i) {
             glGenFramebuffers(1, &sky->framebuffers[i]);
             glBindFramebuffer(GL_FRAMEBUFFER, sky->framebuffers[i]);
-            
+
             glGenTextures(1, &sky->textures[i]);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, sky->textures[i]);
@@ -18971,7 +19074,7 @@ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
 void skybox_sh_reset(skybox_t *sky) {
     for (int s = 0; s < 9; s++) {
         sky->cubemap.sh[s] = vec3(0,0,0);
-    }    
+    }
 }
 
 void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength) {
@@ -19551,7 +19654,7 @@ bool postfx_end(postfx *fx) {
         return false;
     }
 
-    handle fb = *array_back(last_fb); 
+    handle fb = *array_back(last_fb);
     array_pop(last_fb);
     fbo_bind(fb);
 
@@ -19667,13 +19770,13 @@ int ui_fxs() {
     if(!fx.num_loaded) return ui_label(ICON_MD_WARNING " No Post FXs with annotations loaded."), 0;
 
     int changed = 0;
-        for( int i = 0; i < 64; ++i ) {
-            char *name = fx_name(i); if( !name ) break;
-            bool b = fx_enabled(i);
-            if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
-            ui_fx(i);
+    for( int i = 0; i < 64; ++i ) {
+        char *name = fx_name(i); if( !name ) break;
+        bool b = fx_enabled(i);
+        if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
+        ui_fx(i);
         ui_separator();
-        }
+    }
     return changed;
 }
 
@@ -20436,7 +20539,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) 
         if( material_embedded_texture ) {
             *material_embedded_texture = '\0';
             material_embedded_texture += 5;
-            array(char) embedded_texture = base64__decode(material_embedded_texture, strlen(material_embedded_texture));
+            array(char) embedded_texture = base64_decode(material_embedded_texture, strlen(material_embedded_texture));
             //printf("%s %d\n", material_embedded_texture, array_count(embedded_texture));
             //hexdump(embedded_texture, array_count(embedded_texture));
             *out = texture_compressed_from_mem( embedded_texture, array_count(embedded_texture), 0 ).id;
@@ -20562,7 +20665,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
             va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
     // }
-    ASSERT(shaderprog > 0);
+    // ASSERT(shaderprog > 0);
 
     iqm_t *q = CALLOC(1, sizeof(iqm_t));
     m.program = shaderprog;
@@ -20935,13 +21038,13 @@ anims_t animations(const char *pathfile, int flags) {
     if( anim_file ) {
         // deserialize anim
         a.speed = 1.0;
-    for each_substring(anim_file, "\r\n", anim) {
-        int from, to;
-        char anim_name[128] = {0};
-        if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
+        for each_substring(anim_file, "\r\n", anim) {
+            int from, to;
+            char anim_name[128] = {0};
+            if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
             array_push(a.anims, !!strstri(anim_name, "loop") || !strcmpi(anim_name, "idle") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
             array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
-    }
+        }
     } else {
         // placeholder
         array_push(a.anims, clip(0,1,0,0));
@@ -21063,7 +21166,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
         // queue
         for(int i = 0; i < array_count(dd_text2d); ++i) {
             ddraw_color(dd_text2d[i].col);
-            ddraw_text(dd_text2d[i].pos, dd_text2d[i].sca, dd_text2d[i].str); 
+            ddraw_text(dd_text2d[i].pos, dd_text2d[i].sca, dd_text2d[i].str);
         }
 
         // flush
@@ -21094,7 +21197,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
         // clear
         array_resize(dd_text2d, 0);
     }
-    
+
     glDisable(GL_LINE_SMOOTH);
     glDisable(GL_PROGRAM_POINT_SIZE);
 
@@ -21311,7 +21414,7 @@ void ddraw_cube(vec3 center, float radius) { // draw_prism(center, 1, -1, vec3(0
 
 #if 0 // @fixme: broken
 void ddraw_cube44(vec3 radius, mat44 M) {
-    float m33[9]; extract33(m33, M); // = { M[0,1,2], M[4,5,6], M[8,9,10] }    
+    float m33[9]; extract33(m33, M); // = { M[0,1,2], M[4,5,6], M[8,9,10] }
     ddraw_cube33( vec3(M[12], M[13], M[14]), radius, m33 );
 }
 #endif
@@ -21468,7 +21571,7 @@ void ddraw_pyramid(vec3 center, float height, int segments) {
     ddraw_prism(center, 1, height, vec3(0,1,0), segments);
 }
 void ddraw_cylinder(vec3 center, float height, int segments) {
-    ddraw_prism(center, 1, -height, vec3(0,1,0), segments);    
+    ddraw_prism(center, 1, -height, vec3(0,1,0), segments);
 }
 void ddraw_diamond(vec3 from, vec3 to, float size) {
     poly p = diamond(from, to, size);
@@ -21811,9 +21914,9 @@ camera_t camera() {
     static camera_t cam = {0};
     do_once {
         cam.speed = 0.50f;
-    cam.position = vec3(10,10,10);
+        cam.position = vec3(10,10,10);
         cam.updir = vec3(0,1,0);
-    cam.fov = 45;
+        cam.fov = 45;
 
         cam.damping = false;
         cam.move_friction = 0.09f;
@@ -21823,17 +21926,17 @@ camera_t camera() {
         cam.last_look = vec2(0,0);
         cam.last_move = vec3(0,0,0);
 
-    // update proj & view
-    camera_lookat(&cam,vec3(-5,0,-5));
+        // update proj & view
+        camera_lookat(&cam,vec3(-5,0,-5));
 
         // @todo: remove this hack that is used to consolidate dampings
         if( 1 ) {
             vec3 zero = {0};
-        for( int i = 0; i < 1000; ++i ) {
+            for( int i = 0; i < 1000; ++i ) {
                 camera_moveby(&cam, zero);
-            camera_fps(&cam,0,0);
+                camera_fps(&cam,0,0);
+            }
         }
-    }
     }
 
     last_camera = old;
@@ -22464,28 +22567,72 @@ const char *app_cache() {
 
 const char * app_exec( const char *cmd ) {
     static __thread char output[4096+16] = {0};
+    char *buf = output + 16; buf[0] = 0; // memset(buf, 0, 4096);
 
     if( !cmd[0] ) return "0               ";
     cmd = file_normalize(cmd);
 
     int rc = -1;
-    char *buf = output + 16; buf[0] = 0; // memset(buf, 0, 4096);
+
+    // pick the fastest code path per platform
+#if is(osx)
     for( FILE *fp = popen( cmd, "r" ); fp; rc = pclose(fp), fp = 0) {
-        while( fgets(buf, 4096 - 1, fp) ) {
-        }
+        // while( fgets(buf, 4096 - 1, fp) ) {}
     }
-    if( rc != 0 ) {
-        char *r = strrchr(buf, '\r'); if(r) *r = 0;
-        char *n = strrchr(buf, '\n'); if(n) *n = 0;
+    // if( rc != 0 ) {
+    //     char *r = strrchr(buf, '\r'); if(r) *r = 0;
+    //     char *n = strrchr(buf, '\n'); if(n) *n = 0;
+    // }
+#elif is(win32)
+    STARTUPINFOA si = {0}; si.cb = sizeof(si);
+    PROCESS_INFORMATION pi = {0};
+
+    snprintf(output+16, 4096, "cmd /c \"%s\"", cmd);
+
+    int prio = //strstr(cmd, "ffmpeg") || strstr(cmd, "furnace") || strstr(cmd, "ass2iqe") ?
+    REALTIME_PRIORITY_CLASS; //: 0;
+
+//prio |= DETACHED_PROCESS;
+//si.dwFlags = STARTF_USESTDHANDLES;
+
+    if( CreateProcessA(
+        NULL, output+16, // cmdline
+        NULL,
+        NULL,
+        FALSE, // FALSE: dont inherit handles
+        prio /*CREATE_DEFAULT_ERROR_MODE|CREATE_NO_WINDOW*/, // 0|HIGH_PRIORITY_CLASS
+        NULL, // "", // NULL would inherit env
+        NULL, // current dir
+        &si, &pi) )
+    {
+        // Wait for process
+        DWORD dwExitCode2 = WaitForSingleObject(pi.hProcess, INFINITE);
+        DWORD dwExitCode; GetExitCodeProcess(pi.hProcess, &dwExitCode);
+        rc = dwExitCode;
     }
+    else
+    {
+        // CreateProcess() failed
+        rc = GetLastError();
+    }
+#else
+    rc = system(cmd);
+#endif
+
     return snprintf(output, 16, "%-15d", rc), buf[-1] = ' ', output;
 }
 
 int app_spawn( const char *cmd ) {
-    if( !cmd[0] ) return -1;
+    if( !cmd[0] ) return false;
     cmd = file_normalize(cmd);
 
-    return system(cmd);
+#if _WIN32
+    bool ok = WinExec(va("cmd /c \"%s\"", cmd), SW_HIDE) > 31;
+#else
+    bool ok = system(va("%s &", cmd)) == 0;
+#endif
+
+    return ok;
 }
 
 #if is(osx)
@@ -22589,7 +22736,7 @@ char *callstack( int traces ) {
         // should concat addresses into a multi-address line
 
         char *binary = symbols[i];
-        char *address = strchr( symbols[i], '(' ) + 1; 
+        char *address = strchr( symbols[i], '(' ) + 1;
         *strrchr( address, ')') = '\0'; *(address - 1) = '\0';
 
         for( FILE *fp = popen(va("addr2line -e %s %s", binary, address), "r" ); fp ; pclose(fp), fp = 0 ) { //addr2line -e binary -f -C address
@@ -22984,8 +23131,8 @@ void tty_attach() {
     // in order to have a Windows gui application with console:
     // - use WinMain() then AllocConsole(), but that may require supporintg different entry points for different platforms.
     // - /link /SUBSYSTEM:CONSOLE and then call FreeConsole() if no console is needed, but feels naive to flash the terminal for a second.
-    // - /link /SUBSYSTEM:WINDOWS /entry:mainCRTStartup, then AllocConsole() as follows. Quoting @pmttavara: 
-    //   "following calls are the closest i'm aware you can get to /SUBSYSTEM:CONSOLE in a gui program 
+    // - /link /SUBSYSTEM:WINDOWS /entry:mainCRTStartup, then AllocConsole() as follows. Quoting @pmttavara:
+    //   "following calls are the closest i'm aware you can get to /SUBSYSTEM:CONSOLE in a gui program
     //   while cleanly handling existing consoles (cmd.exe), pipes (ninja) and no console (VS/RemedyBG; double-clicking the game)"
     do_once {
         if( !AttachConsole(ATTACH_PARENT_PROCESS) && GetLastError() != ERROR_ACCESS_DENIED ) { bool ok = !!AllocConsole(); ASSERT( ok ); }
@@ -23068,7 +23215,7 @@ void alert(const char *message) { // @todo: move to app_, besides die()
 #endif
 
     window_visible(true);
-    }
+}
 
 void breakpoint() {
     debugbreak();
@@ -23181,9 +23328,9 @@ void app_crash() {
     *p = 42;
 }
 void app_beep() {
-    ifdef(win32, system("rundll32 user32.dll,MessageBeep"); return; );
-    ifdef(linux, system("paplay /usr/share/sounds/freedesktop/stereo/message.oga"); return; );
-    ifdef(osx,   system("tput bel"); return; );
+    ifdef(win32, app_spawn("rundll32 user32.dll,MessageBeep"); return; );
+    ifdef(linux, app_spawn("paplay /usr/share/sounds/freedesktop/stereo/message.oga"); return; );
+    ifdef(osx,   app_spawn("tput bel"); return; );
 
     //fallback:
     fputc('\x7', stdout);
@@ -23238,7 +23385,7 @@ bool app_open_folder(const char *file) {
 #else
     snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
 #endif
-    return system(buf) == 0;
+    return app_spawn(buf);
 }
 
 static
@@ -23251,7 +23398,7 @@ bool app_open_file(const char *file) {
 #else
     snprintf(buf, sizeof(buf), "xdg-open \"%s\"", file);
 #endif
-    return system(buf) == 0;
+    return app_spawn(buf);
 }
 
 static
@@ -23405,8 +23552,8 @@ static uint64_t nanotimer(uint64_t *out_freq) {
 }
 
 uint64_t time_ns() {
-    static uint64_t epoch = 0;
-    static uint64_t freq = 0;
+    static __thread uint64_t epoch = 0;
+    static __thread uint64_t freq = 0;
     if( !freq ) {
         epoch = nanotimer(&freq);
     }
@@ -23949,50 +24096,49 @@ int  (profiler_enable)(bool on) { return profiler_enabled = on; }
 void (ui_profiler)() {
     // @todo: ui_plot()
 
-        double fps = window_fps();
-        profile_setstat("Render.num_fps", fps);
+    double fps = window_fps();
+    profile_setstat("Render.num_fps", fps);
 
-            enum { COUNT = 300 };
-
-            static float values[COUNT] = {0}; static int offset = 0;
-            values[offset=(offset+1)%COUNT] = fps;
+    enum { COUNT = 300 };
+    static float values[COUNT] = {0}; static int offset = 0;
+    values[offset=(offset+1)%COUNT] = fps;
 
     // draw fps-meter: 300 samples, [0..70] range each, 70px height plot ...
     // ... unless filtering is enabled
     if( !(ui_filter && ui_filter[0]) ) {
         nk_layout_row_dynamic(ui_ctx, 70, 1);
 
-            int index = -1;
-            if( nk_chart_begin(ui_ctx, NK_CHART_LINES, COUNT, 0.f, 70.f) ) {
-                for( int i = 0; i < COUNT; ++i ) {
-                    nk_flags res = nk_chart_push(ui_ctx, (float)values[i]);
-                    if( res & NK_CHART_HOVERING ) index = i;
-                    if( res & NK_CHART_CLICKED ) index = i;
-                }
-                nk_chart_end(ui_ctx);
+        int index = -1;
+        if( nk_chart_begin(ui_ctx, NK_CHART_LINES, COUNT, 0.f, 70.f) ) {
+            for( int i = 0; i < COUNT; ++i ) {
+                nk_flags res = nk_chart_push(ui_ctx, (float)values[i]);
+                if( res & NK_CHART_HOVERING ) index = i;
+                if( res & NK_CHART_CLICKED ) index = i;
             }
+            nk_chart_end(ui_ctx);
+        }
 
-            //  hightlight 60fps, 36fps and 12fps
-            struct nk_rect space; nk_layout_peek(&space, ui_ctx);
-            struct nk_command_buffer *canvas = nk_window_get_canvas(ui_ctx);
-            nk_stroke_line(canvas, space.x+0,space.y-60,space.x+space.w,space.y-60, 1.0, nk_rgba(0,255,0,128));
-            nk_stroke_line(canvas, space.x+0,space.y-36,space.x+space.w,space.y-36, 1.0, nk_rgba(255,255,0,128));
-            nk_stroke_line(canvas, space.x+0,space.y-12,space.x+space.w,space.y-12, 1.0, nk_rgba(255,0,0,128));
+        //  hightlight 60fps, 36fps and 12fps
+        struct nk_rect space; nk_layout_peek(&space, ui_ctx);
+        struct nk_command_buffer *canvas = nk_window_get_canvas(ui_ctx);
+        nk_stroke_line(canvas, space.x+0,space.y-60,space.x+space.w,space.y-60, 1.0, nk_rgba(0,255,0,128));
+        nk_stroke_line(canvas, space.x+0,space.y-36,space.x+space.w,space.y-36, 1.0, nk_rgba(255,255,0,128));
+        nk_stroke_line(canvas, space.x+0,space.y-12,space.x+space.w,space.y-12, 1.0, nk_rgba(255,0,0,128));
 
-            if( index >= 0 ) {
-                nk_tooltipf(ui_ctx, "%.2f fps", (float)values[index]);
-            }
+        if( index >= 0 ) {
+            nk_tooltipf(ui_ctx, "%.2f fps", (float)values[index]);
+        }
     }
 
-        for each_map_ptr_sorted(profiler, const char *, key, struct profile_t, val ) {
-            if( isnan(val->stat) ) {
-                float v = val->avg/1000.0;
-                ui_slider2(*key, &v, va("%.2f ms", val->avg/1000.0));
-            } else {
-                float v = val->stat;
-                ui_slider2(*key, &v, va("%.2f", val->stat));
-                val->stat = 0;
-            }
+    for each_map_ptr_sorted(profiler, const char *, key, struct profile_t, val ) {
+        if( isnan(val->stat) ) {
+            float v = val->avg/1000.0;
+            ui_slider2(*key, &v, va("%.2f ms", val->avg/1000.0));
+        } else {
+            float v = val->stat;
+            ui_slider2(*key, &v, va("%.2f", val->stat));
+            val->stat = 0;
+        }
     }
 }
 #endif
@@ -24401,7 +24547,7 @@ void window_drop_callback(GLFWwindow* window, int count, const char** paths) {
 void window_hints(unsigned flags) {
     #ifdef __APPLE__
     //glfwInitHint( GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE );
-    glfwWindowHint( GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE );
+    glfwWindowHint( GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE ); // @todo: remove silicon mac M1 hack
     //glfwWindowHint( GLFW_COCOA_GRAPHICS_SWITCHING, GLFW_FALSE );
     //glfwWindowHint( GLFW_COCOA_MENUBAR, GLFW_FALSE );
     #endif
@@ -24550,6 +24696,9 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
             //glfwWindowHint(GLFW_FLOATING, GLFW_TRUE); // always on top
             glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
         }
+        if( flags & WINDOW_BORDERLESS ) {
+            glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        }
         #endif
         // windowed
         float ratio = (float)winWidth / (winHeight + !winHeight);
@@ -24596,10 +24745,10 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     #endif
 
     glDebugEnable();
-    
+
     // setup nuklear ui
     ui_ctx = nk_glfw3_init(&nk_glfw, window, NK_GLFW3_INSTALL_CALLBACKS);
-   
+
     //glEnable(GL_TEXTURE_2D);
 
     // 0:disable vsync, 1:enable vsync, <0:adaptive (allow vsync when framerate is higher than syncrate and disable vsync when framerate drops below syncrate)
@@ -24620,7 +24769,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     PRINTF("GPU OpenGL: %d.%d\n", GLAD_VERSION_MAJOR(gl_version), GLAD_VERSION_MINOR(gl_version));
 
     if( FLAGS_TRANSPARENT ) { // @transparent
-        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE); // @todo: is decorated an attrib or a hint?
         if( scale >= 1 ) glfwMaximizeWindow(window);
     }
     #endif
@@ -24779,7 +24928,7 @@ int window_frame_begin() {
         engine_tick();
     }
 #endif // ENABLE_RETAIL
- 
+
 #if 0 // deprecated
     // run user-defined hooks
     for(int i = 0; i < 64; ++i) {
@@ -24800,7 +24949,7 @@ int window_frame_begin() {
         timer = 0;
     }
 #else
-        glfwSetWindowTitle(window, title);
+    glfwSetWindowTitle(window, title);
 #endif
 
     void input_update();
@@ -24812,7 +24961,7 @@ int window_frame_begin() {
 void window_frame_end() {
     // flush batching systems that need to be rendered before frame swapping. order matters.
     {
-        font_goto(0,0);        
+        font_goto(0,0);
         touch_flush();
         sprite_flush();
 
@@ -24873,7 +25022,7 @@ void window_shutdown() {
 
         #endif
 
-        window_loop_exit(); // finish emscripten loop automatically        
+        window_loop_exit(); // finish emscripten loop automatically
     }
 }
 
@@ -25013,17 +25162,17 @@ void window_icon(const char *file_icon) {
     if( !data ) data = file_read(file_icon), len = file_size(file_icon);
 
     if( data && len ) {
-            image_t img = image_from_mem(data, len, IMAGE_RGBA);
-            if( img.w && img.h && img.pixels ) {
-                GLFWimage images[1];
-                images[0].width = img.w;
-                images[0].height = img.h;
-                images[0].pixels = img.pixels;
-                glfwSetWindowIcon(window, 1, images);
+        image_t img = image_from_mem(data, len, IMAGE_RGBA);
+        if( img.w && img.h && img.pixels ) {
+            GLFWimage images[1];
+            images[0].width = img.w;
+            images[0].height = img.h;
+            images[0].pixels = img.pixels;
+            glfwSetWindowIcon(window, 1, images);
             has_icon = 1;
-                return;
-            }
+            return;
         }
+    }
 #if 0 // is(win32)
     HANDLE hIcon = LoadImageA(0, file_icon, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE);
     if( hIcon ) {
@@ -25058,7 +25207,7 @@ int window_record(const char *outfile_mp4) {
 
 vec2 window_dpi() {
     vec2 dpi = vec2(1,1);
-#if !defined(__EMSCRIPTEN__) && !defined(__APPLE__)
+#if !is(ems) && !is(osx) // @todo: remove silicon mac M1 hack
     glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &dpi.x, &dpi.y);
 #endif
     return dpi;
@@ -25147,9 +25296,9 @@ void window_fullscreen(int enabled) {
     }
 #else
     if( enabled )
-    EM_ASM(Module.requestFullscreen(1, 1)); 
+    EM_ASM(Module.requestFullscreen(1, 1));
     else
-    EM_ASM(Module.exitFullscreen()); 
+    EM_ASM(Module.exitFullscreen());
 #endif
 
 #else
@@ -25159,7 +25308,7 @@ void window_fullscreen(int enabled) {
         /*glfwGetWindowPos(g->window, &g->window_xpos, &g->window_ypos);*/
         glfwGetWindowSize(g->window, &g->width, &g->height);
         glfwSetWindowMonitor(g->window, glfwGetPrimaryMonitor(), 0, 0, g->width, g->height, GLFW_DONT_CARE);
-    } else {            
+    } else {
         glfwSetWindowMonitor(g->window, NULL, 0, 0, g->width, g->height, GLFW_DONT_CARE);
     }
 #else
@@ -25534,7 +25683,7 @@ void *obj_free(void *o) {
             FREE(o);
         }
         return 0;
-}
+    }
     return o; // cannot destroy: object is still referenced
 }
 
@@ -25782,21 +25931,23 @@ void test_obj_scene() {
 static map(int,int) oms;
 static thread_mutex_t *oms_lock;
 void *obj_setmeta(void *o, const char *key, const char *value) {
+    void *ret = 0;
     do_threadlock(oms_lock) {
         if(!oms) map_init_int(oms);
         int *q = map_find_or_add(oms, intern(va("%llu-%s",obj_id((obj*)o),key)), 0);
         if(!*q && !value[0]) {} else *q = intern(value);
-        return quark(*q), o;
+        quark(*q), ret = o;
     }
-    return 0; // unreachable
+    return ret;
 }
 const char* obj_meta(const void *o, const char *key) {
+    const char *ret = 0;
     do_threadlock(oms_lock) {
         if(!oms) map_init_int(oms);
         int *q = map_find_or_add(oms, intern(va("%llu-%s",obj_id((obj*)o),key)), 0);
-        return quark(*q);
+        ret = quark(*q);
     }
-    return 0; // unreachable
+    return ret;
 }
 
 void *obj_setname(void *o, const char *name) {
@@ -25956,6 +26107,8 @@ const char *p2s(const char *type, void *p) {
     else if( !strcmp(type, "vec2") ) return ftoa2(*(vec2*)p);
     else if( !strcmp(type, "vec3") ) return ftoa3(*(vec3*)p);
     else if( !strcmp(type, "vec4") ) return ftoa4(*(vec4*)p);
+    else if( !strcmp(type, "rgb") ) return rgbatoa(*(unsigned*)p);
+    else if( !strcmp(type, "rgba") ) return rgbatoa(*(unsigned*)p);
     else if( !strcmp(type, "char*") || !strcmp(type, "string") ) return va("%s", *(char**)p);
     // @todo: if strchr('*') assume obj, if reflected save guid: obj_id();
     return tty_color(YELLOW), printf("p2s: cannot serialize `%s` type\n", type), tty_color(0), "";
@@ -25972,6 +26125,8 @@ bool s2p(void *P, const char *type, const char *str) {
     else if( !strcmp(type, "vec2") )      return !!memcpy(P, (v2 = atof2(str), &v2), sizeof(v2));
     else if( !strcmp(type, "vec3") )      return !!memcpy(P, (v3 = atof3(str), &v3), sizeof(v3));
     else if( !strcmp(type, "vec4") )      return !!memcpy(P, (v4 = atof4(str), &v4), sizeof(v4));
+    else if( !strcmp(type, "rgb") )       return !!memcpy(P, (u = atorgba(str), &u), sizeof(u));
+    else if( !strcmp(type, "rgba") )      return !!memcpy(P, (u = atorgba(str), &u), sizeof(u));
     else if( !strcmp(type, "uintptr_t") ) return !!memcpy(P, (p = strtol(str, NULL, 16), &p), sizeof(p));
     else if( !strcmp(type, "char*") || !strcmp(type, "string") ) {
         char substring[128] = {0};
@@ -26224,9 +26379,9 @@ char *entity_save(entity *self) {
 static
 void entity_register() {
     do_once {
-    STRUCT(entity, uintptr_t, cflags);
-    obj_extend(entity, save);
-}
+        STRUCT(entity, uintptr_t, cflags);
+        obj_extend(entity, save);
+    }
 }
 
 AUTORUN{
@@ -27348,7 +27503,7 @@ int engine_tick() {
         window_fps_lock( hz < 5 ? 5 : hz );
     } else {
         // window_fps_lock( editor_hz );
-        } 
+    }
 
     return 0;
 }
@@ -27695,7 +27850,7 @@ int gizmo(vec3 *pos, vec3 *rot, vec3 *sca) {
 
 // -- localization kit
 
-static const char *kit_lang = "enUS", *kit_langs = 
+static const char *kit_lang = "enUS", *kit_langs =
     "enUS,enGB,"
     "frFR,"
     "esES,esAR,esMX,"
@@ -27710,7 +27865,7 @@ static const char *kit_lang = "enUS", *kit_langs =
 static map(char*,char*) kit_ids;
 static map(char*,char*) kit_vars;
 
-#ifndef KIT_FMT_ID2 
+#ifndef KIT_FMT_ID2
 #define KIT_FMT_ID2 "%s.%s"
 #endif
 

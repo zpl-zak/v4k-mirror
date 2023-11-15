@@ -26,13 +26,8 @@ int   boy_tick(boy* self) { printf("%p boy tick, hp:%f\n", self, self->hp); retu
 char* boy_save(boy *self) { return obj_saveini(self); } // PACKMSG("ssf", "boy_v1", self->name, self->hp); }
 
 AUTOTEST {
-    obj_extend(orc, ctor);
-    obj_extend(orc, tick);
-    obj_extend(orc, save);
-
-    obj_extend(boy, ctor);
-    obj_extend(boy, tick);
-    obj_extend(boy, save);
+    EXTEND(orc, ctor,tick,save);
+    EXTEND(boy, ctor,tick,save);
 
     // instance gameobjs
 

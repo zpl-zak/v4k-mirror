@@ -410,13 +410,17 @@ void editor_inspect(obj *o) {
         ui_label_icon_highlight = editor_changed(PTR); // @hack: remove ui_label_icon_highlight hack
         char *label = va(ICON_MD_UNDO "%s", NAME);
         int changed = 0;
-        /**/ if( !strcmp(TYPE,"float") ) changed = ui_float(label, PTR);
-        else if( !strcmp(TYPE,"int") )   changed = ui_int(label, PTR);
-        else if( !strcmp(TYPE,"vec2") )  changed = ui_float2(label, PTR);
-        else if( !strcmp(TYPE,"vec3") )  changed = ui_float3(label, PTR);
-        else if( !strcmp(TYPE,"vec4") )  changed = ui_float4(label, PTR);
-        else if( !strcmp(TYPE,"color") ) changed = ui_color4(label, PTR);
-        else if( !strcmp(TYPE,"char*") ) changed = ui_string(label, PTR);
+        /**/ if( !strcmp(TYPE,"float") )   changed = ui_float(label, PTR);
+        else if( !strcmp(TYPE,"int") )     changed = ui_int(label, PTR);
+        else if( !strcmp(TYPE,"vec2") )    changed = ui_float2(label, PTR);
+        else if( !strcmp(TYPE,"vec3") )    changed = ui_float3(label, PTR);
+        else if( !strcmp(TYPE,"vec4") )    changed = ui_float4(label, PTR);
+        else if( !strcmp(TYPE,"rgb") )     changed = ui_color3(label, PTR);
+        else if( !strcmp(TYPE,"rgba") )    changed = ui_color4(label, PTR);
+        else if( !strcmp(TYPE,"color") )   changed = ui_color4f(label, PTR);
+        else if( !strcmp(TYPE,"color3f") ) changed = ui_color3f(label, PTR);
+        else if( !strcmp(TYPE,"color4f") ) changed = ui_color4f(label, PTR);
+        else if( !strcmp(TYPE,"char*") )   changed = ui_string(label, PTR);
         else ui_label2(label, va("(%s)", TYPE)); // INFO instead of (TYPE)?
         if( changed ) {
             editor_setchanged(PTR, 1);
@@ -600,8 +604,10 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     const char *ICON_PL4Y = window_has_pause() ? ICON_MDI_PLAY : ICON_MDI_PAUSE;
     const char *ICON_SKIP = window_has_pause() ? ICON_MDI_STEP_FORWARD/*ICON_MDI_SKIP_NEXT*/ : ICON_MDI_FAST_FORWARD;
 
+    int is_borderless = !glfwGetWindowAttrib(window, GLFW_DECORATED);
     int ingame = !editor.active;
-    UI_MENU(14, \
+    static double clicked_titlebar = 0;
+    UI_MENU(14+is_borderless, \
         if(ingame) ui_disable(); \
         UI_MENU_ITEM(ICON_MDI_FILE_TREE, editor_send("scene")) \
         if(ingame) ui_enable(); \
@@ -610,7 +616,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         UI_MENU_ITEM(ICON_MDI_STOP, editor_send("stop")) \
         UI_MENU_ITEM(ICON_MDI_EJECT, editor_send("eject")) \
         UI_MENU_ITEM(STATS, stats_mode = (++stats_mode) % 3) \
-        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+34) \
+        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+34 + 32*is_borderless, clicked_titlebar = time_ms()) \
         if(ingame) ui_disable(); \
         UI_MENU_ITEM(ICON_MD_FOLDER_SPECIAL, editor_send("browser")) \
         UI_MENU_ITEM(ICON_MDI_SCRIPT_TEXT, editor_send("script")) \
@@ -622,6 +628,23 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         if(ingame) ui_enable(); \
         UI_MENU_ITEM(ICON_MD_CLOSE, editor_send("quit")) \
     );
+
+    if( is_borderless ) {
+        static vec3 drag = {0};
+        if( clicked_titlebar ) {
+            static double clicks = 0;
+            if( input_up(MOUSE_L) ) ++clicks;
+            if( input_up(MOUSE_L) && clicks == 2 ) window_visible(false), window_maximize( window_has_maximize() ^ 1 ), window_visible(true);
+            if( (time_ms() - clicked_titlebar) > 400 ) clicks = 0, clicked_titlebar = 0;
+
+            if( input_down(MOUSE_L) ) drag = vec3(input(MOUSE_X), input(MOUSE_Y), 1);
+        }
+        if( drag.z *= !input_up(MOUSE_L) ) {
+            int wx = 0, wy = 0;
+            glfwGetWindowPos(window_handle(), &wx, &wy);
+            glfwSetWindowPos(window_handle(), wx + input(MOUSE_X) - drag.x, wy + input(MOUSE_Y) - drag.y);
+        }
+    }
 
     if( !editor.active ) return;
 

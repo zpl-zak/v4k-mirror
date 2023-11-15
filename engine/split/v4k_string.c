@@ -261,11 +261,12 @@ const char *strlerp(unsigned numpairs, const char **pairs, const char *str) { //
 }
 
 array(char*) strsplit(const char *str, const char *separators) {
+    enum { SLOTS = 32 };
     static __thread int slot = 0;
-    static __thread char *buf[16] = {0};
-    static __thread array(char*) list[16] = {0};
+    static __thread char *buf[SLOTS] = {0};
+    static __thread array(char*) list[SLOTS] = {0};
 
-    slot = (slot+1) % 16;
+    slot = (slot+1) % SLOTS;
     array_resize(list[slot], 0);
     *(buf[slot] = REALLOC(buf[slot], strlen(str)*2+1)) = '\0'; // *2 to backup pathological case where input str is only separators && include == 1
 
@@ -297,10 +298,11 @@ array(char*) strsplit(const char *str, const char *separators) {
     return list[slot];
 }
 char* strjoin(array(char*) list, const char *separator) {
+    enum { SLOTS = 16 };
     static __thread int slot = 0;
-    static __thread char* mems[16] = {0};
+    static __thread char* mems[SLOTS] = {0};
 
-    slot = (slot+1) % 16;
+    slot = (slot+1) % SLOTS;
 
     int num_list = array_count(list);
     int len = 0, inc = 0, seplen = strlen(separator);

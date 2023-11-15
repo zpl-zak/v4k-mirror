@@ -1122,6 +1122,7 @@ void lt_init(lua_State *L, void *handle, const char *pathdata, int argc, char **
         "  SCALE = tonumber(os.getenv(\"LITE_SCALE\")) or SCALE\n"
         "  PATHSEP = package.config:sub(1, 1)\n"
         "  EXEDIR = EXEFILE:match(\"^(.+)[/\\\\].*$\")\n"
+        "  USERDIR = EXEDIR .. 'data/user/'\n"
         "  package.path = EXEDIR .. '/data/?.lua;' .. package.path\n"
         "  package.path = EXEDIR .. '/data/?/init.lua;' .. package.path\n"
         "  core = require('core')\n"

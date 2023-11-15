@@ -7,14 +7,18 @@
 #include "3rd_lite.h"
 // }
 
+TODO("new: integrate with Art/ browser")
 TODO("bug: lite key bindings are being sent to editor")
-TODO("eval: https://github.com/Jipok/lite-plugins")
-TODO("eval:  https://github.com/drmargarido/linters")
-TODO("eval:  https://github.com/monolifed/theme16")
-TODO("eval:  https://github.com/takase1121/lite-contextmenu ")
-TODO("eval:  https://github.com/drmargarido/TodoTreeView")
-TODO("eval:  https://github.com/takase1121/lite-nagbar")
-TODO("eval:  https://github.com/rxi/console")
+TODO("bug: not sending quit signal to lite neither at window close nor editor close (see: temporary files)")
+TODO("bug: missing search results window")
+TODO("bug: missing code completions popup")
+// TODO("eval:  https://github.com/drmargarido/linters")
+// TODO("eval:  https://github.com/monolifed/theme16")
+// TODO("eval:  https://github.com/vincens2005/lite-formatters")
+// https://github.com/takase1121/lite-xl-img
+// https://github.com/takase1121/lite-xl-finder
+// https://github.com/rxi/lite/commit/236a585756cb9fa70130eee6c9a604780aced424 > suru.png
+// https://github.com/rxi/lite/commit/f90b00748e1fe1cd2340aaa06d2526a1b2ea54ec
 
 int ui_texture_fit(texture_t t, struct nk_rect bounds) {
     // allocate complete window space
@@ -56,7 +60,7 @@ int editor_scripted(int window_mode) {
     }
 
     unsigned lt_none = 0u;
-    unsigned lt_all = ~0u & ~(GLEQ_WINDOW_MOVED|GLEQ_WINDOW_RESIZED/*|GLEQ_WINDOW_REFRESH*/);
+    unsigned lt_all = ~0u & ~(GLEQ_WINDOW_MOVED/*|GLEQ_WINDOW_RESIZED|GLEQ_WINDOW_REFRESH*/);
     lt_events = lt_none;
 
     int mouse_in_rect = 0;
@@ -80,7 +84,7 @@ int editor_scripted(int window_mode) {
         // fullscreen_quad_rgb( lt_getsurface(0)->t, 1.2f );
         ui_texture_fit(lt_getsurface(0)->t, bounds);
 
-        if( !!nk_input_is_mouse_hovering_rect(&ui_ctx->input, bounds) ) {
+        if( !!nk_input_is_mouse_hovering_rect(&ui_ctx->input, ((struct nk_rect){lt_wx+5,lt_wy+5,lt_ww-10,lt_wh-10})) ) {
             lt_events &= ~(1<<31); // dont cursor shape
         }
 

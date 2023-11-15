@@ -18,6 +18,8 @@ function StatusView:new()
   StatusView.super.new(self)
   self.message_timeout = 0
   self.message = {}
+  self.tooltip_mode = false
+  self.tooltip = {}
 end
 
 
@@ -36,6 +38,17 @@ function StatusView:show_message(icon, icon_color, text)
     style.dim, style.font, StatusView.separator2, style.text, text
   }
   self.message_timeout = system.get_time() + config.message_timeout
+end
+
+
+function StatusView:show_tooltip(text)
+  self.tooltip = { text }
+  self.tooltip_mode = true
+end
+
+
+function StatusView:remove_tooltip()
+  self.tooltip_mode = false
 end
 
 
@@ -94,6 +107,9 @@ function StatusView:get_items()
     local dv = core.active_view
     local line, col = dv.doc:get_selection()
     local dirty = dv.doc:is_dirty()
+    local indent = dv.doc.indent_info
+    local indent_label = (indent and indent.type == "hard") and "tabs: " or "spaces: "
+    local indent_size = indent and tostring(indent.size) .. (indent.confirmed and "" or "*") or "unknown"
 
     --< https://github.com/rxi/lite/issues/300
     col = common.utf8_len(dv.doc:get_text(line, 1, line, col)) + 1
@@ -112,6 +128,8 @@ function StatusView:get_items()
       self.separator,
       string.format("%.f%%", line / #dv.doc.lines * 100), --< @r-lyeh: %d -> %.f
     }, {
+      style.text, indent_label, indent_size,
+      style.dim, self.separator2, style.text,
       style.icon_font, "g",
       style.font, style.dim, self.separator2, style.text,
       #dv.doc.lines, " lines",
@@ -136,9 +154,13 @@ function StatusView:draw()
     self:draw_items(self.message, false, self.size.y)
   end
 
-  local left, right = self:get_items()
-  self:draw_items(left)
-  self:draw_items(right, true)
+  if self.tooltip_mode then
+    self:draw_items(self.tooltip)
+  else
+    local left, right = self:get_items()
+    self:draw_items(left)
+    self:draw_items(right, true)
+  end
 end
 
 

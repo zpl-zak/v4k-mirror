@@ -23,12 +23,13 @@ typedef struct cook_subscript_t {
     char *script;
     char *outname;
     int compress_level;
+    uint64_t pass_ns, gen_ns, exe_ns, zip_ns;
 } cook_subscript_t;
 
 typedef struct cook_script_t {
     cook_subscript_t cs[8];
-
     int num_passes;
+    uint64_t pass_ns, gen_ns, exe_ns, zip_ns;
 } cook_script_t;
 
 static
@@ -42,6 +43,7 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
         // - if no script is going to be generated, output is in fact input file.
         // - no compression is going to be required.
         cook_subscript_t cs = { 0 };
+        cs.gen_ns -= time_ns();
 
             // reuse script heap from last call if possible (optimization)
             static __thread char *script = 0;
@@ -53,6 +55,7 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
             static __thread set(char*) passes = 0;           if(!passes)  set_init_str(passes);
             map_clear(symbols);
             map_clear(groups);
+
 
             map_find_or_add(symbols, "INFILE", STRDUP(infile));
             map_find_or_add(symbols, "INPUT", STRDUP(infile));
@@ -105,10 +108,15 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
                     }
                     lines[i] = line = nl;
 
+#if 0
                 static thread_mutex_t lock, *init = 0; if(!init) thread_mutex_init(init = &lock);
                 thread_mutex_lock( &lock );
                     system(line); // strcatf(&script, "%s\n", line);
                 thread_mutex_unlock( &lock );
+#else
+                // append line
+                strcatf(&script, "%s\n", line);
+#endif
 
                 continue;
             }
@@ -256,15 +264,15 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
                 }
             }
             char *compression = 0;
-            for each_map(groups, char*, key, char*, val) {
-                if( isdigit(key[0]) ) {
+            for each_map_ptr_sorted(groups, char*, key, char*, val) { // sorted iteration, so hopefully '0' no compression gets evaluated first
+                if( !compression && isdigit((*key)[0]) ) {
                     char *comma = va(",%s,", ext);
-                    if( !strcmpi(val,ext) || strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
-                        compression = key;
+                    if( !strcmpi(*val,ext) || strbegi(*val, comma+1) || strstri(*val, comma) || strendi(*val, va(",%s", ext))) {
+                        compression = (*key);
                     }
                     comma = va(",%s,", belongs_to);
-                    if( !strcmpi(val,ext) || strbegi(val, comma+1) || strstri(val, comma) || strendi(val, va(",%s", ext))) {
-                        compression = key;
+                    if( !strcmpi(*val,ext) || strbegi(*val, comma+1) || strstri(*val, comma) || strendi(*val, va(",%s", ext))) {
+                        compression = (*key);
                     }
                 }
             }
@@ -324,6 +332,7 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
         }
 
         cs.outname = cs.outname ? cs.outname : (char*)infile;
+        cs.gen_ns += time_ns();
 
         ASSERT(mcs.num_passes < countof(mcs.cs));
         mcs.cs[mcs.num_passes++] = cs;
@@ -355,8 +364,8 @@ array(struct fs) zipscan_filter(int threadid, int numthreads) {
     array(struct fs) fs = 0;
     for( int i = 0, end = array_count(fs_now); i < end; ++i ) {
         // during workload distribution, we assign random files to specific thread buckets.
-        // we achieve this by hashing the basename of the file. we used to hash also the path 
-        // long time ago but that is less resilient to file relocations across the repository. 
+        // we achieve this by hashing the basename of the file. we used to hash also the path
+        // long time ago but that is less resilient to file relocations across the repository.
         // excluding the file extension from the hash also helps from external file conversions.
         char *fname = file_name(fs_now[i].fname);
         char *sign = strrchr(fname, '@'); if(sign) *sign = '\0'; // special char (multi-pass cooks)
@@ -455,6 +464,11 @@ int cook(void *userdata) {
     volatile int *progress = &job->progress;
     *progress = 0;
 
+    // preload a few large binaries
+//    dll("tools/furnace.exe", 0);
+//    dll("tools/assimp-vc143-mt.dll", 0);
+//    dll("tools/ffmpeg.exe", 0);
+
     // scan disk from fs_now snapshot
     array(struct fs) filtered = zipscan_filter(job->threadid, job->numthreads);
     //printf("Scanned: %d items found\n", array_count(now));
@@ -493,6 +507,13 @@ int cook(void *userdata) {
         zip_append_file/*_timeinfo*/(z, deleted[i], comment, in, 0/*, tm_now*/);
         fclose(in);
     }
+
+    // generate cook metrics. you usually do `game.exe --cook-stats && (type *.csv | sort /R > cook.csv)`
+    static __thread FILE *statsfile = 0;
+    if(flag("--cook-stats"))
+    fseek(statsfile = fopen(va("cook%d.csv",job->threadid), "a+t"), 0L, SEEK_END);
+    if(statsfile && ftell(statsfile) == 0) fprintf(statsfile,"%10s,%10s,%10s,%10s,%10s, %s\n","+total_ms","gen_ms","exe_ms","zip_ms","pass","file");
+
     // added or changed files
     for( int i = 0, end = array_count(uncooked); i < end && !cook_cancelling; ++i ) {
         *progress = ((i+1) == end ? 90 : (i * 90) / end); // (i+i>0) * 100.f / end;
@@ -519,43 +540,46 @@ int cook(void *userdata) {
                 }
             }
 
-            // invoke cooking script and recap status
-            const char *rc_output = app_exec(cs.script);
-            int rc = atoi(rc_output);
-            int outlen = file_size(cs.outfile);
-            int failed = cs.script[0] ? rc || !outlen : 0;
-
-            // print errors
-            if( failed ) {
-                PRINTF("Import failed: %s while executing:\n%s\nReturned:\n%s\n", cs.outname, cs.script, rc_output);
-                continue;
-            }
-
-            // special char (multi-pass cook). newly generated file: refresh values
-            // ensure newly created files by cook are also present on repo/disc for further cook passes
-            if( pass > 0 ) { // && strchr(cs.outname, '@') ) { // pass>0 is a small optimization // special char (multi-pass cooks)
-                file_delete(cs.outname);
-                file_move(cs.outfile, cs.outname);
-                inlen = file_size(infile = cs.outfile = cs.outname);
-            }
+            // invoke cooking script
+            mcs.cs[pass].exe_ns -= time_ns();
+                // invoke cooking script
+                const char *rc_output = app_exec(cs.script);
+                // recap status
+                int rc = atoi(rc_output);
+                // int outlen = file_size(cs.outfile);
+                int failed = rc; // cs.script[0] ? rc || !outlen : 0;
+                // print errors
+                if( failed ) {
+                    PRINTF("Import failed: %s while executing:\n%s\nReturned:\n%s\n", cs.outname, cs.script, rc_output);
+                    continue;
+                }
+                if( pass > 0 ) { // (multi-pass cook)
+                    // newly generated file: refresh values
+                    // ensure newly created files by cook are also present on repo/disc for further cook passes
+                    file_delete(cs.outname);
+                    file_move(cs.outfile, cs.outname);
+                    inlen = file_size(infile = cs.outfile = cs.outname);
+                }
+            mcs.cs[pass].exe_ns += time_ns();
 
             // process only if included. may include optional compression.
+            mcs.cs[pass].zip_ns -= time_ns();
             if( cs.compress_level >= 0 ) {
-                FILE *in = fopen(cs.outfile, "rb");
-
-#if 0
-                    struct stat st; stat(infile, &st);
-                    struct tm *timeinfo = localtime(&st.st_mtime);
-                    ASSERT(timeinfo);
-#endif
+                FILE *in = fopen(cs.outfile ? cs.outfile : infile, "rb");
+                if(!in) in = fopen(infile, "rb");
 
                     char *comment = va("%d", inlen);
-                    if( !zip_append_file/*_timeinfo*/(z, infile, comment, in, cs.compress_level/*, timeinfo*/) ) {
+                    if( !zip_append_file(z, infile, comment, in, cs.compress_level) ) {
                         PANIC("failed to add processed file into %s: %s(%s)", zipfile, cs.outname, infile);
                     }
 
                 fclose(in);
             }
+            mcs.cs[pass].zip_ns += time_ns();
+
+            // stats per subscript
+            mcs.cs[pass].pass_ns = mcs.cs[pass].gen_ns + mcs.cs[pass].exe_ns + mcs.cs[pass].zip_ns;
+            if(statsfile) fprintf(statsfile, "%10.f,%10.f,%10.f,%10.f,%10d, \"%s\"\n", mcs.cs[pass].pass_ns/1e6, mcs.cs[pass].gen_ns/1e6, mcs.cs[pass].exe_ns/1e6, mcs.cs[pass].zip_ns/1e6, pass+1, infile);
         }
     }
 
@@ -584,13 +608,13 @@ int cook_async( void *userdata ) {
 
     // tcc: only a single running thread shall pass, because of racing shared state due to missing thread_local support at compiler level
     ifdef(tcc, thread_mutex_lock( job->lock ));
-    ifdef(osx, thread_mutex_lock( job->lock ));
+    ifdef(osx, thread_mutex_lock( job->lock ));   // @todo: remove silicon mac M1 hack
 
     int ret = cook(userdata);
 
     // tcc: only a single running thread shall pass, because of racing shared state due to missing thread_local support at compiler level
+    ifdef(osx, thread_mutex_unlock( job->lock )); // @todo: remove silicon mac M1 hack
     ifdef(tcc, thread_mutex_unlock( job->lock ));
-    ifdef(osx, thread_mutex_unlock( job->lock ));
 
     thread_exit( ret );
     return ret;
@@ -613,7 +637,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
         HOME[ strlen(HOME) - strlen(file_name(cook_ini)) ] = '\0'; // -> tools/ @leak
     #endif
 
-        ART_LEN = 0; //strlen(app_path()); 
+        ART_LEN = 0; //strlen(app_path());
         /* = MAX_PATH;
         for each_substring(ART, ",", art_folder) {
             ART_LEN = mini(ART_LEN, strlen(art_folder));
@@ -669,6 +693,14 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
             EDITOR = out; // @leak
             assert( EDITOR[strlen(EDITOR) - 1] == '/' );
         }
+
+        // small optimization for upcoming parser: remove whole comments from file
+        array(char*) lines = strsplit(rules, "\r\n");
+        for( int i = 0; i < array_count(lines); ) {
+            if( lines[i][0] == ';' ) array_erase_slow(lines, i);
+            else ++i;
+        }
+        rules = STRDUP( strjoin(lines, "\n") );
     }
 
     if( !masks ) {
@@ -715,7 +747,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
             if( strend(fname, ".obj") ) {
                 char header[4] = {0};
                 for( FILE *in = fopen(fname, "rb"); in; fclose(in), in = NULL) {
-                    fread(header, 1, 2, in);
+                    fread(header, 2, 1, in);
                 }
                 if( !memcmp(header, "\x64\x86", 2) ) continue;
                 if( !memcmp(header, "\x00\x00", 2) ) continue;
@@ -727,7 +759,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
                 snprintf(extdot, 32, "%s.", dot); // .png -> .png.
                 // exclude vc/gcc/clang files
                 if( strstr(fname, ".a.o.pdb.lib.ilk.exp.dSYM.") ) // must end with dot
-                continue;
+                    continue;
             }
 
             // @todo: normalize path & rebase here (absolute to local)
@@ -751,7 +783,7 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
         fi.stamp = file_stamp10(fname); // timestamp in base10(yyyymmddhhmmss)
 
         array_push(fs_now, fi);
-    }        
+    }
 
     cook_debug = !!( flags & COOK_DEBUGLOG );
     cook_cancelable = !!( flags & COOK_CANCELABLE );

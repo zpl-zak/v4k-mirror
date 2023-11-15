@@ -152,5 +152,5 @@ typedef struct curve_t {
 API curve_t curve();
 API void      curve_add(curve_t *c, vec3 p);
 API void      curve_end(curve_t *c, int num_points);
-API vec3      curve_eval(curve_t *c, float dt, unsigned *color);
+API vec3       curve_eval(curve_t *c, float dt, unsigned *color);
 API void    curve_destroy(curve_t *c);

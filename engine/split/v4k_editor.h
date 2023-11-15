@@ -6,8 +6,8 @@
 
 //API void  editor();
 //API bool  editor_active();
-API vec3  editor_pick(float mouse_x, float mouse_y);
-API char* editor_path(const char *path);
+API vec3   editor_pick(float mouse_x, float mouse_y);
+API char*  editor_path(const char *path);
 
 API float* engine_getf(const char *key);
 API int*   engine_geti(const char *key);

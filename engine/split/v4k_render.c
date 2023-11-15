@@ -96,7 +96,7 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
     PRINTF(/*"!"*/"Compiling shader\n");
 
     char *glsl_defines = "";
-    if (defines) {
+    if( defines ) {
         for each_substring(defines, ",", def) {
             glsl_defines = va("%s#define %s\n", glsl_defines, def);
         }
@@ -400,7 +400,7 @@ int ui_shaders() {
     if( !map_count(shader_reflect) ) return ui_label(ICON_MD_WARNING " No shaders with annotations loaded."), 0;
 
     int changed = 0;
-        for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
+    for each_map_ptr(shader_reflect, unsigned, k, array(char*), v) {
         int open = 0, clicked_or_toggled = 0;
         char *id = va("##SHD%d", *k);
         char *title = va("Shader %d", *k);
@@ -565,6 +565,27 @@ unsigned rgbaf(float r, float g, float b, float a) {
 }
 unsigned bgraf(float b, float g, float r, float a) {
     return rgba(r * 255, g * 255, b * 255, a * 255);
+}
+
+unsigned atorgba(const char *s) {
+    if( s[0] != '#' ) return 0;
+    unsigned r = 0, g = 0, b = 0, a = 255;
+    int slen = strspn(s+1, "0123456789abcdefABCDEF");
+    if( slen > 8 ) slen = 8;
+    /**/ if( slen == 6 ) sscanf(s+1, "%2x%2x%2x",    &r,&g,&b);
+    else if( slen == 8 ) sscanf(s+1, "%2x%2x%2x%2x", &r,&g,&b,&a);
+    else if( slen == 3 ) sscanf(s+1, "%1x%1x%1x",    &r,&g,&b   ), r=r<<4|r,g=g<<4|g,b=b<<4|b;
+    else if( slen == 4 ) sscanf(s+1, "%1x%1x%1x%1x", &r,&g,&b,&a), r=r<<4|r,g=g<<4|g,b=b<<4|b,a=a<<4|a;
+    return rgba(r,g,b,a);
+}
+char *rgbatoa(unsigned rgba) {
+    unsigned a = rgba >> 24;
+    unsigned b =(rgba >> 16) & 255;
+    unsigned g =(rgba >>  8) & 255;
+    unsigned r = rgba        & 255;
+    char *s = va("#        ");
+    sprintf(s+1, "%02x%02x%02x%02x", r,g,b,a);
+    return s;
 }
 
 // -----------------------------------------------------------------------------
@@ -1453,16 +1474,19 @@ void sprite( texture_t texture, float position[3], float rotation, uint32_t colo
     sprite_sheet( texture, spritesheet, position, rotation, offset, scale, 0, color, false );
 }
 
-// rect(x,y,w,h) is [0..1] normalized, z-index, pos(x,y,scale), rotation (degrees), color (rgba)
-void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba) {
-    // @todo: no need to queue if alpha or scale are zero
+// rect(x,y,w,h) is [0..1] normalized, z-index, pos(x,y,scalex,scaley), rotation (degrees), color (rgba)
+void sprite_rect( texture_t t, vec4 rect, float zindex, vec4 pos, float tilt_deg, unsigned tint_rgba) {
+    // do not queue if either alpha or scale is zero
+    if( 0 == (pos.z * pos.w * ((tint_rgba>>24) & 255)) ) return;
+
     sprite_t s = {0};
 
-    s.x = rect.x, s.y = rect.y, s.w = rect.z, s.h = rect.w;
-    s.cellw = s.w * t.w, s.cellh = s.h * t.h;
-
     s.px = pos.x, s.py = pos.y, s.pz = zindex;
-    s.sx = s.sy = pos.z;
+    s.sx = pos.z, s.sy = pos.w;
+
+    s.x = rect.x, s.y = rect.y, s.w = rect.z, s.h = rect.w;
+    s.cellw = s.w * s.sx * t.w, s.cellh = s.h * s.sy * t.h;
+
     s.rgba = tint_rgba;
     s.ox = 0/*ox*/ * s.sx;
     s.oy = 0/*oy*/ * s.sy;
@@ -1808,10 +1832,10 @@ tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols
     return t;
 }
 
-int tileset_ui( tileset_t t ) {
+int ui_tileset( tileset_t t ) {
     ui_subimage(va("Selection #%d (%d,%d)", t.selected, t.selected % t.cols, t.selected / t.cols), t.tex.id, t.tex.w, t.tex.h, (t.selected % t.cols) * t.tile_w, (t.selected / t.cols) * t.tile_h, t.tile_w, t.tile_h);
     int choice;
-    if( (choice = ui_image(0, t.tex.id, t.tex.w,t.tex.h)) ) { 
+    if( (choice = ui_image(0, t.tex.id, t.tex.w,t.tex.h)) ) {
         int px = ((choice / 100) / 100.f) * t.tex.w / t.tile_w;
         int py = ((choice % 100) / 100.f) * t.tex.h / t.tile_h;
         t.selected = px + py * t.cols;
@@ -1922,7 +1946,7 @@ void tiled_render(tiled_t tmx, vec3 pos) {
     }
 }
 
-void tiled_ui(tiled_t *t) {
+void ui_tiled(tiled_t *t) {
     ui_label2("Loaded map", t->map_name ? t->map_name : "(none)");
     ui_label2("Map dimensions", va("%dx%d", t->w, t->h));
     ui_label2("Tile dimensions", va("%dx%d", t->tilew, t->tileh));
@@ -1939,7 +1963,7 @@ void tiled_ui(tiled_t *t) {
     if( ui_collapse(va("Sets: %d", array_count(t->layers)), va("%p",t))) {
         for( int i = 0; i < array_count(t->layers); ++i ) {
             if( ui_collapse(va("%d", i+1), va("%p%d",t,i)) ) {
-                t->sets[i].selected = tileset_ui( t->sets[i] );
+                t->sets[i].selected = ui_tileset( t->sets[i] );
                 ui_collapse_end();
             }
         }
@@ -2366,7 +2390,7 @@ void spine_render(spine_t *p, vec3 offset, unsigned flags) {
                     offsy = dir.y * r->sy;
                 }
 
-                sprite_rect(p->texture, rect, zindex, add3(vec3(target.x,target.y,1),vec3(offsx,offsy,0)), tilt, tint);
+                sprite_rect(p->texture, rect, zindex, add4(vec4(target.x,target.y,1,1),vec4(offsx,offsy,0,0)), tilt, tint);
             }
          }
 
@@ -2414,7 +2438,7 @@ void spine_animate(spine_t *p, float delta) {
     spine_animate_(p, &p->time, &p->maxtime, delta);
 }
 
-void spine_ui(spine_t *p) {
+void ui_spine(spine_t *p) {
     if( ui_collapse(va("Anims: %d", array_count(p->anims)), va("%p-a", p))) {
         for each_array_ptr(p->anims, spine_anim_t, q) {
             if(ui_slider2("", &p->time, va("%.2f/%.0f %.2f%%", p->time, p->maxtime, p->time * 100.f))) {
@@ -2491,7 +2515,7 @@ void spine_ui(spine_t *p) {
                             sprite_rect(p->texture,
                                 // rect: vec4(r->x*1.0/p->texture.w,r->y*1.0/p->texture.h,(r->x+r->w)*1.0/p->texture.w,(r->y+r->h)*1.0/p->texture.h),
                                 ptr4(&r->x), // atlas
-                                0, vec3(0,0,0), r->deg + tilt, tint);
+                                0, vec4(0,0,1,1), r->deg + tilt, tint);
                             sprite_flush();
                     camera_get_active()->position = vec3(+window_width()/3,window_height()/2.25,2);
                 }
@@ -2736,7 +2760,7 @@ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
         for(int i = 0; i < 6; ++i) {
             glGenFramebuffers(1, &sky->framebuffers[i]);
             glBindFramebuffer(GL_FRAMEBUFFER, sky->framebuffers[i]);
-            
+
             glGenTextures(1, &sky->textures[i]);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, sky->textures[i]);
@@ -2807,7 +2831,7 @@ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
 void skybox_sh_reset(skybox_t *sky) {
     for (int s = 0; s < 9; s++) {
         sky->cubemap.sh[s] = vec3(0,0,0);
-    }    
+    }
 }
 
 void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength) {
@@ -3387,7 +3411,7 @@ bool postfx_end(postfx *fx) {
         return false;
     }
 
-    handle fb = *array_back(last_fb); 
+    handle fb = *array_back(last_fb);
     array_pop(last_fb);
     fbo_bind(fb);
 
@@ -3503,13 +3527,13 @@ int ui_fxs() {
     if(!fx.num_loaded) return ui_label(ICON_MD_WARNING " No Post FXs with annotations loaded."), 0;
 
     int changed = 0;
-        for( int i = 0; i < 64; ++i ) {
-            char *name = fx_name(i); if( !name ) break;
-            bool b = fx_enabled(i);
-            if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
-            ui_fx(i);
+    for( int i = 0; i < 64; ++i ) {
+        char *name = fx_name(i); if( !name ) break;
+        bool b = fx_enabled(i);
+        if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
+        ui_fx(i);
         ui_separator();
-        }
+    }
     return changed;
 }
 
@@ -4272,7 +4296,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) 
         if( material_embedded_texture ) {
             *material_embedded_texture = '\0';
             material_embedded_texture += 5;
-            array(char) embedded_texture = base64__decode(material_embedded_texture, strlen(material_embedded_texture));
+            array(char) embedded_texture = base64_decode(material_embedded_texture, strlen(material_embedded_texture));
             //printf("%s %d\n", material_embedded_texture, array_count(embedded_texture));
             //hexdump(embedded_texture, array_count(embedded_texture));
             *out = texture_compressed_from_mem( embedded_texture, array_count(embedded_texture), 0 ).id;
@@ -4398,7 +4422,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
             va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
     // }
-    ASSERT(shaderprog > 0);
+    // ASSERT(shaderprog > 0);
 
     iqm_t *q = CALLOC(1, sizeof(iqm_t));
     m.program = shaderprog;
@@ -4771,13 +4795,13 @@ anims_t animations(const char *pathfile, int flags) {
     if( anim_file ) {
         // deserialize anim
         a.speed = 1.0;
-    for each_substring(anim_file, "\r\n", anim) {
-        int from, to;
-        char anim_name[128] = {0};
-        if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
+        for each_substring(anim_file, "\r\n", anim) {
+            int from, to;
+            char anim_name[128] = {0};
+            if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
             array_push(a.anims, !!strstri(anim_name, "loop") || !strcmpi(anim_name, "idle") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
             array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
-    }
+        }
     } else {
         // placeholder
         array_push(a.anims, clip(0,1,0,0));

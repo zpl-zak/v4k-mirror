@@ -10,7 +10,7 @@ static map(unsigned, array(reflect_t)) members;
 void reflect_init() {
     if(!reflects) map_init_int(reflects);
     if(!members)  map_init_int(members);
-    }
+}
 AUTORUN {
     reflect_init();
 }
@@ -22,7 +22,7 @@ const char* symbol_naked(const char *s) {
     if(!strstr(s, " *") ) return s;
     char *copy = va("%s", s);
     do strswap(copy," *","*"); while( strstr(copy, " *") ); // char  * -> char*
-    return (const char *)copy;
+    return (const char*)copy;
 }
 
 void type_inscribe(const char *TY,unsigned TYsz,const char *infos) {
@@ -138,11 +138,11 @@ int ui_reflect(const char *filter) {
         // ENUMS, then FUNCTIONS, then STRUCTS
         unsigned masks[] = { 'E', 'F', 'S' };
         for( int i = 0; i < countof(masks); ++i )
-    for each_map_ptr(reflects, unsigned, k, reflect_t, R) {
+        for each_map_ptr(reflects, unsigned, k, reflect_t, R) {
             if( strmatchi(R->name, filter)) {
                 ui_reflect_(R, filter, masks[i]);
-    }
-}
+            }
+        }
 
     if( enabled ) ui_enable();
     return 0;
@@ -183,9 +183,9 @@ AUTOTEST {
         //printf("+%s vec3.%s (+%x) // %s\n", R->type, R->name, R->member_offset, R->info);
     }
 
-    // reflect_print("puts");
+    //reflect_print("puts");
     //reflect_print("TEXTURE_RGBA");
     //reflect_print("vec3");
 
-    // reflect_dump("*");
+    //reflect_dump("*");
 }

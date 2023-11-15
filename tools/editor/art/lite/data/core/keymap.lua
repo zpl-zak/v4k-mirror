@@ -127,6 +127,8 @@ keymap.add {
   ["ctrl+x"] = "doc:cut",
   ["ctrl+c"] = "doc:copy",
   ["ctrl+v"] = "doc:paste",
+  ["ctrl+insert"] = "doc:copy",
+  ["shift+insert"] = "doc:paste",
   ["escape"] = { "command:escape", "doc:select-none" },
   ["tab"] = { "command:complete", "doc:indent" },
   ["shift+tab"] = "doc:unindent",
@@ -144,7 +146,7 @@ keymap.add {
   ["ctrl+shift+return"] = "doc:newline-above",
   ["ctrl+j"] = "doc:join-lines",
   ["ctrl+a"] = "doc:select-all",
-  ["ctrl+d"] = { "find-replace:select-next", "doc:select-word" },
+  ["ctrl+d"] = { "find-replace:select-add-next", "doc:select-word" },
   ["ctrl+l"] = "doc:select-lines",
   ["ctrl+/"] = "doc:toggle-line-comments",
   ["ctrl+up"] = "doc:move-lines-up",
@@ -181,6 +183,8 @@ keymap.add {
   ["ctrl+shift+end"] = "doc:select-to-end-of-doc",
   ["shift+pageup"] = "doc:select-to-previous-page",
   ["shift+pagedown"] = "doc:select-to-next-page",
+  ["ctrl+shift+up"] = "doc:create-cursor-previous-line",
+  ["ctrl+shift+down"] = "doc:create-cursor-next-line"
 }
 
 return keymap

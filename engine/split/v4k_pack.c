@@ -626,7 +626,7 @@ static bool rd(void *buf, size_t len, size_t swap) { // return false any error a
     bool ret;
     if( in.fp ) {
         assert( !ferror(in.fp) && "invalid file handle (reader)" );
-        ret = len == fread((char*)buf, 1, len, in.fp);
+        ret = 1 == fread((char*)buf, len, 1, in.fp);
     } else {
         assert( in.membuf && "invalid memory buffer (reader)");
         assert( (in.offset + len <= in.memsize) && "memory overflow! (reader)");
@@ -2304,7 +2304,7 @@ void entropy( void *buf, unsigned n ) {
     FILE *fp = fopen( "/dev/urandom", "r" );
     if( !fp ) assert(!"/dev/urandom open failed");
 
-    size_t read = fread( buf, 1, n, fp );
+    size_t read = n * fread( buf, n, 1, fp );
     assert( read == n && "/dev/urandom read failed" );
     fclose( fp );
 }

@@ -107,10 +107,11 @@ static int ui_using_v2_menubar = 0;
         nk_menu_close(ui_ctx); \
         nk_menu_end(ui_ctx); \
     }}
-#define UI_MENU_ALIGN_RIGHT(px) { \
+#define UI_MENU_ALIGN_RIGHT(px, ...) { \
     int hspace = total_space.w - span - (px) - 1.5 * ITEM_WIDTH; \
     nk_layout_row_push(ui_ctx, hspace); span += hspace; \
     if (nk_menu_begin_label(ui_ctx, (title), align = NK_TEXT_RIGHT, nk_vec2(1,1))) { \
+        __VA_ARGS__; \
         nk_menu_close(ui_ctx); \
         nk_menu_end(ui_ctx); \
     }}
@@ -124,9 +125,9 @@ static int ui_using_v2_menubar = 0;
 
 #define UI_FONT_ENUM(carlito,b612) b612 // carlito
 
-#define UI_FONT_REGULAR  UI_FONT_ENUM("Carlito",     "B612")     "-Regular.ttf"
-#define UI_FONT_HEADING  UI_FONT_ENUM("Carlito",     "B612")     "-BoldItalic.ttf"
-#define UI_FONT_TERMINAL UI_FONT_ENUM("Inconsolata", "B612Mono") "-Regular.ttf"
+#define UI_FONT_REGULAR    UI_FONT_ENUM("Carlito",     "B612")     "-Regular.ttf"
+#define UI_FONT_HEADING    UI_FONT_ENUM("Carlito",     "B612")     "-BoldItalic.ttf"
+#define UI_FONT_TERMINAL   UI_FONT_ENUM("Inconsolata", "B612Mono") "-Regular.ttf"
 
 #if UI_LESSER_SPACING
     enum { UI_SEPARATOR_HEIGHT = 5, UI_MENUBAR_ICON_HEIGHT = 20, UI_ROW_HEIGHT = 22, UI_MENUROW_HEIGHT = 32 };
@@ -221,7 +222,7 @@ static void nk_config_custom_fonts() {
         // Monospaced font. Used in terminals or consoles.
 
         for( char *data = vfs_load(UI_FONT_TERMINAL, &datalen); data; data = 0 ) {
-            const float font_size = UI_FONT_REGULAR_SIZE; 
+            const float font_size = UI_FONT_REGULAR_SIZE;
             static const nk_rune icon_range[] = {32, 127, 0};
 
             struct nk_font_config cfg = nk_font_config(font_size);
@@ -518,10 +519,10 @@ vec2 ui_toolbar_(array(ui_item_t) ui_items, vec2 ui_results) {
                     if( nk_menu_item_text(ui_ctx, item, lens[j], NK_TEXT_LEFT) ) {
                         ui_results = vec2(i+1, j+1-1);
                     }
-                }                    
+                }
 
                 nk_menu_end(ui_ctx);
-            }            
+            }
         }
     }
 
@@ -905,7 +906,7 @@ int ui_set_enable_(int enabled) {
     static struct nk_input input;
     if (!enabled) {
         ui_alpha_push(0.5);
-        ui_ctx->style = off; // .button = off.button; 
+        ui_ctx->style = off; // .button = off.button;
         input = ui_ctx->input;
         memset(&ui_ctx->input, 0, sizeof(ui_ctx->input));
     } else {
@@ -1216,7 +1217,7 @@ int ui_layout_all_load_disk(const char *mask) {
         const char *title = ui_layout_load_disk(k, mask, i, &out);
         if( title ) {
             struct nk_window *win = nk_window_find(ui_ctx, title);
-            if( win ) {            
+            if( win ) {
                 win->bounds.x = out.x;
                 win->bounds.y = out.y;
                 win->bounds.w = out.w;
@@ -1340,7 +1341,7 @@ if( win ) {
 
     if( group1_any || !group2_interacting || anim_in_progress ) {
         struct nk_rect target = ui_layout_load_mem(idx, desktop, is_panel);
-        float alpha = len2sq(sub2(s->desktop, desktop)) ? 0 : UI_ANIM_ALPHA; // smooth unless we're restoring a desktop change 
+        float alpha = len2sq(sub2(s->desktop, desktop)) ? 0 : UI_ANIM_ALPHA; // smooth unless we're restoring a desktop change
 #if 1
         if( is_window && win->flags & NK_WINDOW_FULLSCREEN ) {
             target.x = 1;
@@ -1356,7 +1357,7 @@ if( win ) {
             target.y = ((desktop.h - workarea_h) - target.h) / 2;
         }
 #endif
-        win->bounds = nk_rect( 
+        win->bounds = nk_rect(
             win->bounds.x * alpha + target.x * (1 - alpha),
             win->bounds.y * alpha + target.y * (1 - alpha),
             win->bounds.w * alpha + target.w * (1 - alpha),
@@ -1411,7 +1412,7 @@ if( is_notify ) {
     if( nk_begin(ui_ctx, title, start_coords, window_flags) ) {
 
 // set width for all inactive panels
-struct nk_rect bounds = nk_window_get_bounds(ui_ctx); 
+struct nk_rect bounds = nk_window_get_bounds(ui_ctx);
 if( mouse_pressed && win && win->is_window_resizing ) {
     edge = vec2(bounds.w, bounds.h);
 
@@ -1433,7 +1434,7 @@ if( mouse_pressed && win && win->is_window_resizing ) {
     } else {
 
 if(is_panel) {
-   ui_panel_end(); 
+   ui_panel_end();
 } else ui_window_end();
 
         return 0;
@@ -1508,7 +1509,7 @@ int ui_panel(const char *title, int flags) {
         if(!ui_window_has_menubar) nk_layout_row_push(ui_ctx, 70);
         ui_window_has_menubar = 1;
 
-        return nk_menu_begin_text_styled(ui_ctx, title, strlen(title), NK_TEXT_ALIGN_CENTERED|NK_TEXT_ALIGN_MIDDLE, nk_vec2(220, 200), &transparent_style);    
+        return nk_menu_begin_text_styled(ui_ctx, title, strlen(title), NK_TEXT_ALIGN_CENTERED|NK_TEXT_ALIGN_MIDDLE, nk_vec2(220, 200), &transparent_style);
     }
 
     return ui_begin_panel_or_window_(title, flags, false);
@@ -1655,7 +1656,7 @@ if( !has_icon ) {
 } else {
     char *icon_glyph = va("%.*s", icon_len, icon);
 
-// @todo: implement nk_push_layout() 
+// @todo: implement nk_push_layout()
 //  nk_rect bounds = {..}; nk_panel_alloc_space(bounds, ctx);
     struct nk_window *win = ui_ctx->current;
     struct nk_panel *layout = win->layout, copy = *layout;
@@ -1686,7 +1687,7 @@ if( font )  nk_style_pop_font(ui_ctx);
     // old way
     // ui_labeicon_l_icked_L.x = is_hovering ? nk_input_has_mouse_click_down_in_rect(input, NK_BUTTON_LEFT, layout->bounds, nk_true) : 0;
     // new way
-    // this is an ugly hack to detect which icon (within a label) we're clicking on. 
+    // this is an ugly hack to detect which icon (within a label) we're clicking on.
     // @todo: figure out a better way to detect this... would it be better to have a ui_label_toolbar(lbl,bar) helper function instead?
     ui_label_icon_clicked_L.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x) - (alignment == NK_TEXT_RIGHT ? bounds.w : 0) ) * nk_input_is_mouse_released(input, NK_BUTTON_LEFT)) : 0;
 
@@ -1702,20 +1703,20 @@ int ui_label(const char *label) {
 }
 
 static int nk_label_(struct nk_context *ui_ctx, const char *text_, int align2 ) {
-const struct nk_input *input = &ui_ctx->input;
-struct nk_rect bounds = nk_widget_bounds(ui_ctx);
-int is_hovering = nk_input_is_mouse_hovering_rect(input, bounds) && !ui_has_active_popups;
-if( is_hovering ) {
-    struct nk_rect winbounds = nk_window_get_bounds(ui_ctx);
-    is_hovering &= nk_input_is_mouse_hovering_rect(input, winbounds);
-    is_hovering &= nk_window_has_focus(ui_ctx);
-}
+    const struct nk_input *input = &ui_ctx->input;
+    struct nk_rect bounds = nk_widget_bounds(ui_ctx);
+    int is_hovering = nk_input_is_mouse_hovering_rect(input, bounds) && !ui_has_active_popups;
+    if( is_hovering ) {
+        struct nk_rect winbounds = nk_window_get_bounds(ui_ctx);
+        is_hovering &= nk_input_is_mouse_hovering_rect(input, winbounds);
+        is_hovering &= nk_window_has_focus(ui_ctx);
+    }
 
-    nk_label(ui_ctx, text_, align2);
+        nk_label(ui_ctx, text_, align2);
 
-// this is an ugly hack to detect which icon (within a label) we're clicking on. 
-// @todo: figure out a better way to detect this... would it be better to have a ui_label_toolbar(lbl,bar) helper function instead?
-ui_label_icon_clicked_R.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x) - (align2 == NK_TEXT_RIGHT ? bounds.w : 0) ) * nk_input_is_mouse_released(input, NK_BUTTON_LEFT)) : 0;
+    // this is an ugly hack to detect which icon (within a label) we're clicking on.
+    // @todo: figure out a better way to detect this... would it be better to have a ui_label_toolbar(lbl,bar) helper function instead?
+    ui_label_icon_clicked_R.x = is_hovering ? ( (int)((input->mouse.pos.x - bounds.x) - (align2 == NK_TEXT_RIGHT ? bounds.w : 0) ) * nk_input_is_mouse_released(input, NK_BUTTON_LEFT)) : 0;
 
     return ui_label_icon_clicked_R.x;
 }
@@ -1892,24 +1893,60 @@ int ui_toggle(const char *label, bool *value) {
     return rc ? (*value ^= 1), rc : rc;
 }
 
-int ui_color4f(const char *label, float *color4) {
-    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
-
-    float c[4] = { color4[0]*255, color4[1]*255, color4[2]*255, color4[3]*255 };
-    int ret = ui_color4(label, c);
-    for( int i = 0; i < 4; ++i ) color4[i] = c[i] / 255.0f;
-    return ret;
-}
-
 static enum color_mode {COL_RGB, COL_HSV} ui_color_mode = COL_RGB;
 
-int ui_color4(const char *label, float *color4) {
+int ui_color4f(const char *label, float *color) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color4[0]*ui_alpha/255, color4[1]*ui_alpha/255, color4[2]*ui_alpha/255, color4[3]/255 }, before = after;
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3] }, before = after;
+    struct nk_colorf clamped = { clampf(color[0],0,1), clampf(color[1],0,1), clampf(color[2],0,1), clampf(color[3],0,1) };
+    if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
+        nk_layout_row_dynamic(ui_ctx, 120, 1);
+        after = nk_color_picker(ui_ctx, after, NK_RGB);
+
+        nk_layout_row_dynamic(ui_ctx, 0, 2);
+        ui_color_mode = nk_option_label(ui_ctx, "RGB", ui_color_mode == COL_RGB) ? COL_RGB : ui_color_mode;
+        ui_color_mode = nk_option_label(ui_ctx, "HSV", ui_color_mode == COL_HSV) ? COL_HSV : ui_color_mode;
+
+        nk_layout_row_dynamic(ui_ctx, 0, 1);
+        if (ui_color_mode == COL_RGB) {
+            after.r = nk_propertyf(ui_ctx, "#R:", -FLT_MAX, after.r, FLT_MAX, 0.01f,0.005f);
+            after.g = nk_propertyf(ui_ctx, "#G:", -FLT_MAX, after.g, FLT_MAX, 0.01f,0.005f);
+            after.b = nk_propertyf(ui_ctx, "#B:", -FLT_MAX, after.b, FLT_MAX, 0.01f,0.005f);
+        } else {
+            float hsva[4];
+            nk_colorf_hsva_fv(hsva, after);
+            hsva[0] = nk_propertyf(ui_ctx, "#H:", -FLT_MAX, hsva[0], FLT_MAX, 0.01f,0.005f);
+            hsva[1] = nk_propertyf(ui_ctx, "#S:", -FLT_MAX, hsva[1], FLT_MAX, 0.01f,0.005f);
+            hsva[2] = nk_propertyf(ui_ctx, "#V:", -FLT_MAX, hsva[2], FLT_MAX, 0.01f,0.005f);
+            after = nk_hsva_colorfv(hsva);
+        }
+        nk_label(ui_ctx, va("#%02X%02X%02X", (unsigned)clampf(after.r*255,0,255), (unsigned)clampf(after.g*255,0,255), (unsigned)clampf(after.b*255,0,255)), NK_TEXT_CENTERED);
+
+        color[0] = after.r;
+        color[1] = after.g;
+        color[2] = after.b;
+        color[3] = after.a;
+
+        nk_combo_end(ui_ctx);
+    }
+    return !!memcmp(&before.r, &after.r, sizeof(struct nk_colorf));
+}
+int ui_color4(const char *label, unsigned *color) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    unsigned a = *color >> 24;
+    unsigned b =(*color >> 16)&255;
+    unsigned g =(*color >> 8)&255;
+    unsigned r = *color & 255;
+
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+    ui_label_(label, NK_TEXT_LEFT);
+
+    struct nk_colorf after = { r*ui_alpha/255, g*ui_alpha/255, b*ui_alpha/255, a*ui_alpha/255 }, before = after;
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(after), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGBA);
@@ -1920,44 +1957,83 @@ int ui_color4(const char *label, float *color4) {
 
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         if (ui_color_mode == COL_RGB) {
-            after.r = nk_propertyf(ui_ctx, "#R:", 0, after.r, 1.0f, 0.01f,0.005f);
-            after.g = nk_propertyf(ui_ctx, "#G:", 0, after.g, 1.0f, 0.01f,0.005f);
-            after.b = nk_propertyf(ui_ctx, "#B:", 0, after.b, 1.0f, 0.01f,0.005f);
-            after.a = nk_propertyf(ui_ctx, "#A:", 0, after.a, 1.0f, 0.01f,0.005f);
+            after.r = nk_propertyi(ui_ctx, "#R:", 0, after.r * 255, 255, 1,1) / 255.f;
+            after.g = nk_propertyi(ui_ctx, "#G:", 0, after.g * 255, 255, 1,1) / 255.f;
+            after.b = nk_propertyi(ui_ctx, "#B:", 0, after.b * 255, 255, 1,1) / 255.f;
+            after.a = nk_propertyi(ui_ctx, "#A:", 0, after.a * 255, 255, 1,1) / 255.f;
         } else {
             float hsva[4];
             nk_colorf_hsva_fv(hsva, after);
-            hsva[0] = nk_propertyf(ui_ctx, "#H:", 0, hsva[0], 1.0f, 0.01f,0.05f);
-            hsva[1] = nk_propertyf(ui_ctx, "#S:", 0, hsva[1], 1.0f, 0.01f,0.05f);
-            hsva[2] = nk_propertyf(ui_ctx, "#V:", 0, hsva[2], 1.0f, 0.01f,0.05f);
-            hsva[3] = nk_propertyf(ui_ctx, "#A:", 0, hsva[3], 1.0f, 0.01f,0.05f);
+            hsva[0] = nk_propertyi(ui_ctx, "#H:", 0, hsva[0] * 255, 255, 1,1) / 255.f;
+            hsva[1] = nk_propertyi(ui_ctx, "#S:", 0, hsva[1] * 255, 255, 1,1) / 255.f;
+            hsva[2] = nk_propertyi(ui_ctx, "#V:", 0, hsva[2] * 255, 255, 1,1) / 255.f;
+            hsva[3] = nk_propertyi(ui_ctx, "#A:", 0, hsva[3] * 255, 255, 1,1) / 255.f;
             after = nk_hsva_colorfv(hsva);
         }
+        r = after.r * 255;
+        g = after.g * 255;
+        b = after.b * 255;
+        a = after.a * 255;
+        *color = rgba(r,g,b,a);
 
-        color4[0] = after.r * 255;
-        color4[1] = after.g * 255;
-        color4[2] = after.b * 255;
-        color4[3] = after.a * 255;
+        nk_label(ui_ctx, va("#%02X%02X%02X%02X", r, g, b, a), NK_TEXT_CENTERED);
 
         nk_combo_end(ui_ctx);
     }
     return !!memcmp(&before.r, &after.r, sizeof(struct nk_colorf));
 }
 
-int ui_color3f(const char *label, float *color3) {
-    float c[3] = { color3[0]*255, color3[1]*255, color3[2]*255 };
-    int ret = ui_color3(label, c);
-    for( int i = 0; i < 3; ++i ) color3[i] = c[i] / 255.0f;
-    return ret;
-}
-
-int ui_color3(const char *label, float *color3) {
+int ui_color3f(const char *label, float *color) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color3[0]*ui_alpha/255, color3[1]*ui_alpha/255, color3[2]*ui_alpha/255, 1 }, before = after;
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, ui_alpha }, before = after;
+    struct nk_colorf clamped = { clampf(color[0],0,1), clampf(color[1],0,1), clampf(color[2],0,1), 1 };
+    if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
+        nk_layout_row_dynamic(ui_ctx, 120, 1);
+        after = nk_color_picker(ui_ctx, after, NK_RGB);
+
+        nk_layout_row_dynamic(ui_ctx, 0, 2);
+        ui_color_mode = nk_option_label(ui_ctx, "RGB", ui_color_mode == COL_RGB) ? COL_RGB : ui_color_mode;
+        ui_color_mode = nk_option_label(ui_ctx, "HSV", ui_color_mode == COL_HSV) ? COL_HSV : ui_color_mode;
+
+        nk_layout_row_dynamic(ui_ctx, 0, 1);
+        if (ui_color_mode == COL_RGB) {
+            after.r = nk_propertyf(ui_ctx, "#R:", -FLT_MAX, after.r, FLT_MAX, 0.01f,0.005f);
+            after.g = nk_propertyf(ui_ctx, "#G:", -FLT_MAX, after.g, FLT_MAX, 0.01f,0.005f);
+            after.b = nk_propertyf(ui_ctx, "#B:", -FLT_MAX, after.b, FLT_MAX, 0.01f,0.005f);
+        } else {
+            float hsva[4];
+            nk_colorf_hsva_fv(hsva, after);
+            hsva[0] = nk_propertyf(ui_ctx, "#H:", -FLT_MAX, hsva[0], FLT_MAX, 0.01f,0.005f);
+            hsva[1] = nk_propertyf(ui_ctx, "#S:", -FLT_MAX, hsva[1], FLT_MAX, 0.01f,0.005f);
+            hsva[2] = nk_propertyf(ui_ctx, "#V:", -FLT_MAX, hsva[2], FLT_MAX, 0.01f,0.005f);
+            after = nk_hsva_colorfv(hsva);
+        }
+        nk_label(ui_ctx, va("#%02X%02X%02X", (unsigned)clampf(after.r*255,0,255), (unsigned)clampf(after.g*255,0,255), (unsigned)clampf(after.b*255,0,255)), NK_TEXT_CENTERED);
+
+        color[0] = after.r;
+        color[1] = after.g;
+        color[2] = after.b;
+
+        nk_combo_end(ui_ctx);
+    }
+    return !!memcmp(&before.r, &after.r, sizeof(struct nk_colorf));
+}
+int ui_color3(const char *label, unsigned *color) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    unsigned a = *color >> 24;
+    unsigned b =(*color >> 16)&255;
+    unsigned g =(*color >> 8)&255;
+    unsigned r = *color & 255;
+
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+    ui_label_(label, NK_TEXT_LEFT);
+
+    struct nk_colorf after = { r*ui_alpha, g*ui_alpha, b*ui_alpha, 1 }, before = after;
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(after), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGB);
@@ -1968,21 +2044,23 @@ int ui_color3(const char *label, float *color3) {
 
         nk_layout_row_dynamic(ui_ctx, 0, 1);
         if (ui_color_mode == COL_RGB) {
-            after.r = nk_propertyf(ui_ctx, "#R:", 0, after.r, 1.0f, 0.01f,0.005f);
-            after.g = nk_propertyf(ui_ctx, "#G:", 0, after.g, 1.0f, 0.01f,0.005f);
-            after.b = nk_propertyf(ui_ctx, "#B:", 0, after.b, 1.0f, 0.01f,0.005f);
+            after.r = nk_propertyi(ui_ctx, "#R:", 0, after.r * 255, 255, 1,1) / 255.f;
+            after.g = nk_propertyi(ui_ctx, "#G:", 0, after.g * 255, 255, 1,1) / 255.f;
+            after.b = nk_propertyi(ui_ctx, "#B:", 0, after.b * 255, 255, 1,1) / 255.f;
         } else {
             float hsva[4];
             nk_colorf_hsva_fv(hsva, after);
-            hsva[0] = nk_propertyf(ui_ctx, "#H:", 0, hsva[0], 1.0f, 0.01f,0.05f);
-            hsva[1] = nk_propertyf(ui_ctx, "#S:", 0, hsva[1], 1.0f, 0.01f,0.05f);
-            hsva[2] = nk_propertyf(ui_ctx, "#V:", 0, hsva[2], 1.0f, 0.01f,0.05f);
+            hsva[0] = nk_propertyi(ui_ctx, "#H:", 0, hsva[0] * 255, 255, 1,1) / 255.f;
+            hsva[1] = nk_propertyi(ui_ctx, "#S:", 0, hsva[1] * 255, 255, 1,1) / 255.f;
+            hsva[2] = nk_propertyi(ui_ctx, "#V:", 0, hsva[2] * 255, 255, 1,1) / 255.f;
             after = nk_hsva_colorfv(hsva);
         }
+        r = after.r * 255;
+        g = after.g * 255;
+        b = after.b * 255;
+        *color = rgba(r,g,b,a);
 
-        color3[0] = after.r * 255;
-        color3[1] = after.g * 255;
-        color3[2] = after.b * 255;
+        nk_label(ui_ctx, va("#%02X%02X%02X", r, g, b), NK_TEXT_CENTERED);
 
         nk_combo_end(ui_ctx);
     }
@@ -2055,6 +2133,8 @@ int ui_bool(const char *label, bool *enabled ) {
     return chg;
 }
 
+static int ui_num_signs = 0;
+
 int ui_int(const char *label, int *v) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
@@ -2075,6 +2155,45 @@ int ui_unsigned(const char *label, unsigned *v) {
     unsigned prev = *v;
     *v = (unsigned)nk_propertyd(ui_ctx, "#", 0, *v, UINT_MAX, 1,1);
     return prev != *v;
+}
+int ui_unsigned2(const char *label, unsigned *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+    ui_label_(label, NK_TEXT_LEFT);
+
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+2u %+2u", v[0], v[1]) :
+        va("%2u, %2u", v[0], v[1]);
+
+    if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
+        nk_layout_row_dynamic(ui_ctx, 0, 1);
+        unsigned prev0 = v[0]; nk_property_int(ui_ctx, "#X:", 0, &v[0], INT_MAX, 1,0.5f);
+        unsigned prev1 = v[1]; nk_property_int(ui_ctx, "#Y:", 0, &v[1], INT_MAX, 1,0.5f);
+        nk_combo_end(ui_ctx);
+        return prev0 != v[0] || prev1 != v[1];
+    }
+    return 0;
+}
+int ui_unsigned3(const char *label, unsigned *v) {
+    if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
+
+    nk_layout_row_dynamic(ui_ctx, 0, 2);
+    ui_label_(label, NK_TEXT_LEFT);
+
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+2u %+2u %+2u", v[0], v[1], v[2]) :
+        va("%2u, %2u, %2u", v[0], v[1], v[2]);
+
+    if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
+        nk_layout_row_dynamic(ui_ctx, 0, 1);
+        unsigned prev0 = v[0]; nk_property_int(ui_ctx, "#X:", 0, &v[0], INT_MAX, 1,0.5f);
+        unsigned prev1 = v[1]; nk_property_int(ui_ctx, "#Y:", 0, &v[1], INT_MAX, 1,0.5f);
+        unsigned prev2 = v[2]; nk_property_int(ui_ctx, "#Z:", 0, &v[2], INT_MAX, 1,0.5f);
+        nk_combo_end(ui_ctx);
+        return prev0 != v[0] || prev1 != v[1] || prev2 != v[2];
+    }
+    return 0;
 }
 
 int ui_short(const char *label, short *v) {
@@ -2116,16 +2235,14 @@ int ui_clampf(const char *label, float *v, float minf, float maxf) {
     return prev != v[0];
 }
 
-static bool ui_float_sign = 0;
-
 int ui_float2(const char *label, float *v) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = ui_float_sign ?
-        --ui_float_sign, va("%+.3f %+.3f", v[0], v[1]) :
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+.3f %+.3f", v[0], v[1]) :
         va("%.3f, %.3f", v[0], v[1]);
 
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
@@ -2144,8 +2261,8 @@ int ui_float3(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = ui_float_sign ?
-        --ui_float_sign, va("%+.2f %+.2f %+.2f", v[0], v[1], v[2]) :
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+.2f %+.2f %+.2f", v[0], v[1], v[2]) :
         va("%.2f, %.2f, %.2f", v[0], v[1], v[2]);
 
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
@@ -2165,8 +2282,8 @@ int ui_float4(const char *label, float *v) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    char *buffer = ui_float_sign ?
-        --ui_float_sign, va("%+.2f %+.2f %+.2f %+.2f", v[0], v[1], v[2], v[3]) :
+    char *buffer = ui_num_signs ?
+        --ui_num_signs, va("%+.2f %+.2f %+.2f %+.2f", v[0], v[1], v[2], v[3]) :
         va("%.2f,%.2f,%.2f,%.2f", v[0], v[1], v[2], v[3]);
 
     if (nk_combo_begin_label(ui_ctx, buffer, nk_vec2(200,200))) {
@@ -2185,7 +2302,7 @@ int ui_float4(const char *label, float *v) {
 int ui_mat33(const char *label, float M[9]) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
-    ui_float_sign = 3;
+    ui_num_signs = 3;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float3(NULL, M);
@@ -2196,7 +2313,7 @@ int ui_mat33(const char *label, float M[9]) {
 int ui_mat34(const char *label, float M[12]) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
-    ui_float_sign = 3;
+    ui_num_signs = 3;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float4(NULL, M);
@@ -2207,7 +2324,7 @@ int ui_mat34(const char *label, float M[12]) {
 int ui_mat44(const char *label, float M[16]) {
     if( label && ui_filter && ui_filter[0] ) if( !strstri(label, ui_filter) ) return 0;
 
-    ui_float_sign = 4;
+    ui_num_signs = 4;
     int changed = 0;
     changed |= ui_label(label);
     changed |= ui_float4(NULL, M);
@@ -2452,7 +2569,7 @@ int ui_browse(const char **output, bool *inlined) {
         const int W = 96, H = 96; // 2048x481 px, 21x5 cells
         texture_t i = texture("icons/suru.png", TEXTURE_RGBA|TEXTURE_MIPMAPS);
         browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H, 16, 3), BROWSER_FOLDER); // default group
-        browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H,  2, 4), BROWSER_HOME); 
+        browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H,  2, 4), BROWSER_HOME);
         browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H, 17, 3), BROWSER_COMPUTER);
         browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H,  1, 4), BROWSER_PROJECT);
         browser_config_dir(icon_load_rect(i.id, i.w, i.h, W, H,  0, 4), BROWSER_DESKTOP);
@@ -2704,7 +2821,7 @@ int ui_demo(int do_windows) {
         struct nk_window *win = nk_window_find(ui_ctx, title);
         if( win ) {
             enum { menubar_height = 65 }; // title bar (~32) + menu bounds (~25)
-            struct nk_rect bounds = win->bounds; bounds.y += menubar_height; bounds.h -= menubar_height; 
+            struct nk_rect bounds = win->bounds; bounds.y += menubar_height; bounds.h -= menubar_height;
 #if 1
             ddraw_flush();
 

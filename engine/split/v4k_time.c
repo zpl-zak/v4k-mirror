@@ -103,8 +103,8 @@ static uint64_t nanotimer(uint64_t *out_freq) {
 }
 
 uint64_t time_ns() {
-    static uint64_t epoch = 0;
-    static uint64_t freq = 0;
+    static __thread uint64_t epoch = 0;
+    static __thread uint64_t freq = 0;
     if( !freq ) {
         epoch = nanotimer(&freq);
     }

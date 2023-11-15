@@ -88,14 +88,14 @@ void *lt_load_file(const char *filename, int *size) {
 }
 
 const char* lt_button_name(int button) {
-    if(button == GLFW_MOUSE_BUTTON_1) return "left";
-    if(button == GLFW_MOUSE_BUTTON_2) return "middle";
-    if(button == GLFW_MOUSE_BUTTON_3) return "right";
+    if(button == GLFW_MOUSE_BUTTON_LEFT) return "left";
+    if(button == GLFW_MOUSE_BUTTON_RIGHT) return "right";
+    if(button == GLFW_MOUSE_BUTTON_MIDDLE) return "middle";
     return "?";
 }
 
 char* lt_key_name(char *dst, int key, int vk, int mods) {
-    // @todo: ALTGR -> left ctrl + right alt
+    // @todo: "altgr" -> left ctrl + right alt
 
     if( key == GLFW_KEY_UP ) return "up";
     if( key == GLFW_KEY_DOWN ) return "down";

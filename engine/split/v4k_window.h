@@ -17,6 +17,7 @@ enum WINDOW_FLAGS {
     WINDOW_ASPECT = 0x100, // keep aspect
     WINDOW_FIXED = 0x200, // disable resizing
     WINDOW_TRANSPARENT = 0x400,
+    WINDOW_BORDERLESS = 0x800,
 
     WINDOW_VSYNC = 0,
     WINDOW_VSYNC_ADAPTIVE = 0x1000,

@@ -9,9 +9,9 @@ camera_t camera() {
     static camera_t cam = {0};
     do_once {
         cam.speed = 0.50f;
-    cam.position = vec3(10,10,10);
+        cam.position = vec3(10,10,10);
         cam.updir = vec3(0,1,0);
-    cam.fov = 45;
+        cam.fov = 45;
 
         cam.damping = false;
         cam.move_friction = 0.09f;
@@ -21,17 +21,17 @@ camera_t camera() {
         cam.last_look = vec2(0,0);
         cam.last_move = vec3(0,0,0);
 
-    // update proj & view
-    camera_lookat(&cam,vec3(-5,0,-5));
+        // update proj & view
+        camera_lookat(&cam,vec3(-5,0,-5));
 
         // @todo: remove this hack that is used to consolidate dampings
         if( 1 ) {
             vec3 zero = {0};
-        for( int i = 0; i < 1000; ++i ) {
+            for( int i = 0; i < 1000; ++i ) {
                 camera_moveby(&cam, zero);
-            camera_fps(&cam,0,0);
+                camera_fps(&cam,0,0);
+            }
         }
-    }
     }
 
     last_camera = old;

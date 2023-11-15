@@ -22,7 +22,7 @@ local TreeView = View:extend()
 function TreeView:new()
   TreeView.super.new(self)
   self.scrollable = true
-  self.visible = true
+  self.visible = false --< @r-lyeh true>false
   self.init_size = true
   self.cache = {}
 end
@@ -185,7 +185,7 @@ end
 -- init
 local view = TreeView()
 local node = core.root_view:get_active_node()
-node:split("left", view, true) --< @r-lyeh true > false allows resizable treeview
+node:split("left", view, true)
 
 -- register commands and keymap
 command.add(nil, {
@@ -195,3 +195,100 @@ command.add(nil, {
 })
 
 keymap.add { ["ctrl+t"] = "treeview:toggle" } --< @r-lyeh ctrl+// > ctrl+t
+
+-- register some context menu items, if available
+local has_menu, menu = core.try(require, "plugins.contextmenu")
+local has_fsutils, fsutils = core.try(require, "plugins.fsutils")
+
+if has_menu and has_fsutils then
+  local function new_file_f(path)
+    command.perform "core:new-doc"
+  end
+
+  local function new_file()
+    new_file_f(view.hovered_item.abs_filename)
+  end
+
+  local function new_dir_f(path)
+    core.command_view:enter("New directory name", function(dir)
+      fsutils.mkdir(dir)
+    end)
+    core.command_view:set_text(path .. PATHSEP .. "New folder")
+  end
+
+  local function new_dir()
+    new_dir_f(view.hovered_item.abs_filename)
+  end
+
+  local function delete_f(path)
+    core.add_thread(function()
+      local function wrap()
+        return coroutine.wrap(function() fsutils.delete(path, true) end)
+      end
+
+      for n in wrap() do
+        if n % 100 == 0 then
+          core.log("Deleted %d items.", n)
+          coroutine.yield(0)
+        end
+      end
+
+      core.log("%q deleted.", path)
+    end)
+  end
+
+  local function delete()
+    local path = view.hovered_item.abs_filename
+    if view.hovered_item.type == "dir"
+      and system.show_confirm_dialog("Delete confirmation", string.format("Do you really want to delete %q ?", path)) then
+      delete_f(path)
+    else
+      delete_f(path)
+    end
+  end
+
+  local function dirname(path)
+    local p = fsutils.split(path)
+    table.remove(p)
+    return table.concat(p, PATHSEP)
+  end
+
+  local function rename()
+    local oldname = view.hovered_item.abs_filename
+    core.command_view:enter("Rename to", function(newname)
+      fsutils.move(oldname, newname)
+      core.log("Moved %q to %q", oldname, newname)
+    end, common.path_suggest)
+    core.command_view:set_text(dirname(oldname))
+  end
+
+  local function copy_path()
+    system.set_clipboard(view.hovered_item.abs_filename)
+  end
+
+  menu:register(function() return view.hovered_item and view.hovered_item.type == "dir" end, {
+    { text = "New file", command = new_file },
+    { text = "New folder", command = new_dir },
+    menu.DIVIDER,
+    { text = "Rename", command = rename },
+    { text = "Delete", command = delete },
+    menu.DIVIDER,
+    { text = "Copy directory name", command = copy_path }
+  })
+  menu:register(function() return view.hovered_item and view.hovered_item.type == "file" end, {
+    { text = "Rename", command = rename },
+    { text = "Delete", command = delete },
+    menu.DIVIDER,
+    { text = "Copy filename", command = copy_path }
+  })
+  -- general region of the treeview
+  menu:register(function(x, y)
+    local x1, y1, x2, y2 = view:get_content_bounds()
+    return not view.hovered_item and x > x1 and x <= x2 and y > y1 and y <= y2
+  end, {
+    { text = "New file", command = function() new_file_f(system.absolute_path('.')) end },
+    { text = "New folder", command = function() new_dir_f(system.absolute_path('.')) end }
+  })
+end
+
+return view --< @r-lyeh

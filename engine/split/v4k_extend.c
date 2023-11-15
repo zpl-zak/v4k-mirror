@@ -23,7 +23,7 @@ void* dll(const char *fname, const char *symbol) {
             fname = (const char *)buf;
         } else {
             return NULL;
-    }
+        }
     }
 #if is(win32)
     return (void*)GetProcAddress(fname ? LoadLibraryA(fname) : GetModuleHandleA(NULL), symbol);

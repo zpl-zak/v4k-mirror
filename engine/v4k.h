@@ -1273,17 +1273,17 @@ bool        id_valid(uintptr_t id);
 #define OBJHEADER \
     struct { \
         ifdef(debug, const char *objname;) \
-    union { \
-        uintptr_t objheader; \
-        struct {  \
-        uintptr_t objtype:8; \
-        uintptr_t objsizew:8; \
-        uintptr_t objrefs:8; \
-        uintptr_t objheap:1; \
-        uintptr_t objcomps:1; /* << can be removed? check payload ptr instead? */ \
-        uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
-        uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
-        }; \
+        union { \
+            uintptr_t objheader; \
+            struct {  \
+            uintptr_t objtype:8; \
+            uintptr_t objsizew:8; \
+            uintptr_t objrefs:8; \
+            uintptr_t objheap:1; \
+            uintptr_t objcomps:1; /* << can be removed? check payload ptr instead? */ \
+            uintptr_t objunused:64-8-8-8-1-1-ID_INDEX_BITS-ID_COUNT_BITS; /*19*/ \
+            uintptr_t objid:ID_INDEX_BITS+ID_COUNT_BITS; /*16+3*/ \
+            }; \
         }; \
         array(struct obj*) objchildren; \
     };
@@ -1575,7 +1575,6 @@ typedef enum OBJTYPE_BUILTINS {
     OBJTYPE_vec2i  =  9,
     OBJTYPE_vec3i  = 10,
 } OBJTYPE_BUILTINS;
-
 #line 0
 
 
@@ -2007,8 +2006,8 @@ API void *script_init_env(unsigned flags);
 
 //API void  editor();
 //API bool  editor_active();
-API vec3  editor_pick(float mouse_x, float mouse_y);
-API char* editor_path(const char *path);
+API vec3   editor_pick(float mouse_x, float mouse_y);
+API char*  editor_path(const char *path);
 
 API float* engine_getf(const char *key);
 API int*   engine_geti(const char *key);
@@ -2788,9 +2787,9 @@ API char* ftoa3(vec3  v);
 API char* ftoa4(vec4  v);
 
 API float atof1(const char *s);
-API vec2 atof2(const char *s);
-API vec3 atof3(const char *s);
-API vec4 atof4(const char *s);
+API vec2  atof2(const char *s);
+API vec3  atof3(const char *s);
+API vec4  atof4(const char *s);
 
 API char* itoa1(int   v);
 API char* itoa2(vec2i v);
@@ -2803,14 +2802,14 @@ API vec3i atoi3(const char *s);
 // ----------------------------------------------------------------------------
 // endianness
 
-API int is_big();
-API int is_little();
+API int         is_big();
+API int         is_little();
 
-API uint16_t swap16( uint16_t x );
-API uint32_t swap32( uint32_t x );
-API uint64_t swap64( uint64_t x );
-API float    swap32f(float n);
-API double   swap64f(double n);
+API uint16_t    swap16( uint16_t x );
+API uint32_t    swap32( uint32_t x );
+API uint64_t    swap64( uint64_t x );
+API float       swap32f(float n);
+API double      swap64f(double n);
 API void        swapf(float *a, float *b);
 API void        swapf2(vec2 *a, vec2 *b);
 API void        swapf3(vec3 *a, vec3 *b);
@@ -2828,17 +2827,17 @@ API uint64_t    big64(uint64_t n); // swap64 as big
 API float       big32f(float n);   // swap32 as big
 API double      big64f(double n);  // swap64 as big
 
-API uint16_t* lil16p(void *p, int sz);
-API uint32_t* lil32p(void *p, int sz);
-API uint64_t* lil64p(void *p, int sz);
-API float   * lil32pf(void *p, int sz);
-API double  * lil64pf(void *p, int sz);
+API uint16_t*   lil16p(void *p, int sz);
+API uint32_t*   lil32p(void *p, int sz);
+API uint64_t*   lil64p(void *p, int sz);
+API float   *   lil32pf(void *p, int sz);
+API double  *   lil64pf(void *p, int sz);
 
 API uint16_t*   big16p(void *p, int sz);
 API uint32_t*   big32p(void *p, int sz);
 API uint64_t*   big64p(void *p, int sz);
 API float   *   big32pf(void *p, int sz);
-API double  * big64pf(void *p, int sz);
+API double  *   big64pf(void *p, int sz);
 
 #if is(cl)
 #define swap16 _byteswap_ushort
@@ -2992,6 +2991,7 @@ API int saveb(unsigned char *buf, const char *format, ...);
 
 API int loadf(FILE *file, const char *format, ...);
 API int loadb(const unsigned char *buf, const char *format, ...);
+
 #line 0
 
 #line 1 "engine/split/v4k_profile.h"
@@ -3133,6 +3133,9 @@ API unsigned alpha( unsigned rgba );
 
 #define BLUE    RGBX(0xB55A06,255)
 
+API unsigned atorgba(const char *s);
+API char *   rgbatoa(unsigned rgba);
+
 // -----------------------------------------------------------------------------
 // images
 
@@ -3217,6 +3220,7 @@ typedef struct texture_t {
     char* filename;
     bool transparent;
     unsigned fbo; // for texture recording
+    union { unsigned userdata, delay; };
 } texture_t;
 
 API texture_t texture_compressed(const char *filename, unsigned flags);
@@ -3281,8 +3285,8 @@ API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma 
 // texture id, position(x,y,depth sort), tint color, rotation angle
 API void sprite( texture_t texture, float position[3], float rotation /*0*/, uint32_t color /*~0u*/);
 
-// texture id, rect(x,y,w,h) is [0..1] normalized, z-index, pos(xy,scale), rotation (degrees), color (rgba)
-API void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
+// texture id, rect(x,y,w,h) is [0..1] normalized, z-index, pos(xy,scale.xy), rotation (degrees), color (rgba)
+API void sprite_rect( texture_t t, vec4 rect, float zindex, vec4 pos, float tilt_deg, unsigned tint_rgba);
 
 // texture id, sheet(frameNumber,X,Y) (frame in a X*Y spritesheet), position(x,y,depth sort), rotation angle, offset(x,y), scale(x,y), is_additive, tint color
 API void sprite_sheet( texture_t texture, float sheet[3], float position[3], float rotation, float offset[2], float scale[2], int is_additive, uint32_t rgba, int resolution_independant);
@@ -3300,7 +3304,8 @@ typedef struct tileset_t {
 } tileset_t;
 
 API tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols, unsigned rows);
-API int       tileset_ui( tileset_t t );
+
+API int       ui_tileset( tileset_t t );
 
 typedef struct tilemap_t {
     int blank_chr;                // transparent tile
@@ -3335,7 +3340,8 @@ typedef struct tiled_t {
 
 API tiled_t tiled(const char *file_tmx);
 API void    tiled_render(tiled_t tmx, vec3 pos);
-API void    tiled_ui(tiled_t *t);
+
+API void    ui_tiled(tiled_t *t);
 
 // -----------------------------------------------------------------------------
 // spines
@@ -3346,7 +3352,8 @@ API spine_t*spine(const char *file_json, const char *file_atlas, unsigned flags)
 API void    spine_skin(spine_t *p, unsigned skin);
 API void    spine_render(spine_t *p, vec3 offset, unsigned flags);
 API void    spine_animate(spine_t *p, float delta);
-API void    spine_ui(spine_t *p);
+
+API void    ui_spine(spine_t *p);
 
 // -----------------------------------------------------------------------------
 // cubemaps
@@ -4155,13 +4162,13 @@ API void        trap_on_quit(int signal);   // helper util
 API void        trap_on_abort(int signal);  // helper util
 API void        trap_on_debug(int signal);  // helper util
 
-#define PANIC(...)   PANIC(va(__VA_ARGS__), strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__) // die() ?
+#define PANIC(...)   PANIC(va(""__VA_ARGS__), __FILE__, __LINE__) // die() ?
 API int (PANIC)(const char *error, const char *file, int line);
 
-#define PRINTF(...)  PRINTF(va(__VA_ARGS__), 1[#__VA_ARGS__] == '!' ? callstack(+48) : "", strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__, __LINE__, __FUNCTION__)
+#define PRINTF(...)  PRINTF(va(""__VA_ARGS__), 1[""#__VA_ARGS__] == '!' ? callstack(+48) : "", __FILE__, __LINE__, __FUNCTION__)
 API int (PRINTF)(const char *text, const char *stack, const char *file, int line, const char *function);
 
-#define test(expr) test(strrchr(__FILE__, '/')?(strrchr(__FILE__, '/')+2):__FILE__,__LINE__,#expr,!!(expr))
+#define test(expr) test(__FILE__,__LINE__,#expr,!!(expr))
 API int (test)(const char *file, int line, const char *expr, bool result);
 
 #if ENABLE_AUTOTESTS
@@ -4335,7 +4342,7 @@ typedef struct curve_t {
 API curve_t curve();
 API void      curve_add(curve_t *c, vec3 p);
 API void      curve_end(curve_t *c, int num_points);
-API vec3      curve_eval(curve_t *c, float dt, unsigned *color);
+API vec3       curve_eval(curve_t *c, float dt, unsigned *color);
 API void    curve_destroy(curve_t *c);
 #line 0
 
@@ -4371,11 +4378,13 @@ API int    ui_mat44(const char *label, float mat44[16]);
 API int    ui_double(const char *label, double *value);
 API int    ui_buffer(const char *label, char *buffer, int buflen);
 API int    ui_string(const char *label, char **string);
-API int    ui_color3(const char *label, float *color3); //[0..255]
-API int    ui_color3f(const char *label, float *color3); //[0..1]
-API int    ui_color4(const char *label, float *color4); //[0..255]
-API int    ui_color4f(const char *label, float *color4); //[0..1]
+API int    ui_color3(const char *label, unsigned *color); //[0..255]
+API int    ui_color3f(const char *label, float color[3]); //[0..1]
+API int    ui_color4(const char *label, unsigned *color); //[0..255]
+API int    ui_color4f(const char *label, float color[4]); //[0..1]
 API int    ui_unsigned(const char *label, unsigned *value);
+API int    ui_unsigned2(const char *label, unsigned *value);
+API int    ui_unsigned3(const char *label, unsigned *value);
 API int    ui_button(const char *label);
 API int    ui_button_transparent(const char *label);
 API int    ui_buttons(int buttons, /*labels*/...);
@@ -4494,6 +4503,7 @@ enum WINDOW_FLAGS {
     WINDOW_ASPECT = 0x100, // keep aspect
     WINDOW_FIXED = 0x200, // disable resizing
     WINDOW_TRANSPARENT = 0x400,
+    WINDOW_BORDERLESS = 0x800,
 
     WINDOW_VSYNC = 0,
     WINDOW_VSYNC_ADAPTIVE = 0x1000,

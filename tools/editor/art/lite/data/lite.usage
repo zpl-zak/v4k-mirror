@@ -134,12 +134,12 @@ Plugins can be downloaded from the [plugins repository](https://github.com/rxi/l
 
 ## Color Themes
 Colors themes in lite are lua modules which overwrite the color fields of lite's
-`core.style` module. Color themes should be placed in the `data/user/colors`
+`core.style` module. Color themes should be placed in the `data/themes`
 directory.
 
 A color theme can be set by requiring it in your user module:
 ```lua
-require "user.colors.winter"
+require "themes.winter"
 ```
 
 Color themes can be downloaded from the [color themes repository](https://github.com/rxi/lite-colors).

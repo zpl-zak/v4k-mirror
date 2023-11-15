@@ -657,15 +657,15 @@ bool input_touch_active() {
 #endif // !is(ems)
 
 int ui_mouse() {
-        ui_label2_float("X", input(MOUSE_X));
-        ui_label2_float("Y", input(MOUSE_Y));
-        ui_label2_float("Wheel", input(MOUSE_W));
-        ui_separator();
-        ui_label2_bool("Left", input(MOUSE_L));
-        ui_label2_bool("Middle", input(MOUSE_M));
-        ui_label2_bool("Right", input(MOUSE_R));
-        ui_separator();
-        for( int i = 0; i <= CURSOR_SW_AUTO; ++i ) if(ui_button(va("Cursor shape #%d", i))) window_cursor_shape(i);
+    ui_label2_float("X", input(MOUSE_X));
+    ui_label2_float("Y", input(MOUSE_Y));
+    ui_label2_float("Wheel", input(MOUSE_W));
+    ui_separator();
+    ui_label2_bool("Left", input(MOUSE_L));
+    ui_label2_bool("Middle", input(MOUSE_M));
+    ui_label2_bool("Right", input(MOUSE_R));
+    ui_separator();
+    for( int i = 0; i <= CURSOR_SW_AUTO; ++i ) if(ui_button(va("Cursor shape #%d", i))) window_cursor_shape(i);
 
     return 0;
 }
@@ -704,7 +704,7 @@ int ui_keyboard() {
 }
 
 int ui_gamepad(int gamepad_id) {
-        input_use(gamepad_id);
+    input_use(gamepad_id);
 
     bool connected = !!input(GAMEPAD_CONNECTED);
 
@@ -712,48 +712,48 @@ int ui_gamepad(int gamepad_id) {
 
     if( !connected ) ui_disable();
 
-        ui_separator();
+    ui_separator();
 
-        ui_label2_bool("A", input(GAMEPAD_A) );
-        ui_label2_bool("B", input(GAMEPAD_B) );
-        ui_label2_bool("X", input(GAMEPAD_X) );
-        ui_label2_bool("Y", input(GAMEPAD_Y) );
-        ui_label2_bool("Up", input(GAMEPAD_UP) );
-        ui_label2_bool("Down", input(GAMEPAD_DOWN) );
-        ui_label2_bool("Left", input(GAMEPAD_LEFT) );
-        ui_label2_bool("Right", input(GAMEPAD_RIGHT) );
-        ui_label2_bool("Menu", input(GAMEPAD_MENU) );
-        ui_label2_bool("Start", input(GAMEPAD_START) );
+    ui_label2_bool("A", input(GAMEPAD_A) );
+    ui_label2_bool("B", input(GAMEPAD_B) );
+    ui_label2_bool("X", input(GAMEPAD_X) );
+    ui_label2_bool("Y", input(GAMEPAD_Y) );
+    ui_label2_bool("Up", input(GAMEPAD_UP) );
+    ui_label2_bool("Down", input(GAMEPAD_DOWN) );
+    ui_label2_bool("Left", input(GAMEPAD_LEFT) );
+    ui_label2_bool("Right", input(GAMEPAD_RIGHT) );
+    ui_label2_bool("Menu", input(GAMEPAD_MENU) );
+    ui_label2_bool("Start", input(GAMEPAD_START) );
 
-        ui_separator();
+    ui_separator();
 
-        ui_label2_float("Left pad x", input(GAMEPAD_LPADX) );
-        ui_label2_float("Left pad y", input(GAMEPAD_LPADY) );
-        ui_label2_float("Left trigger", input(GAMEPAD_LT) );
-        ui_label2_bool("Left bumper", input(GAMEPAD_LB) );
-        ui_label2_bool("Left thumb", input(GAMEPAD_LTHUMB) );
+    ui_label2_float("Left pad x", input(GAMEPAD_LPADX) );
+    ui_label2_float("Left pad y", input(GAMEPAD_LPADY) );
+    ui_label2_float("Left trigger", input(GAMEPAD_LT) );
+    ui_label2_bool("Left bumper", input(GAMEPAD_LB) );
+    ui_label2_bool("Left thumb", input(GAMEPAD_LTHUMB) );
 
-        vec2 v = input_filter_deadzone( input2(GAMEPAD_LPADX), 0.1f );
-        ui_label2_float("Filtered pad x", v.x);
-        ui_label2_float("Filtered pad y", v.y);
+    vec2 v = input_filter_deadzone( input2(GAMEPAD_LPADX), 0.1f );
+    ui_label2_float("Filtered pad x", v.x);
+    ui_label2_float("Filtered pad y", v.y);
 
-        ui_separator();
+    ui_separator();
 
-        ui_label2_float("Right pad x", input(GAMEPAD_RPADX) );
-        ui_label2_float("Right pad y", input(GAMEPAD_RPADY) );
-        ui_label2_float("Right trigger", input(GAMEPAD_RT) );
-        ui_label2_bool("Right bumper", input(GAMEPAD_RB) );
-        ui_label2_bool("Right thumb", input(GAMEPAD_RTHUMB) );
+    ui_label2_float("Right pad x", input(GAMEPAD_RPADX) );
+    ui_label2_float("Right pad y", input(GAMEPAD_RPADY) );
+    ui_label2_float("Right trigger", input(GAMEPAD_RT) );
+    ui_label2_bool("Right bumper", input(GAMEPAD_RB) );
+    ui_label2_bool("Right thumb", input(GAMEPAD_RTHUMB) );
 
-        vec2 w = input_filter_deadzone( input2(GAMEPAD_RPADX), 0.1f );
-        ui_label2_float("Filtered pad x", w.x);
-        ui_label2_float("Filtered pad y", w.y);
+    vec2 w = input_filter_deadzone( input2(GAMEPAD_RPADX), 0.1f );
+    ui_label2_float("Filtered pad x", w.x);
+    ui_label2_float("Filtered pad y", w.y);
 
     ui_enable();
 
     input_use(0);
     return 0;
-    }
+}
 
 int ui_gamepads() {
     for( int i = 0; i < 4; ++i ) ui_gamepad(i);

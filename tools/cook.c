@@ -1,7 +1,6 @@
-#define V4K_IMPLEMENTATION
 #define COOK_ON_DEMAND 0
 #define COOK_FROM_TERMINAL 1
-#include "joint/v4k.h"
+#include "v4k.c"
 
 int main(int argc, const char **argv) {
     double timer = time_ss();
@@ -34,3 +33,4 @@ int main(int argc, const char **argv) {
 // cl  cook.c      -I..\engine /openmp /Os /Ox /O2 /Oy /MT /DNDEBUG /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
 // cc -ObjC cook.c -I../engine -o cook.osx -framework Cocoa -framework IOKit -framework audiotoolbox -O3
 // cc cook.c       -I../engine -o cook.linux -lm -lpthread -ldl -lX11 -O3
+// del cook.o & del cook.obj & del cook.lib & del cook.exp

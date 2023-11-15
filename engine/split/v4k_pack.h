@@ -182,9 +182,9 @@ API char* ftoa3(vec3  v);
 API char* ftoa4(vec4  v);
 
 API float atof1(const char *s);
-API vec2 atof2(const char *s);
-API vec3 atof3(const char *s);
-API vec4 atof4(const char *s);
+API vec2  atof2(const char *s);
+API vec3  atof3(const char *s);
+API vec4  atof4(const char *s);
 
 API char* itoa1(int   v);
 API char* itoa2(vec2i v);
@@ -197,14 +197,14 @@ API vec3i atoi3(const char *s);
 // ----------------------------------------------------------------------------
 // endianness
 
-API int is_big();
-API int is_little();
+API int         is_big();
+API int         is_little();
 
-API uint16_t swap16( uint16_t x );
-API uint32_t swap32( uint32_t x );
-API uint64_t swap64( uint64_t x );
-API float    swap32f(float n);
-API double   swap64f(double n);
+API uint16_t    swap16( uint16_t x );
+API uint32_t    swap32( uint32_t x );
+API uint64_t    swap64( uint64_t x );
+API float       swap32f(float n);
+API double      swap64f(double n);
 API void        swapf(float *a, float *b);
 API void        swapf2(vec2 *a, vec2 *b);
 API void        swapf3(vec3 *a, vec3 *b);
@@ -222,17 +222,17 @@ API uint64_t    big64(uint64_t n); // swap64 as big
 API float       big32f(float n);   // swap32 as big
 API double      big64f(double n);  // swap64 as big
 
-API uint16_t* lil16p(void *p, int sz);
-API uint32_t* lil32p(void *p, int sz);
-API uint64_t* lil64p(void *p, int sz);
-API float   * lil32pf(void *p, int sz);
-API double  * lil64pf(void *p, int sz);
+API uint16_t*   lil16p(void *p, int sz);
+API uint32_t*   lil32p(void *p, int sz);
+API uint64_t*   lil64p(void *p, int sz);
+API float   *   lil32pf(void *p, int sz);
+API double  *   lil64pf(void *p, int sz);
 
 API uint16_t*   big16p(void *p, int sz);
 API uint32_t*   big32p(void *p, int sz);
 API uint64_t*   big64p(void *p, int sz);
 API float   *   big32pf(void *p, int sz);
-API double  * big64pf(void *p, int sz);
+API double  *   big64pf(void *p, int sz);
 
 #if is(cl)
 #define swap16 _byteswap_ushort
@@ -386,3 +386,4 @@ API int saveb(unsigned char *buf, const char *format, ...);
 
 API int loadf(FILE *file, const char *format, ...);
 API int loadb(const unsigned char *buf, const char *format, ...);
+
