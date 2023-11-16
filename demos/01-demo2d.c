@@ -136,7 +136,7 @@ int main() {
         }
         if( ui_panel("Tiled", 0)) {
             ui_float("Zoom in", &cam.position.z);
-            tiled_ui(&tmx);
+            ui_tiled(&tmx);
             ui_panel_end();
         }
         /*if( ui_panel("Spine", 0)) {

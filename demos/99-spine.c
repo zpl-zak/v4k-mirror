@@ -12,9 +12,9 @@
 #include "v4k.h"
 #define spine spine2
 #define spine_render spine_render2
-#define spine_ui spine_ui2
 #define spine_animate spine_animate2
 #define spine_skin spine_skin2
+#define ui_spine ui_spine2
 
 enum { _64 = 64 }; // max bones
 
@@ -395,7 +395,7 @@ void spine_render(spine_t *p, vec3 offset, unsigned flags) {
                 float deg_rect = self->rect_id ? p->skins[p->skin].rects[self->rect_id].deg : 0;
                 float tilt = p->atlas[self->atlas_id].deg + self->deg2 - deg_rect; // + self->deg2 + deg_rect + p->atlas[self->atlas_id].deg
                 unsigned tint = ~0u;
-                sprite_rect(p->texture, rect, zindex, add3(vec3(target.x,target.y,1),vec3(offsx,offsy,0)), tilt, tint);
+                sprite_rect(p->texture, rect, zindex, add4(vec4(target.x,target.y,1,1),vec4(offsx,offsy,0,0)), tilt, tint);
             }
          }
 
@@ -438,7 +438,7 @@ void spine_animate(spine_t *p, float *time, float *maxtime, float delta) {
     }
 }
 
-void spine_ui(spine_t *p) {
+void ui_spine(spine_t *p) {
 
     if( ui_collapse(va("Anims: %d", array_count(p->anims)), va("%p-a", p))) {
         for each_array_ptr(p->anims, spine_anim_t, q) {
@@ -514,7 +514,7 @@ void spine_ui(spine_t *p) {
                             sprite_rect(p->texture,
                                 // rect: vec4(r->x*1.0/p->texture.w,r->y*1.0/p->texture.h,(r->x+r->w)*1.0/p->texture.w,(r->y+r->h)*1.0/p->texture.h),
                                 ptr4(&r->x), // atlas
-                                0, vec3(0,0,0), r->deg + tilt, tint);
+                                0, vec4(0,0,1,1), r->deg + tilt, tint);
                             sprite_flush();
                     camera_get_active()->position = vec3(+window_width()/3,window_height()/2.25,2);
                 }
@@ -559,7 +559,7 @@ int main() {
             if(ui_button("Load")) {
                 s = spine("goblins.json", "goblins.atlas", 0);
             }
-            spine_ui(&s);
+            ui_spine(&s);
             if(ui_bool("Draw Skin", &do_skin));
             if(ui_bool("Draw Skeleton", &do_skel));
             ui_panel_end();
