@@ -116,8 +116,6 @@ extern "C" {
 
 {{FILE:v4k_extend.h}}
 
-{{FILE:v4k_editor.h}}
-
 {{FILE:v4k_file.h}}
 
 {{FILE:v4k_font.h}}
@@ -144,6 +142,8 @@ extern "C" {
 
 {{FILE:v4k_scene.h}}
 
+{{FILE:v4k_sprite.h}}
+
 {{FILE:v4k_string.h}}
 
 {{FILE:v4k_system.h}}
@@ -155,6 +155,10 @@ extern "C" {
 {{FILE:v4k_video.h}}
 
 {{FILE:v4k_window.h}}
+
+// ----
+
+{{FILE:v4k_editor.h}}
 
 // ----
 

@@ -200,8 +200,8 @@ static char **backtrace_symbols(void *const *list,int size) {
 
     static __thread char **symbols = 0; //[32][64] = {0};
     if( !symbols ) {
-        symbols = SYS_REALLOC(0, 128 * sizeof(char*));
-        for( int i = 0; i < 128; ++i) symbols[i] = SYS_REALLOC(0, 128 * sizeof(char));
+        symbols = SYS_MEM_REALLOC(0, 128 * sizeof(char*));
+        for( int i = 0; i < 128; ++i) symbols[i] = SYS_MEM_REALLOC(0, 128 * sizeof(char));
     }
 
     if(size > 128) size = 128;
@@ -234,7 +234,7 @@ static char **backtrace_symbols(void *const *sym,int num) { return 0; }
 
 char *callstack( int traces ) {
     static __thread char *output = 0;
-    if(!output ) output = SYS_REALLOC( 0, 128 * (64+2) );
+    if(!output ) output = SYS_MEM_REALLOC( 0, 128 * (64+2) );
     if( output ) output[0] = '\0';
     char *ptr = output;
 
@@ -793,7 +793,7 @@ int (PRINTF)(const char *text, const char *stack, const char *file, int line, co
 
 static void *panic_oom_reserve; // for out-of-memory recovery
 int (PANIC)(const char *error, const char *file, int line) {
-    panic_oom_reserve = SYS_REALLOC(panic_oom_reserve, 0);
+    panic_oom_reserve = SYS_MEM_REALLOC(panic_oom_reserve, 0);
 
     tty_color(RED);
 

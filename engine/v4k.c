@@ -101,7 +101,7 @@
 //-----------------------------------------------------------------------------
 // C files
 
-#line 1 "engine/split/v4k_begin.c"
+#line 1 "v4k_begin.c"
 #define do_threadlock(mutexptr) \
     for( int init_ = !!(mutexptr) || (thread_mutex_init( (mutexptr) = CALLOC(1, sizeof(thread_mutex_t)) ), 1); init_; init_ = 0) \
     for( int lock_ = (thread_mutex_lock( mutexptr ), 1); lock_; lock_ = (thread_mutex_unlock( mutexptr ), 0) )
@@ -110,7 +110,7 @@
     ((struct nk_color){ ((color>>0))&255,((color>>8))&255,((color>>16))&255,((color>>24))&255 })
 #line 0
 
-#line 1 "engine/split/v4k_ds.c"
+#line 1 "v4k_ds.c"
 
 // -----------------------------------------------------------------------------
 // sort/less
@@ -500,7 +500,7 @@ void (set_free)(set* m) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_string.c"
+#line 1 "v4k_string.c"
 #include <stdarg.h>
 
 char* tempvl(const char *fmt, va_list vl) {
@@ -921,9 +921,158 @@ AUTORUN {
     test( !strcmp("Hello happy world.", buf) );
 }
 #endif
+
+// ----------------------------------------------------------------------------
+// localization kit
+
+static const char *kit_lang = "enUS", *kit_langs =
+    "enUS,enGB,"
+    "frFR,"
+    "esES,esAR,esMX,"
+    "deDE,deCH,deAT,"
+    "itIT,itCH,"
+    "ptBR,ptPT,"
+    "zhCN,zhSG,zhTW,zhHK,zhMO,"
+    "ruRU,elGR,trTR,daDK,noNB,svSE,nlNL,plPL,fiFI,jaJP,"
+    "koKR,csCZ,huHU,roRO,thTH,bgBG,heIL"
+;
+
+static map(char*,char*) kit_ids;
+static map(char*,char*) kit_vars;
+
+#ifndef KIT_FMT_ID2
+#define KIT_FMT_ID2 "%s.%s"
+#endif
+
+void kit_init() {
+    do_once map_init(kit_ids, less_str, hash_str);
+    do_once map_init(kit_vars, less_str, hash_str);
+}
+
+void kit_insert( const char *id, const char *translation) {
+    char *id2 = va(KIT_FMT_ID2, kit_lang, id);
+
+    char **found = map_find_or_add_allocated_key(kit_ids, STRDUP(id2), NULL);
+    if(*found) FREE(*found);
+    *found = STRDUP(translation);
+}
+
+bool kit_merge( const char *filename ) {
+    // @todo: xlsx2ini
+    return false;
+}
+
+void kit_clear() {
+    map_clear(kit_ids);
+}
+
+bool kit_load( const char *filename ) {
+    return kit_clear(), kit_merge( filename );
+}
+
+void kit_set( const char *key, const char *value ) {
+    value = value && value[0] ? value : "";
+
+    char **found = map_find_or_add_allocated_key(kit_vars, STRDUP(key), NULL );
+    if(*found) FREE(*found);
+    *found = STRDUP(value);
+}
+
+void kit_reset() {
+    map_clear(kit_vars);
+}
+
+char *kit_translate2( const char *id, const char *lang ) {
+    char *id2 = va(KIT_FMT_ID2, lang, id);
+
+    char **found = map_find(kit_ids, id2);
+
+    // return original [[ID]] if no translation is found
+    if( !found ) return va("[[%s]]", id);
+
+    // return translation if no {{moustaches}} are found
+    if( !strstr(*found, "{{") ) return *found;
+
+    // else replace all found {{moustaches}} with context vars
+    {
+        // make room
+        static __thread char *results[16] = {0};
+        static __thread unsigned counter = 0; counter = (counter+1) % 16;
+
+        char *buffer = results[ counter ];
+        if( buffer ) FREE(buffer), buffer = 0;
+
+        // iterate moustaches
+        const char *begin, *end, *text = *found;
+        while( NULL != (begin = strstr(text, "{{")) ) {
+            end = strstr(begin+2, "}}");
+            if( end ) {
+                char *var = va("%.*s", (int)(end - (begin+2)), begin+2);
+                char **found_var = map_find(kit_vars, var);
+
+                if( found_var && 0[*found_var] ) {
+                    strcatf(&buffer, "%.*s%s", (int)(begin - text), text, *found_var);
+                } else {
+                    strcatf(&buffer, "%.*s{{%s}}", (int)(begin - text), text, var);
+                }
+
+                text = end+2;
+            } else {
+                strcatf(&buffer, "%.*s", (int)(begin - text), text);
+
+                text = begin+2;
+            }
+        }
+
+        strcatf(&buffer, "%s", text);
+        return buffer;
+    }
+}
+
+char *kit_translate( const char *id ) {
+    return kit_translate2( id, kit_lang );
+}
+
+void kit_locale( const char *lang ) {
+    kit_lang = STRDUP(lang); // @leak
+}
+
+void kit_dump_state( FILE *fp ) {
+    for each_map(kit_ids, char *, k, char *, v) {
+        fprintf(fp, "[ID ] %s=%s\n", k, v);
+    }
+    for each_map(kit_vars, char *, k, char *, v) {
+        fprintf(fp, "[VAR] %s=%s\n", k, v);
+    }
+}
+
+/*
+int main() {
+    kit_init();
+
+    kit_locale("enUS");
+    kit_insert("HELLO_PLAYERS", "Hi {{PLAYER1}} and {{PLAYER2}}!");
+    kit_insert("GREET_PLAYERS", "Nice to meet you.");
+
+    kit_locale("esES");
+    kit_insert("HELLO_PLAYERS", "Hola {{PLAYER1}} y {{PLAYER2}}!");
+    kit_insert("GREET_PLAYERS", "Un placer conoceros.");
+
+    kit_locale("enUS");
+    printf("%s %s\n", kit_translate("HELLO_PLAYERS"), kit_translate("GREET_PLAYERS")); // Hi {{PLAYER1}} and {{PLAYER2}}! Nice to meet you.
+
+    kit_locale("esES");
+    kit_set("PLAYER1", "John");
+    kit_set("PLAYER2", "Karl");
+    printf("%s %s\n", kit_translate("HELLO_PLAYERS"), kit_translate("GREET_PLAYERS")); // Hola John y Karl! Un placer conoceros.
+
+    assert( 0 == strcmp(kit_translate("NON_EXISTING"), "[[NON_EXISTING]]")); // [[NON_EXISTING]]
+    assert(~puts("Ok"));
+}
+*/
 #line 0
 
-#line 1 "engine/split/v4k_compat.c"
+#line 1 "v4k_compat.c"
 //-----------------------------------------------------------------------------
 // compat (unix & stdio.h)
 
@@ -1042,7 +1191,7 @@ static void v4k_pre_init();
 static void v4k_post_init(float);
 #line 0
 
-#line 1 "engine/split/v4k_ui.c"
+#line 1 "v4k_ui.c"
 // ----------------------------------------------------------------------------------------
 // ui extensions first
 
@@ -2946,8 +3095,8 @@ int ui_color4f(const char *label, float *color) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3] }, before = after;
-    struct nk_colorf clamped = { clampf(color[0],0,1), clampf(color[1],0,1), clampf(color[2],0,1), clampf(color[3],0,1) };
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3]*ui_alpha }, before = after;
+    struct nk_colorf clamped = { clampf(after.r,0,1), clampf(after.g,0,1), clampf(after.b,0,1), clampf(after.a,0,1) };
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGB);
@@ -3034,8 +3183,8 @@ int ui_color3f(const char *label, float *color) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, ui_alpha }, before = after;
-    struct nk_colorf clamped = { clampf(color[0],0,1), clampf(color[1],0,1), clampf(color[2],0,1), 1 };
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3]*ui_alpha }, before = after;
+    struct nk_colorf clamped = { clampf(after.r,0,1), clampf(after.g,0,1), clampf(after.b,0,1), ui_alpha };
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGB);
@@ -3078,7 +3227,7 @@ int ui_color3(const char *label, unsigned *color) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { r*ui_alpha, g*ui_alpha, b*ui_alpha, 1 }, before = after;
+    struct nk_colorf after = { r*ui_alpha/255, g*ui_alpha/255, b*ui_alpha/255, ui_alpha }, before = after;
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(after), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGB);
@@ -3740,8 +3889,10 @@ int ui_demo(int do_windows) {
     static float float2[2] = {1,2};
     static float float3[3] = {1,2,3};
     static float float4[4] = {1,2,3,4};
-    static float rgb[3] = {0.84,0.67,0.17};
-    static float rgba[4] = {0.67,0.90,0.12,1};
+    static float rgbf[3] = {0.84,0.67,0.17};
+    static float rgbaf[4] = {0.67,0.90,0.12,1};
+    static unsigned rgb = CYAN;
+    static unsigned rgba = PINK;
     static float slider = 0.5f;
     static float slider2 = 0.5f;
     static char string[64] = "hello world 123";
@@ -3785,8 +3936,10 @@ int ui_demo(int do_windows) {
         if( ui_list("my list", list, 3, &item ) ) puts("list changed");
 
         if( ui_section("Colors")) {}
-        if( ui_color3f("my color3", rgb) ) puts("color3 changed");
-        if( ui_color4f("my color4@this is a tooltip", rgba) ) puts("color4 changed");
+        if( ui_color3("my color3", &rgb) ) puts("color3 changed");
+        if( ui_color4("my color4@this is a tooltip", &rgba) ) puts("color4 changed");
+        if( ui_color3f("my color3f", rgbf) ) puts("color3f changed");
+        if( ui_color4f("my color4f@this is a tooltip", rgbaf) ) puts("color4f changed");
 
         if( ui_section("Sliders")) {}
         if( ui_slider("my slider", &slider)) puts("slider changed");
@@ -3899,7 +4052,7 @@ int ui_demo(int do_windows) {
 #line 0
 
 
-#line 1 "engine/split/v4k_audio.c"
+#line 1 "v4k_audio.c"
 // @fixme: really shutdown audio & related threads before quitting. ma_dr_wav crashes.
 
 
@@ -4492,7 +4645,7 @@ int ui_audio() {
 }
 #line 0
 
-#line 1 "engine/split/v4k_collide.c"
+#line 1 "v4k_collide.c"
 /* poly */
 poly poly_alloc(int cnt) {
     poly p = {0};
@@ -5920,7 +6073,7 @@ void collide_demo() { // debug draw collisions // @fixme: fix leaks: poly_free()
 }
 #line 0
 
-#line 1 "engine/split/v4k_cook.c"
+#line 1 "v4k_cook.c"
 // data pipeline
 // - rlyeh, public domain.
 // ----------------------------------------------------------------------------
@@ -5934,7 +6087,7 @@ void collide_demo() { // debug draw collisions // @fixme: fix leaks: poly_free()
 
 const char *ART = "art/";
 const char *TOOLS = "tools/bin/";
-const char *EDITOR = "tools/editor/";
+const char *EDITOR = "tools/";
 const char *COOK_INI = "tools/cook.ini";
 
 static unsigned ART_SKIP_ROOT; // number of chars to skip the base root in ART folder
@@ -6431,11 +6584,14 @@ int cook(void *userdata) {
         fclose(in);
     }
 
+//  if(array_count(uncooked))
+//  PRINTF("cook_jobs[%d]=%d\n", job->threadid, array_count(uncooked));
+
     // generate cook metrics. you usually do `game.exe --cook-stats && (type *.csv | sort /R > cook.csv)`
     static __thread FILE *statsfile = 0;
     if(flag("--cook-stats"))
     fseek(statsfile = fopen(va("cook%d.csv",job->threadid), "a+t"), 0L, SEEK_END);
-    if(statsfile && ftell(statsfile) == 0) fprintf(statsfile,"%10s,%10s,%10s,%10s,%10s, %s\n","+total_ms","gen_ms","exe_ms","zip_ms","pass","file");
+    if(statsfile && !job->threadid && ftell(statsfile) == 0) fprintf(statsfile,"%10s,%10s,%10s,%10s,%10s, %s\n","+total_ms","gen_ms","exe_ms","zip_ms","pass","file");
 
     // added or changed files
     for( int i = 0, end = array_count(uncooked); i < end && !cook_cancelling; ++i ) {
@@ -6748,10 +6904,8 @@ void cook_stop() {
 int cook_progress() {
     int count = 0, sum = 0;
     for( int i = 0, end = cook_jobs(); i < end; ++i ) {
-//        if( jobs[i].progress >= 0 ) {
             sum += jobs[i].progress;
             ++count;
-//        }
     }
     return cook_jobs() ? sum / (count+!count) : 100;
 }
@@ -6779,7 +6933,7 @@ bool have_tools() {
 }
 #line 0
 
-#line 1 "engine/split/v4k_data.c"
+#line 1 "v4k_data.c"
 
 static array(json5) roots;
 static array(char*) sources;
@@ -7009,7 +7163,7 @@ bool data_tests() {
 }
 #line 0
 
-#line 1 "engine/split/v4k_extend.c"
+#line 1 "v4k_extend.c"
 // dll ------------------------------------------------------------------------
 
 /* deprecated
@@ -7300,7 +7454,7 @@ void *script_init_env(unsigned flags) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_file.c"
+#line 1 "v4k_file.c"
 // -----------------------------------------------------------------------------
 // file
 
@@ -8187,7 +8341,7 @@ if( found && *found == 0 ) {
                 char *cmd = va("%scook" ifdef(osx,".osx",ifdef(linux,".linux",".exe"))" %s %s --cook-ini=%s --cook-additive --cook-jobs=1 --quiet", TOOLS, group1, group2, COOK_INI);
 
                 // cook groups
-                int rc = atoi(app_exec(cmd));
+                int rc = system(cmd); // atoi(app_exec(cmd));
                 if(rc < 0) PANIC("cannot invoke `%scook` (return code %d)", TOOLS, rc);
 
                 vfs_reload(); // @todo: optimize me. it is waaay inefficent to reload the whole VFS layout after cooking a single asset
@@ -8453,7 +8607,7 @@ bool ini_write(const char *filename, const char *section, const char *key, const
 
 #line 0
 
-#line 1 "engine/split/v4k_font.c"
+#line 1 "v4k_font.c"
 // font framework. original code by Vassvik (UNLICENSED)
 // - rlyeh, public domain.
 //
@@ -10807,7 +10961,7 @@ vec2 font_rect(const char *str) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_input.c"
+#line 1 "v4k_input.c"
 // input framework
 // - rlyeh, public domain
 //
@@ -11572,7 +11726,7 @@ int ui_gamepads() {
 }
 #line 0
 
-#line 1 "engine/split/v4k_math.c"
+#line 1 "v4k_math.c"
 // -----------------------------------------------------------------------------
 // math framework: rand, ease, vec2, vec3, vec4, quat, mat2, mat33, mat34, mat4
 // - rlyeh, public domain
@@ -12452,7 +12606,7 @@ AUTORUN {
 }
 #line 0
 
-#line 1 "engine/split/v4k_memory.c"
+#line 1 "v4k_memory.c"
 size_t dlmalloc_usable_size(void*); // __ANDROID_API__
 
 #if is(bsd) || is(osx) // bsd or osx
@@ -12461,9 +12615,10 @@ size_t dlmalloc_usable_size(void*); // __ANDROID_API__
 #  include <malloc.h>
 #endif
 
-#ifndef SYS_REALLOC
-#define SYS_REALLOC realloc
-#define SYS_MSIZE /* bsd/osx, then win32, then ems/__GLIBC__, then __ANDROID_API__ */ \
+#ifndef SYS_MEM_INIT
+#define SYS_MEM_INIT()
+#define SYS_MEM_REALLOC realloc
+#define SYS_MEM_SIZE /* bsd/osx, then win32, then ems/__GLIBC__, then __ANDROID_API__ */ \
     ifdef(osx, malloc_size, ifdef(bsd, malloc_size, \
         ifdef(win32, _msize, malloc_usable_size)))
 #endif
@@ -12473,10 +12628,12 @@ size_t dlmalloc_usable_size(void*); // __ANDROID_API__
 static __thread uint64_t xstats_current = 0, xstats_total = 0, xstats_allocs = 0;
 
 void* xrealloc(void* oldptr, size_t size) {
+    static __thread int once = 0; for(;!once;once = 1) SYS_MEM_INIT();
+
     // for stats
     size_t oldsize = xsize(oldptr);
 
-    void *ptr = SYS_REALLOC(oldptr, size);
+    void *ptr = SYS_MEM_REALLOC(oldptr, size);
     if( !ptr && size ) {
         PANIC("Not memory enough (trying to allocate %u bytes)", (unsigned)size);
     }
@@ -12501,7 +12658,7 @@ void* xrealloc(void* oldptr, size_t size) {
     return ptr;
 }
 size_t xsize(void* p) {
-    if( p ) return SYS_MSIZE(p);
+    if( p ) return SYS_MEM_SIZE(p);
     return 0;
 }
 char *xstats(void) {
@@ -12553,7 +12710,7 @@ void* forget( void *ptr ) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_network.c"
+#line 1 "v4k_network.c"
 
 #if is(tcc) && is(win32) // @fixme: https lib is broken with tcc. replaced with InternetReadFile() api for now
 
@@ -12850,7 +13007,7 @@ static void network_init() {
 }
 #line 0
 
-#line 1 "engine/split/v4k_track.c"
+#line 1 "v4k_track.c"
 static __thread int track__sock = -1;
 
 //~ Lifecycle methods
@@ -12987,7 +13144,7 @@ int track_event_props(char const *event_id, char const *user_id, const track_pro
 #undef TRACK__APPEND_SAFE_EX
 #line 0
 
-#line 1 "engine/split/v4k_netsync.c"
+#line 1 "v4k_netsync.c"
 typedef void* (*rpc_function)();
 
 typedef struct rpc_call {
@@ -13673,7 +13830,7 @@ void network_rpc_send(unsigned id, const char *cmdline) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_pack.c"
+#line 1 "v4k_pack.c"
 // -----------------------------------------------------------------------------
 // semantic versioning in a single byte (octal)
 // - rlyeh, public domain.
@@ -16046,7 +16203,7 @@ AUTORUN {
 #endif
 #line 0
 
-#line 1 "engine/split/v4k_reflect.c"
+#line 1 "v4k_reflect.c"
 // C reflection: enums, functions, structs, members and anotations.
 // - rlyeh, public domain
 //
@@ -16240,7 +16397,7 @@ AUTOTEST {
 }
 #line 0
 
-#line 1 "engine/split/v4k_render.c"
+#line 1 "v4k_render.c"
 // -----------------------------------------------------------------------------
 // opengl
 
@@ -17670,1110 +17827,6 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3], float gamma ) {
     glBindVertexArray( 0 );
     glUseProgram( 0 );
 //    glDisable( GL_BLEND );
-}
-
-// ----------------------------------------------------------------------------
-// sprites
-
-typedef struct sprite_t {
-    float px, py, pz;         // origin x, y, depth
-    float ox, oy, cos, sin;   // offset x, offset y, cos/sin of rotation degree
-    float sx, sy;             // scale x,y
-    uint32_t rgba;            // vertex color
-    float cellw, cellh;       // dimensions of any cell in spritesheet
-
-    union {
-    struct {
-        int frame, ncx, ncy;      // frame in a (num cellx, num celly) spritesheet
-    };
-    struct {
-        float x, y, w, h;         // normalized[0..1] within texture bounds
-    };
-    };
-} sprite_t;
-
-// sprite batching
-typedef struct batch_t { array(sprite_t) sprites; mesh_t mesh; int dirty; } batch_t;
-typedef map(int, batch_t) batch_group_t; // mapkey is anything that forces a flush. texture_id for now, might be texture_id+program_id soon
-
-// sprite stream
-typedef struct sprite_vertex { vec3 pos; vec2 uv; uint32_t rgba; } sprite_vertex;
-typedef struct sprite_index  { GLuint triangle[3]; } sprite_index;
-
-#define sprite_vertex(...) C_CAST(sprite_vertex, __VA_ARGS__)
-#define sprite_index(...)  C_CAST(sprite_index, __VA_ARGS__)
-
-// sprite impl
-static int sprite_count = 0;
-static int sprite_program = -1;
-static array(sprite_index)  sprite_indices = 0;
-static array(sprite_vertex) sprite_vertices = 0;
-static batch_group_t sprite_additive_group = {0}; // (w/2,h/2) centered
-static batch_group_t sprite_translucent_group = {0}; // (w/2,h/2) centered
-static batch_group_t sprite_00_translucent_group = {0}; // (0,0) centered
-
-void sprite( texture_t texture, float position[3], float rotation, uint32_t color ) {
-    float offset[2] = {0,0}, scale[2] = {1,1}, spritesheet[3] = {0,0,0};
-    sprite_sheet( texture, spritesheet, position, rotation, offset, scale, 0, color, false );
-}
-
-// rect(x,y,w,h) is [0..1] normalized, z-index, pos(x,y,scalex,scaley), rotation (degrees), color (rgba)
-void sprite_rect( texture_t t, vec4 rect, float zindex, vec4 pos, float tilt_deg, unsigned tint_rgba) {
-    // do not queue if either alpha or scale is zero
-    if( 0 == (pos.z * pos.w * ((tint_rgba>>24) & 255)) ) return;
-
-    sprite_t s = {0};
-
-    s.px = pos.x, s.py = pos.y, s.pz = zindex;
-    s.sx = pos.z, s.sy = pos.w;
-
-    s.x = rect.x, s.y = rect.y, s.w = rect.z, s.h = rect.w;
-    s.cellw = s.w * s.sx * t.w, s.cellh = s.h * s.sy * t.h;
-
-    s.rgba = tint_rgba;
-    s.ox = 0/*ox*/ * s.sx;
-    s.oy = 0/*oy*/ * s.sy;
-    if( tilt_deg ) {
-        tilt_deg = (tilt_deg + 0) * ((float)C_PI / 180);
-        s.cos = cosf(tilt_deg);
-        s.sin = sinf(tilt_deg);
-    } else {
-        s.cos = 1;
-        s.sin = 0;
-    }
-
-    batch_group_t *batches = &sprite_00_translucent_group;
-    batch_t *found = map_find_or_add(*batches, t.id, (batch_t){0});
-
-    array_push(found->sprites, s);
-}
-
-void sprite_sheet( texture_t texture, float spritesheet[3], float position[3], float rotation, float offset[2], float scale[2], int is_additive, uint32_t rgba, int resolution_independant) {
-    const float px = position[0], py = position[1], pz = position[2];
-    const float ox = offset[0], oy = offset[1], sx = scale[0], sy = scale[1];
-    const float frame = spritesheet[0], xcells = spritesheet[1], ycells = spritesheet[2];
-
-    if (frame < 0) return;
-    if (frame > 0 && frame >= (xcells * ycells)) return;
-
-    // no need to queue if alpha or scale are zero
-    if( sx && sy && alpha(rgba) ) {
-        vec3 bak = camera_get_active()->position;
-        if( resolution_independant ) { // @todo: optimize me
-        sprite_flush();
-        camera_get_active()->position = vec3(window_width()/2,window_height()/2,1);
-        }
-
-        sprite_t s;
-        s.px = px;
-        s.py = py;
-        s.pz = pz;
-        s.frame = frame;
-        s.ncx = xcells ? xcells : 1;
-        s.ncy = ycells ? ycells : 1;
-        s.sx = sx;
-        s.sy = sy;
-        s.ox = ox * sx;
-        s.oy = oy * sy;
-        s.cellw = (texture.x * sx / s.ncx);
-        s.cellh = (texture.y * sy / s.ncy);
-        s.rgba = rgba;
-        s.cos = 1;
-        s.sin = 0;
-        if(rotation) {
-            rotation = (rotation + 0) * ((float)C_PI / 180);
-            s.cos = cosf(rotation);
-            s.sin = sinf(rotation);
-        }
-
-        batch_group_t *batches = is_additive ? &sprite_additive_group : &sprite_translucent_group;
-#if 0
-        batch_t *found = map_find(*batches, texture.id);
-        if( !found ) found = map_insert(*batches, texture.id, (batch_t){0});
-#else
-        batch_t *found = map_find_or_add(*batches, texture.id, (batch_t){0});
-#endif
-
-        array_push(found->sprites, s);
-
-        if( resolution_independant ) { // @todo: optimize me
-        sprite_flush();
-        camera_get_active()->position = bak;
-        }
-    }
-}
-
-static void sprite_rebuild_meshes() {
-    sprite_count = 0;
-
-    batch_group_t* list[] = { &sprite_additive_group, &sprite_translucent_group };
-    for( int l = 0; l < countof(list); ++l) {
-        for each_map_ptr(*list[l], int,_, batch_t,bt) {
-
-            bt->dirty = array_count(bt->sprites) ? 1 : 0;
-            if( !bt->dirty ) continue;
-
-            int index = 0;
-            array_clear(sprite_indices);
-            array_clear(sprite_vertices);
-
-            array_foreach_ptr(bt->sprites, sprite_t,it ) {
-                float x0 = it->ox - it->cellw/2, x3 = x0 + it->cellw;
-                float y0 = it->oy - it->cellh/2, y3 = y0;
-                float x1 = x0,                   x2 = x3;
-                float y1 = y0 + it->cellh,       y2 = y1;
-
-                // @todo: move this affine transform into glsl shader
-                vec3 v0 = { it->px + ( x0 * it->cos - y0 * it->sin ), it->py + ( x0 * it->sin + y0 * it->cos ), it->pz };
-                vec3 v1 = { it->px + ( x1 * it->cos - y1 * it->sin ), it->py + ( x1 * it->sin + y1 * it->cos ), it->pz };
-                vec3 v2 = { it->px + ( x2 * it->cos - y2 * it->sin ), it->py + ( x2 * it->sin + y2 * it->cos ), it->pz };
-                vec3 v3 = { it->px + ( x3 * it->cos - y3 * it->sin ), it->py + ( x3 * it->sin + y3 * it->cos ), it->pz };
-
-                float cx = (1.0f / it->ncx) - 1e-9f;
-                float cy = (1.0f / it->ncy) - 1e-9f;
-                int idx = (int)it->frame;
-                int px = idx % it->ncx;
-                int py = idx / it->ncx;
-
-                float ux = px * cx, uy = py * cy;
-                float vx = ux + cx, vy = uy + cy;
-
-                vec2 uv0 = vec2(ux, uy);
-                vec2 uv1 = vec2(ux, vy);
-                vec2 uv2 = vec2(vx, vy);
-                vec2 uv3 = vec2(vx, uy);
-
-                array_push( sprite_vertices, sprite_vertex(v0, uv0, it->rgba) ); // Vertex 0 (A)
-                array_push( sprite_vertices, sprite_vertex(v1, uv1, it->rgba) ); // Vertex 1 (B)
-                array_push( sprite_vertices, sprite_vertex(v2, uv2, it->rgba) ); // Vertex 2 (C)
-                array_push( sprite_vertices, sprite_vertex(v3, uv3, it->rgba) ); // Vertex 3 (D)
-
-                //      A--B                  A               A-B
-                // quad |  | becomes triangle |\  and triangle \|
-                //      D--C                  D-C               C
-                GLuint A = (index+0), B = (index+1), C = (index+2), D = (index+3); index += 4;
-
-                array_push( sprite_indices, sprite_index(C, D, A) ); // Triangle 1
-                array_push( sprite_indices, sprite_index(C, A, B) ); // Triangle 2
-            }
-
-            mesh_update(&bt->mesh, "p3 t2 c4B", 0,array_count(sprite_vertices),sprite_vertices, 3*array_count(sprite_indices),sprite_indices, MESH_STATIC);
-
-            // clear elements from queue
-            sprite_count += array_count(bt->sprites);
-            array_clear(bt->sprites);
-        }
-    }
-
-    batch_group_t* list2[] = { &sprite_00_translucent_group };
-    for( int l = 0; l < countof(list2); ++l) {
-        for each_map_ptr(*list2[l], int,_, batch_t,bt) {
-
-            bt->dirty = array_count(bt->sprites) ? 1 : 0;
-            if( !bt->dirty ) continue;
-
-            int index = 0;
-            array_clear(sprite_indices);
-            array_clear(sprite_vertices);
-
-            array_foreach_ptr(bt->sprites, sprite_t,it ) {
-                float x0 = it->ox - it->cellw/2, x3 = x0 + it->cellw;
-                float y0 = it->oy - it->cellh/2, y3 = y0;
-                float x1 = x0,                   x2 = x3;
-                float y1 = y0 + it->cellh,       y2 = y1;
-
-                // @todo: move this affine transform into glsl shader
-                vec3 v0 = { it->px + ( x0 * it->cos - y0 * it->sin ), it->py + ( x0 * it->sin + y0 * it->cos ), it->pz };
-                vec3 v1 = { it->px + ( x1 * it->cos - y1 * it->sin ), it->py + ( x1 * it->sin + y1 * it->cos ), it->pz };
-                vec3 v2 = { it->px + ( x2 * it->cos - y2 * it->sin ), it->py + ( x2 * it->sin + y2 * it->cos ), it->pz };
-                vec3 v3 = { it->px + ( x3 * it->cos - y3 * it->sin ), it->py + ( x3 * it->sin + y3 * it->cos ), it->pz };
-
-                float ux = it->x, vx = ux + it->w;
-                float uy = it->y, vy = uy + it->h;
-
-                vec2 uv0 = vec2(ux, uy);
-                vec2 uv1 = vec2(ux, vy);
-                vec2 uv2 = vec2(vx, vy);
-                vec2 uv3 = vec2(vx, uy);
-
-                array_push( sprite_vertices, sprite_vertex(v0, uv0, it->rgba) ); // Vertex 0 (A)
-                array_push( sprite_vertices, sprite_vertex(v1, uv1, it->rgba) ); // Vertex 1 (B)
-                array_push( sprite_vertices, sprite_vertex(v2, uv2, it->rgba) ); // Vertex 2 (C)
-                array_push( sprite_vertices, sprite_vertex(v3, uv3, it->rgba) ); // Vertex 3 (D)
-
-                //      A--B                  A               A-B
-                // quad |  | becomes triangle |\  and triangle \|
-                //      D--C                  D-C               C
-                GLuint A = (index+0), B = (index+1), C = (index+2), D = (index+3); index += 4;
-
-                array_push( sprite_indices, sprite_index(C, D, A) ); // Triangle 1
-                array_push( sprite_indices, sprite_index(C, A, B) ); // Triangle 2
-            }
-
-            mesh_update(&bt->mesh, "p3 t2 c4B", 0,array_count(sprite_vertices),sprite_vertices, 3*array_count(sprite_indices),sprite_indices, MESH_STATIC);
-
-            // clear elements from queue
-            sprite_count += array_count(bt->sprites);
-            array_clear(bt->sprites);
-        }
-    }
-}
-
-static void sprite_render_meshes() {
-    if( map_count(sprite_additive_group) <= 0 )
-    if( map_count(sprite_translucent_group) <= 0 )
-    if( map_count(sprite_00_translucent_group) <= 0 )
-        return;
-
-    if( sprite_program < 0 ) {
-        sprite_program = shader( vfs_read("shaders/vs_324_24_sprite.glsl"), vfs_read("shaders/fs_24_4_sprite.glsl"),
-            "att_Position,att_TexCoord,att_Color",
-            "fragColor", NULL
-        );
-    }
-
-    // use the shader and  bind the texture @ unit 0
-    shader_bind(sprite_program);
-    glActiveTexture(GL_TEXTURE0);
-
-    // setup rendering state
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glDepthFunc(GL_LEQUAL); // try to help with zfighting
-
-    // update camera
-    // camera_fps(camera_get_active(), 0,0);
-    vec3 pos = camera_get_active()->position;
-    float zoom = absf(pos.z); if(zoom < 0.1f) zoom = 0.1f; zoom = 1.f / (zoom + !zoom);
-    float width  = window_width();
-    float height = window_height();
-
-    // set mvp in the uniform. (0,0) is center of screen.
-    mat44 mvp2d;
-    float zdepth_max = window_height(); // 1;
-    float l = pos.x - width  * zoom / 2;
-    float r = pos.x + width  * zoom / 2;
-    float b = pos.y + height * zoom / 2;
-    float t = pos.y - height * zoom / 2;
-    ortho44(mvp2d, l,r,b,t, -zdepth_max, +zdepth_max);
-
-    shader_mat44("u_mvp", mvp2d);
-
-    // set (unit 0) in the uniform texture sampler, and render batch
-    // for all additive then translucent groups
-
-    if( map_count(sprite_additive_group) > 0 ) {
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE );
-        for each_map_ptr(sprite_additive_group, int,texture_id, batch_t,bt) {
-            if( bt->dirty ) {
-                shader_texture_unit("u_texture", *texture_id, 0);
-                mesh_render(&bt->mesh);
-            }
-        }
-//        map_clear(sprite_additive_group);
-    }
-
-    if( map_count(sprite_translucent_group) > 0 ) {
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        for each_map_ptr(sprite_translucent_group, int,texture_id, batch_t,bt) {
-            if( bt->dirty ) {
-                shader_texture_unit("u_texture", *texture_id, 0);
-                mesh_render(&bt->mesh);
-            }
-        }
-//        map_clear(sprite_translucent_group);
-    }
-
-    if( map_count(sprite_00_translucent_group) > 0 ) {
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        for each_map_ptr(sprite_00_translucent_group, int,texture_id, batch_t,bt) {
-            if( bt->dirty ) {
-                shader_texture_unit("u_texture", *texture_id, 0);
-                mesh_render(&bt->mesh);
-            }
-        }
-//        map_clear(sprite_00_translucent_group);
-    }
-
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
-    glDepthFunc(GL_LESS);
-    glUseProgram(0);
-}
-
-static void sprite_init() {
-    do_once {
-    map_init(sprite_00_translucent_group, less_int, hash_int);
-    map_init(sprite_translucent_group, less_int, hash_int);
-    map_init(sprite_additive_group, less_int, hash_int);
-    }
-}
-
-void sprite_flush() {
-    profile("Sprite.rebuild_time") {
-    sprite_rebuild_meshes();
-    }
-    profile("Sprite.render_time") {
-    sprite_render_meshes();
-    }
-}
-
-// -----------------------------------------------------------------------------
-// tilemaps
-
-tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr) {
-    tilemap_t t = {0};
-    t.tint = ~0u; // WHITE
-    t.blank_chr = blank_chr;
-    for( ; *map ; ++map ) {
-        if( map[0] == linefeed_chr ) ++t.rows;
-        else {
-            array_push(t.map, map[0]);
-            ++t.cols;
-        }
-    }
-    return t;
-}
-
-void tilemap_render_ext( tilemap_t m, tileset_t t, float zindex, float xy_zoom[3], float tilt, unsigned tint, bool is_additive ) {
-    vec3 old_pos = camera_get_active()->position;
-    sprite_flush();
-    camera_get_active()->position = vec3(window_width()/2,window_height()/2,1);
-
-    float scale[2] = {xy_zoom[2], xy_zoom[2]};
-    xy_zoom[2] = zindex;
-
-    float offset[2] = {0,0};
-    float spritesheet[3] = {0,t.cols,t.rows}; // selected tile index and spritesheet dimensions (cols,rows)
-
-    for( unsigned y = 0, c = 0; y < m.rows; ++y ) {
-        for( unsigned x = 0; x < m.cols; ++x, ++c ) {
-            if( m.map[c] != m.blank_chr ) {
-                spritesheet[0] = m.map[c];
-                sprite_sheet(t.tex, spritesheet, xy_zoom, tilt, offset, scale, is_additive, tint, false);
-            }
-            offset[0] += t.tile_w;
-        }
-        offset[0] = 0, offset[1] += t.tile_h;
-    }
-
-    sprite_flush();
-    camera_get_active()->position = old_pos;
-}
-
-void tilemap_render( tilemap_t map, tileset_t set ) {
-    map.position.x += set.tile_w;
-    map.position.y += set.tile_h;
-    tilemap_render_ext( map, set, map.zindex, &map.position.x, map.tilt, map.tint, map.is_additive );
-}
-
-tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols, unsigned rows) {
-    tileset_t t = {0};
-    t.tex = tex;
-    t.cols = cols, t.rows = rows;
-    t.tile_w = tile_w, t.tile_h = tile_h;
-    return t;
-}
-
-int ui_tileset( tileset_t t ) {
-    ui_subimage(va("Selection #%d (%d,%d)", t.selected, t.selected % t.cols, t.selected / t.cols), t.tex.id, t.tex.w, t.tex.h, (t.selected % t.cols) * t.tile_w, (t.selected / t.cols) * t.tile_h, t.tile_w, t.tile_h);
-    int choice;
-    if( (choice = ui_image(0, t.tex.id, t.tex.w,t.tex.h)) ) {
-        int px = ((choice / 100) / 100.f) * t.tex.w / t.tile_w;
-        int py = ((choice % 100) / 100.f) * t.tex.h / t.tile_h;
-        t.selected = px + py * t.cols;
-    }
-    // if( (choice = ui_buttons(3, "load", "save", "clear")) ) {}
-    return t.selected;
-}
-
-// -----------------------------------------------------------------------------
-// tiled
-
-tiled_t tiled(const char *file_tmx) {
-    tiled_t zero = {0}, ti = zero;
-
-    // read file and parse json
-    if( !xml_push(file_tmx) ) return zero;
-
-    // sanity checks
-    bool supported = !strcmp(xml_string("/map/@orientation"), "orthogonal") && !strcmp(xml_string("/map/@renderorder"), "right-down");
-    if( !supported ) return xml_pop(), zero;
-
-    // tileset
-    const char *file_tsx = xml_string("/map/tileset/@source");
-    if( !xml_push(vfs_read(file_tsx)) ) return zero;
-        const char *set_src = xml_string("/tileset/image/@source");
-        int set_w = xml_int("/tileset/@tilewidth");
-        int set_h = xml_int("/tileset/@tileheight");
-        int set_c = xml_int("/tileset/@columns");
-        int set_r = xml_int("/tileset/@tilecount") / set_c;
-        tileset_t set = tileset(texture(set_src,0), set_w, set_h, set_c, set_r );
-    xml_pop();
-
-    // actual parsing
-    ti.w = xml_int("/map/@width");
-    ti.h = xml_int("/map/@height");
-    ti.tilew = xml_int("/map/@tilewidth");
-    ti.tileh = xml_int("/map/@tileheight");
-    ti.first_gid = xml_int("/map/tileset/@firstgid");
-    ti.map_name = STRDUP( xml_string("/map/tileset/@source") ); // @leak
-
-    for(int l = 0, layers = xml_count("/map/layer"); l < layers; ++l ) {
-        if( strcmp(xml_string("/map/layer[%d]/data/@encoding",l), "base64") || strcmp(xml_string("/map/layer[%d]/data/@compression",l), "zlib") ) {
-            PRINTF("Warning: layer encoding not supported: '%s' -> layer '%s'\n", file_tmx, *array_back(ti.names));
-            continue;
-        }
-
-        int cols = xml_int("/map/layer[%d]/@width",l);
-        int rows = xml_int("/map/layer[%d]/@height",l);
-
-        tilemap_t tm = tilemap("", ' ', '\n');
-        tm.blank_chr = ~0u; //ti.first_gid - 1;
-        tm.cols = cols;
-        tm.rows = rows;
-        array_resize(tm.map, tm.cols * tm.rows);
-        memset(tm.map, 0xFF, tm.cols * tm.rows * sizeof(int));
-
-        for( int c = 0, chunks = xml_count("/map/layer[%d]/data/chunk", l); c <= chunks; ++c ) {
-            int cw, ch;
-            int cx, cy;
-            array(char) b64 = 0;
-
-            if( !chunks ) { // non-infinite mode
-                b64 = xml_blob("/map/layer[%d]/data/$",l);
-                cw = tm.cols, ch = tm.rows;
-                cx = 0, cy = 0;
-            } else { // infinite mode
-                b64 = xml_blob("/map/layer[%d]/data/chunk[%d]/$",l,c);
-                cw = xml_int("/map/layer[%d]/data/chunk[%d]/@width",l,c), ch = xml_int("/map/layer[%d]/data/chunk[%d]/@height",l,c); // 20x20
-                cx = xml_int("/map/layer[%d]/data/chunk[%d]/@x",l,c), cy = xml_int("/map/layer[%d]/data/chunk[%d]/@y",l,c); // (-16,-32)
-                cx = abs(cx), cy = abs(cy);
-            }
-
-            int outlen = cw * ch * 4;
-            static __thread int *out = 0; out = (int *)REALLOC( 0, outlen + zexcess(COMPRESS_ZLIB) ); // @leak
-            if( zdecode( out, outlen, b64, array_count(b64), COMPRESS_ZLIB ) > 0 ) {
-                for( int y = 0, p = 0; y < ch; ++y ) {
-                    for( int x = 0; x < cw; ++x, ++p ) {
-                        if( out[p] >= ti.first_gid ) {
-                            int offset = (x + cx) + (y + cy) * tm.cols;
-                            if( offset >= 0 && offset < (cw * ch) )
-                            tm.map[ offset ] = out[ p ] - ti.first_gid;
-                        }
-                    }
-                }
-            }
-            else {
-                PRINTF("Warning: bad zlib stream: '%s' -> layer #%d -> chunk #%d\n", file_tmx, l, c);
-            }
-
-            array_free(b64);
-        }
-
-        array_push(ti.layers, tm);
-        array_push(ti.names, STRDUP(xml_string("/map/layer[%d]/@name",l)));
-        array_push(ti.visible, true);
-        array_push(ti.sets, set);
-    }
-
-    xml_pop();
-    return ti;
-}
-
-void tiled_render(tiled_t tmx, vec3 pos) {
-    for( unsigned i = 0, end = array_count(tmx.layers); i < end; ++i ) {
-        tmx.layers[i].position = pos; // add3(camera_get_active()->position, pos);
-        if( tmx.parallax ) tmx.layers[i].position.x /= (3+i), tmx.layers[i].position.y /= (5+i);
-        if( tmx.visible[i] ) tilemap_render(tmx.layers[i], tmx.sets[i]);
-    }
-}
-
-void ui_tiled(tiled_t *t) {
-    ui_label2("Loaded map", t->map_name ? t->map_name : "(none)");
-    ui_label2("Map dimensions", va("%dx%d", t->w, t->h));
-    ui_label2("Tile dimensions", va("%dx%d", t->tilew, t->tileh));
-    ui_separator();
-    ui_bool("Parallax", &t->parallax);
-    ui_separator();
-    ui_label2("Layers", va("%d", array_count(t->layers)));
-    for( int i = 0; i < array_count(t->layers); ++i ) {
-        if( ui_label2_toolbar(va("- %s (%dx%d)", t->names[i], t->layers[i].cols, t->layers[i].rows ), t->visible[i] ? "\xee\xa3\xb4" : "\xee\xa3\xb5") > 0 ) { // ICON_MD_VISIBILITY / ICON_MD_VISIBILITY_OFF
-            t->visible[i] ^= true;
-        }
-    }
-    ui_separator();
-    if( ui_collapse(va("Sets: %d", array_count(t->layers)), va("%p",t))) {
-        for( int i = 0; i < array_count(t->layers); ++i ) {
-            if( ui_collapse(va("%d", i+1), va("%p%d",t,i)) ) {
-                t->sets[i].selected = ui_tileset( t->sets[i] );
-                ui_collapse_end();
-            }
-        }
-        ui_collapse_end();
-    }
-}
-
-// -----------------------------------------------------------------------------
-// spine json loader (wip)
-// - rlyeh, public domain
-//
-// [ref] http://es.esotericsoftware.com/spine-json-format
-//
-// notable misses:
-// - mesh deforms
-// - cubic beziers
-// - shears
-// - bounding boxes
-
-enum { SPINE_MAX_BONES = 64 }; // max bones
-
-typedef struct spine_bone_t {
-    char *name, *parent;
-    struct spine_bone_t *parent_bone;
-
-    float z; // draw order usually matches bone-id. ie, zindex == bone_id .. root(0) < chest (mid) < finger(top)
-
-    float len;
-    float x, y, deg;        // base
-    float x2, y2, deg2;     // accum / temporaries during bone transform time
-    float x3, y3, deg3;     // values from timeline
-
-    unsigned rect_id;
-    unsigned atlas_id;
-} spine_bone_t;
-
-typedef struct spine_slot_t {
-    char *name, *bone, *attach;
-} spine_slot_t;
-
-typedef struct spine_rect_t {
-    char *name;
-    float x,y,w,h,sx,sy,deg;
-} spine_rect_t;
-
-typedef struct spine_skin_t {
-    char *name;
-    array(spine_rect_t) rects;
-} spine_skin_t;
-
-typedef struct spine_animkey_t { // offline; only during loading
-    float time, curve[4];        // time is mandatory, curve is optional
-    union {
-        char *name;              // type: attachment (mode-1)
-        struct { float deg; };   // type: rotate (mode-2)
-        struct { float x,y; };   // type: translate (mode-3)
-    };
-} spine_animkey_t;
-
-#if 0
-typedef struct spine_pose_t { // runtime; only during playing
-    unsigned frame;
-    array(vec4) xform; // entry per bone. translation(x,y),rotation(z),attachment-id(w)
-} spine_pose_t;
-#endif
-
-typedef struct spine_anim_t {
-    char *name;
-    union {
-#if 0
-        struct {
-            unsigned frames;
-            array(spine_pose_t) poses;
-        };
-#endif
-        struct {
-            array(spine_animkey_t) attach_keys[SPINE_MAX_BONES];
-            array(spine_animkey_t) rotate_keys[SPINE_MAX_BONES];
-            array(spine_animkey_t) translate_keys[SPINE_MAX_BONES];
-        };
-    };
-} spine_anim_t;
-
-typedef struct spine_atlas_t {
-    char *name;
-    float x,y,w,h,deg;
-} spine_atlas_t;
-
-typedef struct spine_t {
-    char *name;
-    texture_t texture;
-    unsigned skin;
-    array(spine_bone_t) bones;
-    array(spine_slot_t) slots;
-    array(spine_skin_t) skins;
-    array(spine_anim_t) anims;
-    array(spine_atlas_t) atlas;
-    // anim controller
-    unsigned inuse;
-    float time, maxtime;
-    unsigned debug_atlas_id;
-} spine_t;
-
-// ---
-
-static
-void spine_convert_animkeys_to_animpose(spine_anim_t *input) {
-    spine_anim_t copy = *input; // @todo
-    // @leak: attach/rot/tra keys
-}
-
-static
-int find_bone_id(spine_t *s, const char *bone_name) {
-    for( unsigned i = 0, end = array_count(s->bones); i < end; ++i )
-        if( !strcmp(s->bones[i].name, bone_name)) return i;
-    return -1;
-}
-static
-spine_bone_t *find_bone(spine_t *s, const char *bone_name) {
-    int bone_id = find_bone_id(s, bone_name);
-    return bone_id >= 0 ? &s->bones[bone_id] : NULL;
-}
-
-void spine_skin(spine_t *p, unsigned skin) {
-    if( !p->texture.id ) return;
-    if( skin >= array_count(p->skins) ) return;
-
-    p->skin = skin;
-
-    char *skin_name = va("%s/", p->skins[skin].name);
-    int header = strlen(skin_name);
-
-    for( int i = 0; i < array_count(p->atlas); ++i) {
-        if(!strbeg(p->atlas[i].name, skin_name)) continue;
-
-        int bone_id = find_bone_id(p, p->atlas[i].name+header );
-        if( bone_id < 0 ) continue;
-
-        p->bones[bone_id].atlas_id = i;
-    }
-
-    for( int i = 0; i < array_count(p->skins[p->skin].rects); ++i) {
-        int bone_id = find_bone_id(p, p->skins[p->skin].rects[i].name );
-        if( bone_id < 0 ) continue;
-
-        p->bones[bone_id].rect_id = i;
-    }
-}
-
-static
-bool spine_(spine_t *t, const char *file_json, const char *file_atlas, unsigned flags) {
-    char *atlas = vfs_read(file_atlas);
-    if(!atlas || !atlas[0]) return false;
-
-    memset(t, 0, sizeof(spine_t));
-
-    // goblins.png
-    //   size: 1024, 128
-    //   filter: Linear, Linear
-    //   pma: true
-    // dagger
-    //   bounds: 2, 18, 26, 108
-    // goblin/eyes-closed
-    //   bounds: 2, 4, 34, 12
-    spine_atlas_t *sa = 0;
-    const char *last_id = 0;
-    const char *texture_name = 0;
-    const char *texture_filter = 0;
-    const char *texture_format = 0;
-    const char *texture_repeat = 0;
-    float texture_width = 0, texture_height = 0, temp;
-    for each_substring(atlas, "\r\n", it) {
-        it += strspn(it, " \t\f\v");
-        /**/ if( strbeg(it, "pma:" ) || strbeg(it, "index:") ) {} // ignored
-        else if( strbeg(it, "size:" ) ) sscanf(it+5, "%f,%f", &texture_width, &texture_height);
-        else if( strbeg(it, "rotate:" ) ) { float tmp; tmp=sa->w,sa->w=sa->h,sa->h=tmp; sa->deg = 90; } // assert(val==90)
-        else if( strbeg(it, "repeat:" ) ) texture_repeat = it+7; // temp string
-        else if( strbeg(it, "filter:" ) ) texture_filter = it+7; // temp string
-        else if( strbeg(it, "format:" ) ) texture_format = it+7; // temp string
-        else if( strbeg(it, "bounds:" ) ) {
-            sscanf(it+7, "%f,%f,%f,%f", &sa->x, &sa->y, &sa->w, &sa->h);
-        }
-        else if( !texture_name ) texture_name = va("%s", it);
-        else {
-            array_push(t->atlas, ((spine_atlas_t){0}) );
-            sa = &t->atlas[array_count(t->atlas) - 1];
-            sa->name = STRDUP(it);
-        }
-    }
-    for( int i = 0; i < array_count(t->atlas); ++i ) {
-        sa = &t->atlas[i];
-        sa->x /= texture_width, sa->y /= texture_height;
-        sa->w /= texture_width, sa->h /= texture_height;
-    }
-
-    if(!texture_name) return false;
-
-    t->texture = texture(texture_name, TEXTURE_LINEAR);
-
-    json_push(vfs_read(file_json)); // @fixme: json_push_from_file() ?
-
-    array_resize(t->bones, json_count("/bones"));
-    array_reserve(t->slots, json_count("/slots"));
-    array_resize(t->skins, json_count("/skins"));
-    array_resize(t->anims, json_count("/animations"));
-
-    for( int i = 0, end = json_count("/bones"); i < end; ++i ) {
-        spine_bone_t v = {0};
-        v.name = STRDUP(json_string("/bones[%d]/name", i));
-        v.parent = STRDUP(json_string("/bones[%d]/parent", i));
-        v.x = json_float("/bones[%d]/x", i);
-        v.y = json_float("/bones[%d]/y", i);
-        v.z = i;
-        v.len = json_float("/bones[%d]/length", i);
-        v.deg = json_float("/bones[%d]/rotation", i);
-        t->bones[i] = v;
-
-        for( int j = i-1; j > 0; --j ) {
-            if( strcmp(t->bones[j].name,v.parent) ) continue;
-            t->bones[i].parent_bone = &t->bones[j];
-            break;
-        }
-    }
-
-    for( int i = 0, end = json_count("/slots"); i < end; ++i ) {
-        spine_slot_t v = {0};
-        v.name = STRDUP(json_string("/slots[%d]/name", i));
-        v.bone = STRDUP(json_string("/slots[%d]/bone", i));
-        v.attach = STRDUP(json_string("/slots[%d]/attachment", i));
-
-        array_push(t->slots, v);
-
-        // slots define draw-order. so, update draw-order/zindex in bone
-        spine_bone_t *b = find_bone(t, v.name);
-        if( b ) b->z = i;
-    }
-
-    for( int i = 0, end = json_count("/skins"); i < end; ++i ) {
-        spine_skin_t v = {0};
-        v.name = STRDUP(json_string("/skins[%d]/name", i));
-
-        for( int j = 0, jend = json_count("/skins[%d]/attachments",i); j < jend; ++j ) // /skins/default/
-        for( int k = 0, kend = json_count("/skins[%d]/attachments[%d]",i,j); k < kend; ++k ) { // /skins/default/left hand item/
-            spine_rect_t r = {0};
-            r.name = STRDUP(json_key("/skins[%d]/attachments[%d][%d]",i,j,k)); // stringf("%s-%s-%s", json_key("/skins[%d]",i), json_key("/skins[%d][%d]",i,j), json_key("/skins[%d][%d][%d]",i,j,k));
-            r.x = json_float("/skins[%d]/attachments[%d][%d]/x",i,j,k);
-            r.y = json_float("/skins[%d]/attachments[%d][%d]/y",i,j,k);
-            r.sx= json_float("/skins[%d]/attachments[%d][%d]/scaleX",i,j,k); r.sx += !r.sx;
-            r.sy= json_float("/skins[%d]/attachments[%d][%d]/scaleY",i,j,k); r.sy += !r.sy;
-            r.w = json_float("/skins[%d]/attachments[%d][%d]/width",i,j,k);
-            r.h = json_float("/skins[%d]/attachments[%d][%d]/height",i,j,k);
-            r.deg = json_float("/skins[%d]/attachments[%d][%d]/rotation",i,j,k);
-            array_push(v.rects, r);
-        }
-
-        t->skins[i] = v;
-    }
-
-#if 1
-    // simplify:
-    // merge /skins/default into existing /skins/*, then delete /skins/default
-    if( array_count(t->skins) > 1 ) {
-        for( int i = 1; i < array_count(t->skins); ++i ) {
-            for( int j = 0; j < array_count(t->skins[0].rects); ++j ) {
-                array_push(t->skins[i].rects, t->skins[0].rects[j]);
-            }
-        }
-        // @leak @fixme: FREE(t->skins[0])
-        for( int i = 0; i < array_count(t->skins)-1; ++i ) {
-            t->skins[i] = t->skins[i+1];
-        }
-        array_pop(t->skins);
-    }
-#endif
-
-    for( int i = 0, end = json_count("/animations"); i < end; ++i ) {
-        int id;
-        const char *name;
-
-        spine_anim_t v = {0};
-        v.name = STRDUP(json_key("/animations[%d]", i));
-
-        // slots / attachments
-
-        for( int j = 0, jend = json_count("/animations[%d]/slots",i); j < jend; ++j )
-        for( int k = 0, kend = json_count("/animations[%d]/slots[%d]",i,j); k < kend; ++k ) // ids
-        {
-            int bone_id = find_bone_id(t, json_key("/animations[%d]/bones[%d]",i,j));
-            if( bone_id < 0 ) continue;
-
-            for( int l = 0, lend = json_count("/animations[%d]/slots[%d][%d]",i,j,k); l < lend; ++l ) { // channels (rot,tra,attach)
-                spine_animkey_t key = {0};
-
-                key.name = STRDUP(json_string("/animations[%d]/slots[%d][%d][%d]/name",i,j,k,l));
-                key.time = json_float("/animations[%d]/slots[%d][%d][%d]/time",i,j,k,l);
-                if( json_count("/animations[%d]/slots[%d][%d][%d]/curve",i,j,k,l) == 4 ) {
-                key.curve[0] = json_float("/animations[%d]/slots[%d][%d][%d]/curve[0]",i,j,k,l);
-                key.curve[1] = json_float("/animations[%d]/slots[%d][%d][%d]/curve[1]",i,j,k,l);
-                key.curve[2] = json_float("/animations[%d]/slots[%d][%d][%d]/curve[2]",i,j,k,l);
-                key.curve[3] = json_float("/animations[%d]/slots[%d][%d][%d]/curve[3]",i,j,k,l);
-                }
-
-                // @todo: convert name to id
-                // for(id = 0; t->bones[id].name && strcmp(t->bones[id].name,key.name); ++id)
-                // printf("%s vs %s\n", key.name, t->bones[id].name);
-
-                array_push(v.attach_keys[bone_id], key);
-            }
-        }
-
-        // bones
-
-        for( int j = 0, jend = json_count("/animations[%d]/bones",i); j < jend; ++j ) // slots or bones
-        for( int k = 0, kend = json_count("/animations[%d]/bones[%d]",i,j); k < kend; ++k ) { // bone ids
-            int bone_id = find_bone_id(t, json_key("/animations[%d]/bones[%d]",i,j));
-            if( bone_id < 0 ) continue;
-
-            // parse bones
-            for( int l = 0, lend = json_count("/animations[%d]/bones[%d][%d]",i,j,k); l < lend; ++l ) { // channels (rot,tra,attach)
-                const char *channel = json_key("/animations[%d]/bones[%d][%d]",i,j,k);
-                int track = !strcmp(channel, "rotate") ? 1 : !strcmp(channel, "translate") ? 2 : 0;
-                if( !track ) continue;
-
-                spine_animkey_t key = {0};
-
-                key.time = json_float("/animations[%d]/bones[%d][%d][%d]/time",i,j,k,l);
-                if( json_count("/animations[%d]/bones[%d][%d][%d]/curve",i,j,k,l) == 4 ) {
-                key.curve[0] = json_float("/animations[%d]/bones[%d][%d][%d]/curve[0]",i,j,k,l);
-                key.curve[1] = json_float("/animations[%d]/bones[%d][%d][%d]/curve[1]",i,j,k,l);
-                key.curve[2] = json_float("/animations[%d]/bones[%d][%d][%d]/curve[2]",i,j,k,l);
-                key.curve[3] = json_float("/animations[%d]/bones[%d][%d][%d]/curve[3]",i,j,k,l);
-                }
-
-                if( track == 1 )
-                key.deg = json_float("/animations[%d]/bones[%d][%d][%d]/value",i,j,k,l), // "/angle"
-                array_push(v.rotate_keys[bone_id], key);
-                else
-                key.x = json_float("/animations[%d]/bones[%d][%d][%d]/x",i,j,k,l),
-                key.y = json_float("/animations[%d]/bones[%d][%d][%d]/y",i,j,k,l),
-                array_push(v.translate_keys[bone_id], key);
-            }
-        }
-
-        t->anims[i] = v;
-    }
-
-    json_pop();
-
-    spine_skin(t, 0);
-
-    return true;
-}
-
-spine_t* spine(const char *file_json, const char *file_atlas, unsigned flags) {
-    spine_t *t = MALLOC(sizeof(spine_t));
-    if( !spine_(t, file_json, file_atlas, flags) ) return FREE(t), NULL;
-    return t;
-}
-
-void spine_render(spine_t *p, vec3 offset, unsigned flags) {
-    if( !p->texture.id ) return;
-    if( !flags ) return;
-
-    ddraw_push_2d();
-        // if( flags & 2 ) ddraw_line(vec3(0,0,0), vec3(window_width(),window_height(),0));
-        // if( flags & 2 ) ddraw_line(vec3(window_width(),0,0), vec3(0,window_height(),0));
-
-        // int already_computed[SPINE_MAX_BONES] = {0}; // @fixme: optimize: update longest chains first, then remnant branches
-
-        for( int i = 1; i < array_count(p->bones); ++i ) {
-            spine_bone_t *self = &p->bones[i];
-            if( !self->rect_id ) continue;
-
-            int num_bones = 0;
-            static array(spine_bone_t*) chain = 0; array_resize(chain, 0);
-            for( spine_bone_t *next = self; next ; next = next->parent_bone, ++num_bones ) {
-                array_push(chain, next);
-            }
-
-            vec3 target = {0}, prev = {0};
-            for( int j = 0, end = array_count(chain); j < end; ++j ) { // traverse from root(skipped) -> `i` bone direction
-                int j_opposite = end - 1 - j;
-
-                spine_bone_t *b = chain[j_opposite]; // bone
-                spine_bone_t *pb = b->parent_bone; // parent bone
-
-                float pb_x2 = 0, pb_y2 = 0, pb_deg2 = 0;
-                if( pb ) pb_x2 = pb->x2, pb_y2 = pb->y2, pb_deg2 = pb->deg2;
-
-                const float deg2rad = C_PI / 180;
-                b->x2 =      b->x3 + pb_x2   + b->x * cos( -pb_deg2 * deg2rad ) - b->y * sin( -pb_deg2 * deg2rad );
-                b->y2 =     -b->y3 + pb_y2   - b->y * cos(  pb_deg2 * deg2rad ) + b->x * sin(  pb_deg2 * deg2rad );
-                b->deg2 = -b->deg3 + pb_deg2 - b->deg;
-
-                prev = target;
-                target = vec3(b->x2,b->y2,b->deg2);
-            }
-
-            target.z = 0;
-            target = add3(target, offset);
-            prev.z = 0;
-            prev = add3(prev, offset);
-
-            if( flags & 2 ) {
-                ddraw_point( target );
-                ddraw_text( target, -0.25f, self->name );
-                ddraw_bone( prev, target ); // from parent to bone
-            }
-            if( flags & 1 ) {
-                spine_atlas_t *a = &p->atlas[self->atlas_id];
-                spine_rect_t *r = &p->skins[p->skin].rects[self->rect_id];
-
-                vec4 rect = ptr4(&a->x);
-                float zindex = self->z;
-                float offsx = 0;
-                float offsy = 0;
-                float tilt = self->deg2 + (a->deg - r->deg);
-                unsigned tint = self->atlas_id == p->debug_atlas_id ? 0xFF<<24 | 0xFF : ~0u;
-
-                if( 1 ) {
-                    vec3 dir = vec3(r->x,r->y,0);
-                    dir = rotatez3(dir, self->deg2);
-                    offsx = dir.x * r->sx;
-                    offsy = dir.y * r->sy;
-                }
-
-                sprite_rect(p->texture, rect, zindex, add4(vec4(target.x,target.y,1,1),vec4(offsx,offsy,0,0)), tilt, tint);
-            }
-         }
-
-    ddraw_pop_2d();
-    ddraw_flush();
-}
-
-static
-void spine_animate_(spine_t *p, float *time, float *maxtime, float delta) {
-    if( !p->texture.id ) return;
-
-    if( delta > 1/120.f ) delta = 1/120.f;
-    if( *time >= *maxtime ) *time = 0; else *time += delta;
-
-    // reset root // needed?
-    p->bones[0].x2 = 0;
-    p->bones[0].y2 = 0;
-    p->bones[0].deg2 = 0;
-    p->bones[0].x3 = 0;
-    p->bones[0].y3 = 0;
-    p->bones[0].deg3 = 0;
-
-    for( int i = 0, end = array_count(p->bones); i < end; ++i) {
-        // @todo: attach channel
-        // @todo: per channel: if curve == linear || curve == stepped || array_count(curve) == 4 {...}
-        for each_array_ptr(p->anims[p->inuse].rotate_keys[i], spine_animkey_t, r) {
-            double r0 = r->time;
-            *maxtime = maxf( *maxtime, r0 );
-            if( absf(*time - r0) < delta ) {
-                p->bones[i].deg3 = r->deg;
-            }
-        }
-        for each_array_ptr(p->anims[p->inuse].translate_keys[i], spine_animkey_t, r) {
-            double r0 = r->time;
-            *maxtime = maxf( *maxtime, r0 );
-            if( absf(*time - r0) < delta ) {
-                p->bones[i].x3 = r->x;
-                p->bones[i].y3 = r->y;
-            }
-        }
-    }
-}
-
-void spine_animate(spine_t *p, float delta) {
-    spine_animate_(p, &p->time, &p->maxtime, delta);
-}
-
-void ui_spine(spine_t *p) {
-    if( ui_collapse(va("Anims: %d", array_count(p->anims)), va("%p-a", p))) {
-        for each_array_ptr(p->anims, spine_anim_t, q) {
-            if(ui_slider2("", &p->time, va("%.2f/%.0f %.2f%%", p->time, p->maxtime, p->time * 100.f))) {
-                spine_animate(p, 0);
-            }
-
-            int choice = ui_label2_toolbar(q->name, ICON_MD_PAUSE_CIRCLE " " ICON_MD_PLAY_CIRCLE);
-            if( choice == 1 ) window_pause( 0 ); // play
-            if( choice == 2 ) window_pause( 1 ); // pause
-
-            for( int i = 0; i < SPINE_MAX_BONES; ++i ) {
-                ui_separator();
-                ui_label(va("Bone %d: Attachment keys", i));
-                for each_array_ptr(q->attach_keys[i], spine_animkey_t, r) {
-                    ui_label(va("%.2f [%.2f %.2f %.2f %.2f] %s", r->time, r->curve[0], r->curve[1], r->curve[2], r->curve[3], r->name));
-                }
-                ui_label(va("Bone %d: Rotate keys", i));
-                for each_array_ptr(q->rotate_keys[i], spine_animkey_t, r) {
-                    ui_label(va("%.2f [%.2f %.2f %.2f %.2f] %.2f deg", r->time, r->curve[0], r->curve[1], r->curve[2], r->curve[3], r->deg));
-                }
-                ui_label(va("Bone %d: Translate keys", i));
-                for each_array_ptr(q->translate_keys[i], spine_animkey_t, r) {
-                    ui_label(va("%.2f [%.2f %.2f %.2f %.2f] (%.2f,%.2f)", r->time, r->curve[0], r->curve[1], r->curve[2], r->curve[3], r->x, r->y));
-                }
-            }
-        }
-        ui_collapse_end();
-    }
-    if( ui_collapse(va("Bones: %d", array_count(p->bones)), va("%p-b", p))) {
-        for each_array_ptr(p->bones, spine_bone_t, q)
-        if( ui_collapse(q->name, va("%p-b2", q)) ) {
-            ui_label2("Parent:", q->parent);
-            ui_label2("X:", va("%.2f", q->x));
-            ui_label2("Y:", va("%.2f", q->y));
-            ui_label2("Length:", va("%.2f", q->len));
-            ui_label2("Rotation:", va("%.2f", q->deg));
-            ui_collapse_end();
-        }
-        ui_collapse_end();
-    }
-    if( ui_collapse(va("Slots: %d", array_count(p->slots)), va("%p-s", p))) {
-        for each_array_ptr(p->slots, spine_slot_t, q)
-        if( ui_collapse(q->name, va("%p-s2", q)) ) {
-            ui_label2("Bone:", q->bone);
-            ui_label2("Attachment:", q->attach);
-            ui_collapse_end();
-        }
-        ui_collapse_end();
-    }
-    if( ui_collapse(va("Skins: %d", array_count(p->skins)), va("%p-k", p))) {
-        for each_array_ptr(p->skins, spine_skin_t, q)
-        if( ui_collapse(q->name, va("%p-k2", q)) ) {
-            for each_array_ptr(q->rects, spine_rect_t, r)
-            if( ui_collapse(r->name, va("%p-k3", r)) ) {
-                ui_label2("X:", va("%.2f", r->x));
-                ui_label2("Y:", va("%.2f", r->y));
-                ui_label2("Scale X:", va("%.2f", r->sx));
-                ui_label2("Scale Y:", va("%.2f", r->sy));
-                ui_label2("Width:", va("%.2f", r->w));
-                ui_label2("Height:", va("%.2f", r->h));
-                ui_label2("Rotation:", va("%.2f", r->deg));
-                ui_collapse_end();
-
-                spine_bone_t *b = find_bone(p, r->name);
-                if( b ) {
-                    p->debug_atlas_id = b->atlas_id;
-
-                    static float tilt = 0;
-                    if( input(KEY_LCTRL) ) tilt += 60*1/60.f; else tilt = 0;
-                    spine_atlas_t *r = p->atlas + b->atlas_id;
-                    sprite_flush();
-                    camera_get_active()->position = vec3(0,0,2);
-                            vec4 rect = ptr4(&r->x); float zindex = 0; vec3 xy_zoom = vec3(0,0,0); unsigned tint = ~0u;
-                            sprite_rect(p->texture,
-                                // rect: vec4(r->x*1.0/p->texture.w,r->y*1.0/p->texture.h,(r->x+r->w)*1.0/p->texture.w,(r->y+r->h)*1.0/p->texture.h),
-                                ptr4(&r->x), // atlas
-                                0, vec4(0,0,1,1), r->deg + tilt, tint);
-                            sprite_flush();
-                    camera_get_active()->position = vec3(+window_width()/3,window_height()/2.25,2);
-                }
-            }
-            ui_collapse_end();
-        }
-        ui_collapse_end();
-    }
-
-    if( ui_int("Use skin", &p->skin) ) {
-    p->skin = clampf(p->skin, 0, array_count(p->skins) - 1);
-    spine_skin(p, p->skin);
-    }
-
-    if( p->texture.id ) ui_texture(0, p->texture);
 }
 
 // -----------------------------------------------------------------------------
@@ -21054,7 +20107,7 @@ anims_t animations(const char *pathfile, int flags) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_renderdd.c"
+#line 1 "v4k_renderdd.c"
 static const char *dd_vs = "//" FILELINE "\n"
     "in vec3 att_position;\n"
     "uniform mat4 u_MVP;\n"
@@ -21902,7 +20955,7 @@ void ddraw_demo() {
 }
 #line 0
 
-#line 1 "engine/split/v4k_scene.c"
+#line 1 "v4k_scene.c"
 //
 // @todo: remove explicit GL code from here
 
@@ -22474,7 +21527,1476 @@ void scene_render(int flags) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_system.c"
+#line 1 "v4k_sprite.c"
+// ----------------------------------------------------------------------------
+// sprites
+
+typedef struct sprite_static_t {
+    float px, py, pz;         // origin x, y, depth
+    float ox, oy, cos, sin;   // offset x, offset y, cos/sin of rotation degree
+    float sx, sy;             // scale x,y
+    float cellw, cellh;       // dimensions of any cell in spritesheet
+
+    union {
+    struct {
+        int frame, ncx, ncy;      // frame in a (num cellx, num celly) spritesheet
+    };
+    struct {
+        float x, y, w, h;         // normalized[0..1] within texture bounds
+    };
+    };
+
+    uint32_t rgba, flags;     // vertex color and flags
+} sprite_static_t;
+
+// sprite batching
+typedef struct batch_t { array(sprite_static_t) sprites; mesh_t mesh; int dirty; } batch_t;
+typedef map(int, batch_t) batch_group_t; // mapkey is anything that forces a flush. texture_id for now, might be texture_id+program_id soon
+
+// sprite stream
+typedef struct sprite_vertex { vec3 pos; vec2 uv; uint32_t rgba; } sprite_vertex;
+typedef struct sprite_index  { GLuint triangle[3]; } sprite_index;
+
+#define sprite_vertex(...) C_CAST(sprite_vertex, __VA_ARGS__)
+#define sprite_index(...)  C_CAST(sprite_index, __VA_ARGS__)
+
+// sprite impl
+static int sprite_count = 0;
+static int sprite_program = -1;
+static array(sprite_index)  sprite_indices = 0;
+static array(sprite_vertex) sprite_vertices = 0;
+
+// center_wh << 2 | additive << 1 | projected << 0
+static batch_group_t sprite_group[8] = {0};
+
+// rect(x,y,w,h) is [0..1] normalized, pos(xyz,z-index), scale_offset(sx,sy,offx,offy), rotation (degrees), color (rgba)
+void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scale_offset, float tilt_deg, unsigned tint_rgba, unsigned flags) {
+    float zindex = pos.w;
+    float scalex = scale_offset.x;
+    float scaley = scale_offset.y;
+    float offsetx = scale_offset.z;
+    float offsety = scale_offset.w;
+
+    // do not queue if either scales or alpha are zero
+    if( 0 == (scalex * scaley * ((tint_rgba>>24) & 255)) ) return;
+
+    ASSERT( (flags & SPRITE_CENTERED) == 0 );
+    if( flags & SPRITE_PROJECTED ) {
+        tilt_deg += 180, scalex = -scalex; // flip texture Y on mvp3d (same than turn 180º then flip X)
+    }
+
+    sprite_static_t s = {0};
+
+    s.px = pos.x, s.py = pos.y, s.pz = pos.z - zindex;
+    s.sx = scalex, s.sy = scaley;
+
+    s.x = rect.x, s.y = rect.y, s.w = rect.z, s.h = rect.w;
+    s.cellw = s.w * s.sx * t.w, s.cellh = s.h * s.sy * t.h;
+
+    s.rgba = tint_rgba;
+    s.flags = flags;
+
+#if 0
+    s.ox = 0/*ox*/ * s.sx;
+    s.oy = 0/*oy*/ * s.sy;
+#else
+    s.ox += offsetx * scalex;
+    s.oy += offsety * scaley;
+#endif
+
+    if( tilt_deg ) {
+        tilt_deg = (tilt_deg + 0) * ((float)C_PI / 180);
+        s.cos = cosf(tilt_deg);
+        s.sin = sinf(tilt_deg);
+    } else {
+        s.cos = 1;
+        s.sin = 0;
+    }
+
+    batch_group_t *batches = &sprite_group[ flags & 7 ];
+    batch_t *found = map_find_or_add(*batches, t.id, (batch_t){0});
+
+    array_push(found->sprites, s);
+}
+
+void sprite_sheet( texture_t texture, float spritesheet[3], float position[3], float rotation, float offset[2], float scale[2], unsigned rgba, unsigned flags) {
+    flags |= SPRITE_CENTERED;
+    ASSERT( flags & SPRITE_CENTERED );
+
+    const float px = position[0], py = position[1], pz = position[2];
+    const float ox = offset[0], oy = offset[1], sx = scale[0], sy = scale[1];
+    const float frame = spritesheet[0], xcells = spritesheet[1], ycells = spritesheet[2];
+
+    if (frame < 0) return;
+    if (frame > 0 && frame >= (xcells * ycells)) return;
+
+    // no need to queue if alpha or scale are zero
+    if( sx && sy && alpha(rgba) ) {
+        vec3 bak = camera_get_active()->position;
+        if( flags & SPRITE_RESOLUTION_INDEPENDANT ) { // @todo: optimize me
+        sprite_flush();
+        camera_get_active()->position = vec3(window_width()/2,window_height()/2,1);
+        }
+
+        sprite_static_t s;
+        s.px = px;
+        s.py = py;
+        s.pz = pz;
+        s.frame = frame;
+        s.ncx = xcells ? xcells : 1;
+        s.ncy = ycells ? ycells : 1;
+        s.sx = sx;
+        s.sy = sy;
+        s.ox = ox * sx;
+        s.oy = oy * sy;
+        s.cellw = (texture.x * sx / s.ncx);
+        s.cellh = (texture.y * sy / s.ncy);
+        s.rgba = rgba;
+        s.flags = flags;
+        s.cos = 1;
+        s.sin = 0;
+        if(rotation) {
+            rotation = (rotation + 0) * ((float)C_PI / 180);
+            s.cos = cosf(rotation);
+            s.sin = sinf(rotation);
+        }
+
+        batch_group_t *batches = &sprite_group[ flags & 7 ];
+#if 0
+        batch_t *found = map_find(*batches, texture.id);
+        if( !found ) found = map_insert(*batches, texture.id, (batch_t){0});
+#else
+        batch_t *found = map_find_or_add(*batches, texture.id, (batch_t){0});
+#endif
+
+        array_push(found->sprites, s);
+
+        if( flags & SPRITE_RESOLUTION_INDEPENDANT ) { // @todo: optimize me
+        sprite_flush();
+        camera_get_active()->position = bak;
+        }
+    }
+}
+
+void sprite( texture_t texture, float position[3], float rotation, unsigned color, unsigned flags) {
+    float offset[2] = {0,0}, scale[2] = {1,1}, spritesheet[3] = {0,0,0};
+    sprite_sheet( texture, spritesheet, position, rotation, offset, scale, color, flags );
+}
+
+static void sprite_rebuild_meshes() {
+    sprite_count = 0;
+
+    // w/2,h/2 centered
+    for( int l = countof(sprite_group) / 2; l < countof(sprite_group); ++l) {
+        for each_map_ptr(sprite_group[l], int,_, batch_t,bt) {
+
+            bt->dirty = array_count(bt->sprites) ? 1 : 0;
+            if( !bt->dirty ) continue;
+
+            int index = 0;
+            array_clear(sprite_indices);
+            array_clear(sprite_vertices);
+
+            array_foreach_ptr(bt->sprites, sprite_static_t,it ) {
+                float x0 = it->ox - it->cellw/2, x3 = x0 + it->cellw;
+                float y0 = it->oy - it->cellh/2, y3 = y0;
+                float x1 = x0,                   x2 = x3;
+                float y1 = y0 + it->cellh,       y2 = y1;
+
+                // @todo: move this affine transform into glsl shader
+                vec3 v0 = { it->px + ( x0 * it->cos - y0 * it->sin ), it->py + ( x0 * it->sin + y0 * it->cos ), it->pz };
+                vec3 v1 = { it->px + ( x1 * it->cos - y1 * it->sin ), it->py + ( x1 * it->sin + y1 * it->cos ), it->pz };
+                vec3 v2 = { it->px + ( x2 * it->cos - y2 * it->sin ), it->py + ( x2 * it->sin + y2 * it->cos ), it->pz };
+                vec3 v3 = { it->px + ( x3 * it->cos - y3 * it->sin ), it->py + ( x3 * it->sin + y3 * it->cos ), it->pz };
+
+                float cx = (1.0f / it->ncx) - 1e-9f;
+                float cy = (1.0f / it->ncy) - 1e-9f;
+                int idx = (int)it->frame;
+                int px = idx % it->ncx;
+                int py = idx / it->ncx;
+
+                float ux = px * cx, uy = py * cy;
+                float vx = ux + cx, vy = uy + cy;
+
+                vec2 uv0 = vec2(ux, uy);
+                vec2 uv1 = vec2(ux, vy);
+                vec2 uv2 = vec2(vx, vy);
+                vec2 uv3 = vec2(vx, uy);
+
+                array_push( sprite_vertices, sprite_vertex(v0, uv0, it->rgba) ); // Vertex 0 (A)
+                array_push( sprite_vertices, sprite_vertex(v1, uv1, it->rgba) ); // Vertex 1 (B)
+                array_push( sprite_vertices, sprite_vertex(v2, uv2, it->rgba) ); // Vertex 2 (C)
+                array_push( sprite_vertices, sprite_vertex(v3, uv3, it->rgba) ); // Vertex 3 (D)
+
+                //      A--B                  A               A-B
+                // quad |  | becomes triangle |\  and triangle \|
+                //      D--C                  D-C               C
+                GLuint A = (index+0), B = (index+1), C = (index+2), D = (index+3); index += 4;
+
+                array_push( sprite_indices, sprite_index(C, D, A) ); // Triangle 1
+                array_push( sprite_indices, sprite_index(C, A, B) ); // Triangle 2
+            }
+
+            mesh_update(&bt->mesh, "p3 t2 c4B", 0,array_count(sprite_vertices),sprite_vertices, 3*array_count(sprite_indices),sprite_indices, MESH_STATIC);
+
+            // clear elements from queue
+            sprite_count += array_count(bt->sprites);
+            array_clear(bt->sprites);
+        }
+    }
+
+    // (0,0) centered
+    for( int l = 0; l < countof(sprite_group) / 2; ++l) {
+        for each_map_ptr(sprite_group[l], int,_, batch_t,bt) {
+
+            bt->dirty = array_count(bt->sprites) ? 1 : 0;
+            if( !bt->dirty ) continue;
+
+            int index = 0;
+            array_clear(sprite_indices);
+            array_clear(sprite_vertices);
+
+            array_foreach_ptr(bt->sprites, sprite_static_t,it ) {
+                float x0 = it->ox - it->cellw/2, x3 = x0 + it->cellw;
+                float y0 = it->oy - it->cellh/2, y3 = y0;
+                float x1 = x0,                   x2 = x3;
+                float y1 = y0 + it->cellh,       y2 = y1;
+
+                // @todo: move this affine transform into glsl shader
+                vec3 v0 = { it->px + ( x0 * it->cos - y0 * it->sin ), it->py + ( x0 * it->sin + y0 * it->cos ), it->pz };
+                vec3 v1 = { it->px + ( x1 * it->cos - y1 * it->sin ), it->py + ( x1 * it->sin + y1 * it->cos ), it->pz };
+                vec3 v2 = { it->px + ( x2 * it->cos - y2 * it->sin ), it->py + ( x2 * it->sin + y2 * it->cos ), it->pz };
+                vec3 v3 = { it->px + ( x3 * it->cos - y3 * it->sin ), it->py + ( x3 * it->sin + y3 * it->cos ), it->pz };
+
+                float ux = it->x, vx = ux + it->w;
+                float uy = it->y, vy = uy + it->h;
+
+                vec2 uv0 = vec2(ux, uy);
+                vec2 uv1 = vec2(ux, vy);
+                vec2 uv2 = vec2(vx, vy);
+                vec2 uv3 = vec2(vx, uy);
+
+                array_push( sprite_vertices, sprite_vertex(v0, uv0, it->rgba) ); // Vertex 0 (A)
+                array_push( sprite_vertices, sprite_vertex(v1, uv1, it->rgba) ); // Vertex 1 (B)
+                array_push( sprite_vertices, sprite_vertex(v2, uv2, it->rgba) ); // Vertex 2 (C)
+                array_push( sprite_vertices, sprite_vertex(v3, uv3, it->rgba) ); // Vertex 3 (D)
+
+                //      A--B                  A               A-B
+                // quad |  | becomes triangle |\  and triangle \|
+                //      D--C                  D-C               C
+                GLuint A = (index+0), B = (index+1), C = (index+2), D = (index+3); index += 4;
+
+                array_push( sprite_indices, sprite_index(C, D, A) ); // Triangle 1
+                array_push( sprite_indices, sprite_index(C, A, B) ); // Triangle 2
+            }
+
+            mesh_update(&bt->mesh, "p3 t2 c4B", 0,array_count(sprite_vertices),sprite_vertices, 3*array_count(sprite_indices),sprite_indices, MESH_STATIC);
+
+            // clear elements from queue
+            sprite_count += array_count(bt->sprites);
+            array_clear(bt->sprites);
+        }
+    }
+}
+
+static void sprite_render_meshes_group(batch_group_t* sprites, int alpha_key, int alpha_value, float mvp[16]) {
+    if( map_count(*sprites) > 0 ) {
+        // setup shader
+        if( sprite_program < 0 ) {
+            sprite_program = shader( vfs_read("shaders/vs_324_24_sprite.glsl"), vfs_read("shaders/fs_24_4_sprite.glsl"),
+                "att_Position,att_TexCoord,att_Color",
+                "fragColor", NULL
+            );
+        }
+        shader_bind(sprite_program);
+        shader_mat44("u_mvp", mvp);
+
+        // set (unit 0) in the uniform texture sampler, and render batch
+        glActiveTexture(GL_TEXTURE0);
+        glBlendFunc( alpha_key, alpha_value );
+
+        for each_map_ptr(*sprites, int,texture_id, batch_t,bt) {
+            if( bt->dirty ) {
+                shader_texture_unit("u_texture", *texture_id, 0);
+                mesh_render(&bt->mesh);
+            }
+        }
+//      map_clear(*sprites);
+    }
+}
+
+static void sprite_init() {
+    do_once for(int i = 0; i < countof(sprite_group); ++i) {
+    map_init(sprite_group[i], less_int, hash_int);
+    }
+}
+
+void sprite_flush() {
+    profile("Sprite.rebuild_time") {
+        sprite_rebuild_meshes();
+    }
+    profile("Sprite.render_time") {
+        // setup rendering state
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glDepthFunc(GL_LEQUAL); // try to help with zfighting
+
+        // 3d
+        mat44 mvp3d; multiply44x2(mvp3d, camera_get_active()->proj, camera_get_active()->view);
+        // render all additive then translucent groups
+        sprite_render_meshes_group(&sprite_group[SPRITE_PROJECTED], GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, mvp3d );
+        sprite_render_meshes_group(&sprite_group[SPRITE_PROJECTED|SPRITE_CENTERED], GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, mvp3d );
+        sprite_render_meshes_group(&sprite_group[SPRITE_PROJECTED|SPRITE_CENTERED|SPRITE_ADDITIVE], GL_SRC_ALPHA, GL_ONE, mvp3d );
+        sprite_render_meshes_group(&sprite_group[SPRITE_PROJECTED|SPRITE_ADDITIVE], GL_SRC_ALPHA, GL_ONE, mvp3d );
+
+        // 2d: (0,0) is center of screen
+        mat44 mvp2d;
+        vec3 pos = camera_get_active()->position;
+        float zoom = absf(pos.z); if(zoom < 0.1f) zoom = 0.1f; zoom = 1.f / (zoom + !zoom);
+        float zdepth_max = window_height(); // 1;
+        float l = pos.x - window_width()  * zoom / 2;
+        float r = pos.x + window_width()  * zoom / 2;
+        float b = pos.y + window_height() * zoom / 2;
+        float t = pos.y - window_height() * zoom / 2;
+        ortho44(mvp2d, l,r,b,t, -zdepth_max, +zdepth_max);
+        // render all additive then translucent groups
+        sprite_render_meshes_group(&sprite_group[0], GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, mvp2d );
+        sprite_render_meshes_group(&sprite_group[SPRITE_CENTERED], GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, mvp2d );
+        sprite_render_meshes_group(&sprite_group[SPRITE_CENTERED|SPRITE_ADDITIVE], GL_SRC_ALPHA, GL_ONE, mvp2d );
+        sprite_render_meshes_group(&sprite_group[SPRITE_ADDITIVE], GL_SRC_ALPHA, GL_ONE, mvp2d );
+
+        // restore rendering state
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+        glDepthFunc(GL_LESS);
+        glUseProgram(0);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// tilemaps
+
+tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr) {
+    tilemap_t t = {0};
+    t.tint = ~0u; // WHITE
+    t.blank_chr = blank_chr;
+    for( ; *map ; ++map ) {
+        if( map[0] == linefeed_chr ) ++t.rows;
+        else {
+            array_push(t.map, map[0]);
+            ++t.cols;
+        }
+    }
+    return t;
+}
+
+void tilemap_render_ext( tilemap_t m, tileset_t t, float zindex, float xy_zoom[3], float tilt, unsigned tint, bool is_additive ) {
+    vec3 old_pos = camera_get_active()->position;
+    sprite_flush();
+    camera_get_active()->position = vec3(window_width()/2,window_height()/2,1);
+
+    float scale[2] = {xy_zoom[2], xy_zoom[2]};
+    xy_zoom[2] = zindex;
+
+    float offset[2] = {0,0};
+    float spritesheet[3] = {0,t.cols,t.rows}; // selected tile index and spritesheet dimensions (cols,rows)
+
+    for( unsigned y = 0, c = 0; y < m.rows; ++y ) {
+        for( unsigned x = 0; x < m.cols; ++x, ++c ) {
+            if( m.map[c] != m.blank_chr ) {
+                spritesheet[0] = m.map[c];
+                sprite_sheet(t.tex, spritesheet, xy_zoom, tilt, offset, scale, tint, is_additive ? SPRITE_ADDITIVE : 0);
+            }
+            offset[0] += t.tile_w;
+        }
+        offset[0] = 0, offset[1] += t.tile_h;
+    }
+
+    sprite_flush();
+    camera_get_active()->position = old_pos;
+}
+
+void tilemap_render( tilemap_t map, tileset_t set ) {
+    map.position.x += set.tile_w;
+    map.position.y += set.tile_h;
+    tilemap_render_ext( map, set, map.zindex, &map.position.x, map.tilt, map.tint, map.is_additive );
+}
+
+tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols, unsigned rows) {
+    tileset_t t = {0};
+    t.tex = tex;
+    t.cols = cols, t.rows = rows;
+    t.tile_w = tile_w, t.tile_h = tile_h;
+    return t;
+}
+
+int ui_tileset( tileset_t t ) {
+    ui_subimage(va("Selection #%d (%d,%d)", t.selected, t.selected % t.cols, t.selected / t.cols), t.tex.id, t.tex.w, t.tex.h, (t.selected % t.cols) * t.tile_w, (t.selected / t.cols) * t.tile_h, t.tile_w, t.tile_h);
+    int choice;
+    if( (choice = ui_image(0, t.tex.id, t.tex.w,t.tex.h)) ) {
+        int px = ((choice / 100) / 100.f) * t.tex.w / t.tile_w;
+        int py = ((choice % 100) / 100.f) * t.tex.h / t.tile_h;
+        t.selected = px + py * t.cols;
+    }
+    // if( (choice = ui_buttons(3, "load", "save", "clear")) ) {}
+    return t.selected;
+}
+
+// -----------------------------------------------------------------------------
+// tiled
+
+tiled_t tiled(const char *file_tmx) {
+    tiled_t zero = {0}, ti = zero;
+
+    // read file and parse json
+    if( !xml_push(file_tmx) ) return zero;
+
+    // sanity checks
+    bool supported = !strcmp(xml_string("/map/@orientation"), "orthogonal") && !strcmp(xml_string("/map/@renderorder"), "right-down");
+    if( !supported ) return xml_pop(), zero;
+
+    // tileset
+    const char *file_tsx = xml_string("/map/tileset/@source");
+    if( !xml_push(vfs_read(file_tsx)) ) return zero;
+        const char *set_src = xml_string("/tileset/image/@source");
+        int set_w = xml_int("/tileset/@tilewidth");
+        int set_h = xml_int("/tileset/@tileheight");
+        int set_c = xml_int("/tileset/@columns");
+        int set_r = xml_int("/tileset/@tilecount") / set_c;
+        tileset_t set = tileset(texture(set_src,0), set_w, set_h, set_c, set_r );
+    xml_pop();
+
+    // actual parsing
+    ti.w = xml_int("/map/@width");
+    ti.h = xml_int("/map/@height");
+    ti.tilew = xml_int("/map/@tilewidth");
+    ti.tileh = xml_int("/map/@tileheight");
+    ti.first_gid = xml_int("/map/tileset/@firstgid");
+    ti.map_name = STRDUP( xml_string("/map/tileset/@source") ); // @leak
+
+    for(int l = 0, layers = xml_count("/map/layer"); l < layers; ++l ) {
+        if( strcmp(xml_string("/map/layer[%d]/data/@encoding",l), "base64") || strcmp(xml_string("/map/layer[%d]/data/@compression",l), "zlib") ) {
+            PRINTF("Warning: layer encoding not supported: '%s' -> layer '%s'\n", file_tmx, *array_back(ti.names));
+            continue;
+        }
+
+        int cols = xml_int("/map/layer[%d]/@width",l);
+        int rows = xml_int("/map/layer[%d]/@height",l);
+
+        tilemap_t tm = tilemap("", ' ', '\n');
+        tm.blank_chr = ~0u; //ti.first_gid - 1;
+        tm.cols = cols;
+        tm.rows = rows;
+        array_resize(tm.map, tm.cols * tm.rows);
+        memset(tm.map, 0xFF, tm.cols * tm.rows * sizeof(int));
+
+        for( int c = 0, chunks = xml_count("/map/layer[%d]/data/chunk", l); c <= chunks; ++c ) {
+            int cw, ch;
+            int cx, cy;
+            array(char) b64 = 0;
+
+            if( !chunks ) { // non-infinite mode
+                b64 = xml_blob("/map/layer[%d]/data/$",l);
+                cw = tm.cols, ch = tm.rows;
+                cx = 0, cy = 0;
+            } else { // infinite mode
+                b64 = xml_blob("/map/layer[%d]/data/chunk[%d]/$",l,c);
+                cw = xml_int("/map/layer[%d]/data/chunk[%d]/@width",l,c), ch = xml_int("/map/layer[%d]/data/chunk[%d]/@height",l,c); // 20x20
+                cx = xml_int("/map/layer[%d]/data/chunk[%d]/@x",l,c), cy = xml_int("/map/layer[%d]/data/chunk[%d]/@y",l,c); // (-16,-32)
+                cx = abs(cx), cy = abs(cy);
+            }
+
+            int outlen = cw * ch * 4;
+            static __thread int *out = 0; out = (int *)REALLOC( 0, outlen + zexcess(COMPRESS_ZLIB) ); // @leak
+            if( zdecode( out, outlen, b64, array_count(b64), COMPRESS_ZLIB ) > 0 ) {
+                for( int y = 0, p = 0; y < ch; ++y ) {
+                    for( int x = 0; x < cw; ++x, ++p ) {
+                        if( out[p] >= ti.first_gid ) {
+                            int offset = (x + cx) + (y + cy) * tm.cols;
+                            if( offset >= 0 && offset < (cw * ch) )
+                            tm.map[ offset ] = out[ p ] - ti.first_gid;
+                        }
+                    }
+                }
+            }
+            else {
+                PRINTF("Warning: bad zlib stream: '%s' -> layer #%d -> chunk #%d\n", file_tmx, l, c);
+            }
+
+            array_free(b64);
+        }
+
+        array_push(ti.layers, tm);
+        array_push(ti.names, STRDUP(xml_string("/map/layer[%d]/@name",l)));
+        array_push(ti.visible, true);
+        array_push(ti.sets, set);
+    }
+
+    xml_pop();
+    return ti;
+}
+
+void tiled_render(tiled_t tmx, vec3 pos) {
+    for( unsigned i = 0, end = array_count(tmx.layers); i < end; ++i ) {
+        tmx.layers[i].position = pos; // add3(camera_get_active()->position, pos);
+        if( tmx.parallax ) tmx.layers[i].position.x /= (3+i), tmx.layers[i].position.y /= (5+i);
+        if( tmx.visible[i] ) tilemap_render(tmx.layers[i], tmx.sets[i]);
+    }
+}
+
+void ui_tiled(tiled_t *t) {
+    ui_label2("Loaded map", t->map_name ? t->map_name : "(none)");
+    ui_label2("Map dimensions", va("%dx%d", t->w, t->h));
+    ui_label2("Tile dimensions", va("%dx%d", t->tilew, t->tileh));
+    ui_separator();
+    ui_bool("Parallax", &t->parallax);
+    ui_separator();
+    ui_label2("Layers", va("%d", array_count(t->layers)));
+    for( int i = 0; i < array_count(t->layers); ++i ) {
+        if( ui_label2_toolbar(va("- %s (%dx%d)", t->names[i], t->layers[i].cols, t->layers[i].rows ), t->visible[i] ? "\xee\xa3\xb4" : "\xee\xa3\xb5") > 0 ) { // ICON_MD_VISIBILITY / ICON_MD_VISIBILITY_OFF
+            t->visible[i] ^= true;
+        }
+    }
+    ui_separator();
+    if( ui_collapse(va("Sets: %d", array_count(t->layers)), va("%p",t))) {
+        for( int i = 0; i < array_count(t->layers); ++i ) {
+            if( ui_collapse(va("%d", i+1), va("%p%d",t,i)) ) {
+                t->sets[i].selected = ui_tileset( t->sets[i] );
+                ui_collapse_end();
+            }
+        }
+        ui_collapse_end();
+    }
+}
+
+// -----------------------------------------------------------------------------
+// spine json loader (wip)
+// - rlyeh, public domain
+//
+// [ref] http://es.esotericsoftware.com/spine-json-format
+//
+// notable misses:
+// - mesh deforms
+// - cubic beziers
+// - shears
+// - bounding boxes
+
+enum { SPINE_MAX_BONES = 64 }; // max bones
+
+typedef struct spine_bone_t {
+    char *name, *parent;
+    struct spine_bone_t *parent_bone;
+
+    float z; // draw order usually matches bone-id. ie, zindex == bone_id .. root(0) < chest (mid) < finger(top)
+
+    float len;
+    float x, y, deg;        // base
+    float x2, y2, deg2;     // accum / temporaries during bone transform time
+    float x3, y3, deg3;     // values from timeline
+
+    unsigned rect_id;
+    unsigned atlas_id;
+} spine_bone_t;
+
+typedef struct spine_slot_t {
+    char *name, *bone, *attach;
+} spine_slot_t;
+
+typedef struct spine_rect_t {
+    char *name;
+    float x,y,w,h,sx,sy,deg;
+} spine_rect_t;
+
+typedef struct spine_skin_t {
+    char *name;
+    array(spine_rect_t) rects;
+} spine_skin_t;
+
+typedef struct spine_animkey_t { // offline; only during loading
+    float time, curve[4];        // time is mandatory, curve is optional
+    union {
+        char *name;              // type: attachment (mode-1)
+        struct { float deg; };   // type: rotate (mode-2)
+        struct { float x,y; };   // type: translate (mode-3)
+    };
+} spine_animkey_t;
+
+#if 0
+typedef struct spine_pose_t { // runtime; only during playing
+    unsigned frame;
+    array(vec4) xform; // entry per bone. translation(x,y),rotation(z),attachment-id(w)
+} spine_pose_t;
+#endif
+
+typedef struct spine_anim_t {
+    char *name;
+    union {
+#if 0
+        struct {
+            unsigned frames;
+            array(spine_pose_t) poses;
+        };
+#endif
+        struct {
+            array(spine_animkey_t) attach_keys[SPINE_MAX_BONES];
+            array(spine_animkey_t) rotate_keys[SPINE_MAX_BONES];
+            array(spine_animkey_t) translate_keys[SPINE_MAX_BONES];
+        };
+    };
+} spine_anim_t;
+
+typedef struct spine_atlas_t {
+    char *name;
+    float x,y,w,h,deg;
+} spine_atlas_t;
+
+typedef struct spine_t {
+    char *name;
+    texture_t texture;
+    unsigned skin;
+    array(spine_bone_t) bones;
+    array(spine_slot_t) slots;
+    array(spine_skin_t) skins;
+    array(spine_anim_t) anims;
+    array(spine_atlas_t) atlas;
+    // anim controller
+    unsigned inuse;
+    float time, maxtime;
+    unsigned debug_atlas_id;
+} spine_t;
+
+// ---
+
+static
+void spine_convert_animkeys_to_animpose(spine_anim_t *input) {
+    spine_anim_t copy = *input; // @todo
+    // @leak: attach/rot/tra keys
+}
+
+static
+int find_bone_id(spine_t *s, const char *bone_name) {
+    for( unsigned i = 0, end = array_count(s->bones); i < end; ++i )
+        if( !strcmp(s->bones[i].name, bone_name)) return i;
+    return -1;
+}
+static
+spine_bone_t *find_bone(spine_t *s, const char *bone_name) {
+    int bone_id = find_bone_id(s, bone_name);
+    return bone_id >= 0 ? &s->bones[bone_id] : NULL;
+}
+
+void spine_skin(spine_t *p, unsigned skin) {
+    if( !p->texture.id ) return;
+    if( skin >= array_count(p->skins) ) return;
+
+    p->skin = skin;
+
+    char *skin_name = va("%s/", p->skins[skin].name);
+    int header = strlen(skin_name);
+
+    for( int i = 0; i < array_count(p->atlas); ++i) {
+        if(!strbeg(p->atlas[i].name, skin_name)) continue;
+
+        int bone_id = find_bone_id(p, p->atlas[i].name+header );
+        if( bone_id < 0 ) continue;
+
+        p->bones[bone_id].atlas_id = i;
+    }
+
+    for( int i = 0; i < array_count(p->skins[p->skin].rects); ++i) {
+        int bone_id = find_bone_id(p, p->skins[p->skin].rects[i].name );
+        if( bone_id < 0 ) continue;
+
+        p->bones[bone_id].rect_id = i;
+    }
+}
+
+static
+bool spine_(spine_t *t, const char *file_json, const char *file_atlas, unsigned flags) {
+    char *atlas = vfs_read(file_atlas);
+    if(!atlas || !atlas[0]) return false;
+
+    memset(t, 0, sizeof(spine_t));
+
+    // goblins.png
+    //   size: 1024, 128
+    //   filter: Linear, Linear
+    //   pma: true
+    // dagger
+    //   bounds: 2, 18, 26, 108
+    // goblin/eyes-closed
+    //   bounds: 2, 4, 34, 12
+    spine_atlas_t *sa = 0;
+    const char *last_id = 0;
+    const char *texture_name = 0;
+    const char *texture_filter = 0;
+    const char *texture_format = 0;
+    const char *texture_repeat = 0;
+    float texture_width = 0, texture_height = 0, temp;
+    for each_substring(atlas, "\r\n", it) {
+        it += strspn(it, " \t\f\v");
+        /**/ if( strbeg(it, "pma:" ) || strbeg(it, "index:") ) {} // ignored
+        else if( strbeg(it, "size:" ) ) sscanf(it+5, "%f,%f", &texture_width, &texture_height);
+        else if( strbeg(it, "rotate:" ) ) { float tmp; tmp=sa->w,sa->w=sa->h,sa->h=tmp; sa->deg = 90; } // assert(val==90)
+        else if( strbeg(it, "repeat:" ) ) texture_repeat = it+7; // temp string
+        else if( strbeg(it, "filter:" ) ) texture_filter = it+7; // temp string
+        else if( strbeg(it, "format:" ) ) texture_format = it+7; // temp string
+        else if( strbeg(it, "bounds:" ) ) {
+            sscanf(it+7, "%f,%f,%f,%f", &sa->x, &sa->y, &sa->w, &sa->h);
+        }
+        else if( !texture_name ) texture_name = va("%s", it);
+        else {
+            array_push(t->atlas, ((spine_atlas_t){0}) );
+            sa = &t->atlas[array_count(t->atlas) - 1];
+            sa->name = STRDUP(it);
+        }
+    }
+    for( int i = 0; i < array_count(t->atlas); ++i ) {
+        sa = &t->atlas[i];
+        sa->x /= texture_width, sa->y /= texture_height;
+        sa->w /= texture_width, sa->h /= texture_height;
+    }
+
+    if(!texture_name) return false;
+
+    t->texture = texture(texture_name, TEXTURE_LINEAR);
+
+    json_push(vfs_read(file_json)); // @fixme: json_push_from_file() ?
+
+    array_resize(t->bones, json_count("/bones"));
+    array_reserve(t->slots, json_count("/slots"));
+    array_resize(t->skins, json_count("/skins"));
+    array_resize(t->anims, json_count("/animations"));
+
+    for( int i = 0, end = json_count("/bones"); i < end; ++i ) {
+        spine_bone_t v = {0};
+        v.name = STRDUP(json_string("/bones[%d]/name", i));
+        v.parent = STRDUP(json_string("/bones[%d]/parent", i));
+        v.x = json_float("/bones[%d]/x", i);
+        v.y = json_float("/bones[%d]/y", i);
+        v.z = i;
+        v.len = json_float("/bones[%d]/length", i);
+        v.deg = json_float("/bones[%d]/rotation", i);
+        t->bones[i] = v;
+
+        for( int j = i-1; j > 0; --j ) {
+            if( strcmp(t->bones[j].name,v.parent) ) continue;
+            t->bones[i].parent_bone = &t->bones[j];
+            break;
+        }
+    }
+
+    for( int i = 0, end = json_count("/slots"); i < end; ++i ) {
+        spine_slot_t v = {0};
+        v.name = STRDUP(json_string("/slots[%d]/name", i));
+        v.bone = STRDUP(json_string("/slots[%d]/bone", i));
+        v.attach = STRDUP(json_string("/slots[%d]/attachment", i));
+
+        array_push(t->slots, v);
+
+        // slots define draw-order. so, update draw-order/zindex in bone
+        spine_bone_t *b = find_bone(t, v.name);
+        if( b ) b->z = i;
+    }
+
+    for( int i = 0, end = json_count("/skins"); i < end; ++i ) {
+        spine_skin_t v = {0};
+        v.name = STRDUP(json_string("/skins[%d]/name", i));
+
+        for( int j = 0, jend = json_count("/skins[%d]/attachments",i); j < jend; ++j ) // /skins/default/
+        for( int k = 0, kend = json_count("/skins[%d]/attachments[%d]",i,j); k < kend; ++k ) { // /skins/default/left hand item/
+            spine_rect_t r = {0};
+            r.name = STRDUP(json_key("/skins[%d]/attachments[%d][%d]",i,j,k)); // stringf("%s-%s-%s", json_key("/skins[%d]",i), json_key("/skins[%d][%d]",i,j), json_key("/skins[%d][%d][%d]",i,j,k));
+            r.x = json_float("/skins[%d]/attachments[%d][%d]/x",i,j,k);
+            r.y = json_float("/skins[%d]/attachments[%d][%d]/y",i,j,k);
+            r.sx= json_float("/skins[%d]/attachments[%d][%d]/scaleX",i,j,k); r.sx += !r.sx;
+            r.sy= json_float("/skins[%d]/attachments[%d][%d]/scaleY",i,j,k); r.sy += !r.sy;
+            r.w = json_float("/skins[%d]/attachments[%d][%d]/width",i,j,k);
+            r.h = json_float("/skins[%d]/attachments[%d][%d]/height",i,j,k);
+            r.deg = json_float("/skins[%d]/attachments[%d][%d]/rotation",i,j,k);
+            array_push(v.rects, r);
+        }
+
+        t->skins[i] = v;
+    }
+
+#if 1
+    // simplify:
+    // merge /skins/default into existing /skins/*, then delete /skins/default
+    if( array_count(t->skins) > 1 ) {
+        for( int i = 1; i < array_count(t->skins); ++i ) {
+            for( int j = 0; j < array_count(t->skins[0].rects); ++j ) {
+                array_push(t->skins[i].rects, t->skins[0].rects[j]);
+            }
+        }
+        // @leak @fixme: FREE(t->skins[0])
+        for( int i = 0; i < array_count(t->skins)-1; ++i ) {
+            t->skins[i] = t->skins[i+1];
+        }
+        array_pop(t->skins);
+    }
+#endif
+
+    for( int i = 0, end = json_count("/animations"); i < end; ++i ) {
+        int id;
+        const char *name;
+
+        spine_anim_t v = {0};
+        v.name = STRDUP(json_key("/animations[%d]", i));
+
+        // slots / attachments
+
+        for( int j = 0, jend = json_count("/animations[%d]/slots",i); j < jend; ++j )
+        for( int k = 0, kend = json_count("/animations[%d]/slots[%d]",i,j); k < kend; ++k ) // ids
+        {
+            int bone_id = find_bone_id(t, json_key("/animations[%d]/bones[%d]",i,j));
+            if( bone_id < 0 ) continue;
+
+            for( int l = 0, lend = json_count("/animations[%d]/slots[%d][%d]",i,j,k); l < lend; ++l ) { // channels (rot,tra,attach)
+                spine_animkey_t key = {0};
+
+                key.name = STRDUP(json_string("/animations[%d]/slots[%d][%d][%d]/name",i,j,k,l));
+                key.time = json_float("/animations[%d]/slots[%d][%d][%d]/time",i,j,k,l);
+                if( json_count("/animations[%d]/slots[%d][%d][%d]/curve",i,j,k,l) == 4 ) {
+                key.curve[0] = json_float("/animations[%d]/slots[%d][%d][%d]/curve[0]",i,j,k,l);
+                key.curve[1] = json_float("/animations[%d]/slots[%d][%d][%d]/curve[1]",i,j,k,l);
+                key.curve[2] = json_float("/animations[%d]/slots[%d][%d][%d]/curve[2]",i,j,k,l);
+                key.curve[3] = json_float("/animations[%d]/slots[%d][%d][%d]/curve[3]",i,j,k,l);
+                }
+
+                // @todo: convert name to id
+                // for(id = 0; t->bones[id].name && strcmp(t->bones[id].name,key.name); ++id)
+                // printf("%s vs %s\n", key.name, t->bones[id].name);
+
+                array_push(v.attach_keys[bone_id], key);
+            }
+        }
+
+        // bones
+
+        for( int j = 0, jend = json_count("/animations[%d]/bones",i); j < jend; ++j ) // slots or bones
+        for( int k = 0, kend = json_count("/animations[%d]/bones[%d]",i,j); k < kend; ++k ) { // bone ids
+            int bone_id = find_bone_id(t, json_key("/animations[%d]/bones[%d]",i,j));
+            if( bone_id < 0 ) continue;
+
+            // parse bones
+            for( int l = 0, lend = json_count("/animations[%d]/bones[%d][%d]",i,j,k); l < lend; ++l ) { // channels (rot,tra,attach)
+                const char *channel = json_key("/animations[%d]/bones[%d][%d]",i,j,k);
+                int track = !strcmp(channel, "rotate") ? 1 : !strcmp(channel, "translate") ? 2 : 0;
+                if( !track ) continue;
+
+                spine_animkey_t key = {0};
+
+                key.time = json_float("/animations[%d]/bones[%d][%d][%d]/time",i,j,k,l);
+                if( json_count("/animations[%d]/bones[%d][%d][%d]/curve",i,j,k,l) == 4 ) {
+                key.curve[0] = json_float("/animations[%d]/bones[%d][%d][%d]/curve[0]",i,j,k,l);
+                key.curve[1] = json_float("/animations[%d]/bones[%d][%d][%d]/curve[1]",i,j,k,l);
+                key.curve[2] = json_float("/animations[%d]/bones[%d][%d][%d]/curve[2]",i,j,k,l);
+                key.curve[3] = json_float("/animations[%d]/bones[%d][%d][%d]/curve[3]",i,j,k,l);
+                }
+
+                if( track == 1 )
+                key.deg = json_float("/animations[%d]/bones[%d][%d][%d]/value",i,j,k,l), // "/angle"
+                array_push(v.rotate_keys[bone_id], key);
+                else
+                key.x = json_float("/animations[%d]/bones[%d][%d][%d]/x",i,j,k,l),
+                key.y = json_float("/animations[%d]/bones[%d][%d][%d]/y",i,j,k,l),
+                array_push(v.translate_keys[bone_id], key);
+            }
+        }
+
+        t->anims[i] = v;
+    }
+
+    json_pop();
+
+    spine_skin(t, 0);
+
+    return true;
+}
+
+spine_t* spine(const char *file_json, const char *file_atlas, unsigned flags) {
+    spine_t *t = MALLOC(sizeof(spine_t));
+    if( !spine_(t, file_json, file_atlas, flags) ) return FREE(t), NULL;
+    return t;
+}
+
+void spine_render(spine_t *p, vec3 offset, unsigned flags) {
+    if( !p->texture.id ) return;
+    if( !flags ) return;
+
+    ddraw_push_2d();
+        // if( flags & 2 ) ddraw_line(vec3(0,0,0), vec3(window_width(),window_height(),0));
+        // if( flags & 2 ) ddraw_line(vec3(window_width(),0,0), vec3(0,window_height(),0));
+
+        // int already_computed[SPINE_MAX_BONES] = {0}; // @fixme: optimize: update longest chains first, then remnant branches
+
+        for( int i = 1; i < array_count(p->bones); ++i ) {
+            spine_bone_t *self = &p->bones[i];
+            if( !self->rect_id ) continue;
+
+            int num_bones = 0;
+            static array(spine_bone_t*) chain = 0; array_resize(chain, 0);
+            for( spine_bone_t *next = self; next ; next = next->parent_bone, ++num_bones ) {
+                array_push(chain, next);
+            }
+
+            vec3 target = {0}, prev = {0};
+            for( int j = 0, end = array_count(chain); j < end; ++j ) { // traverse from root(skipped) -> `i` bone direction
+                int j_opposite = end - 1 - j;
+
+                spine_bone_t *b = chain[j_opposite]; // bone
+                spine_bone_t *pb = b->parent_bone; // parent bone
+
+                float pb_x2 = 0, pb_y2 = 0, pb_deg2 = 0;
+                if( pb ) pb_x2 = pb->x2, pb_y2 = pb->y2, pb_deg2 = pb->deg2;
+
+                const float deg2rad = C_PI / 180;
+                b->x2 =      b->x3 + pb_x2   + b->x * cos( -pb_deg2 * deg2rad ) - b->y * sin( -pb_deg2 * deg2rad );
+                b->y2 =     -b->y3 + pb_y2   - b->y * cos(  pb_deg2 * deg2rad ) + b->x * sin(  pb_deg2 * deg2rad );
+                b->deg2 = -b->deg3 + pb_deg2 - b->deg;
+
+                prev = target;
+                target = vec3(b->x2,b->y2,b->deg2);
+            }
+
+            target.z = 0;
+            target = add3(target, offset);
+            prev.z = 0;
+            prev = add3(prev, offset);
+
+            if( flags & 2 ) {
+                ddraw_point( target );
+                ddraw_text( target, -0.25f, self->name );
+                ddraw_bone( prev, target ); // from parent to bone
+            }
+            if( flags & 1 ) {
+                spine_atlas_t *a = &p->atlas[self->atlas_id];
+                spine_rect_t *r = &p->skins[p->skin].rects[self->rect_id];
+
+                vec4 rect = ptr4(&a->x);
+                float zindex = self->z;
+                float offsx = 0;
+                float offsy = 0;
+                float tilt = self->deg2 + (a->deg - r->deg);
+                unsigned tint = self->atlas_id == p->debug_atlas_id ? 0xFF<<24 | 0xFF : ~0u;
+
+                if( 1 ) {
+                    vec3 dir = vec3(r->x,r->y,0);
+                    dir = rotatez3(dir, self->deg2);
+                    offsx = dir.x * r->sx;
+                    offsy = dir.y * r->sy;
+                }
+
+                sprite_rect(p->texture, rect, vec4(target.x,target.y,0,zindex), vec4(1,1,offsx,offsy), tilt, tint, 0);
+            }
+         }
+
+    ddraw_pop_2d();
+    ddraw_flush();
+}
+
+static
+void spine_animate_(spine_t *p, float *time, float *maxtime, float delta) {
+    if( !p->texture.id ) return;
+
+    if( delta > 1/120.f ) delta = 1/120.f;
+    if( *time >= *maxtime ) *time = 0; else *time += delta;
+
+    // reset root // needed?
+    p->bones[0].x2 = 0;
+    p->bones[0].y2 = 0;
+    p->bones[0].deg2 = 0;
+    p->bones[0].x3 = 0;
+    p->bones[0].y3 = 0;
+    p->bones[0].deg3 = 0;
+
+    for( int i = 0, end = array_count(p->bones); i < end; ++i) {
+        // @todo: attach channel
+        // @todo: per channel: if curve == linear || curve == stepped || array_count(curve) == 4 {...}
+        for each_array_ptr(p->anims[p->inuse].rotate_keys[i], spine_animkey_t, r) {
+            double r0 = r->time;
+            *maxtime = maxf( *maxtime, r0 );
+            if( absf(*time - r0) < delta ) {
+                p->bones[i].deg3 = r->deg;
+            }
+        }
+        for each_array_ptr(p->anims[p->inuse].translate_keys[i], spine_animkey_t, r) {
+            double r0 = r->time;
+            *maxtime = maxf( *maxtime, r0 );
+            if( absf(*time - r0) < delta ) {
+                p->bones[i].x3 = r->x;
+                p->bones[i].y3 = r->y;
+            }
+        }
+    }
+}
+
+void spine_animate(spine_t *p, float delta) {
+    spine_animate_(p, &p->time, &p->maxtime, delta);
+}
+
+void ui_spine(spine_t *p) {
+    if( ui_collapse(va("Anims: %d", array_count(p->anims)), va("%p-a", p))) {
+        for each_array_ptr(p->anims, spine_anim_t, q) {
+            if(ui_slider2("", &p->time, va("%.2f/%.0f %.2f%%", p->time, p->maxtime, p->time * 100.f))) {
+                spine_animate(p, 0);
+            }
+
+            int choice = ui_label2_toolbar(q->name, ICON_MD_PAUSE_CIRCLE " " ICON_MD_PLAY_CIRCLE);
+            if( choice == 1 ) window_pause( 0 ); // play
+            if( choice == 2 ) window_pause( 1 ); // pause
+
+            for( int i = 0; i < SPINE_MAX_BONES; ++i ) {
+                ui_separator();
+                ui_label(va("Bone %d: Attachment keys", i));
+                for each_array_ptr(q->attach_keys[i], spine_animkey_t, r) {
+                    ui_label(va("%.2f [%.2f %.2f %.2f %.2f] %s", r->time, r->curve[0], r->curve[1], r->curve[2], r->curve[3], r->name));
+                }
+                ui_label(va("Bone %d: Rotate keys", i));
+                for each_array_ptr(q->rotate_keys[i], spine_animkey_t, r) {
+                    ui_label(va("%.2f [%.2f %.2f %.2f %.2f] %.2f deg", r->time, r->curve[0], r->curve[1], r->curve[2], r->curve[3], r->deg));
+                }
+                ui_label(va("Bone %d: Translate keys", i));
+                for each_array_ptr(q->translate_keys[i], spine_animkey_t, r) {
+                    ui_label(va("%.2f [%.2f %.2f %.2f %.2f] (%.2f,%.2f)", r->time, r->curve[0], r->curve[1], r->curve[2], r->curve[3], r->x, r->y));
+                }
+            }
+        }
+        ui_collapse_end();
+    }
+    if( ui_collapse(va("Bones: %d", array_count(p->bones)), va("%p-b", p))) {
+        for each_array_ptr(p->bones, spine_bone_t, q)
+        if( ui_collapse(q->name, va("%p-b2", q)) ) {
+            ui_label2("Parent:", q->parent);
+            ui_label2("X:", va("%.2f", q->x));
+            ui_label2("Y:", va("%.2f", q->y));
+            ui_label2("Length:", va("%.2f", q->len));
+            ui_label2("Rotation:", va("%.2f", q->deg));
+            ui_collapse_end();
+        }
+        ui_collapse_end();
+    }
+    if( ui_collapse(va("Slots: %d", array_count(p->slots)), va("%p-s", p))) {
+        for each_array_ptr(p->slots, spine_slot_t, q)
+        if( ui_collapse(q->name, va("%p-s2", q)) ) {
+            ui_label2("Bone:", q->bone);
+            ui_label2("Attachment:", q->attach);
+            ui_collapse_end();
+        }
+        ui_collapse_end();
+    }
+    if( ui_collapse(va("Skins: %d", array_count(p->skins)), va("%p-k", p))) {
+        for each_array_ptr(p->skins, spine_skin_t, q)
+        if( ui_collapse(q->name, va("%p-k2", q)) ) {
+            for each_array_ptr(q->rects, spine_rect_t, r)
+            if( ui_collapse(r->name, va("%p-k3", r)) ) {
+                ui_label2("X:", va("%.2f", r->x));
+                ui_label2("Y:", va("%.2f", r->y));
+                ui_label2("Scale X:", va("%.2f", r->sx));
+                ui_label2("Scale Y:", va("%.2f", r->sy));
+                ui_label2("Width:", va("%.2f", r->w));
+                ui_label2("Height:", va("%.2f", r->h));
+                ui_label2("Rotation:", va("%.2f", r->deg));
+                ui_collapse_end();
+
+                spine_bone_t *b = find_bone(p, r->name);
+                if( b ) {
+                    p->debug_atlas_id = b->atlas_id;
+
+                    static float tilt = 0;
+                    if( input(KEY_LCTRL) ) tilt += 60*1/60.f; else tilt = 0;
+                    spine_atlas_t *r = p->atlas + b->atlas_id;
+                    sprite_flush();
+                    camera_get_active()->position = vec3(0,0,2);
+                        vec4 rect = ptr4(&r->x); float zindex = 0; vec4 scale_offset = vec4(1,1,0,0);
+                        sprite_rect(p->texture, ptr4(&r->x), vec4(0,0,0,zindex), scale_offset, r->deg + tilt, ~0u, 0);
+                        sprite_flush();
+                    camera_get_active()->position = vec3(+window_width()/3,window_height()/2.25,2);
+                }
+            }
+            ui_collapse_end();
+        }
+        ui_collapse_end();
+    }
+
+    if( ui_int("Use skin", &p->skin) ) {
+    p->skin = clampf(p->skin, 0, array_count(p->skins) - 1);
+    spine_skin(p, p->skin);
+    }
+
+    if( p->texture.id ) ui_texture(0, p->texture);
+}
+
+// ----------------------------------------------------------------------------
+
+// texture_t texture_createclip(unsigned cx,unsigned cy,unsigned cw,unsigned ch, unsigned tw,unsigned th,unsigned tn,void *pixels, unsigned flags) {
+//     return texture_create(tw,th,tn,pixels,flags);
+//     static array(unsigned) clip = 0;
+//     array_resize(clip, cw*ch*4);
+//     for( unsigned y = 0; y < ch; ++y )
+//     memcpy((char *)clip + (0+(0+y)*cw)*tn, (char*)pixels + (cx+(cy+y)*tw)*tn, cw*tn);
+//     return texture_create(cw,ch,tn,clip,flags);
+// }
+
+typedef unsigned quark_t;
+
+#define array_reserve_(arr,x) (array_count(arr) > (x) ? (arr) : array_resize(arr, 1+(x)))
+
+#define ui_array(label,type,ptr) do { \
+    int changed = 0; \
+    if( ui_collapse(label, va(#type "%p",ptr)) ) { \
+        char label_ex[8]; \
+        for( int idx = 0, iend = array_count(*(ptr)); idx < iend; ++idx ) { \
+            type* it = *(ptr) + idx; \
+            snprintf(label_ex, sizeof(label_ex), "[%d]", idx); \
+            changed |= ui_##type(label_ex, it); \
+        } \
+        ui_collapse_end(); \
+    } \
+} while(0)
+
+int ui_vec2i(const char *label, vec2i *v) { return ui_unsigned2(label, (unsigned*)v); }
+int ui_vec3i(const char *label, vec3i *v) { return ui_unsigned3(label, (unsigned*)v); }
+int ui_vec2(const char *label, vec2 *v) { return ui_float2(label, (float*)v); }
+int ui_vec3(const char *label, vec3 *v) { return ui_float3(label, (float*)v); }
+int ui_vec4(const char *label, vec4 *v) { return ui_float4(label, (float*)v); }
+
+char *trimspace(char *str) {
+    for( char *s = str; *s; ++s )
+        if(*s <= 32) memmove(s, s+1, strlen(s));
+    return str;
+}
+
+char *file_parent(const char *f) {   // folder/folder/abc
+    char *p = file_path(f);          // folder/folder/
+    char *last = strrchr(p, '/');    //              ^
+    if( !last ) return p;            // return parent if no sep
+    *last = '\0';                    // folder/folder
+    last = strrchr(p, '/');          //       ^
+    return last ? last + 1 : p;      // return parent if no sep
+}
+
+int ui_obj(const char *fmt, obj *o) {
+    int changed = 0, item = 1;
+    for each_objmember(o, TYPE,NAME,PTR) {
+        char *label = va(fmt, NAME);
+        /**/ if(!strcmp(TYPE,"float"))    { if(ui_float(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"int"))      { if(ui_int(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"unsigned")) { if(ui_unsigned(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"vec2"))     { if(ui_float2(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"vec3"))     { if(ui_float3(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"vec4"))     { if(ui_float4(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"rgb"))      { if(ui_color3(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"rgba"))     { if(ui_color4(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"color"))    { if(ui_color4f(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"color3f"))  { if(ui_color3f(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"color4f"))  { if(ui_color4f(label, PTR)) changed = item; }
+        else if(!strcmp(TYPE,"char*"))    { if(ui_string(label, PTR)) changed = item; }
+        else ui_label2(label, va("(%s)", TYPE)); // INFO instead of (TYPE)?
+        ++item;
+    }
+    return changed;
+}
+
+#define OBJTYPEDEF2(...) OBJTYPEDEF(__VA_ARGS__); AUTORUN
+
+// ----------------------------------------------------------------------------
+// atlas
+
+typedef struct atlas_frame_t {
+    unsigned delay;
+    vec4 sheet;
+    vec2 anchor; // @todo
+    array(vec3i) indices;
+    array(vec2) coords;
+    array(vec2) uvs;
+} atlas_frame_t;
+
+typedef struct atlas_anim_t {
+    quark_t name;
+    array(unsigned) frames;
+} atlas_anim_t;
+
+typedef struct atlas_t {
+    texture_t tex;
+
+    array(atlas_frame_t) frames;
+    array(atlas_anim_t)  anims;
+
+    quarks_db db;
+} atlas_t;
+
+int ui_atlas_frame(atlas_frame_t *f) {
+    ui_unsigned("delay", &f->delay);
+    ui_vec4("sheet", &f->sheet);
+    ui_array("indices", vec3i, &f->indices);
+    ui_array("coords", vec2, &f->coords);
+    ui_array("uvs", vec2, &f->uvs);
+    return 0;
+}
+
+int ui_atlas(atlas_t *a) {
+    int changed = 0;
+    ui_texture(NULL, a->tex);
+    for( int i = 0; i < array_count(a->anims); ++i ) {
+        if( ui_collapse(quark_string(&a->db, a->anims[i].name), va("%p%d", a, a->anims[i].name) ) ) {
+            changed = i+1;
+            for( int j = 0; j < array_count(a->anims[i].frames); ++j ) {
+                if( ui_collapse(va("[%d]",j), va("%p%d.%d", a, a->anims[i].name,j) ) ) {
+                    ui_unsigned("Frame", &a->anims[i].frames[j]);
+                    ui_atlas_frame(a->frames + a->anims[i].frames[j]);
+                    ui_collapse_end();
+                }
+            }
+            ui_collapse_end();
+        }
+    }
+    return changed;
+}
+
+void atlas_destroy(atlas_t *a) {
+    if( a ) {
+        texture_destroy(&a->tex);
+        memset(a, 0, sizeof(atlas_t));
+    }
+}
+atlas_t atlas_create(const char *inifile, unsigned flags) {
+    atlas_t a = {0};
+    int padding = 0, border = 0;
+
+    ini_t kv = ini(inifile);
+    for each_map(kv, char*,k, char*,v ) {
+        unsigned index = atoi(k);
+        /**/ if( strend(k, ".name") ) {
+            array_reserve_(a.anims, index);
+
+            a.anims[index].name = quark_intern(&a.db, v);
+        }
+        else if( strend(k, ".frames") ) {
+            array_reserve_(a.anims, index);
+
+            array(char*) pairs = strsplit(v, ",");
+            for( int i = 0, end = array_count(pairs); i < end; i += 2 ) {
+                unsigned frame = atoi(pairs[i]);
+                unsigned delay = atoi(pairs[i+1]);
+
+                array_reserve_(a.frames, frame);
+                a.frames[frame].delay = delay;
+
+                array_push(a.anims[index].frames, frame);
+            }
+        }
+        else if( strend(k, ".sheet") ) {
+            array_reserve_(a.frames, index);
+
+            vec4 sheet = atof4(v); //x,y,x2+2,y2+2 -> x,y,w,h (for 2,2 padding)
+            a.frames[index].sheet = vec4(sheet.x,sheet.y,sheet.z-sheet.x,sheet.w-sheet.y);
+        }
+        else if( strend(k, ".indices") ) {
+            array_reserve_(a.frames, index);
+
+            const char *text = v;
+            array(char*) tuples = strsplit(text, ",");
+            for( int i = 0, end = array_count(tuples); i < end; i += 3 ) {
+                unsigned p1 = atoi(tuples[i]);
+                unsigned p2 = atoi(tuples[i+1]);
+                unsigned p3 = atoi(tuples[i+2]);
+                array_push(a.frames[index].indices, vec3i(p1,p2,p3));
+            }
+        }
+        else if( strend(k, ".coords") ) {
+            array_reserve_(a.frames, index);
+
+            const char *text = v;
+            array(char*) pairs = strsplit(text, ",");
+            for( int i = 0, end = array_count(pairs); i < end; i += 2 ) {
+                unsigned x = atoi(pairs[i]);
+                unsigned y = atoi(pairs[i+1]);
+                array_push(a.frames[index].coords, vec2(x,y));
+            }
+        }
+        else if( strend(k, ".uvs") ) {
+            array_reserve_(a.frames, index);
+
+            const char *text = v;
+            array(char*) pairs = strsplit(text, ",");
+            for( int i = 0, end = array_count(pairs); i < end; i += 2 ) {
+                unsigned u = atoi(pairs[i]);
+                unsigned v = atoi(pairs[i+1]);
+                array_push(a.frames[index].uvs, vec2(u,v));
+            }
+        }
+        else if( strend(k, "padding") ) {
+            padding = atoi(v);
+        }
+        else if( strend(k, "border") ) {
+            border = atoi(v);
+        }
+        else if( strend(k, "file") ) {
+            a.tex = texture(v, 0);
+        }
+        else if( strend(k, "bitmap") ) {
+            const char *text = v;
+            array(char) bin = base64_decode(text, strlen(text));
+            a.tex = texture_from_mem(bin, array_count(bin), 0);
+            array_free(bin);
+        }
+#if 0
+        else if( strend(k, ".frame") ) {
+            array_reserve_(a.frames, index);
+            puts(k), puts(v);
+        }
+#endif
+    }
+
+    // post-process: normalize uvs and coords into [0..1] ranges
+    for each_array_ptr(a.frames, atlas_frame_t, f) {
+        for each_array_ptr(f->uvs, vec2, uv) {
+            uv->x /= a.tex.w;
+            uv->y /= a.tex.h;
+        }
+        for each_array_ptr(f->coords, vec2, xy) {
+            xy->x /= a.tex.w;
+            xy->y /= a.tex.h;
+        }
+        // @todo: adjust padding/border
+    }
+#if 0
+    // post-process: specify an anchor for each anim based on 1st frame dims
+    for each_array_ptr(a.anims, atlas_anim_t, anim) {
+        atlas_frame_t *first = a.frames + *anim->frames;
+        for( int i = 0; i < array_count(anim->frames); i += 2) {
+            atlas_frame_t *ff = a.frames + anim->frames[ i ];
+            ff->anchor.x = (ff->sheet.z - first->sheet.z) / 2;
+            ff->anchor.y = (ff->sheet.w - first->sheet.w) / 2;
+        }
+    }
+#endif
+
+    return a;
+}
+
+// ----------------------------------------------------------------------------
+// sprite v2
+
+void sprite_ctor(sprite_t *s) {
+    s->tint = WHITE;
+    s->timer_ms = 100;
+    s->flipped = 1;
+    s->sca.x += !s->sca.x;
+    s->sca.y += !s->sca.y;
+}
+void sprite_dtor(sprite_t *s) {
+    memset(s, 0, sizeof(*s));
+}
+void sprite_tick(sprite_t *s) {
+    int right = input(s->gamepad.array[3]) - input(s->gamepad.array[2]); // RIGHT - LEFT
+    int forward = input(s->gamepad.array[1]) - input(s->gamepad.array[0]); // DOWN - UP
+    int move = right || forward;
+    int dt = 16; // window_delta() * 1000;
+
+    unsigned over = (s->timer - dt) > s->timer;
+    if(!s->paused) s->timer -= dt;
+    if( over ) {
+        int len = array_count(s->a->anims[s->play].frames);
+        unsigned next = (s->frame + 1) % (len + !len);
+        unsigned eoa = next < s->frame;
+        s->frame = next;
+
+        atlas_frame_t *f = &s->a->frames[ s->a->anims[s->play].frames[s->frame] ];
+        s->timer_ms = f->delay;
+        s->timer += s->timer_ms;
+    }
+
+    if( s->play == 0 && move ) sprite_setanim(s, 1);
+    if( s->play == 1 ) { //<
+        if(right) s->flip_ = right < 0, sprite_setanim(s, 1);
+        if(!right && !forward) sprite_setanim(s, 0);
+
+        float speed = s->sca.x*2;
+        s->pos = add4(s->pos, scale4(norm4(vec4(right,0,forward,0)),speed));
+    }
+}
+void sprite_draw(sprite_t *s) {
+    atlas_frame_t *f = &s->a->frames[ s->a->anims[s->play].frames[s->frame] ];
+
+#if 1
+    // @todo {
+        unsigned sample = s->a->anims[s->play].frames[s->frame];
+        sample = 0;
+        f->anchor.x = (-s->a->frames[sample].sheet.z + f->sheet.z) / 2;
+        f->anchor.y = (+s->a->frames[sample].sheet.w - f->sheet.w) / 2;
+    // }
+#endif
+
+    // rect(x,y,w,h) is [0..1] normalized, z-index, pos(x,y,scale), rotation (degrees), color (rgba)
+    vec4 rect = { f->sheet.x / s->a->tex.w, f->sheet.y / s->a->tex.h, f->sheet.z / s->a->tex.w, f->sheet.w / s->a->tex.h };
+    sprite_rect(s->a->tex, rect, s->pos, vec4(s->flip_ ^ s->flipped?s->sca.x:-s->sca.x,s->sca.y,f->anchor.x,f->anchor.y), s->tilt, s->tint, 0|SPRITE_PROJECTED);
+}
+void sprite_edit(sprite_t *s) {
+    const char *name = obj_name(s);
+    const char *id = vac("%p", s);
+    if( s && ui_collapse(name ? name : id, id) ) {
+        ui_obj("%s", (obj*)s);
+
+        ui_bool("paused", &s->paused);
+        ui_label(va("frame anim [%d]", s->a->anims[s->play].frames[s->frame]));
+
+        int k = s->play;
+        if( ui_int("anim", &k) ) {
+            sprite_setanim(s, k);
+        }
+
+        int selected = ui_atlas(s->a);
+        if( selected ) sprite_setanim(s, selected - 1);
+
+        ui_collapse_end();
+    }
+}
+
+sprite_t* sprite_new(const char *ase, int bindings[6]) {
+    sprite_t *s = obj_new(sprite_t, {bindings[0],bindings[1],bindings[2],bindings[3]}, {bindings[4],bindings[5]});
+    atlas_t own = atlas_create(ase, 0);
+    memcpy(s->a = MALLOC(sizeof(atlas_t)), &own, sizeof(atlas_t)); // s->a = &s->own;
+    return s;
+}
+void sprite_del(sprite_t *s) {
+    if( s ) {
+        if( s->a ) atlas_destroy(s->a), FREE(s->a); // if( s->a == &s->own )
+        obj_free(s);
+        memset(s, 0, sizeof(sprite_t));
+    }
+}
+void sprite_setanim(sprite_t *s, unsigned name) {
+    if( s->play != name ) {
+        s->play = name;
+        s->frame = 0;
+
+        atlas_frame_t *f = &s->a->frames[ s->a->anims[s->play].frames[s->frame] ];
+
+        s->timer_ms = f->delay;
+        s->timer = s->timer_ms;
+    }
+}
+
+AUTORUN {
+    STRUCT(sprite_t, vec4, pos);
+    STRUCT(sprite_t, vec2, sca);
+    STRUCT(sprite_t, float, tilt);
+    STRUCT(sprite_t, vec4, gamepad);
+    STRUCT(sprite_t, vec2, fire);
+    STRUCT(sprite_t, rgba,  tint);
+    STRUCT(sprite_t, unsigned, frame);
+    STRUCT(sprite_t, unsigned, timer);
+    STRUCT(sprite_t, unsigned, timer_ms);
+    STRUCT(sprite_t, unsigned, flipped);
+    STRUCT(sprite_t, unsigned, play);
+    EXTEND_T(sprite, ctor,edit,draw,tick);
+}
+#line 0
+
+#line 1 "v4k_system.c"
 #if (is(tcc) && is(linux)) || (is(gcc) && !is(mingw)) // || is(clang)
 int __argc; char **__argv;
 #if !is(ems)
@@ -22677,8 +23199,8 @@ static char **backtrace_symbols(void *const *list,int size) {
 
     static __thread char **symbols = 0; //[32][64] = {0};
     if( !symbols ) {
-        symbols = SYS_REALLOC(0, 128 * sizeof(char*));
-        for( int i = 0; i < 128; ++i) symbols[i] = SYS_REALLOC(0, 128 * sizeof(char));
+        symbols = SYS_MEM_REALLOC(0, 128 * sizeof(char*));
+        for( int i = 0; i < 128; ++i) symbols[i] = SYS_MEM_REALLOC(0, 128 * sizeof(char));
     }
 
     if(size > 128) size = 128;
@@ -22711,7 +23233,7 @@ static char **backtrace_symbols(void *const *sym,int num) { return 0; }
 
 char *callstack( int traces ) {
     static __thread char *output = 0;
-    if(!output ) output = SYS_REALLOC( 0, 128 * (64+2) );
+    if(!output ) output = SYS_MEM_REALLOC( 0, 128 * (64+2) );
     if( output ) output[0] = '\0';
     char *ptr = output;
 
@@ -23270,7 +23792,7 @@ int (PRINTF)(const char *text, const char *stack, const char *file, int line, co
 
 static void *panic_oom_reserve; // for out-of-memory recovery
 int (PANIC)(const char *error, const char *file, int line) {
-    panic_oom_reserve = SYS_REALLOC(panic_oom_reserve, 0);
+    panic_oom_reserve = SYS_MEM_REALLOC(panic_oom_reserve, 0);
 
     tty_color(RED);
 
@@ -23446,7 +23968,7 @@ int (test)(const char *file, int line, const char *expr, bool result) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_time.c"
+#line 1 "v4k_time.c"
 // ----------------------------------------------------------------------------
 // time
 
@@ -24086,7 +24608,7 @@ void curve_destroy(curve_t *c) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_profile.c"
+#line 1 "v4k_profile.c"
 #if ENABLE_PROFILER
 profiler_t profiler;
 int profiler_enabled = 1;
@@ -24144,7 +24666,7 @@ void (ui_profiler)() {
 #endif
 #line 0
 
-#line 1 "engine/split/v4k_video.c"
+#line 1 "v4k_video.c"
 // tip: convert video to x265/mp4. note: higher crf to increase compression (default crf is 28)
 // ffmpeg -i {{infile}} -c:v libx265 -crf 24 -c:a copy {{outfile}}
 
@@ -24376,7 +24898,7 @@ void record_frame() {
 }
 #line 0
 
-#line 1 "engine/split/v4k_window.c"
+#line 1 "v4k_window.c"
 //-----------------------------------------------------------------------------
 // fps locking
 
@@ -24803,7 +25325,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
                 #define ddraw_progress_bar(JOB_ID, JOB_MAX, PERCENT) do { \
                    /* NDC coordinates (2d): bottom-left(-1,-1), center(0,0), top-right(+1,+1) */ \
                    float progress = (PERCENT+1) / 100.f; if(progress > 1) progress = 1; \
-                   float speed = progress < 1 ? 0.2f : 0.5f; \
+                   float speed = progress < 1 ? 0.05f : 0.75f; \
                    float smooth = previous[JOB_ID] = progress * speed + previous[JOB_ID] * (1-speed); \
                    \
                    float pixel = 2.f / window_height(), dist = smooth*2-1, y = pixel*3*JOB_ID; \
@@ -25465,7 +25987,7 @@ double window_scale() { // ok? @testme
 }
 #line 0
 
-#line 1 "engine/split/v4k_obj.c"
+#line 1 "v4k_obj.c"
 // -----------------------------------------------------------------------------
 // factory of handle ids, based on code by randy gaul (PD/Zlib licensed)
 // - rlyeh, public domain
@@ -26477,7 +26999,7 @@ void *obj_make(const char *str) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_ai.c"
+#line 1 "v4k_ai.c"
 // AI framework
 // - rlyeh, public domain.
 //
@@ -27315,7 +27837,7 @@ int ui_bt(bt_t *b) {
 }
 #line 0
 
-#line 1 "engine/split/v4k_editor.c"
+#line 1 "v4k_editor0.c"
 // editing:
 // nope > functions: add/rem property
 
@@ -27848,158 +28370,9 @@ int gizmo(vec3 *pos, vec3 *rot, vec3 *sca) {
     return modified;
 }
 
-// -- localization kit
-
-static const char *kit_lang = "enUS", *kit_langs =
-    "enUS,enGB,"
-    "frFR,"
-    "esES,esAR,esMX,"
-    "deDE,deCH,deAT,"
-    "itIT,itCH,"
-    "ptBR,ptPT,"
-    "zhCN,zhSG,zhTW,zhHK,zhMO,"
-    "ruRU,elGR,trTR,daDK,noNB,svSE,nlNL,plPL,fiFI,jaJP,"
-    "koKR,csCZ,huHU,roRO,thTH,bgBG,heIL"
-;
-
-static map(char*,char*) kit_ids;
-static map(char*,char*) kit_vars;
-
-#ifndef KIT_FMT_ID2
-#define KIT_FMT_ID2 "%s.%s"
-#endif
-
-void kit_init() {
-    do_once map_init(kit_ids, less_str, hash_str);
-    do_once map_init(kit_vars, less_str, hash_str);
-}
-
-void kit_insert( const char *id, const char *translation) {
-    char *id2 = va(KIT_FMT_ID2, kit_lang, id);
-
-    char **found = map_find_or_add_allocated_key(kit_ids, STRDUP(id2), NULL);
-    if(*found) FREE(*found);
-    *found = STRDUP(translation);
-}
-
-bool kit_merge( const char *filename ) {
-    // @todo: xlsx2ini
-    return false;
-}
-
-void kit_clear() {
-    map_clear(kit_ids);
-}
-
-bool kit_load( const char *filename ) {
-    return kit_clear(), kit_merge( filename );
-}
-
-void kit_set( const char *key, const char *value ) {
-    value = value && value[0] ? value : "";
-
-    char **found = map_find_or_add_allocated_key(kit_vars, STRDUP(key), NULL );
-    if(*found) FREE(*found);
-    *found = STRDUP(value);
-}
-
-void kit_reset() {
-    map_clear(kit_vars);
-}
-
-char *kit_translate2( const char *id, const char *lang ) {
-    char *id2 = va(KIT_FMT_ID2, lang, id);
-
-    char **found = map_find(kit_ids, id2);
-
-    // return original [[ID]] if no translation is found
-    if( !found ) return va("[[%s]]", id);
-
-    // return translation if no {{moustaches}} are found
-    if( !strstr(*found, "{{") ) return *found;
-
-    // else replace all found {{moustaches}} with context vars
-    {
-        // make room
-        static __thread char *results[16] = {0};
-        static __thread unsigned counter = 0; counter = (counter+1) % 16;
-
-        char *buffer = results[ counter ];
-        if( buffer ) FREE(buffer), buffer = 0;
-
-        // iterate moustaches
-        const char *begin, *end, *text = *found;
-        while( NULL != (begin = strstr(text, "{{")) ) {
-            end = strstr(begin+2, "}}");
-            if( end ) {
-                char *var = va("%.*s", (int)(end - (begin+2)), begin+2);
-                char **found_var = map_find(kit_vars, var);
-
-                if( found_var && 0[*found_var] ) {
-                    strcatf(&buffer, "%.*s%s", (int)(begin - text), text, *found_var);
-                } else {
-                    strcatf(&buffer, "%.*s{{%s}}", (int)(begin - text), text, var);
-                }
-
-                text = end+2;
-            } else {
-                strcatf(&buffer, "%.*s", (int)(begin - text), text);
-
-                text = begin+2;
-            }
-        }
-
-        strcatf(&buffer, "%s", text);
-        return buffer;
-    }
-}
-
-char *kit_translate( const char *id ) {
-    return kit_translate2( id, kit_lang );
-}
-
-void kit_locale( const char *lang ) {
-    kit_lang = STRDUP(lang); // @leak
-}
-
-void kit_dump_state( FILE *fp ) {
-    for each_map(kit_ids, char *, k, char *, v) {
-        fprintf(fp, "[ID ] %s=%s\n", k, v);
-    }
-    for each_map(kit_vars, char *, k, char *, v) {
-        fprintf(fp, "[VAR] %s=%s\n", k, v);
-    }
-}
-
-/*
-int main() {
-    kit_init();
-
-    kit_locale("enUS");
-    kit_insert("HELLO_PLAYERS", "Hi {{PLAYER1}} and {{PLAYER2}}!");
-    kit_insert("GREET_PLAYERS", "Nice to meet you.");
-
-    kit_locale("esES");
-    kit_insert("HELLO_PLAYERS", "Hola {{PLAYER1}} y {{PLAYER2}}!");
-    kit_insert("GREET_PLAYERS", "Un placer conoceros.");
-
-    kit_locale("enUS");
-    printf("%s %s\n", kit_translate("HELLO_PLAYERS"), kit_translate("GREET_PLAYERS")); // Hi {{PLAYER1}} and {{PLAYER2}}! Nice to meet you.
-
-    kit_locale("esES");
-    kit_set("PLAYER1", "John");
-    kit_set("PLAYER2", "Karl");
-    printf("%s %s\n", kit_translate("HELLO_PLAYERS"), kit_translate("GREET_PLAYERS")); // Hola John y Karl! Un placer conoceros.
-
-    assert( 0 == strcmp(kit_translate("NON_EXISTING"), "[[NON_EXISTING]]")); // [[NON_EXISTING]]
-    assert(~puts("Ok"));
-}
-*/
 #line 0
 
-// editor is last in place, so it can use all internals from above headers
-
-#line 1 "engine/split/v4k_main.c"
+#line 1 "v4k_main.c"
 // ----------------------------------------------------------------------------
 
 static void v4k_pre_init() {
@@ -28066,7 +28439,7 @@ void v4k_init() {
         ifdef(debug, trap_install());
 
         // init panic handler
-        panic_oom_reserve = SYS_REALLOC(panic_oom_reserve, 1<<20); // 1MiB
+        panic_oom_reserve = SYS_MEM_REALLOC(panic_oom_reserve, 1<<20); // 1MiB
 
         // init glfw
         glfw_init();
@@ -28092,7 +28465,2155 @@ void v4k_init() {
 }
 #line 0
 
-#line 1 "engine/split/v4k_end.c"
+// editor is last in place, so it can use all internals from above headers
+#line 1 "v4k_editor.c"
+// ## Editor long-term plan
+// - editor = tree of nodes. levels and objects are nodes, and their widgets are also nodes
+// - you can perform actions on nodes, with or without descendants, top-bottom or bottom-top
+// - these operations include load/save, undo/redo, reset, play/render, ddraw, etc
+// - nodes are saved to disk as a filesystem layout: parents are folders, and leafs are files
+// - network replication can be done by external tools by comparing the filesystems and by sending the resulting diff zipped
+//
+// ## Editor roadmap
+// - Gizmos?, scene tree, property editor?, load/save?, undo/redo?, copy/paste, on/off (vis,tick,ddraw,log), vcs.
+// - Scenenode pass: node singleton display, node console, node labels, node outlines?.<!-- node == gameobj ? -->
+// - Render pass: billboards?, materials, un/lit, cast shadows, wireframe, skybox?/mie?, fog/atmosphere
+// - Level pass: volumes, triggers, platforms, level streaming, collide?, physics
+// - Edit pass: Procedural content, brushes, noise and CSG.
+// - GUI pass: timeline and data tracks, node graphs. <!-- worthy: will be reused into materials, animgraphs and blueprints -->
+
+// ## Alt plan
+// editor is a database + window/tile manager + ui toolkit; all network driven.
+// to be precise, editor is a dumb app and ...
+// - does not know a thing about what it stores.
+// - does not know how to render the game graphics.
+// - does not know how to run the game logic.
+//
+// the editor will create a canvas for your game to render.
+// your game will be responsible to tick the logic and render the window inside the editor.
+//
+// that being said, editor...
+// - can store datas hierarchically.
+// - can perform diffs and merges, and version the datas into repositories.
+// - can be instructed to render UI on top of game and window views.
+// - can download new .natvis and plugins quickly.
+// - can dump whole project in a filesystem form (zip).
+
+// - editor reflects database contents up-to-date.
+// - database can be queried and modified via OSC(UDP) commands.
+
+// editor database uses one table, and stores two kind of payload types:
+// - classes: defines typename and dna. class names are prefixed by '@'
+// - instances: defines typename and datas. instance names are as-is, not prefixed.
+//
+// every save contains 5Ws: what, who, when, where, how,
+// every save can be diffed/merged.
+
+// ----------------------------------------------------------------------------
+
+#define EDITOR_VERSION "2023.10"
+
+// ----------------------------------------------------------------------------
+
+typedef struct editor_bind_t {
+    const char *command;
+    const char *bindings;
+    void (*fn)();
+} editor_bind_t;
+
+array(editor_bind_t) editor_binds;
+
+#define EDITOR_BIND(CMD,KEYS,...) void macro(editor_bind_##CMD##_fn_)() { __VA_ARGS__ }; AUTORUN { array_push(editor_binds, ((editor_bind_t){#CMD,KEYS,macro(editor_bind_##CMD##_fn_)}) ); }
+
+// ----------------------------------------------------------------------------
+
+typedef void (*editor_no_property)(void *);
+array(void*) editor_persist_kv;
+array(editor_no_property) editor_no_properties;
+
+#define EDITOR_PROPERTY(property_name,T,defaults) \
+typedef map(void*,T) editor_##property_name##_map_t; \
+editor_##property_name##_map_t *editor_##property_name##_map() { \
+    static editor_##property_name##_map_t map = 0; do_once map_init_ptr(map); \
+    return &map; \
+} \
+T editor_##property_name(const void *obj) { \
+    return *map_find_or_add(*editor_##property_name##_map(), (void*)obj, ((T) defaults)); \
+} \
+void editor_set##property_name(const void *obj, T value) { \
+    *map_find_or_add(*editor_##property_name##_map(), (void*)obj, ((T) value)) = ((T) value); \
+} \
+void editor_alt##property_name(const void *obj) { \
+    T* found = map_find_or_add(*editor_##property_name##_map(), (void*)obj, ((T) defaults)); \
+    *found = (T)(uintptr_t)!(*found); \
+} \
+void editor_no##property_name(void *obj) { \
+    T* found = map_find_or_add(*editor_##property_name##_map(), (void*)obj, ((T) defaults)); \
+    map_erase(*editor_##property_name##_map(), (void*)obj); \
+} \
+AUTORUN { array_push(editor_persist_kv, #T); array_push(editor_persist_kv, editor_##property_name##_map()); array_push(editor_no_properties, editor_no##property_name); }
+
+EDITOR_PROPERTY(open,         int,    0); // whether object is tree opened in tree editor
+EDITOR_PROPERTY(selected,     int,    0); // whether object is displaying a contextual popup or not
+EDITOR_PROPERTY(changed,      int,    0); // whether object is displaying a contextual popup or not
+EDITOR_PROPERTY(popup,        int,    0); // whether object is displaying a contextual popup or not
+EDITOR_PROPERTY(visible,      int,    0);
+EDITOR_PROPERTY(script,       int,    0);
+EDITOR_PROPERTY(event,        int,    0);
+EDITOR_PROPERTY(iconinstance, char*,  0);
+EDITOR_PROPERTY(iconclass,    char*,  0);
+EDITOR_PROPERTY(treeoffsety,  int,    0);
+// new prop: breakpoint: request to break on any given node
+// new prop: persist: objects with this property will be saved on disk
+
+void editor_destroy_properties(void *o) {
+    for each_array(editor_no_properties,editor_no_property,fn) {
+        fn(o);
+    }
+}
+
+void editor_load_on_boot(void) {
+}
+void editor_save_on_quit(void) {
+}
+AUTORUN {
+    editor_load_on_boot();
+    (atexit)(editor_save_on_quit);
+}
+
+// ----------------------------------------------------------------------------
+
+typedef int(*subeditor)(int mode);
+
+struct editor_t {
+    // time
+    unsigned   frame;
+    double     t, dt, slomo;
+    // controls
+    int        transparent;
+    int        attached;
+    int        active; // focus? does_grabinput instead?
+    int        key;
+    vec2       mouse; // 2d coord for ray/picking
+    bool       gamepad; // mask instead? |1|2|4|8
+    int        hz_high, hz_medium, hz_low;
+    int        filter;
+    bool       battery; // battery mode: low fps
+    bool       unlit;
+    bool       ddraw;
+    // event root nodes
+    obj* root;
+    obj*  on_init;
+    obj*   on_tick;
+    obj*   on_draw;
+    obj*   on_edit;
+    obj*  on_quit;
+    // all of them (hierarchical)
+    array(obj*) objs; // @todo:set() world?
+    // all of them (flat)
+    set(obj*) world;
+    //
+    array(char*) cmds;
+    // subeditors
+    array(subeditor) subeditors;
+} editor = {
+    .active = 1,
+    .gamepad = 1,
+    .hz_high = 60, .hz_medium = 18, .hz_low = 5,
+};
+
+enum {
+    EDITOR_PANEL,
+    EDITOR_WINDOW,
+    EDITOR_WINDOW_NK,
+    EDITOR_WINDOW_NK_SMALL,
+};
+
+int editor_begin(const char *title, int mode) {
+    if( mode == 0 ) return ui_panel(title, PANEL_OPEN);
+    if( mode == 1 ) return ui_window(title, 0);
+
+    int ww = window_width(),  w = ww * 0.66;
+    int hh = window_height(), h = hh * 0.66;
+
+    struct nk_rect position = { (ww-w)/2,(hh-h)/2, w,h };
+    nk_flags win_flags = NK_WINDOW_TITLE | NK_WINDOW_BORDER |
+        NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
+        NK_WINDOW_CLOSABLE | NK_WINDOW_MINIMIZABLE |
+        // NK_WINDOW_SCALE_LEFT|NK_WINDOW_SCALE_TOP| //< @fixme: move this logic into nuklear
+        // NK_WINDOW_MAXIMIZABLE | NK_WINDOW_PINNABLE |
+        0; // NK_WINDOW_SCROLL_AUTO_HIDE;
+
+    if( mode == 3 ) {
+        mode = 2, position.x = input(MOUSE_X), position.w = w/3, win_flags =
+            NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE|
+            NK_WINDOW_SCALABLE|NK_WINDOW_MOVABLE| //< nuklear requires these two to `remember` popup rects
+            0;
+    }
+
+    if( mode == 2 || mode == 3 )
+    if (nk_begin(ui_ctx, title, position, win_flags))
+        return 1;
+    else
+        return nk_end(ui_ctx), 0;
+
+    return 0;
+}
+int editor_end(int mode) {
+    if( mode == 0 ) return ui_panel_end();
+    if( mode == 1 ) return ui_window_end();
+    if( mode == 2 ) nk_end(ui_ctx);
+    if( mode == 3 ) nk_end(ui_ctx);
+    return 0;
+}
+
+#if 0 // deprecate
+bool editor_active() {
+    return ui_hover() || ui_active() || gizmo_active() ? editor.active : 0;
+}
+#endif
+
+int editor_filter() {
+    if( editor.filter ) {
+        if (nk_begin(ui_ctx, "Filter", nk_rect(window_width()-window_width()*0.33,32, window_width()*0.33, 40),
+            NK_WINDOW_NO_SCROLLBAR)) {
+
+        char *bak = ui_filter; ui_filter = 0;
+        ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &bak);
+        ui_filter = bak;
+
+            if( input(KEY_ESC) || ( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 )) {
+                if( ui_filter ) ui_filter[0] = '\0';
+                editor.filter = 0;
+    }
+    }
+        nk_end(ui_ctx);
+    }
+
+    return editor.filter;
+    }
+
+static
+int editor_select_(void *o, const char *mask) {
+    int matches = 0;
+    int off = mask[0] == '!', inv = mask[0] == '~';
+    int match = strmatchi(obj_type(o), mask+off+inv) || strmatchi(obj_name(o), mask+off+inv);
+    if( match ) {
+        editor_setselected(o, inv ? editor_selected(o) ^ 1 : !off);
+        ++matches;
+    }
+    for each_objchild(o, obj*, oo) {
+        matches += editor_select_(oo, mask);
+    }
+    return matches;
+}
+void editor_select(const char *mask) {
+    for each_array( editor.objs, obj*, o )
+        editor_select_(o, mask);
+}
+void editor_unselect() { // same than editor_select("!**");
+    for each_map_ptr(*editor_selected_map(), void*,o, int, k) {
+        if( *k ) *k = 0;
+    }
+    }
+
+void editor_select_aabb(aabb box) {
+    int is_inv = input_held(KEY_CTRL);
+    int is_add = input_held(KEY_SHIFT);
+    if( !is_inv && !is_add ) editor_unselect();
+
+    aabb item = {0};
+    for each_set_ptr( editor.world, obj*, o ) {
+        if( obj_hasmethod(*o,aabb) && obj_aabb(*o, &item) ) {
+            if( aabb_test_aabb(item, box) ) {
+                if( is_inv )
+                editor_altselected(*o);
+                else
+                editor_setselected(*o, 1);
+            }
+        }
+    }
+}
+
+static obj* active_ = 0;
+static void editor_selectgroup_(obj *o, obj *first, obj *last) {
+    // printf("%s (looking for %s in [%s..%s])\n", obj_name(o), active_ ? obj_name(active_) : "", obj_name(first), obj_name(last));
+    if( !active_ ) if( o == first || o == last ) active_ = o == first ? last : first;
+    if( active_ ) editor_setselected(o, 1);
+    if( o == active_ ) active_ = 0;
+    for each_objchild(o, obj*, oo) {
+        editor_selectgroup_(oo, first, last);
+    }
+}
+void editor_selectgroup(obj *first, obj *last) {
+    if( last ) {
+        if( !first ) first = array_count(editor.objs) ? editor.objs[0] : NULL;
+        if( !first ) editor_setselected(last, 1);
+        else {
+            active_ = 0;
+            for each_array(editor.objs,obj*,o) {
+                editor_selectgroup_(o, first, last);
+            }
+        }
+        }
+    }
+
+static obj *find_any_selected_(obj *o) {
+    if( editor_selected(o) ) return o;
+    for each_objchild(o,obj*,oo) {
+        obj *ooo = find_any_selected_(oo);
+        if( ooo )
+            return ooo;
+    }
+    return 0;
+}
+void* editor_first_selected() {
+    for each_array(editor.objs,obj*,o) {
+        obj *oo = find_any_selected_(o);
+        // if( oo ) printf("1st found: %s\n", obj_name(oo));
+        if( oo ) return oo;
+}
+    return 0;
+}
+
+static obj *find_last_selected_(obj *o) {
+    void *last = 0;
+    if( editor_selected(o) ) last = o;
+    for each_objchild(o,obj*,oo) {
+        obj *ooo = find_last_selected_(oo);
+        if( ooo )
+            last = ooo;
+}
+    return last;
+}
+void* editor_last_selected() {
+    void *last = 0;
+    for each_array(editor.objs,obj*,o) {
+        obj *oo = find_last_selected_(o);
+        // if( oo ) printf("last found: %s\n", obj_name(oo));
+        if( oo ) last = oo;
+}
+    return last;
+}
+
+// ----------------------------------------------------------------------------------------
+
+void editor_addtoworld(obj *o) {
+    set_find_or_add(editor.world, o);
+    for each_objchild(o, obj*, oo) {
+        editor_addtoworld(oo);
+}
+}
+
+void editor_watch(const void *o) {
+    array_push(editor.objs, (obj*)o);
+    obj_push(o); // save state
+
+    editor_addtoworld((obj*)o);
+}
+void* editor_spawn(const char *ini) { // deprecate?
+    obj *o = obj_make(ini);
+    editor_watch(o);
+    return o;
+}
+void editor_spawn1() {
+    obj *selected = editor_first_selected();
+    obj *o = selected ? obj_make(obj_saveini(selected)) : obj_new(obj);
+    if( selected ) obj_attach(selected, o), editor_setopen(selected, 1);
+    else
+    editor_watch(o);
+
+    editor_unselect();
+    editor_setselected(o, 1);
+}
+
+typedef set(obj*) set_objp_t;
+static
+void editor_glob_recurse(set_objp_t*list, obj *o) {
+    set_find_or_add(*list, o);
+    for each_objchild(o,obj*,oo) {
+        editor_glob_recurse(list, oo);
+    }
+}
+void editor_destroy_selected() {
+    set_objp_t list = 0;
+    set_init_ptr(list);
+    for each_map_ptr(*editor_selected_map(), obj*,o, int,selected) {
+        if( *selected ) { editor_glob_recurse(&list, *o); }
+    }
+    for each_set(list, obj*, o) {
+        obj_detach(o);
+    }
+    for each_set(list, obj*, o) {
+        // printf("deleting %p %s\n", o, obj_name(o));
+        // remove from watched items
+        for (int i = 0, end = array_count(editor.objs); i < end; ++i) {
+            if (editor.objs[i] == o) {
+                editor.objs[i] = 0;
+                array_erase_slow(editor.objs, i);
+                --end;
+                --i;
+            }
+        }
+        // delete from world
+        set_erase(editor.world, o);
+        // delete properties + obj
+        editor_destroy_properties(o);
+        obj_free(o);
+    }
+    set_free(list);
+}
+void editor_inspect(obj *o) {
+    ui_section(va("%s (%s)", obj_type(o), obj_name(o)));
+
+    if( obj_hasmethod(o, menu) ) {
+        obj_menu(o);
+    }
+
+    for each_objmember(o,TYPE,NAME,PTR) {
+        if( !editor_changed(PTR) ) {
+            obj_push(o);
+        }
+        ui_label_icon_highlight = editor_changed(PTR); // @hack: remove ui_label_icon_highlight hack
+        char *label = va(ICON_MD_UNDO "%s", NAME);
+        int changed = 0;
+        /**/ if( !strcmp(TYPE,"float") )   changed = ui_float(label, PTR);
+        else if( !strcmp(TYPE,"int") )     changed = ui_int(label, PTR);
+        else if( !strcmp(TYPE,"vec2") )    changed = ui_float2(label, PTR);
+        else if( !strcmp(TYPE,"vec3") )    changed = ui_float3(label, PTR);
+        else if( !strcmp(TYPE,"vec4") )    changed = ui_float4(label, PTR);
+        else if( !strcmp(TYPE,"rgb") )     changed = ui_color3(label, PTR);
+        else if( !strcmp(TYPE,"rgba") )    changed = ui_color4(label, PTR);
+        else if( !strcmp(TYPE,"color") )   changed = ui_color4f(label, PTR);
+        else if( !strcmp(TYPE,"color3f") ) changed = ui_color3f(label, PTR);
+        else if( !strcmp(TYPE,"color4f") ) changed = ui_color4f(label, PTR);
+        else if( !strcmp(TYPE,"char*") )   changed = ui_string(label, PTR);
+        else ui_label2(label, va("(%s)", TYPE)); // INFO instead of (TYPE)?
+        if( changed ) {
+            editor_setchanged(PTR, 1);
+        }
+        if( ui_label_icon_highlight )
+        if( ui_label_icon_clicked_L.x >= 6 && ui_label_icon_clicked_L.x <= 26 ) { // @hack: if clicked on UNDO icon (1st icon)
+            editor_setchanged(PTR, 0);
+        }
+        if( !editor_changed(PTR) ) {
+            obj_pop(o);
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------------------
+// tty
+
+static thread_mutex_t *console_lock;
+static array(char*) editor_jobs;
+int editor_send(const char *cmd) { // return job-id
+    int skip = strspn(cmd, " \t\r\n");
+    char *buf = STRDUP(cmd + skip);
+    strswap(buf, "\r\n", "");
+    int jobid;
+    do_threadlock(console_lock) {
+        array_push(editor_jobs, buf);
+        jobid = array_count(editor_jobs) - 1;
+    }
+    return jobid;
+}
+const char* editor_recv(int jobid, double timeout_ss) {
+    char *answer = 0;
+
+    while(!answer && timeout_ss >= 0 ) {
+        do_threadlock(console_lock) {
+            if( editor_jobs[jobid][0] == '\0' )
+                answer = editor_jobs[jobid];
+        }
+        timeout_ss -= 0.1;
+        if( timeout_ss > 0 ) sleep_ms(100); // thread_yield()
+    }
+
+    return answer + 1;
+}
+
+// plain and ctrl keys
+EDITOR_BIND(play, "down(F5)",                               { window_pause(0); /* if(!editor.slomo) editor.active = 0; */ editor.slomo = 1; } );
+EDITOR_BIND(stop, "down(ESC)",                              { if(editor.t > 0) { window_pause(1), editor.frame = 0, editor.t = 0, editor.dt = 0, editor.slomo = 0, editor.active = 1; editor_select("**"); editor_destroy_selected(); }} );
+EDITOR_BIND(eject, "down(F1)",                              { /*window_pause(!editor.active); editor.slomo = !!editor.active;*/ editor.active ^= 1; } );
+EDITOR_BIND(pause, "(held(CTRL) & down(P)) | down(PAUSE)",  { window_pause( window_has_pause() ^ 1 ); } );
+EDITOR_BIND(frame, "held(CTRL) & down(LEFT)",               { window_pause(1); editor.frame++, editor.t += (editor.dt = 1/60.f); } );
+EDITOR_BIND(slomo, "held(CTRL) & down(RIGHT)",              { window_pause(0); editor.slomo = maxf(fmod(editor.slomo * 2, 16), 0.125); } );
+EDITOR_BIND(reload, "held(CTRL) & down(F5)",                { window_reload(); } );
+EDITOR_BIND(filter, "held(CTRL) & down(F)",                 { editor.filter ^= 1; } );
+
+// alt keys
+EDITOR_BIND(quit, "held(ALT) & down(F4)",                   { record_stop(), exit(0); } );
+EDITOR_BIND(mute, "held(ALT) & down(M)",                    { audio_volume_master( 1 ^ !!audio_volume_master(-1) ); } );
+EDITOR_BIND(gamepad, "held(ALT) & down(G)",                 { editor.gamepad ^= 1; } );
+EDITOR_BIND(transparent, "held(ALT) & down(T)",             { editor.transparent ^= 1; } );
+EDITOR_BIND(record, "held(ALT) & down(Z)",                  { if(record_active()) record_stop(), ui_notify(va("Video recorded"), date_string()); else { char *name = file_counter(va("%s.mp4",app_name())); app_beep(), window_record(name); } } );
+EDITOR_BIND(screenshot, "held(ALT) & down(S)",              { char *name = file_counter(va("%s.png",app_name())); window_screenshot(name), ui_notify(va("Screenshot: %s", name), date_string()); } );
+EDITOR_BIND(battery, "held(ALT) & down(B)",                 { editor.battery ^= 1; } );
+EDITOR_BIND(outliner, "held(ALT) & down(O)",                { ui_show("Outliner", ui_visible("Outliner") ^ true); } );
+EDITOR_BIND(profiler, "held(ALT) & down(P)",                { ui_show("Profiler", profiler_enable(ui_visible("Profiler") ^ true)); } );
+EDITOR_BIND(fullscreen, "(held(ALT)&down(ENTER))|down(F11)",{ record_stop(), window_fullscreen( window_has_fullscreen() ^ 1 ); } ); // close any recording before framebuffer resizing, which would corrupt video stream
+EDITOR_BIND(unlit, "held(ALT) & down(U)",                   { editor.unlit ^= 1; } );
+EDITOR_BIND(ddraw, "held(ALT) & down(D)",                   { editor.ddraw ^= 1; } );
+
+void editor_pump() {
+    for each_array(editor_binds,editor_bind_t,b) {
+        if( input_eval(b.bindings) ) {
+            editor_send(b.command);
+        }
+    }
+
+    do_threadlock(console_lock) {
+        for each_array_ptr(editor_jobs,char*,cmd) {
+            if( (*cmd)[0] ) {
+                int found = 0;
+                for each_array(editor_binds,editor_bind_t,b) {
+                    if( !strcmpi(b.command, *cmd)) {
+                        b.fn();
+                        found = 1;
+                        break;
+                    }
+                }
+
+                if( !found ) {
+                    // alert(va("Editor: could not handle `%s` command.", *cmd));
+                    (*cmd)[0] = '\0'; strcatf(&(*cmd), "\1%s\n", "Err\n"); (*cmd)[0] = '\0';
+                }
+
+                if( (*cmd)[0] ) {
+                    (*cmd)[0] = '\0'; strcatf(&(*cmd), "\1%s\n", "Ok\n"); (*cmd)[0] = '\0';
+            }
+        }
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------------------
+
+void editor_symbol(int x, int y, const char *sym) {
+    #define FONT_SYMBOLS   FONT_FACE2
+    #define FONT_WHITE     FONT_COLOR1
+    #define FONT_YELLOW    FONT_COLOR2
+    #define FONT_ORANGE    FONT_COLOR3
+    #define FONT_CYAN      FONT_COLOR4
+    // style: atlas size, unicode ranges and 6 font faces max
+    do_once font_face(FONT_SYMBOLS, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
+    // style: 10 colors max
+    do_once font_color(FONT_WHITE,  WHITE);
+    do_once font_color(FONT_YELLOW, YELLOW);
+    do_once font_color(FONT_CYAN,   CYAN);
+    do_once font_color(FONT_ORANGE, ORANGE);
+    font_goto(x,y);
+    font_print(va(FONT_SYMBOLS FONT_WHITE FONT_H1 "%s", sym));
+}
+
+void editor_frame( void (*game)(unsigned, float, double) ) {
+    do_once {
+        set_init_ptr(editor.world);
+        //set_init_ptr(editor.selection);
+        profiler_enable( false );
+
+        window_pause( true );
+        window_cursor_shape(CURSOR_SW_AUTO);
+        editor.hz_high = window_fps_target();
+
+        fx_load("editorOutline.fs");
+        fx_enable(0, 1);
+
+        obj_setname(editor.root = obj_new(obj), "Signals");
+        obj_setname(editor.on_init = obj_new(obj), "onInit");
+        obj_setname(editor.on_tick = obj_new(obj),  "onTick");
+        obj_setname(editor.on_draw = obj_new(obj),  "onDraw");
+        obj_setname(editor.on_edit = obj_new(obj),  "onEdit");
+        obj_setname(editor.on_quit = obj_new(obj), "onQuit");
+
+        obj_attach(editor.root, editor.on_init);
+        obj_attach(editor.root, editor.on_tick);
+        obj_attach(editor.root, editor.on_draw);
+        obj_attach(editor.root, editor.on_edit);
+        obj_attach(editor.root, editor.on_quit);
+
+        editor_seticoninstance(editor.root, ICON_MDI_SIGNAL_VARIANT);
+        editor_seticoninstance(editor.on_init, ICON_MDI_SIGNAL_VARIANT);
+        editor_seticoninstance(editor.on_tick, ICON_MDI_SIGNAL_VARIANT);
+        editor_seticoninstance(editor.on_draw, ICON_MDI_SIGNAL_VARIANT);
+        editor_seticoninstance(editor.on_edit, ICON_MDI_SIGNAL_VARIANT);
+        editor_seticoninstance(editor.on_quit, ICON_MDI_SIGNAL_VARIANT);
+
+        editor_seticonclass(obj_type(editor.root), ICON_MDI_CUBE_OUTLINE);
+    }
+
+    // game tick
+    game(editor.frame, editor.dt, editor.t);
+
+    // timing
+    editor.dt = clampf(window_delta(), 0, 1/60.f) * !window_has_pause() * editor.slomo;
+    editor.t += editor.dt;
+    editor.frame += !window_has_pause();
+    editor.frame += !editor.frame;
+
+    // process inputs & messages
+    editor_pump();
+
+    // adaptive framerate
+    int app_on_background = !window_has_focus();
+    int hz = app_on_background ? editor.hz_low : editor.battery ? editor.hz_medium : editor.hz_high;
+    window_fps_lock( hz < 5 ? 5 : hz );
+
+    // draw menubar
+    static int stats_mode = 1;
+    static double last_fps = 0; if(!window_has_pause()) last_fps = window_fps();
+    const char *STATS = va("x%4.3f %03d.%03dss %02dF %s",
+        editor.slomo, (int)editor.t, (int)(1000 * (editor.t - (int)editor.t)),
+        (editor.frame-1) % ((int)window_fps_target() + !(int)window_fps_target()),
+        stats_mode == 1 ? va("%5.2f/%dfps", last_fps, (int)window_fps_target()) : stats_mode == 0 ? "0/0 KiB" : xstats());
+    const char *ICON_PL4Y = window_has_pause() ? ICON_MDI_PLAY : ICON_MDI_PAUSE;
+    const char *ICON_SKIP = window_has_pause() ? ICON_MDI_STEP_FORWARD/*ICON_MDI_SKIP_NEXT*/ : ICON_MDI_FAST_FORWARD;
+
+    int is_borderless = !glfwGetWindowAttrib(window, GLFW_DECORATED);
+    int ingame = !editor.active;
+    static double clicked_titlebar = 0;
+    UI_MENU(14+is_borderless, \
+        if(ingame) ui_disable(); \
+        UI_MENU_ITEM(ICON_MDI_FILE_TREE, editor_send("scene")) \
+        if(ingame) ui_enable(); \
+        UI_MENU_ITEM(ICON_PL4Y, if(editor.t == 0) editor_send("eject"); editor_send(window_has_pause() ? "play" : "pause")) \
+        UI_MENU_ITEM(ICON_SKIP, editor_send(window_has_pause() ? "frame" : "slomo")) \
+        UI_MENU_ITEM(ICON_MDI_STOP, editor_send("stop")) \
+        UI_MENU_ITEM(ICON_MDI_EJECT, editor_send("eject")) \
+        UI_MENU_ITEM(STATS, stats_mode = (++stats_mode) % 3) \
+        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+34 + 32*is_borderless, clicked_titlebar = time_ms()) \
+        if(ingame) ui_disable(); \
+        UI_MENU_ITEM(ICON_MD_FOLDER_SPECIAL, editor_send("browser")) \
+        UI_MENU_ITEM(ICON_MDI_SCRIPT_TEXT, editor_send("script")) \
+        UI_MENU_ITEM(ICON_MDI_CHART_TIMELINE, editor_send("timeline")) \
+        UI_MENU_ITEM(ICON_MDI_CONSOLE, editor_send("console")) \
+        UI_MENU_ITEM(ICON_MDI_GRAPH, editor_send("nodes")) \
+        UI_MENU_ITEM(ICON_MD_SEARCH, editor_send("filter")) \
+        UI_MENU_POPUP(ICON_MD_SETTINGS, vec2(0.33,1.00), ui_debug()) \
+        if(ingame) ui_enable(); \
+        UI_MENU_ITEM(ICON_MD_CLOSE, editor_send("quit")) \
+    );
+
+    if( is_borderless ) {
+        static vec3 drag = {0};
+        if( clicked_titlebar ) {
+            static double clicks = 0;
+            if( input_up(MOUSE_L) ) ++clicks;
+            if( input_up(MOUSE_L) && clicks == 2 ) window_visible(false), window_maximize( window_has_maximize() ^ 1 ), window_visible(true);
+            if( (time_ms() - clicked_titlebar) > 400 ) clicks = 0, clicked_titlebar = 0;
+
+            if( input_down(MOUSE_L) ) drag = vec3(input(MOUSE_X), input(MOUSE_Y), 1);
+        }
+        if( drag.z *= !input_up(MOUSE_L) ) {
+            int wx = 0, wy = 0;
+            glfwGetWindowPos(window_handle(), &wx, &wy);
+            glfwSetWindowPos(window_handle(), wx + input(MOUSE_X) - drag.x, wy + input(MOUSE_Y) - drag.y);
+        }
+    }
+
+    if( !editor.active ) return;
+
+    // draw edit view (gizmos, position markers, etc).
+    for each_set_ptr(editor.world,obj*,o) {
+        if( obj_hasmethod(*o,edit) ) {
+            obj_edit(*o);
+    }
+}
+
+    // draw silhouettes
+    sprite_flush();
+    fx_begin();
+    for each_map_ptr(*editor_selected_map(),void*,o,int,selected) {
+        if( !*selected ) continue;
+        if( obj_hasmethod(*o,draw) ) {
+            obj_draw(*o);
+        }
+        if( obj_hasmethod(*o,edit) ) {
+            obj_edit(*o);
+}
+}
+    sprite_flush();
+    fx_end();
+
+    // draw box selection
+    if( !ui_active() ) { //< check that we're not moving a window
+        static vec2 from = {0}, to = {0};
+        if( input_down(MOUSE_L) ) to = vec2(input(MOUSE_X), input(MOUSE_Y)), from = to;
+        if( input(MOUSE_L)      ) to = vec2(input(MOUSE_X), input(MOUSE_Y));
+        if( len2sq(sub2(from,to)) > 0 ) {
+            vec2 a = min2(from, to), b = max2(from, to);
+            ddraw_push_2d();
+            ddraw_color_push(YELLOW);
+            ddraw_line( vec3(a.x,a.y,0),vec3(b.x-1,a.y,0) );
+            ddraw_line( vec3(b.x,a.y,0),vec3(b.x,b.y-1,0) );
+            ddraw_line( vec3(b.x,b.y,0),vec3(a.x-1,b.y,0) );
+            ddraw_line( vec3(a.x,b.y,0),vec3(a.x,a.y-1,0) );
+            ddraw_color_pop();
+            ddraw_pop_2d();
+        }
+        if( input_up(MOUSE_L) ) {
+            vec2 a = min2(from, to), b = max2(from, to);
+            from = to = vec2(0,0);
+
+            editor_select_aabb(aabb(vec3(a.x,a.y,0),vec3(b.x,b.y,0)));
+        }
+    }
+
+    // draw mouse aabb
+    aabb mouse = { vec3(input(MOUSE_X),input(MOUSE_Y),0), vec3(input(MOUSE_X),input(MOUSE_Y),1)};
+    if( 1 ) {
+        ddraw_color_push(YELLOW);
+        ddraw_push_2d();
+        ddraw_aabb(mouse.min, mouse.max);
+        ddraw_pop_2d();
+        ddraw_color_pop();
+    }
+
+    // tick mouse aabb selection and contextual tab (RMB)
+    aabb box = {0};
+    for each_set(editor.world,obj*,o) {
+        if( !obj_hasmethod(o, aabb) ) continue;
+        if( !obj_aabb(o, &box) ) continue;
+
+        // trigger contextual inspector
+        if( input_down(MOUSE_R) ) {
+            int is_selected = editor_selected(o);
+            editor_setpopup(o, is_selected);
+        }
+
+        // draw contextual inspector
+        if( editor_popup(o) ) {
+            if( editor_begin(va("%s (%s)", obj_name(o), obj_type(o)),EDITOR_WINDOW_NK_SMALL) ) {
+                ui_label2(obj_name(o), obj_type(o));
+                editor_inspect(o);
+                editor_end(EDITOR_WINDOW_NK_SMALL);
+            } else {
+                editor_setpopup(o, 0);
+    }
+    }
+}
+
+
+    // draw subeditors
+    static int preferred_window_mode = EDITOR_WINDOW;
+    static struct nk_color bak, *on = 0; do_once bak = ui_ctx->style.window.fixed_background.data.color; // ui_ctx->style.window.fixed_background.data.color = !!(on = (on ? NULL : &bak)) ? AS_NKCOLOR(0) : bak;  };
+    if( editor.transparent ) ui_ctx->style.window.fixed_background.data.color = AS_NKCOLOR(0);
+    for each_array(editor.subeditors, subeditor, fn) {
+        fn(preferred_window_mode);
+    }
+    ui_ctx->style.window.fixed_background.data.color = bak;
+
+    // draw ui filter (note: render at end-of-frame, so it's hopefully on-top)
+    editor_filter();
+}
+#line 0
+#line 1 "v4k_editor_scene.h"
+#define SCENE_ICON ICON_MDI_FILE_TREE
+#define SCENE_TITLE "Scene " SCENE_ICON
+
+EDITOR_BIND(scene, "held(CTRL)&down(1)", { ui_show(SCENE_TITLE, ui_visible(SCENE_TITLE) ^ true); });
+
+EDITOR_PROPERTY(bookmarked,   int,    0);
+
+EDITOR_BIND(node_new, "down(INS)",                      { editor_spawn1(); } );
+EDITOR_BIND(node_del, "down(DEL)",                      { editor_destroy_selected(); } );
+EDITOR_BIND(node_save, "held(CTRL)&down(S)",            { puts("@todo"); } );
+EDITOR_BIND(scene_save, "held(CTRL)&down(S)&held(SHIFT)",{ puts("@todo"); } );
+EDITOR_BIND(select_all, "held(CTRL) & down(A)",         { editor_select("**"); } );
+EDITOR_BIND(select_none, "held(CTRL) & down(D)",        { editor_select("!**"); } );
+EDITOR_BIND(select_invert, "held(CTRL) & down(I)",      { editor_select("~**"); } );
+EDITOR_BIND(bookmark, "held(CTRL) & down(B)",           { editor_selected_map_t *map = editor_selected_map(); \
+    int on = 0; \
+    for each_map_ptr(*map,void*,o,int,selected) if(*selected) on |= !editor_bookmarked(*o); \
+    for each_map_ptr(*map,void*,o,int,selected) if(*selected) editor_setbookmarked(*o, on); \
+} );
+
+enum {
+    SCENE_RECURSE = 1,
+    SCENE_SELECTION = 2,
+    SCENE_CHECKBOX = 4,
+    SCENE_INDENT = 8,
+    SCENE_ALL = ~0u
+};
+
+static
+void editor_scene_(obj *o, unsigned flags) {
+    static unsigned tabs = ~0u;
+    ++tabs;
+
+    if( o ) {
+        unsigned do_tags = 1;
+        unsigned do_indent    = !!(flags & SCENE_INDENT);
+        unsigned do_checkbox  = !!(flags & SCENE_CHECKBOX);
+        unsigned do_recurse = !!(flags & SCENE_RECURSE);
+        unsigned do_selection = !!(flags & SCENE_SELECTION);
+
+        nk_layout_row_dynamic(ui_ctx, 25, 1);
+
+        const char *objicon = editor_iconinstance(o);
+        if(!objicon) objicon = editor_iconclass(obj_type(o));
+        if(!objicon) objicon = ICON_MDI_CUBE_OUTLINE;
+
+        const char *objname = va("%s (%s)", obj_type(o), obj_name(o));
+
+        const char *objchevron =
+            !do_recurse || array_count(*obj_children(o)) <= 1 ? ICON_MDI_CIRCLE_SMALL :
+            editor_open(o) ? ICON_MDI_CHEVRON_DOWN : ICON_MDI_CHEVRON_RIGHT;
+
+        char *label = va("%*s%s%s %s", do_indent*(4+2*tabs), "", objchevron, objicon, objname);
+
+        const char *iconsL =
+            //editor_selected(o) ? ICON_MD_CHECK_BOX : ICON_MD_CHECK_BOX_OUTLINE_BLANK;
+            editor_selected(o) ? ICON_MDI_CHECKBOX_MARKED : ICON_MDI_CHECKBOX_BLANK_OUTLINE;
+
+        const char *iconsR = va("%s%s%s",
+            editor_script(o) ? ICON_MDI_SCRIPT : ICON_MDI_CIRCLE_SMALL,
+            editor_event(o) ? ICON_MDI_CALENDAR : ICON_MDI_CIRCLE_SMALL,
+            editor_visible(o) ? ICON_MDI_EYE_OUTLINE : ICON_MDI_EYE_CLOSED );
+
+        UI_TOOLBAR_OVERLAY_DECLARE(int choiceL, choiceR);
+
+        struct nk_command_buffer *canvas = nk_window_get_canvas(ui_ctx);
+        struct nk_rect bounds; nk_layout_peek(&bounds, ui_ctx);
+
+        int clicked = nk_hovered_text(ui_ctx, label, strlen(label), NK_TEXT_LEFT, editor_selected(o));
+        if( clicked && nk_input_is_mouse_hovering_rect(&ui_ctx->input, ((struct nk_rect) { bounds.x,bounds.y,bounds.w*0.66,bounds.h })) )
+            editor_altselected( o );
+
+        vec2i offset_in_tree = {0};
+
+        if( do_indent ) {
+            float thickness = 2.f;
+            struct nk_color color = {255,255,255,64};
+
+            int offsx = 30;
+            int spacx = 10;
+            int lenx = (tabs+1)*spacx;
+            int halfy = bounds.h / 2;
+            int offsy = halfy + 2;
+
+            offset_in_tree = vec2i(bounds.x+offsx+lenx-spacx,bounds.y+offsy);
+
+            editor_settreeoffsety(o, offset_in_tree.y);
+
+            for( obj *p = obj_parent(o); p ; p = 0 )
+            nk_stroke_line(canvas, offset_in_tree.x-6,offset_in_tree.y, offset_in_tree.x-spacx,offset_in_tree.y, thickness, color),
+            nk_stroke_line(canvas, offset_in_tree.x-spacx,offset_in_tree.y,offset_in_tree.x-spacx,editor_treeoffsety(p)+4, thickness, color);
+        }
+
+        if( ui_contextual() ) {
+            int choice = ui_label(ICON_MD_BOOKMARK_ADDED "Toggle bookmarks (CTRL+B)");
+            if( choice & 1 ) editor_send("bookmark");
+
+            ui_contextual_end(!!choice);
+        }
+
+        UI_TOOLBAR_OVERLAY(choiceL,iconsL,nk_rgba_f(1,1,1,do_checkbox*ui_alpha*0.65),NK_TEXT_LEFT);
+
+        if( do_tags )
+        UI_TOOLBAR_OVERLAY(choiceR,iconsR,nk_rgba_f(1,1,1,ui_alpha*0.65),NK_TEXT_RIGHT);
+
+        if( choiceR == 3 ) editor_altscript( o );
+        if( choiceR == 2 ) editor_altevent( o);
+        if( choiceR == 1 ) editor_altvisible( o );
+
+        if( do_recurse && editor_open(o) ) {
+            for each_objchild(o,obj*,oo) {
+                editor_scene_(oo,flags);
+            }
+        }
+
+        if( clicked && !choiceL && !choiceR ) {
+            int is_picking = input(KEY_CTRL);
+            if( !is_picking ) {
+                if( input(KEY_SHIFT) ) {
+                    editor_selectgroup( editor_first_selected(), editor_last_selected() );
+                } else {
+                    editor_unselect();
+                    editor_setselected(o, 1);
+                }
+            }
+            for( obj *p = obj_parent(o); p; p = obj_parent(p) ) {
+                editor_setopen(p, 1);
+            }
+            if( nk_input_is_mouse_hovering_rect(&ui_ctx->input, ((struct nk_rect) { bounds.x,bounds.y,offset_in_tree.x-bounds.x+UI_ICON_FONTSIZE/2,bounds.h })) ) {
+                editor_altopen( o );
+            }
+        }
+    }
+
+    --tabs;
+}
+
+int editor_scene(int window_mode) {
+    window_mode = EDITOR_WINDOW; // force window
+
+    if( editor_begin(SCENE_TITLE, window_mode)) {
+        // #define HELP ICON_MDI_INFORMATION_OUTLINE "@-A\n-B\n-C\n" ";"
+        int choice = ui_toolbar(ICON_MDI_PLUS "@New node (CTRL+N);" ICON_MDI_DOWNLOAD "@Save node (CTRL+S);" ICON_MDI_DOWNLOAD "@Save scene (SHIFT+CTRL+S);" ICON_MD_BOOKMARK_ADDED "@Toggle Bookmark (CTRL+B);");
+        if( choice == 1 ) editor_send("node_new");
+        if( choice == 2 ) editor_send("node_save");
+        if( choice == 3 ) editor_send("scene_save");
+        if( choice == 4 ) editor_send("bookmark");
+
+        array(obj*) bookmarks = 0;
+        for each_map_ptr(*editor_bookmarked_map(), void*,o,int,bookmarked) {
+            if( *bookmarked ) {
+                array_push(bookmarks, *o);
+            }
+        }
+        if( ui_collapse("!" ICON_MD_BOOKMARK "Bookmarks", "DEBUG:BOOKMARK")) {
+            for each_array( bookmarks, obj*, o )
+                editor_scene_( o, SCENE_ALL & ~(SCENE_RECURSE|SCENE_INDENT|SCENE_CHECKBOX) );
+            ui_collapse_end();
+        }
+        array_free(bookmarks);
+
+        editor_scene_( editor.root, SCENE_ALL );
+
+        for each_array( editor.objs, obj*, o )
+            editor_scene_( o, SCENE_ALL );
+
+        ui_separator();
+
+        // edit selection
+        for each_map(*editor_selected_map(), void*,o, int, k) {
+            if( k ) editor_inspect(o);
+        }
+
+        editor_end(window_mode);
+    }
+
+    return 0;
+}
+
+AUTORUN {
+    array_push(editor.subeditors, editor_scene);
+}
+#line 0
+#line 1 "v4k_editor_browser.h"
+#define BROWSER_ICON  ICON_MD_FOLDER_SPECIAL
+#define BROWSER_TITLE "Browser " BROWSER_ICON
+
+EDITOR_BIND(browser, "held(CTRL)&down(2)", { ui_show(BROWSER_TITLE, ui_visible(BROWSER_TITLE) ^ true); });
+
+int editor_browser(int window_mode) {
+    window_mode = EDITOR_WINDOW; // force window
+    if( editor_begin(BROWSER_TITLE, window_mode) ) {
+        const char *file = 0;
+        if( ui_browse(&file, NULL) ) {
+            const char *sep = ifdef(win32, "\"", "'");
+            app_exec(va("%s %s%s%s", ifdef(win32, "start \"\"", ifdef(osx, "open", "xdg-open")), sep, file, sep));
+        }
+        editor_end(window_mode);
+    }
+    return 0;
+}
+
+AUTORUN {
+    array_push(editor.subeditors, editor_browser);
+}
+#line 0
+#line 1 "v4k_editor_timeline.h"
+#define TIMELINE_ICON ICON_MDI_CHART_TIMELINE
+#define TIMELINE_TITLE "Timeline " TIMELINE_ICON
+
+EDITOR_BIND(timeline, "held(CTRL)&down(3)", { ui_show(TIMELINE_TITLE, ui_visible(TIMELINE_TITLE) ^ true); });
+
+int ui_tween(const char *label, tween_t *t) {
+    if( ui_filter && ui_filter[0] ) if( !strstr(label, ui_filter) ) return 0;
+
+    int expand_keys = label[0] == '!'; label += expand_keys;
+    const char *id = label;
+    if( strchr(id, '@') ) *strchr((char*)(id = (const char*)va("%s", label)), '@') = '\0';
+
+    enum { LABEL_SPACING = 250 };
+    enum { ROUNDING = 0 };
+    enum { THICKNESS = 1 };
+    enum { PIXELS_PER_SECOND = 60 };
+    enum { KEY_WIDTH = 5, KEY_HEIGHT = 5 };
+    enum { TIMELINE_HEIGHT = 25 };
+    enum { MARKER1_HEIGHT = 5, MARKER10_HEIGHT = 20, MARKER5_HEIGHT = (MARKER1_HEIGHT + MARKER10_HEIGHT) / 2 };
+    unsigned base_color = WHITE;
+    unsigned time_color = YELLOW;
+    unsigned duration_color = ORANGE;
+    unsigned key_color = GREEN;
+
+    int changed = 0;
+
+#if 0
+    // two rows with height:30 composed of three widgets
+    nk_layout_row_template_begin(ui_ctx, 30);
+    nk_layout_row_template_push_variable(ui_ctx, t->duration * PIXELS_PER_SECOND); // min 80px. can grow
+    nk_layout_row_template_end(ui_ctx);
+#endif
+
+        char *sid = va("%s.%d", id, 0);
+        uint64_t hash = 14695981039346656037ULL, mult = 0x100000001b3ULL;
+        for(int i = 0; sid[i]; ++i) hash = (hash ^ sid[i]) * mult;
+        ui_hue = (hash & 0x3F) / (float)0x3F; ui_hue += !ui_hue;
+
+    ui_label(label);
+
+    struct nk_command_buffer *canvas = nk_window_get_canvas(ui_ctx);
+    struct nk_rect bounds; nk_layout_peek(&bounds, ui_ctx);
+    bounds.y -= 30;
+
+    struct nk_rect baseline = bounds; baseline.y += 30/2;
+    baseline.x += LABEL_SPACING;
+    baseline.w -= LABEL_SPACING;
+
+    // tween duration
+    {
+        struct nk_rect pos = baseline;
+        pos.w  = pos.x + t->duration * PIXELS_PER_SECOND;
+        pos.y -= TIMELINE_HEIGHT/2;
+        pos.h  = TIMELINE_HEIGHT;
+        nk_stroke_rect(canvas, pos, ROUNDING, THICKNESS*2, AS_NKCOLOR(duration_color));
+    }
+
+    // tween ranges
+    for(int i = 0, end = array_count(t->keyframes) - 1; i < end; ++i) {
+        tween_keyframe_t *k = t->keyframes + i;
+        tween_keyframe_t *next = k + 1;
+
+        struct nk_rect pos = baseline;
+        pos.x += k->t * PIXELS_PER_SECOND;
+        pos.w  = (next->t - k->t) * PIXELS_PER_SECOND;
+        pos.y -= TIMELINE_HEIGHT/2;
+        pos.h  = TIMELINE_HEIGHT;
+
+        char *sid = va("%s.%d", id, i);
+        uint64_t hash = 14695981039346656037ULL, mult = 0x100000001b3ULL;
+        for(int i = 0; sid[i]; ++i) hash = (hash ^ sid[i]) * mult;
+        ui_hue = (hash & 0x3F) / (float)0x3F; ui_hue += !ui_hue;
+
+        struct nk_color c = nk_hsva_f(ui_hue, 0.75f, 0.8f, ui_alpha);
+        nk_fill_rect(canvas, pos, ROUNDING, k->ease == EASE_NOP ? AS_NKCOLOR(0) : c); // AS_NKCOLOR(track_color));
+    }
+
+    // horizontal line
+    nk_stroke_line(canvas, baseline.x, baseline.y, baseline.x+baseline.w,baseline.y, THICKNESS, AS_NKCOLOR(base_color));
+
+    // unit, 5-unit and 10-unit markers
+    for( float i = 0, j = 0; i < baseline.w; i += PIXELS_PER_SECOND/10, ++j ) {
+        int len = !((int)j%10) ? MARKER10_HEIGHT : !((int)j%5) ? MARKER5_HEIGHT : MARKER1_HEIGHT;
+        nk_stroke_line(canvas, baseline.x+i, baseline.y-len, baseline.x+i, baseline.y+len, THICKNESS, AS_NKCOLOR(base_color));
+    }
+
+    // time marker
+    float px = t->time * PIXELS_PER_SECOND;
+    nk_stroke_line(canvas, baseline.x+px, bounds.y, baseline.x+px, bounds.y+bounds.h, THICKNESS*2, AS_NKCOLOR(time_color));
+    nk_draw_symbol(canvas, NK_SYMBOL_TRIANGLE_DOWN, ((struct nk_rect){ baseline.x+px-4,bounds.y-4-8,8,8}), /*bg*/AS_NKCOLOR(0), /*fg*/AS_NKCOLOR(time_color), 0.f/*border_width*/, ui_ctx->style.font);
+
+    // key markers
+    for each_array_ptr(t->keyframes, tween_keyframe_t, k) {
+        struct nk_rect pos = baseline;
+        pos.x += k->t * PIXELS_PER_SECOND;
+
+        vec2 romboid[] = {
+            {pos.x-KEY_WIDTH,pos.y}, {pos.x,pos.y-KEY_HEIGHT},
+            {pos.x+KEY_WIDTH,pos.y}, {pos.x,pos.y+KEY_HEIGHT}
+        };
+
+        nk_fill_polygon(canvas, (float*)romboid, countof(romboid), AS_NKCOLOR(key_color));
+    }
+
+    // keys ui
+    if( expand_keys )
+    for(int i = 0, end = array_count(t->keyframes); i < end; ++i) {
+        tween_keyframe_t *k = t->keyframes + i;
+        if( ui_collapse(va("Key %d", i), va("%s.%d", id, i))) {
+            changed |= ui_float("Time", &k->t);
+            changed |= ui_float3("Value", &k->v.x);
+            changed |= ui_list("Ease", ease_enums(), EASE_NUM, &k->ease );
+            ui_collapse_end();
+        }
+    }
+
+    return changed;
+}
+
+tween_t* rand_tween() {
+    tween_t demo = tween();
+    int num_keys = randi(2,8);
+    double t = 0;
+    for( int i = 0; i < num_keys; ++i) {
+        tween_setkey(&demo, t, scale3(vec3(randf(),randf(),randf()),randi(-5,5)), randi(0,EASE_NUM) );
+        t += randi(1,5) / ((float)(1 << randi(0,2)));
+    }
+    tween_t *p = CALLOC(1, sizeof(tween_t));
+    memcpy(p, &demo, sizeof(tween_t));
+    return p;
+}
+
+int editor_timeline(int window_mode) {
+    static array(tween_t*) tweens = 0;
+
+    do_once {
+        array_push(tweens, rand_tween());
+    }
+
+    if( editor.t == 0 )
+    for each_array(tweens, tween_t*,t) {
+        tween_reset(t);
+    }
+    else
+    for each_array(tweens, tween_t*,t) {
+        tween_update(t, editor.dt);
+    }
+
+    static void *selected = NULL;
+    if( editor_begin(TIMELINE_TITLE, window_mode) ) {
+
+        int choice = ui_toolbar(ICON_MDI_PLUS ";" ICON_MDI_MINUS );
+        if( choice == 1 ) array_push(tweens, rand_tween());
+        if( choice == 2 && selected ) {
+            int target = -1;
+            for( int i = 0, end = array_count(tweens); i < end; ++i ) if( tweens[i] == selected ) { target = i; break; }
+            if( target >= 0 ) { array_erase_slow(tweens, target); selected = NULL; }
+        }
+
+        for each_array(tweens, tween_t*,t) {
+            ui_tween(va("%s%p@%05.2fs Value: %s", t == selected ? "!":"", t, t->time, ftoa3(t->result)), t);
+            if(ui_label_icon_clicked_L.x) selected = (t != selected) ? t : NULL;
+        }
+
+        editor_end(window_mode);
+    }
+    return 0;
+}
+
+AUTORUN {
+    array_push(editor.subeditors, editor_timeline);
+}
+#line 0
+#line 1 "v4k_editor_console.h"
+#define CONSOLE_ICON  ICON_MDI_CONSOLE
+#define CONSOLE_TITLE "Console " CONSOLE_ICON
+
+EDITOR_BIND(console, "held(CTRL)&down(4)", { ui_show(CONSOLE_TITLE, ui_visible(CONSOLE_TITLE) ^ true); });
+
+int editor_console(int window_mode) {
+    if( editor_begin(CONSOLE_TITLE, window_mode) ) {
+
+        // peek complete window space
+        struct nk_rect bounds = nk_window_get_content_region(ui_ctx);
+
+        enum { CONSOLE_LINE_HEIGHT = 20 };
+        static array(char*) lines = 0;
+        do_once {
+            array_push(lines, stringf("> Editor v%s. Type `%s` for help.", EDITOR_VERSION, ""));
+        }
+        int max_lines = (bounds.h - UI_ROW_HEIGHT) / (CONSOLE_LINE_HEIGHT * 2);
+        if( max_lines >= 1 ) {
+            nk_layout_row_static(ui_ctx, bounds.h - UI_ROW_HEIGHT, bounds.w, 1);
+            if(nk_group_begin(ui_ctx, "console.group", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER)) {
+                nk_layout_row_static(ui_ctx, CONSOLE_LINE_HEIGHT, bounds.w, 1);
+                for( int i = array_count(lines); i < max_lines; ++i )
+                    array_push_front(lines, 0);
+                for( int i = array_count(lines) - max_lines; i < array_count(lines); ++i ) {
+                    if( !lines[i] ) {
+                        #if 0 // debug
+                        nk_label_wrap(ui_ctx, va("%d.A/%d",i+1,max_lines));
+                        nk_label_wrap(ui_ctx, va("%d.B/%d",i+1,max_lines));
+                        #else
+                        nk_label_wrap(ui_ctx, "");
+                        nk_label_wrap(ui_ctx, "");
+                        #endif
+                    } else {
+                        nk_label_wrap(ui_ctx, lines[i]);
+                        const char *answer = isdigit(*lines[i]) ? editor_recv( atoi(lines[i]), 0 ) : NULL;
+                        nk_label_wrap(ui_ctx, answer ? answer : "");
+                    }
+                }
+                nk_group_end(ui_ctx);
+            }
+        }
+        static char *cmd = 0;
+        if( ui_string(NULL, &cmd) ) {
+            int jobid = editor_send(cmd);
+            array_push(lines, stringf("%d> %s", jobid, cmd));
+            cmd[0] = 0;
+        }
+
+        editor_end(window_mode);
+    }
+    return 0;
+}
+
+AUTORUN {
+    array_push(editor.subeditors, editor_console);
+}
+#line 0
+#line 1 "v4k_editor_nodes.h"
+#define NODES_ICON  ICON_MDI_GRAPH
+#define NODES_TITLE "Nodes " NODES_ICON
+
+EDITOR_BIND(nodes, "held(CTRL)&down(5)", { ui_show(NODES_TITLE, ui_visible(NODES_TITLE) ^ true); });
+
+/*
+A basic node-based UI built with Nuklear.
+Builds on the node editor example included in Nuklear v1.00, with the aim of
+being used as a prototype for implementing a functioning node editor.
+
+Features:
+- Nodes of different types. Currently their implementations are #included in
+  the main file, but they could easily be turned into eg. a plugin system.
+- Pins/pins of different types -- currently float values and colors.
+- Adding and removing nodes.
+- Linking nodes, with validation (one link per input, only link similar pins).
+- Detaching and moving links.
+- Evaluation of output values of connected nodes.
+- Memory management based on fixed size arrays for links and node pointers
+- Multiple node types
+- Multiple pin types
+- Linking between pins of the same type
+- Detaching and reattaching links
+- Getting value from linked node if pin is connected
+
+Todo:
+- Complete pin types.
+- Allow dragging from output to input pin.
+- Cut link by CTRL+clicking input pin.
+- Cut link by drawing intersect line on a link.
+- Group elemnts together with mouse, or LSHIFT+clicking.
+- Drag groups.
+- DEL elements.
+- DEL groups.
+- CTRL-C/CTRL-V/CTRL-X elements.
+- CTRL-C/CTRL-V/CTRL-X groups.
+- CTRL-Z,CTRL-Y.
+- CTRL-N.
+- CTRL-L,CTRL-S.
+- CTRL-F.
+- CTRL-Wheel Zooming.
+- Allow to extend node types from Lua.
+
+Extra todo:
+- Execution Flow (see: nk_stroke_triangle, nk_fill_triangle)
+- Complete missing nodes (see: nk_draw_image, nk_draw_text)
+- Right-click could visualize node/board diagram as Lua script.
+- Once that done, copy/pasting scripts should work within editor.
+
+Sources:
+- https://github.com/Immediate-Mode-UI/Nuklear/pull/561
+- https://github.com/vurtun/nuklear/blob/master/demo/node_editor.c
+*/
+
+typedef enum pin_type_t {
+    type_flow,
+    type_int,type_float,
+    type_block,type_texture,type_image,
+    type_color,
+    /*
+    type_bool,
+    type_char, type_string,
+    type_int2, type_int3, type_int4,
+    type_float2, type_float3, type_float4,
+    type_array, type_map,
+    */
+
+    type_total
+} pin_type_t;
+
+struct node_pin {
+    pin_type_t pin_type;
+    nk_bool is_connected;
+    struct node* connected_node;
+    int connected_pin;
+};
+
+struct node {
+    int ID;
+    char name[32];
+    struct nk_rect bounds;
+    int input_count;
+    int output_count;
+    struct node_pin *inputs;
+    struct node_pin *outputs;
+    struct {
+        float in_padding_x;
+        float in_padding_y;
+        float in_spacing_y;
+        float out_padding_x;
+        float out_padding_y;
+        float out_spacing_y;
+    } pin_spacing; /* Maybe this should be called "node_layout" and include the bounds? */
+    struct node *next; /* Z ordering only */
+    struct node *prev; /* Z ordering only */
+
+    void* (*eval_func)(struct node*, int oIndex);
+    void (*display_func)(struct nk_context*, struct node*);
+};
+
+struct node_link {
+    struct node* input_node;
+    int input_pin;
+    struct node* output_node;
+    int output_pin;
+    nk_bool is_active;
+};
+
+struct node_linking {
+    int active;
+    struct node *node;
+    int input_id;
+    int input_pin;
+};
+
+struct node_editor {
+    int initialized;
+    struct node *node_buf[32];
+    struct node_link links[64];
+    struct node *output_node;
+    struct node *begin;
+    struct node *end;
+    int node_count;
+    int link_count;
+    struct nk_rect bounds;
+    struct node *selected;
+    int show_grid;
+    struct nk_vec2 scrolling;
+    struct node_linking linking;
+};
+
+/* === PROTOTYPES === */
+/* The node implementations need these two functions. */
+/* These could/should go in a header file along with the node and node_pin structs and be #included in the node implementations */
+
+struct node* node_editor_add(struct node_editor *editor, size_t nodeSize, const char *name, struct nk_rect bounds, int in_count, int out_count);
+void* node_editor_eval_connected(struct node *node, int input_pin_number);
+/* ================== */
+
+/* === NODE TYPE IMPLEMENTATIONS === */
+
+#define NODE_DEFAULT_ROW_HEIGHT 25
+
+
+// ----------------------------------------------------------------------------------------------------
+// #include "node_output.h"
+
+struct node_type_output {
+    struct node node;
+    struct nk_colorf input_val;
+};
+
+struct nk_colorf *node_output_get(struct node* node) {
+    struct node_type_output *output_node = (struct node_type_output*)node;
+    if (!node->inputs[0].is_connected) {
+        struct nk_colorf black = {0.0f, 0.0f, 0.0f, 0.0f};
+        output_node->input_val = black;
+    }
+    return &output_node->input_val;
+}
+
+static void node_output_display(struct nk_context *ctx, struct node *node) {
+    if (node->inputs[0].is_connected) {
+        struct node_type_output *output_node = (struct node_type_output*)node;
+        output_node->input_val = *(struct nk_colorf*)node_editor_eval_connected(node, 0);
+        nk_layout_row_dynamic(ctx, 60, 1);
+        nk_button_color(ctx, nk_rgba_cf(output_node->input_val));
+    }
+}
+
+struct node* node_output_create(struct node_editor *editor, struct nk_vec2 position) {
+    struct node_type_output *output_node = (struct node_type_output*)node_editor_add(editor, sizeof(struct node_type_output), "Output", nk_rect(position.x, position.y, 100, 100), 1, 0);
+    if (output_node){
+        output_node->node.inputs[0].pin_type = type_color;
+        output_node->node.display_func = node_output_display;
+    }
+    return (struct node*)output_node;
+}
+
+// ----------------------------------------------------------------------------------------------------
+// #include "node_float.h"
+
+struct node_type_float {
+    struct node node;
+    float output_val;
+};
+
+static float *node_float_eval(struct node* node, int oIndex) {
+    struct node_type_float *float_node = (struct node_type_float*)node;
+    NK_ASSERT(oIndex == 0);
+    return &float_node->output_val;
+}
+
+static void node_float_draw(struct nk_context *ctx, struct node *node) {
+    struct node_type_float *float_node = (struct node_type_float*)node;
+    nk_layout_row_dynamic(ctx, NODE_DEFAULT_ROW_HEIGHT, 1);
+    float_node->output_val = nk_propertyf(ctx, "#Value:", 0.0f, float_node->output_val, 1.0f, 0.01f, 0.01f);
+}
+
+void node_float_create(struct node_editor *editor, struct nk_vec2 position) {
+    struct node_type_float *float_node = (struct node_type_float*)node_editor_add(editor, sizeof(struct node_type_float), "Float", nk_rect(position.x, position.y, 180, 75), 0, 1);
+    if (float_node)
+    {
+        float_node->output_val = 1.0f;
+        float_node->node.display_func = node_float_draw;
+        float_node->node.eval_func = (void*(*)(struct node*, int)) node_float_eval;
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+// #include "node_color.h"
+
+struct node_type_color {
+    struct node node;
+    float input_val[4];
+    struct nk_colorf output_val;
+};
+
+static struct nk_colorf *node_color_eval(struct node* node, int oIndex)
+{
+    struct node_type_color *color_node = (struct node_type_color*)node;
+    NK_ASSERT(oIndex == 0); /* only one output connector */
+
+    return &color_node->output_val;
+}
+
+
+static void node_color_draw(struct nk_context *ctx, struct node *node)
+{
+    struct node_type_color *color_node = (struct node_type_color*)node;
+    float eval_result; /* Get the values from connected nodes into this so the inputs revert on disconnect */
+    const char* labels[4] = {"#R:","#G:","#B:","#A:"};
+    float color_val[4]; /* Because we can't just loop through the struct... */
+    nk_layout_row_dynamic(ctx, NODE_DEFAULT_ROW_HEIGHT, 1);
+    nk_button_color(ctx, nk_rgba_cf(color_node->output_val));
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (color_node->node.inputs[i].is_connected) {
+            eval_result = *(float*)node_editor_eval_connected(node, i);
+            eval_result = nk_propertyf(ctx, labels[i], eval_result, eval_result, eval_result, 0.01f, 0.01f);
+            color_val[i] = eval_result;
+        }
+        else {
+            color_node->input_val[i] = nk_propertyf(ctx, labels[i], 0.0f, color_node->input_val[i], 1.0f, 0.01f, 0.01f);
+            color_val[i] = color_node->input_val[i];
+        }
+    }
+
+    color_node->output_val.r = color_val[0];
+    color_node->output_val.g = color_val[1];
+    color_node->output_val.b = color_val[2];
+    color_node->output_val.a = color_val[3];
+}
+
+void node_color_create(struct node_editor *editor, struct nk_vec2 position)
+{
+    struct node_type_color *color_node = (struct node_type_color*)node_editor_add(editor, sizeof(struct node_type_color), "Color", nk_rect(position.x, position.y, 180, 190), 4, 1);
+    if (color_node)
+    {
+        const struct nk_colorf black = {0.0f, 0.0f, 0.0f, 1.0f};
+
+        for (int i = 0; i < color_node->node.input_count; i++)
+            color_node->node.inputs[i].pin_type = type_float;
+        color_node->node.outputs[0].pin_type = type_color;
+
+        color_node->node.pin_spacing.in_padding_y += NODE_DEFAULT_ROW_HEIGHT;
+
+        color_node->input_val[0] = 0.0f;
+        color_node->input_val[1] = 0.0f;
+        color_node->input_val[2] = 0.0f;
+        color_node->input_val[3] = 1.0f;
+
+        color_node->output_val = black;
+
+        color_node->node.display_func = node_color_draw;
+        color_node->node.eval_func = (void*(*)(struct node*, int)) node_color_eval;
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+// #include "node_blend.h"
+
+struct node_type_blend {
+    struct node node;
+    struct nk_colorf input_val[2];
+    struct nk_colorf output_val;
+    float blend_val;
+};
+
+static struct nk_colorf *node_blend_eval(struct node *node, int oIndex) {
+    struct node_type_blend* blend_node = (struct node_type_blend*)node;
+    return &blend_node->output_val;
+}
+
+static void node_blend_display(struct nk_context *ctx, struct node *node) {
+    struct node_type_blend *blend_node = (struct node_type_blend*)node;
+    const struct nk_colorf blank = {0.0f, 0.0f, 0.0f, 0.0f};
+    float blend_amnt;
+
+    nk_layout_row_dynamic(ctx, NODE_DEFAULT_ROW_HEIGHT, 1);
+    for (int i = 0; i < 2; i++){
+        if(node->inputs[i].is_connected) {
+            blend_node->input_val[i] = *(struct nk_colorf*)node_editor_eval_connected(node, i);
+        }
+        else {
+            blend_node->input_val[i] = blank;
+        }
+        nk_button_color(ctx, nk_rgba_cf(blend_node->input_val[i]));
+    }
+
+        if (node->inputs[2].is_connected) {
+            blend_amnt = *(float*)node_editor_eval_connected(node, 2);
+            blend_amnt = nk_propertyf(ctx, "#Blend", blend_amnt, blend_amnt, blend_amnt, 0.01f, 0.01f);
+        }
+        else {
+            blend_node->blend_val = nk_propertyf(ctx, "#Blend", 0.0f, blend_node->blend_val, 1.0f, 0.01f, 0.01f);
+            blend_amnt = blend_node->blend_val;
+        }
+
+
+    if(node->inputs[0].is_connected && node->inputs[1].is_connected) {
+        blend_node->output_val.r = blend_node->input_val[0].r * (1.0f-blend_amnt) + blend_node->input_val[1].r * blend_amnt;
+        blend_node->output_val.g = blend_node->input_val[0].g * (1.0f-blend_amnt) + blend_node->input_val[1].g * blend_amnt;
+        blend_node->output_val.b = blend_node->input_val[0].b * (1.0f-blend_amnt) + blend_node->input_val[1].b * blend_amnt;
+        blend_node->output_val.a = blend_node->input_val[0].a * (1.0f-blend_amnt) + blend_node->input_val[1].a * blend_amnt;
+    }
+    else {
+        blend_node->output_val = blank;
+    }
+}
+
+void node_blend_create(struct node_editor *editor, struct nk_vec2 position) {
+    struct node_type_blend* blend_node = (struct node_type_blend*)node_editor_add(editor, sizeof(struct node_type_blend), "Blend", nk_rect(position.x, position.y, 180, 130), 3, 1);
+    if (blend_node) {
+        const struct nk_colorf blank = {0.0f, 0.0f, 0.0f, 0.0f};
+        for (int i = 0; i < (int)NK_LEN(blend_node->input_val); i++)
+            blend_node->node.inputs[i].pin_type = type_color;
+        blend_node->node.outputs[0].pin_type = type_color;
+
+        // blend_node->node.pin_spacing.in_padding_y = 42.0f;
+        // blend_node->node.pin_spacing.in_spacing_y = 29.0f;
+
+        for (int i = 0; i < (int)NK_LEN(blend_node->input_val); i++)
+            blend_node->input_val[i] = blank;
+        blend_node->output_val = blank;
+
+        blend_node->blend_val = 0.5f;
+
+        blend_node->node.display_func = node_blend_display;
+        blend_node->node.eval_func = (void*(*)(struct node*, int)) node_blend_eval;
+
+    }
+}
+
+/* ================================= */
+
+#define NK_RGB3(r,g,b) {r,g,b,255}
+#define BG_COLOR ((struct nk_color){60,60,60,192}) // nk_rgba(0,0,0,192)
+
+static
+struct editor_node_style {
+    int pin_type;
+    const char *shape;
+    struct nk_color color_idle;
+    struct nk_color color_hover;
+} styles[] = {
+    // order matters:
+    { type_flow, "triangle_right", NK_RGB3(200,200,200), NK_RGB3(255,255,255) }, // if .num_links == 0
+    { type_int, "circle", NK_RGB3(33,227,175), NK_RGB3(135,239,195) },
+    { type_float, "circle", NK_RGB3(156,253,65), NK_RGB3(144,225,137) },
+    { type_block, "circle", NK_RGB3(6,165,239), NK_RGB3(137,196,247) },
+    { type_texture, "circle", NK_RGB3(148,0,0), NK_RGB3(183,137,137) },
+    { type_image, "circle", NK_RGB3(200,130,255), NK_RGB3(220,170,255) },
+    { type_color, "circle", NK_RGB3(252,200,35), NK_RGB3(255,217,140) },
+};
+
+#define COLOR_FLOW_HI styles[type_flow].color_hover
+#define COLOR_FLOW_LO styles[type_flow].color_idle
+
+#define GRID_SIZE 64.0f
+#define GRID_COLOR ((struct nk_color)NK_RGB3(80,80,120))
+#define GRID_THICKNESS 1.0f
+
+// 4 colors: top-left, top-right, bottom-right, bottom-left
+#define GRID_BG_COLORS ((struct nk_color){30,30,30,255}), ((struct nk_color){40,20,0,255}), ((struct nk_color){30,30,30,255}), ((struct nk_color){20,30,40,255})
+
+#define LINK_THICKNESS 1.0f
+#define LINK_DRAW(POINT_A,POINT_B,COLOR) do { \
+    vec2 a = (POINT_A); \
+    vec2 b = (POINT_B); \
+    nk_stroke_line(canvas, a.x, a.y, b.x, b.y, LINK_THICKNESS, COLOR); \
+} while(0)
+#undef LINK_DRAW
+#define LINK_DRAW(POINT_A,POINT_B,COLOR) do { \
+    vec2 a = (POINT_A); \
+    vec2 b = (POINT_B); \
+    nk_stroke_curve(canvas, a.x, a.y, a.x+50, a.y, b.x-50, b.y, b.x, b.y, LINK_THICKNESS, COLOR); \
+} while(0)
+#undef LINK_DRAW
+#define LINK_DRAW(POINT_A,POINT_B,COLOR) do { \
+    vec2 a = (POINT_A); \
+    vec2 b = (POINT_B); \
+    float dist2 = len2( sub2( ptr2(&b.x), ptr2(&a.x) ) ); \
+    vec2 mid_a = mix2( ptr2(&a.x), ptr2(&b.x), 0.25 ); mid_a.y += dist2/2; \
+    vec2 mid_b = mix2( ptr2(&a.x), ptr2(&b.x), 0.75 ); mid_b.y += dist2/3; \
+    nk_stroke_curve(canvas, a.x, a.y, mid_a.x, mid_a.y, mid_b.x, mid_b.y, b.x, b.y, LINK_THICKNESS, COLOR); \
+} while(0)
+
+
+#define PIN_RADIUS 12
+#define PIN_THICKNESS 1.0f
+#define PIN_DRAW(PIN_ADDR,POINT,RADIUS) do { \
+    circle.x = (POINT).x - (RADIUS) / 2; \
+    circle.y = (POINT).y - (RADIUS) / 2; \
+    circle.w = circle.h = (RADIUS); \
+    struct nk_color color = node_get_type_color((PIN_ADDR).pin_type); \
+    if((PIN_ADDR).is_connected) \
+    nk_fill_circle(canvas, circle, color); \
+    else \
+    nk_stroke_circle(canvas, circle, PIN_THICKNESS, color); \
+} while(0)
+
+
+static struct nk_color node_get_type_color(unsigned pin_type) {
+    for( int i = 0; i < type_total; ++i )
+        if( styles[i].pin_type == pin_type )
+            return styles[i].color_idle;
+    return ((struct nk_color)NK_RGB3(255,0,255));
+}
+
+static void node_editor_push(struct node_editor *editor, struct node *node) {
+    if (!editor->begin) {
+        node->next = NULL;
+        node->prev = NULL;
+        editor->begin = node;
+        editor->end = node;
+    } else {
+        node->prev = editor->end;
+        if (editor->end)
+            editor->end->next = node;
+        node->next = NULL;
+        editor->end = node;
+    }
+}
+
+static void node_editor_pop(struct node_editor *editor, struct node *node) {
+    if (node->next)
+        node->next->prev = node->prev;
+    if (node->prev)
+        node->prev->next = node->next;
+    if (editor->end == node)
+        editor->end = node->prev;
+    if (editor->begin == node)
+        editor->begin = node->next;
+    node->next = NULL;
+    node->prev = NULL;
+}
+
+static struct node* node_editor_find_by_id(struct node_editor *editor, int ID) {
+    struct node *iter = editor->begin;
+    while (iter) {
+        if (iter->ID == ID)
+            return iter;
+        iter = iter->next;
+    }
+    return NULL;
+}
+
+static struct node_link* node_editor_find_link_by_output(struct node_editor *editor, struct node *output_node, int node_input_connector) {
+    for( int i = 0; i < editor->link_count; i++ ) {
+        if (editor->links[i].output_node == output_node &&
+            editor->links[i].output_pin == node_input_connector &&
+            editor->links[i].is_active == nk_true) {
+            return &editor->links[i];
+        }
+    }
+    return NULL;
+}
+
+static struct node_link* node_editor_find_link_by_input(struct node_editor *editor, struct node *input_node, int node_output_connector) {
+    for( int i = 0; i < editor->link_count; i++ ) {
+        if (editor->links[i].input_node == input_node &&
+            editor->links[i].input_pin == node_output_connector &&
+            editor->links[i].is_active == nk_true) {
+            return &editor->links[i];
+        }
+    }
+    return NULL;
+}
+
+static void node_editor_delete_link(struct node_link *link) {
+    link->is_active = nk_false;
+    link->input_node->outputs[link->input_pin].is_connected = nk_false;
+    link->output_node->inputs[link->output_pin].is_connected = nk_false;
+}
+
+struct node* node_editor_add(struct node_editor *editor, size_t nodeSize, const char *name, struct nk_rect bounds, int in_count, int out_count) {
+    static int IDs = 0;
+    struct node *node = NULL;
+
+    if ((nk_size)editor->node_count < NK_LEN(editor->node_buf)) {
+        /* node_buf has unused pins */
+        node = MALLOC(nodeSize);
+        editor->node_buf[editor->node_count++] = node;
+        node->ID = IDs++;
+    } else {
+        /* check for freed up pins in node_buf */
+        for (int i = 0; i < editor->node_count; i++) {
+            if (editor->node_buf[i] == NULL) {
+                node = MALLOC(nodeSize);
+                editor->node_buf[i] = node;
+                node->ID = i;
+                break;
+            }
+        }
+    }
+    if (node == NULL) {
+        puts("Node creation failed");
+        return NULL;
+    }
+
+    node->bounds = bounds;
+
+    node->input_count = in_count;
+    node->output_count = out_count;
+
+    node->inputs = MALLOC(node->input_count * sizeof(struct node_pin));
+    node->outputs = MALLOC(node->output_count * sizeof(struct node_pin));
+
+    for (int  i = 0; i < node->input_count; i++) {
+        node->inputs[i].is_connected = nk_false;
+        node->inputs[i].pin_type = type_float; /* default pin type */
+    }
+    for (int  i = 0; i < node->output_count; i++) {
+        node->outputs[i].is_connected = nk_false;
+        node->outputs[i].pin_type = type_float; /* default pin type */
+    }
+
+    /* default pin spacing */
+    node->pin_spacing.in_padding_x = 2;
+    node->pin_spacing.in_padding_y = 32 + 25/2 + 6; // titlebar height + next half row + adjust
+    node->pin_spacing.in_spacing_y = 25; // row height+border
+    node->pin_spacing.out_padding_x = 3;
+    node->pin_spacing.out_padding_y = 32 + 25/2 + 6; // titlebar height + next half row + adjust
+    node->pin_spacing.out_spacing_y = 25; // row height+border
+
+    strcpy(node->name, name);
+    node_editor_push(editor, node);
+
+    return node;
+}
+
+void *node_editor_eval_connected(struct node* node, int input_pin_number) {
+    NK_ASSERT(node->inputs[input_pin_number].is_connected);
+    return node->inputs[input_pin_number].connected_node->eval_func(node->inputs[input_pin_number].connected_node, node->inputs[input_pin_number].connected_pin);
+}
+
+static void node_editor_link(struct node_editor *editor, struct node *in_node, int in_pin, struct node *out_node, int out_pin) {
+    /* Confusingly, in and out nodes/pins here refer to the inputs and outputs OF THE LINK ITSELF, not the nodes */
+    struct node_link *link = NULL;
+
+    if ((nk_size)editor->link_count < NK_LEN(editor->links)) {
+        link = &editor->links[editor->link_count++];
+    } else {
+        for (int i = 0; i < (int)NK_LEN(editor->links); i++)
+        {
+            if (editor->links[i].is_active == nk_false) {
+                link = &editor->links[i];
+                break;
+            }
+        }
+    }
+    if (link) {
+        out_node->inputs[out_pin].is_connected = nk_true;
+        in_node->outputs[in_pin].is_connected = nk_true;
+        out_node->inputs[out_pin].connected_node = in_node;
+        out_node->inputs[out_pin].connected_pin = in_pin;
+
+        link->input_node = in_node;
+        link->input_pin = in_pin;
+        link->output_node = out_node;
+        link->output_pin = out_pin;
+        link->is_active = nk_true;
+    } else {
+        puts("Too many links");
+    }
+}
+
+static void node_editor_init(struct node_editor *editor) {
+    if (editor->initialized) return;
+
+    struct nk_rect total_space = nk_window_get_content_region(ui_ctx);
+    struct nk_vec2 output_node_position = { total_space.w*2/3, total_space.h/3 };
+    struct nk_vec2 color_node_position = { total_space.w*1/4, total_space.h/3 };
+
+    memset(editor, 0, sizeof(*editor));
+
+    editor->output_node = node_output_create(editor, output_node_position);
+    node_color_create(editor, color_node_position);
+    editor->show_grid = nk_true;
+
+    editor->initialized = 1;
+}
+
+static int node_editor(struct node_editor *editor) {
+    int n = 0;
+    struct nk_rect total_space;
+    const struct nk_input *in = &ui_ctx->input;
+    struct nk_command_buffer *canvas = nk_window_get_canvas(ui_ctx);
+    struct node *updated = 0;
+
+    node_editor_init(editor);
+
+    {
+        /* allocate complete window space */
+        total_space = nk_window_get_content_region(ui_ctx);
+        nk_layout_space_begin(ui_ctx, NK_STATIC, total_space.h, editor->node_count);
+        {
+            struct node *it = editor->begin;
+            struct nk_rect size = nk_layout_space_bounds(ui_ctx);
+            struct nk_panel *nodePanel = 0;
+
+            //nk_fill_rect(canvas, size, 0/*rounding*/, ((struct nk_color){30,30,30,255})); // 20,30,40,255
+            nk_fill_rect_multi_color(canvas, size, GRID_BG_COLORS);
+
+            if (editor->show_grid) {
+                /* display grid */
+                for (float x = (float)fmod(size.x - editor->scrolling.x, GRID_SIZE); x < size.w; x += GRID_SIZE)
+                    nk_stroke_line(canvas, x+size.x, size.y, x+size.x, size.y+size.h, GRID_THICKNESS, GRID_COLOR);
+                for (float y = (float)fmod(size.y - editor->scrolling.y, GRID_SIZE); y < size.h; y += GRID_SIZE)
+                    nk_stroke_line(canvas, size.x, y+size.y, size.x+size.w, y+size.y, GRID_THICKNESS, GRID_COLOR);
+            }
+
+            /* execute each node as a movable group */
+            /* loop through nodes */
+            while (it) {
+                /* Output node window should not have a close button */
+                nk_flags nodePanel_flags = NK_WINDOW_MOVABLE|NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER|NK_WINDOW_TITLE;
+                if (it != editor->output_node)
+                    nodePanel_flags |= NK_WINDOW_CLOSABLE;
+
+                /* calculate scrolled node window position and size */
+                nk_layout_space_push(ui_ctx, nk_rect(it->bounds.x - editor->scrolling.x,
+                    it->bounds.y - editor->scrolling.y, it->bounds.w, it->bounds.h));
+
+                /* execute node window */
+                char *name = va(" " ICON_MD_MENU " %s",it->name); //< @r-lyeh added some spacing+icon because of our UI customizations
+
+struct nk_color bak = ui_ctx->style.window.fixed_background.data.color;
+ui_ctx->style.window.fixed_background.data.color = BG_COLOR;
+
+                if (nk_group_begin(ui_ctx, name, nodePanel_flags))
+                {
+                    /* always have last selected node on top */
+
+                    nodePanel = nk_window_get_panel(ui_ctx);
+                    if (nk_input_mouse_clicked(in, NK_BUTTON_LEFT, nodePanel->bounds) &&
+                        (!(it->prev && nk_input_mouse_clicked(in, NK_BUTTON_LEFT,
+                        nk_layout_space_rect_to_screen(ui_ctx, nodePanel->bounds)))) &&
+                        editor->end != it)
+                    {
+                        updated = it;
+                    }
+
+                    if ((nodePanel->flags & NK_WINDOW_HIDDEN)) /* Node close button has been clicked */
+                    {
+                        /* Delete node */
+                        struct node_link *link_remove;
+                        node_editor_pop(editor, it);
+                        for (int n = 0; n < it->input_count; n++) {
+                            if ((link_remove = node_editor_find_link_by_output(editor, it, n)))
+                            {
+                                node_editor_delete_link(link_remove);
+                            }
+                        }
+                        for (int n = 0; n < it -> output_count; n++) {
+                            while((link_remove = node_editor_find_link_by_input(editor, it, n)))
+                            {
+                                node_editor_delete_link(link_remove);
+                            }
+                        }
+                        NK_ASSERT(editor->node_buf[it->ID] == it);
+                        editor->node_buf[it->ID] = NULL;
+                        FREE(it->inputs);
+                        FREE(it->outputs);
+                        FREE(it);
+                    }
+                    else {
+
+                        /* ================= NODE CONTENT ===================== */
+
+                        it->display_func(ui_ctx, it);
+
+                        /* ==================================================== */
+
+                    }
+                    nk_group_end(ui_ctx);
+
+                }
+
+ui_ctx->style.window.fixed_background.data.color = bak;
+
+                if (!(nodePanel->flags & NK_WINDOW_HIDDEN))
+                {
+                    /* node pin and linking */
+                    struct nk_rect bounds;
+                    bounds = nk_layout_space_rect_to_local(ui_ctx, nodePanel->bounds);
+                    bounds.x += editor->scrolling.x;
+                    bounds.y += editor->scrolling.y;
+                    it->bounds = bounds;
+
+                    /* output pins */
+                    for (int n = 0; n < it->output_count; ++n) {
+                        struct nk_rect circle;
+                        struct nk_vec2 pt = {nodePanel->bounds.x, nodePanel->bounds.y};
+                        pt.x += nodePanel->bounds.w - PIN_RADIUS / 2 + it->pin_spacing.out_padding_x;
+                        pt.y += it->pin_spacing.out_padding_y + it->pin_spacing.out_spacing_y * (n);
+                        PIN_DRAW(it->outputs[n],pt,PIN_RADIUS);
+
+                        /* start linking process */
+                        /* set linking active */
+                        if (nk_input_has_mouse_click_down_in_rect(in, NK_BUTTON_LEFT, circle, nk_true)) {
+                            editor->linking.active = nk_true;
+                            editor->linking.node = it;
+                            editor->linking.input_id = it->ID;
+                            editor->linking.input_pin = n;
+                        }
+
+                        /* draw link being dragged (from linked pin to mouse position) */
+                        if (editor->linking.active && editor->linking.node == it &&
+                            editor->linking.input_pin == n) {
+                                LINK_DRAW(vec2(circle.x+3,circle.y+3),ptr2(&in->mouse.pos.x),COLOR_FLOW_HI);
+                        }
+                    }
+
+                    /* input pins */
+                    for (int n = 0; n < it->input_count; ++n) {
+                        struct nk_rect circle;
+                        struct nk_vec2 pt = {nodePanel->bounds.x, nodePanel->bounds.y};
+                        pt.x += it->pin_spacing.in_padding_x;
+                        pt.y += it->pin_spacing.in_padding_y + it->pin_spacing.in_spacing_y * (n);
+                        PIN_DRAW(it->inputs[n],pt,PIN_RADIUS);
+
+                        /* Detach link */
+                        if (nk_input_has_mouse_click_down_in_rect(in, NK_BUTTON_LEFT, circle, nk_true) &&
+                        editor->linking.active == nk_false &&
+                        it->inputs[n].is_connected == nk_true) {
+                            struct node_link *node_relink = node_editor_find_link_by_output(editor, it, n);
+                            editor->linking.active = nk_true;
+                            editor->linking.node = node_relink->input_node;
+                            editor->linking.input_id = node_relink->input_node->ID;
+                            editor->linking.input_pin = node_relink->input_pin;
+                            node_editor_delete_link(node_relink);
+                        }
+
+                        /* Create link */
+                        if (nk_input_is_mouse_released(in, NK_BUTTON_LEFT) &&
+                            nk_input_is_mouse_hovering_rect(in, circle) &&
+                            editor->linking.active &&
+                            editor->linking.node != it &&
+                            it->inputs[n].pin_type == editor->linking.node->outputs[editor->linking.input_pin].pin_type &&
+                            it->inputs[n].is_connected != nk_true) {
+                            editor->linking.active = nk_false;
+
+                            node_editor_link(editor, editor->linking.node,
+                                editor->linking.input_pin, it, n);
+                        }
+                    }
+                }
+                it = it->next;
+            }
+
+            /* reset (output) linking connection */
+            if (editor->linking.active && (!!input(KEY_LCTRL) || !!input(KEY_RCTRL) || nk_input_is_mouse_released(in, NK_BUTTON_LEFT))) {
+                editor->linking.active = nk_false;
+                editor->linking.node = NULL;
+            }
+
+            /* draw each static link */
+            for (int n = 0; n < editor->link_count; ++n) {
+                struct node_link *link = &editor->links[n];
+                if (link->is_active == nk_true){
+                    struct node *ni = link->input_node;
+                    struct node *no = link->output_node;
+                    struct nk_vec2 l0 = nk_layout_space_to_screen(ui_ctx, nk_vec2(ni->bounds.x + ni->bounds.w + ni->pin_spacing.out_padding_x, 3.0f + ni->bounds.y + ni->pin_spacing.out_padding_y + ni->pin_spacing.out_spacing_y * (link->input_pin)));
+                    struct nk_vec2 l1 = nk_layout_space_to_screen(ui_ctx, nk_vec2(no->bounds.x + no->pin_spacing.in_padding_x, 3.0f + no->bounds.y + no->pin_spacing.in_padding_y + no->pin_spacing.in_spacing_y * (link->output_pin)));
+
+                    l0.x -= editor->scrolling.x;
+                    l0.y -= editor->scrolling.y;
+                    l1.x -= editor->scrolling.x;
+                    l1.y -= editor->scrolling.y;
+
+                    struct nk_color color = node_get_type_color(no->inputs[link->output_pin].pin_type);
+                    LINK_DRAW(ptr2(&l0.x), ptr2(&l1.x), color);
+                }
+            }
+
+            if (updated) {
+                /* reshuffle nodes to have least recently selected node on top */
+                node_editor_pop(editor, updated);
+                node_editor_push(editor, updated);
+            }
+
+            /* node selection */
+            if (nk_input_mouse_clicked(in, NK_BUTTON_LEFT, nk_layout_space_bounds(ui_ctx))) {
+                it = editor->begin;
+                editor->selected = NULL;
+                editor->bounds = nk_rect(in->mouse.pos.x, in->mouse.pos.y, 100, 200);
+                while (it) {
+                    struct nk_rect b = nk_layout_space_rect_to_screen(ui_ctx, it->bounds);
+                    b.x -= editor->scrolling.x;
+                    b.y -= editor->scrolling.y;
+                    if (nk_input_is_mouse_hovering_rect(in, b))
+                        editor->selected = it;
+                    it = it->next;
+                }
+            }
+
+            /* contextual menu */
+            if (nk_contextual_begin(ui_ctx, 0, nk_vec2(150, 220), nk_window_get_bounds(ui_ctx))) {
+                struct nk_vec2 wincoords = { in->mouse.pos.x-total_space.x-50, in->mouse.pos.y-total_space.y-32 };
+
+#if 1
+            static char *filter = 0;
+                static int do_filter = 0;
+                if( input_down(KEY_F) ) if( input(KEY_LCTRL) || input(KEY_RCTRL) ) do_filter ^= 1;
+                int choice = ui_toolbar(ICON_MD_SEARCH ";");
+                if( choice == 1 ) do_filter = 1;
+                if( do_filter ) {
+                    ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &filter);
+                    if( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 ) { // if clicked on CANCEL icon (1st icon)
+                        do_filter = 0;
+                    }
+                } else {
+                    if( filter ) filter[0] = '\0';
+                }
+            char *filter_mask = filter && filter[0] ? va("*%s*", filter) : "*";
+#endif
+
+                #define ui_label_filtered(lbl) (strmatchi(lbl,filter_mask) && ui_label(lbl))
+
+                int close = 0;
+                if (ui_label_filtered("=Add Color node")) close=1,node_color_create(editor, wincoords);
+                if (ui_label_filtered("=Add Float node")) close=1,node_float_create(editor, wincoords);
+                if (ui_label_filtered("=Add Blend Node")) close=1,node_blend_create(editor, wincoords);
+                if (ui_label_filtered(editor->show_grid ? "=Hide Grid" : "=Show Grid"))
+                    close=1,editor->show_grid = !editor->show_grid;
+                if(close) do_filter = 0, (filter ? filter[0] = '\0' : '\0'), nk_contextual_close(ui_ctx);
+                nk_contextual_end(ui_ctx);
+            }
+        }
+        nk_layout_space_end(ui_ctx);
+
+        /* window content scrolling */
+        if (nk_input_is_mouse_hovering_rect(in, nk_window_get_bounds(ui_ctx)) &&
+            nk_input_is_mouse_down(in, NK_BUTTON_MIDDLE)) {
+            editor->scrolling.x += in->mouse.delta.x;
+            editor->scrolling.y += in->mouse.delta.y;
+        }
+    }
+
+    return !nk_window_is_closed(ui_ctx, "NodeEdit");
+}
+
+int editor_nodes(int window_mode) {
+    window_mode = EDITOR_WINDOW; // force window
+
+    if( editor_begin(NODES_TITLE, window_mode) ) {
+
+            static struct node_editor nodeEditor = {0};
+            node_editor(&nodeEditor);
+
+        editor_end(window_mode);
+    }
+    return 0;
+}
+
+AUTORUN {
+    array_push(editor.subeditors, editor_nodes);
+}
+#line 0
+#line 1 "v4k_editor_script.h"
+
+int ui_texture_fit(texture_t t, struct nk_rect bounds) {
+    // allocate complete window space
+    struct nk_rect total_space = nk_window_get_content_region(ui_ctx);
+    nk_layout_space_begin(ui_ctx, NK_DYNAMIC, total_space.h - 4, 1); // -4 to hide scrollbar Y
+    nk_layout_space_push(ui_ctx, nk_rect(0,0,1,1));
+
+    struct nk_command_buffer *canvas = nk_window_get_canvas(ui_ctx);
+    struct nk_image image = nk_image_id((int)t.id);
+    nk_draw_image(canvas, bounds, &image, nk_white);
+
+    nk_layout_space_end(ui_ctx);
+    return 0;
+}
+
+#define LITE_ICON  ICON_MDI_SCRIPT_TEXT
+#define LITE_TITLE "Script " LITE_ICON
+
+EDITOR_BIND(script, "held(CTRL)&down(6)", { ui_show(LITE_TITLE, ui_visible(LITE_TITLE) ^ true); });
+
+int editor_scripted(int window_mode) {
+    window_mode = EDITOR_WINDOW; // force mode
+
+    static lua_State *L = 0;
+    do_once {
+        L = script_init_env(SCRIPT_LUA|SCRIPT_DEBUGGER);
+
+        const char *platform = "" // "Android" "FreeBSD" "OpenBSD" "NetBSD"
+            ifdef(ems, "Emscripten")
+            ifdef(linux, "Linux")
+            ifdef(osx, "macOS")
+            ifdef(win32, "Windows")
+        ;
+        const char *pathexe = vac("%s%s%s", app_path(), app_name(), ifdef(win32, ".exe", ""));
+
+        gleqInit();
+        gleqTrackWindow(window_handle());
+        lt_init(L, window_handle(), LT_DATAPATH, __argc, __argv, window_scale(), platform, pathexe);
+    }
+
+    unsigned lt_none = 0u;
+    unsigned lt_all = ~0u & ~(GLEQ_WINDOW_MOVED/*|GLEQ_WINDOW_RESIZED|GLEQ_WINDOW_REFRESH*/);
+    lt_events = lt_none;
+
+    int mouse_in_rect = 0;
+    if( editor_begin(LITE_TITLE, window_mode) ) {
+
+        lt_events = lt_all;
+        if( !nk_window_has_focus(ui_ctx) ) lt_events = lt_none;
+
+        struct nk_rect bounds = nk_window_get_content_region(ui_ctx);
+
+        lt_mx = input(MOUSE_X) - bounds.x;
+        lt_my = input(MOUSE_Y) - bounds.y;
+        lt_wx = bounds.x;
+        lt_wy = bounds.y;
+        lt_ww = bounds.w;
+        lt_wh = bounds.h;
+
+        if( lt_resizesurface(lt_getsurface(0), lt_ww, lt_wh) ) {
+            gleq_window_refresh_callback(window_handle());
+        }
+        // fullscreen_quad_rgb( lt_getsurface(0)->t, 1.2f );
+        ui_texture_fit(lt_getsurface(0)->t, bounds);
+
+        if( !!nk_input_is_mouse_hovering_rect(&ui_ctx->input, ((struct nk_rect){lt_wx+5,lt_wy+5,lt_ww-10,lt_wh-10})) ) {
+            lt_events &= ~(1<<31); // dont cursor shape
+        }
+
+        editor_end(window_mode);
+    }
+
+    lt_tick(L);
+    return 0;
+}
+
+AUTORUN {
+    array_push(editor.subeditors, editor_scripted);
+}
+#line 0
+
+#line 1 "v4k_end.c"
 // Enable more performant GPUs on laptops. Does this work into a dll?
 // int NvOptimusEnablement = 1;
 // int AmdPowerXpressRequestHighPerformance = 1;

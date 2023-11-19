@@ -161,6 +161,7 @@ void*   obj_free(void *o);
 // --- syntax sugars
 
 #define obj_extend(T,method)       (obj_##method[OBJTYPE(T)] = (void*)T##_##method)
+#define obj_extend_t(T,method)     (obj_##method[OBJTYPE(T##_t)] = (void*)T##_##method)
 #define obj_method(method,o,...)   (obj_##method[((struct obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((struct obj*)(o))->objtype]((o), ##__VA_ARGS__))
 #define obj_hasmethod(o,method)    (obj_typeid(o)[obj_##method])
 
@@ -183,6 +184,17 @@ void*   obj_free(void *o);
 #define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8)
 #define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9)
 
+#define EXTEND_T(...) EXPAND(EXTEND_T, __VA_ARGS__)
+#define EXTEND_T2(o,F1) obj_extend_t(o,F1)
+#define EXTEND_T3(o,F1,F2) obj_extend_t(o,F1), obj_extend_t(o,F2)
+#define EXTEND_T4(o,F1,F2,F3) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3)
+#define EXTEND_T5(o,F1,F2,F3,F4) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4)
+#define EXTEND_T6(o,F1,F2,F3,F4,F5) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5)
+#define EXTEND_T7(o,F1,F2,F3,F4,F5,F6) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6)
+#define EXTEND_T8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7)
+#define EXTEND_T9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8)
+#define EXTEND_T10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8), obj_extend_t(o,F9)
+
 // --- declare vtables
 
 API extern void  (*obj_ctor[256])(); ///-
@@ -200,6 +212,8 @@ API extern int   (*obj_draw[256])(); ///-
 API extern int   (*obj_lerp[256])(); ///-
 API extern int   (*obj_edit[256])(); ///-
 API extern int   (*obj_aabb[256])(); ///-
+
+API extern const char*OBJTYPES[256]; /// -
 
 // ----------------------------------------------------------------------------
 // core

@@ -324,6 +324,7 @@ if "%1"=="fwk_prep" (
     xcopy /y "engine\split\3rd_*" "_fwk\engine\split"
     xcopy /y "engine\art\shaders\*" "_fwk\engine\art\shaders"
     xcopy /y "demos" "_fwk\demos"
+    xcopy /y "engine\editor.c" "_fwk\engine\editor.c"
     rem xcopy /y/E "tools "_fwk\tools"
     for %%f in ("engine\split\v4k*") do (
         set "filename=%%~nf"
@@ -371,6 +372,10 @@ if "%1"=="back" (
     xcopy /y "_fwk\engine\split\3rd_*" "engine\split"
     xcopy /y "_fwk\engine\art\shaders\*" "engine\art\shaders"
     xcopy /y "_fwk\demos" "demos"
+    xcopy /y "_fwk\engine\editor.c" "engine\editor.c"
+    tools\fwkren.exe "engine\editor.c" to
+    tools\fwkren.exe "hello.c" to
+
     rem xcopy /y/E "_fwk\tools "tools"
     for %%f in ("_fwk\engine\split\fwk*") do (
         set "filename=%%~nf"
@@ -804,7 +809,8 @@ if "!v4k!"=="yes" (
 rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND
-!echo! editor      && !cc! !o! editor.exe tools\editor\editor.c !edit! -Iengine/joint !args! || set rc=1
+rem set edit=-DUI_LESSER_SPACING -DUI_ICONS_SMALL !edit!
+!echo! editor      && !cc! !o! editor.exe engine\editor.c !edit! -Iengine/joint !args! || set rc=1
 
 rem if "!cc!"=="cl" (
 rem set plug_export=/LD

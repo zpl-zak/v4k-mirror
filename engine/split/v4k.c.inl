@@ -148,6 +148,8 @@
 
 {{FILE:v4k_scene.c}}
 
+{{FILE:v4k_sprite.c}}
+
 {{FILE:v4k_system.c}}
 
 {{FILE:v4k_time.c}}
@@ -162,10 +164,17 @@
 
 {{FILE:v4k_ai.c}}
 
-{{FILE:v4k_editor.c}}
-
-// editor is last in place, so it can use all internals from above headers
+{{FILE:v4k_editor0.c}}
 
 {{FILE:v4k_main.c}}
+
+// editor is last in place, so it can use all internals from above headers
+{{FILE:v4k_editor.c}}
+{{FILE:v4k_editor_scene.h}}
+{{FILE:v4k_editor_browser.h}}
+{{FILE:v4k_editor_timeline.h}}
+{{FILE:v4k_editor_console.h}}
+{{FILE:v4k_editor_nodes.h}}
+{{FILE:v4k_editor_script.h}}
 
 {{FILE:v4k_end.c}}

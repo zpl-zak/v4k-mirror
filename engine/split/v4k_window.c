@@ -424,7 +424,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
                 #define ddraw_progress_bar(JOB_ID, JOB_MAX, PERCENT) do { \
                    /* NDC coordinates (2d): bottom-left(-1,-1), center(0,0), top-right(+1,+1) */ \
                    float progress = (PERCENT+1) / 100.f; if(progress > 1) progress = 1; \
-                   float speed = progress < 1 ? 0.2f : 0.5f; \
+                   float speed = progress < 1 ? 0.05f : 0.75f; \
                    float smooth = previous[JOB_ID] = progress * speed + previous[JOB_ID] * (1-speed); \
                    \
                    float pixel = 2.f / window_height(), dist = smooth*2-1, y = pixel*3*JOB_ID; \

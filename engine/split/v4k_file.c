@@ -884,7 +884,7 @@ if( found && *found == 0 ) {
                 char *cmd = va("%scook" ifdef(osx,".osx",ifdef(linux,".linux",".exe"))" %s %s --cook-ini=%s --cook-additive --cook-jobs=1 --quiet", TOOLS, group1, group2, COOK_INI);
 
                 // cook groups
-                int rc = atoi(app_exec(cmd));
+                int rc = system(cmd); // atoi(app_exec(cmd));
                 if(rc < 0) PANIC("cannot invoke `%scook` (return code %d)", TOOLS, rc);
 
                 vfs_reload(); // @todo: optimize me. it is waaay inefficent to reload the whole VFS layout after cooking a single asset

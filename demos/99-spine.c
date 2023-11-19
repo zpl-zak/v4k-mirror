@@ -394,8 +394,8 @@ void spine_render(spine_t *p, vec3 offset, unsigned flags) {
                 float offsy = 0; // /*-(rect.z * p->texture.h)*2*/ -p->atlas[self->atlas_id].h - (self->rect_id ? p->skins[p->skin].rects[self->rect_id].h/2 : 0);
                 float deg_rect = self->rect_id ? p->skins[p->skin].rects[self->rect_id].deg : 0;
                 float tilt = p->atlas[self->atlas_id].deg + self->deg2 - deg_rect; // + self->deg2 + deg_rect + p->atlas[self->atlas_id].deg
-                unsigned tint = ~0u;
-                sprite_rect(p->texture, rect, zindex, add4(vec4(target.x,target.y,1,1),vec4(offsx,offsy,0,0)), tilt, tint);
+                unsigned tint = ~0u, flags = 0;
+                sprite_rect(p->texture, rect, vec4(target.x,target.y,0,zindex), vec4(1,1,offsx,offsy), tilt, tint, flags);
             }
          }
 
@@ -510,12 +510,9 @@ void ui_spine(spine_t *p) {
                     spine_atlas_t *r = p->atlas + b->atlas_id;
                     sprite_flush();
                     camera_get_active()->position = vec3(0,0,2);
-                            vec4 rect = ptr4(&r->x); float zindex = 0; vec3 xy_zoom = vec3(0,0,0); unsigned tint = ~0u;
-                            sprite_rect(p->texture,
-                                // rect: vec4(r->x*1.0/p->texture.w,r->y*1.0/p->texture.h,(r->x+r->w)*1.0/p->texture.w,(r->y+r->h)*1.0/p->texture.h),
-                                ptr4(&r->x), // atlas
-                                0, vec4(0,0,1,1), r->deg + tilt, tint);
-                            sprite_flush();
+                        vec4 rect = ptr4(&r->x); float zindex = 0; vec4 scale_offset = vec4(1,1,0,0);
+                        sprite_rect(p->texture, ptr4(&r->x), vec4(0,0,0,zindex), scale_offset, r->deg + tilt, ~0u, 0);
+                        sprite_flush();
                     camera_get_active()->position = vec3(+window_width()/3,window_height()/2.25,2);
                 }
             } 

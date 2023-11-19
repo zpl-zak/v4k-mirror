@@ -184,6 +184,16 @@ static char *ui_filter = 0;
 {{FILE:3rd_eval.h}}
 {{FILE:3rd_luadebugger.h}}
 {{FILE:3rd_base64.h}}
+
+#if ENABLE_RPMALLOC
+{{FILE:3rd_rpmalloc.h}}
+{{FILE:3rd_rpmalloc.c}}
+//{{FILE: 3rd_rpmalloci.c}}
+#define SYS_MEM_INIT()   rpmalloc_initialize()
+#define SYS_MEM_REALLOC  rprealloc
+#define SYS_MEM_SIZE     rpmalloc_usable_size
+#endif
+
 //#define SQLITE_OMIT_LOAD_EXTENSION
 //#define SQLITE_CORE 1
 //#define SQLITE_DEBUG 1
@@ -197,4 +207,13 @@ static char *ui_filter = 0;
 //#undef rehash
 //#undef NB
 //#undef threadid
+
+// editor
+{{FILE:3rd_icon_mdi.h}}
+// editor_script
+#define GLEQ_IMPLEMENTATION
+{{FILE:3rd_lite_sys_gleq.h}}
+{{FILE:3rd_lite_sys.h}}
+{{FILE:3rd_lite.h}}
+
 #endif // V4K_3RD

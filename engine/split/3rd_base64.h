@@ -26,7 +26,7 @@ unsigned base64_bounds(unsigned size) {
 
 char* base64_encode(const void *inp, unsigned inlen) { // free() after use
     unsigned outlen = base64_bounds(inlen);
-    char *out_ = malloc(outlen);
+    char *out_ = MALLOC(outlen);
     out_[outlen] = 0;
 
     uint_least32_t v;
@@ -43,21 +43,21 @@ char* base64_encode(const void *inp, unsigned inlen) { // free() after use
         while (rem >= 6) {
             rem -= 6;
             if (io >= outlen)
-                return (free(out_), 0); /* truncation is failure */
+                return (FREE(out_), NULL); /* truncation is failure */
             out[io ++] = base64enc_tab[(v >> rem) & 63];
         }
     }
     if (rem) {
         v <<= (6 - rem);
         if (io >= outlen)
-            return (free(out_), 0); /* truncation is failure */
+            return (FREE(out_), NULL); /* truncation is failure */
         out[io ++] = base64enc_tab[v & 63];
     }
     while(io&3) {
-        if(io>=outlen) return (free(out_), 0); /* truncation is failure */
+        if(io>=outlen) return (FREE(out_), NULL); /* truncation is failure */
         out[io++]='=';
     }
-    if(io>=outlen) return (free(out_), 0); /* no room for null terminator */
+    if(io>=outlen) return (FREE(out_), NULL); /* no room for null terminator */
     out[io]=0;
     return out_;
 }

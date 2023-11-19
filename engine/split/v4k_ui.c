@@ -1901,8 +1901,8 @@ int ui_color4f(const char *label, float *color) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3] }, before = after;
-    struct nk_colorf clamped = { clampf(color[0],0,1), clampf(color[1],0,1), clampf(color[2],0,1), clampf(color[3],0,1) };
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3]*ui_alpha }, before = after;
+    struct nk_colorf clamped = { clampf(after.r,0,1), clampf(after.g,0,1), clampf(after.b,0,1), clampf(after.a,0,1) };
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGB);
@@ -1989,8 +1989,8 @@ int ui_color3f(const char *label, float *color) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, ui_alpha }, before = after;
-    struct nk_colorf clamped = { clampf(color[0],0,1), clampf(color[1],0,1), clampf(color[2],0,1), 1 };
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3]*ui_alpha }, before = after;
+    struct nk_colorf clamped = { clampf(after.r,0,1), clampf(after.g,0,1), clampf(after.b,0,1), ui_alpha };
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGB);
@@ -2033,7 +2033,7 @@ int ui_color3(const char *label, unsigned *color) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { r*ui_alpha, g*ui_alpha, b*ui_alpha, 1 }, before = after;
+    struct nk_colorf after = { r*ui_alpha/255, g*ui_alpha/255, b*ui_alpha/255, ui_alpha }, before = after;
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(after), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
         after = nk_color_picker(ui_ctx, after, NK_RGB);
@@ -2695,8 +2695,10 @@ int ui_demo(int do_windows) {
     static float float2[2] = {1,2};
     static float float3[3] = {1,2,3};
     static float float4[4] = {1,2,3,4};
-    static float rgb[3] = {0.84,0.67,0.17};
-    static float rgba[4] = {0.67,0.90,0.12,1};
+    static float rgbf[3] = {0.84,0.67,0.17};
+    static float rgbaf[4] = {0.67,0.90,0.12,1};
+    static unsigned rgb = CYAN;
+    static unsigned rgba = PINK;
     static float slider = 0.5f;
     static float slider2 = 0.5f;
     static char string[64] = "hello world 123";
@@ -2740,8 +2742,10 @@ int ui_demo(int do_windows) {
         if( ui_list("my list", list, 3, &item ) ) puts("list changed");
 
         if( ui_section("Colors")) {}
-        if( ui_color3f("my color3", rgb) ) puts("color3 changed");
-        if( ui_color4f("my color4@this is a tooltip", rgba) ) puts("color4 changed");
+        if( ui_color3("my color3", &rgb) ) puts("color3 changed");
+        if( ui_color4("my color4@this is a tooltip", &rgba) ) puts("color4 changed");
+        if( ui_color3f("my color3f", rgbf) ) puts("color3f changed");
+        if( ui_color4f("my color4f@this is a tooltip", rgbaf) ) puts("color4f changed");
 
         if( ui_section("Sliders")) {}
         if( ui_slider("my slider", &slider)) puts("slider changed");

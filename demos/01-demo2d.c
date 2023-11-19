@@ -32,7 +32,7 @@ void demo_kids(vec3 offs) {
             spritesheet,        // num_frame in a 4x4 spritesheet
             position, 0,        // position(x,y,depth:sort-by-Y), angle
             offset, scale,      // offset(x,y), scale(x,y)
-            false, WHITE, false // is_additive, tint color, resolution-independent
+            WHITE, 0       // tint_color, no flags
         );
     }
 }
@@ -43,7 +43,7 @@ void demo_hud() {
     float spritesheet[3] = {17,34,24}, offset[2] = {0, - 2*absf(sin(window_time()*5))}; // sprite cell and animation
     float scale[2] = {3, 3}, tile_w = 16 * scale[0], tile_h = 16 * scale[1]; // scaling
     float position[3] = {window_width() - tile_w, window_height() - tile_h, window_height() }; // position in screen-coordinates (x,y,z-index)
-    sprite_sheet(inputs, spritesheet, position, 0/*deg*/, offset, scale, false, WHITE, 1);
+    sprite_sheet(inputs, spritesheet, position, 0/*deg*/, offset, scale, WHITE, SPRITE_RESOLUTION_INDEPENDANT);
 }
 
 int main() {
@@ -140,7 +140,7 @@ int main() {
             ui_panel_end();
         }
         /*if( ui_panel("Spine", 0)) {
-            spine_ui(spn);
+            ui_spine(spn);
             ui_panel_end();
         }*/
     }

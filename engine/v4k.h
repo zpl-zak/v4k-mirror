@@ -95,7 +95,7 @@ extern "C" {
 //-----------------------------------------------------------------------------
 // Headers
 
-#line 1 "engine/split/v4k_config.h"
+#line 1 "v4k_config.h"
 // -----------------------------------------------------------------------------
 // config directives
 
@@ -510,7 +510,7 @@ typedef char bool;
 #endif
 #line 0
 
-#line 1 "engine/split/v4k_ds.h"
+#line 1 "v4k_ds.h"
 // data structures and utils: array, set, map, hash, sort.
 // - rlyeh, public domain
 
@@ -949,7 +949,7 @@ API bool  (map_sort)(map* m);
 API void  (map_clear)(map* m);
 #line 0
 
-#line 1 "engine/split/v4k_math.h"
+#line 1 "v4k_math.h"
 // -----------------------------------------------------------------------------
 // math framework: rand, ease, vec2, vec3, vec4, quat, mat2, mat33, mat34, mat4
 // - rlyeh, public domain
@@ -1230,7 +1230,7 @@ API void print34( float *m );
 API void print44( float *m );
 #line 0
 
-#line 1 "engine/split/v4k_obj.h"
+#line 1 "v4k_obj.h"
 // -----------------------------------------------------------------------------
 // factory of handle ids
 
@@ -1394,6 +1394,7 @@ void*   obj_free(void *o);
 // --- syntax sugars
 
 #define obj_extend(T,method)       (obj_##method[OBJTYPE(T)] = (void*)T##_##method)
+#define obj_extend_t(T,method)     (obj_##method[OBJTYPE(T##_t)] = (void*)T##_##method)
 #define obj_method(method,o,...)   (obj_##method[((struct obj*)(o))->objtype](o,##__VA_ARGS__)) // (obj_##method[((struct obj*)(o))->objtype]((o), ##__VA_ARGS__))
 #define obj_hasmethod(o,method)    (obj_typeid(o)[obj_##method])
 
@@ -1416,6 +1417,17 @@ void*   obj_free(void *o);
 #define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8)
 #define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9)
 
+#define EXTEND_T(...) EXPAND(EXTEND_T, __VA_ARGS__)
+#define EXTEND_T2(o,F1) obj_extend_t(o,F1)
+#define EXTEND_T3(o,F1,F2) obj_extend_t(o,F1), obj_extend_t(o,F2)
+#define EXTEND_T4(o,F1,F2,F3) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3)
+#define EXTEND_T5(o,F1,F2,F3,F4) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4)
+#define EXTEND_T6(o,F1,F2,F3,F4,F5) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5)
+#define EXTEND_T7(o,F1,F2,F3,F4,F5,F6) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6)
+#define EXTEND_T8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7)
+#define EXTEND_T9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8)
+#define EXTEND_T10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8), obj_extend_t(o,F9)
+
 // --- declare vtables
 
 API extern void  (*obj_ctor[256])(); ///-
@@ -1433,6 +1445,8 @@ API extern int   (*obj_draw[256])(); ///-
 API extern int   (*obj_lerp[256])(); ///-
 API extern int   (*obj_edit[256])(); ///-
 API extern int   (*obj_aabb[256])(); ///-
+
+API extern const char*OBJTYPES[256]; /// -
 
 // ----------------------------------------------------------------------------
 // core
@@ -1578,7 +1592,7 @@ typedef enum OBJTYPE_BUILTINS {
 #line 0
 
 
-#line 1 "engine/split/v4k_ai.h"
+#line 1 "v4k_ai.h"
 // AI framework
 // - rlyeh, public domain.
 //
@@ -1663,7 +1677,7 @@ API void    swarm_update_acceleration_and_velocity_only(swarm_t *self, float del
 API int     ui_swarm(swarm_t *self);
 #line 0
 
-#line 1 "engine/split/v4k_audio.h"
+#line 1 "v4k_audio.h"
 // -----------------------------------------------------------------------------
 // audio framework
 // - rlyeh, public domain
@@ -1724,7 +1738,7 @@ enum AUDIO_FLAGS {
 API int audio_queue( const void *samples, int num_samples, int flags );
 #line 0
 
-#line 1 "engine/split/v4k_collide.h"
+#line 1 "v4k_collide.h"
 // -----------------------------------------------------------------------------
 // original code by @vurtun (PD) and @barerose (CC0).
 // [src] https://gist.github.com/vurtun/95f088e4889da2474ad1ce82d7911fee
@@ -1885,7 +1899,7 @@ API poly    diamond(vec3 from, vec3 to, float size); // poly_free() required
 API void    collide_demo(); // debug draw collisions
 #line 0
 
-#line 1 "engine/split/v4k_cook.h"
+#line 1 "v4k_cook.h"
 // -----------------------------------------------------------------------------
 // asset pipeline framework
 // - rlyeh, public domain.
@@ -1921,7 +1935,7 @@ API int  cook_progress(); // [0..100]
 API bool have_tools();
 #line 0
 
-#line 1 "engine/split/v4k_data.h"
+#line 1 "v4k_data.h"
 // -----------------------------------------------------------------------------
 // data framework (json5, xml, compression) @todo:kvdb
 // - rlyeh, public domain
@@ -1960,7 +1974,7 @@ API void            xml_pop();
 API bool data_tests();
 #line 0
 
-#line 1 "engine/split/v4k_extend.h"
+#line 1 "v4k_extend.h"
 // dll ------------------------------------------------------------------------
 
 /// !!! `filename` must contain extension
@@ -1997,54 +2011,7 @@ enum {
 API void *script_init_env(unsigned flags);
 #line 0
 
-#line 1 "engine/split/v4k_editor.h"
-// -----------------------------------------------------------------------------
-// in-game editor
-// - rlyeh, public domain.
-//
-// @todo: merge editor1.c and editor3.c internals into this api
-
-//API void  editor();
-//API bool  editor_active();
-API vec3   editor_pick(float mouse_x, float mouse_y);
-API char*  editor_path(const char *path);
-
-API float* engine_getf(const char *key);
-API int*   engine_geti(const char *key);
-API char** engine_gets(const char *key);
-API int    engine_send(const char *cmd, const char *optional_value);
-
-API int    ui_debug();
-
-// open file dialog
-
-API char* dialog_load();
-API char* dialog_save();
-
-// transform gizmos
-
-API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-API bool  gizmo_active();
-API bool  gizmo_hover();
-
-// localization kit (I18N, L10N)
-
-API bool  kit_load( const char *filename ); // load translations file (xlsx)
-API bool  kit_merge( const char *filename ); // merge translations file into existing context
-API void  kit_insert( const char *id, const char *translation ); // insert single translation unit
-API void  kit_clear(); // delete all translations
-
-API void  kit_set( const char *variable, const char *value ); // set context variable
-API void  kit_reset(); // reset all variables in context
-API void  kit_dump_state( FILE *fp ); // debug
-
-API char* kit_translate2( const char *id, const char *langcode_iso639_1 ); // perform a translation given explicit locale
-
-API void  kit_locale( const char *langcode_iso639_1 ); // set current locale: enUS, ptBR, esES, ...
-API char* kit_translate( const char *id ); // perform a translation, given current locale
-#line 0
-
-#line 1 "engine/split/v4k_file.h"
+#line 1 "v4k_file.h"
 // -----------------------------------------------------------------------------
 // files, cache and virtual filesystem (registered directories and/or compressed zip archives).
 // - rlyeh, public domain.
@@ -2144,7 +2111,7 @@ API void         ini_destroy(ini_t);
 API bool         ini_write(const char *filename, const char *section, const char *key, const char *value);
 #line 0
 
-#line 1 "engine/split/v4k_font.h"
+#line 1 "v4k_font.h"
 // -----------------------------------------------------------------------------
 // font framework
 // - rlyeh, public domain
@@ -2236,7 +2203,7 @@ API void* font_colorize(const char *text, const char *comma_types, const char *c
 API vec2  font_highlight(const char *text, const void *colors);
 #line 0
 
-#line 1 "engine/split/v4k_input.h"
+#line 1 "v4k_input.h"
 // -----------------------------------------------------------------------------
 // input framework
 // - rlyeh, public domain
@@ -2363,7 +2330,7 @@ enum INPUT_ALIASES {
 };
 #line 0
 
-#line 1 "engine/split/v4k_memory.h"
+#line 1 "v4k_memory.h"
 // -----------------------------------------------------------------------------
 // memory framework
 // - rlyeh, public domain
@@ -2403,7 +2370,7 @@ static FORCE_INLINE void *(CALLOC_)(size_t m, size_t n) { return n *= m, memset(
 static FORCE_INLINE char *(STRDUP_)(const char *s) { size_t n = strlen(s)+1; return ((char*)memcpy(REALLOC(0,n), s, n)); } ///-
 #line 0
 
-#line 1 "engine/split/v4k_network.h"
+#line 1 "v4k_network.h"
 // -----------------------------------------------------------------------------
 // network framework
 // - rlyeh, public domain
@@ -2455,7 +2422,7 @@ API int   tcp_debug(int); // toggle traffic monitoring on/off for given socket
 //API int   tcp_crypt(int,uint64_t);               // set shared secret
 #line 0
 
-#line 1 "engine/split/v4k_track.h"
+#line 1 "v4k_track.h"
 #ifndef TRACK_SEND_BUFSIZE
 #define TRACK_SEND_BUFSIZE 576
 #endif
@@ -2516,7 +2483,7 @@ typedef struct track_prop {
 API int track_event_props(char const *event_id, char const *user_id, const track_prop *props);
 #line 0
 
-#line 1 "engine/split/v4k_netsync.h"
+#line 1 "v4k_netsync.h"
 // high-level, socket-less networking api. inspired by Quake, MPI and RenderBuckets theories.
 // - rlyeh, public domain
 //
@@ -2602,7 +2569,7 @@ API int64_t  client_join(const char *ip, int port);
 #define LOCALHOST_IPV6 "::1"
 #line 0
 
-#line 1 "engine/split/v4k_pack.h"
+#line 1 "v4k_pack.h"
 // ----------------------------------------------------------------------------
 // compression api
 
@@ -2731,25 +2698,25 @@ typedef struct double2 { double x,y; } double2;
 typedef struct double3 { double x,y,z; } double3;
 typedef struct double4 { double x,y,z,w; } double4;
 
-#define byte2(x,y)       M_CAST(byte2, (uint8_t)(x), (uint8_t)(y) )
-#define byte3(x,y,z)     M_CAST(byte3, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z) )
-#define byte4(x,y,z,w)   M_CAST(byte4, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z), (uint8_t)(w) )
+#define byte2(x,y)       C_CAST(byte2, (uint8_t)(x), (uint8_t)(y) )
+#define byte3(x,y,z)     C_CAST(byte3, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z) )
+#define byte4(x,y,z,w)   C_CAST(byte4, (uint8_t)(x), (uint8_t)(y), (uint8_t)(z), (uint8_t)(w) )
 
-#define int2(x,y)        M_CAST(int2, (int)(x), (int)(y) )
-#define int3(x,y,z)      M_CAST(int3, (int)(x), (int)(y), (int)(z) )
-#define int4(x,y,z,w)    M_CAST(int4, (int)(x), (int)(y), (int)(z), (int)(w) )
+#define int2(x,y)        C_CAST(int2, (int)(x), (int)(y) )
+#define int3(x,y,z)      C_CAST(int3, (int)(x), (int)(y), (int)(z) )
+#define int4(x,y,z,w)    C_CAST(int4, (int)(x), (int)(y), (int)(z), (int)(w) )
 
-#define uint2(x,y)       M_CAST(uint2, (unsigned)(x), (unsigned)(y) )
-#define uint3(x,y,z)     M_CAST(uint3, (unsigned)(x), (unsigned)(y), (unsigned)(z) )
-#define uint4(x,y,z,w)   M_CAST(uint4, (unsigned)(x), (unsigned)(y), (unsigned)(z), (unsigned)(w) )
+#define uint2(x,y)       C_CAST(uint2, (unsigned)(x), (unsigned)(y) )
+#define uint3(x,y,z)     C_CAST(uint3, (unsigned)(x), (unsigned)(y), (unsigned)(z) )
+#define uint4(x,y,z,w)   C_CAST(uint4, (unsigned)(x), (unsigned)(y), (unsigned)(z), (unsigned)(w) )
 
-#define float2(x,y)      M_CAST(float2, (float)(x), (float)(y) )
-#define float3(x,y,z)    M_CAST(float3, (float)(x), (float)(y), (float)(z) )
-#define float4(x,y,z,w)  M_CAST(float4, (float)(x), (float)(y), (float)(z), (float)(w) )
+#define float2(x,y)      C_CAST(float2, (float)(x), (float)(y) )
+#define float3(x,y,z)    C_CAST(float3, (float)(x), (float)(y), (float)(z) )
+#define float4(x,y,z,w)  C_CAST(float4, (float)(x), (float)(y), (float)(z), (float)(w) )
 
-#define double2(x,y)     M_CAST(double2, (double)(x), (double)(y) )
-#define double3(x,y,z)   M_CAST(double3, (double)(x), (double)(y), (double)(z) )
-#define double4(x,y,z,w) M_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )
+#define double2(x,y)     C_CAST(double2, (double)(x), (double)(y) )
+#define double3(x,y,z)   C_CAST(double3, (double)(x), (double)(y), (double)(z) )
+#define double4(x,y,z,w) C_CAST(double4, (double)(x), (double)(y), (double)(z), (double)(w) )
 
 // -----------------------------------------------------------------------------
 // compile-time fourcc, eightcc
@@ -2994,7 +2961,7 @@ API int loadb(const unsigned char *buf, const char *format, ...);
 
 #line 0
 
-#line 1 "engine/split/v4k_profile.h"
+#line 1 "v4k_profile.h"
 // -----------------------------------------------------------------------------
 // profiler & stats (@fixme: threadsafe)
 
@@ -3026,7 +2993,7 @@ extern API int profiler_enabled; ///-
 #endif
 #line 0
 
-#line 1 "engine/split/v4k_reflect.h"
+#line 1 "v4k_reflect.h"
 // C reflection: enums, functions, structs, members and anotations.
 // - rlyeh, public domain
 //
@@ -3093,7 +3060,7 @@ API const char*        symbol_naked(const char *s);
 API int                ui_reflect(const char *mask); // *, model* or NULL
 #line 0
 
-#line 1 "engine/split/v4k_render.h"
+#line 1 "v4k_render.h"
 // -----------------------------------------------------------------------------
 // naive rendering framework
 // - rlyeh, public domain
@@ -3278,82 +3245,6 @@ API void fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
 API void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
 API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
 API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma );
-
-// -----------------------------------------------------------------------------
-// sprites
-
-// texture id, position(x,y,depth sort), tint color, rotation angle
-API void sprite( texture_t texture, float position[3], float rotation /*0*/, uint32_t color /*~0u*/);
-
-// texture id, rect(x,y,w,h) is [0..1] normalized, z-index, pos(xy,scale.xy), rotation (degrees), color (rgba)
-API void sprite_rect( texture_t t, vec4 rect, float zindex, vec4 pos, float tilt_deg, unsigned tint_rgba);
-
-// texture id, sheet(frameNumber,X,Y) (frame in a X*Y spritesheet), position(x,y,depth sort), rotation angle, offset(x,y), scale(x,y), is_additive, tint color
-API void sprite_sheet( texture_t texture, float sheet[3], float position[3], float rotation, float offset[2], float scale[2], int is_additive, uint32_t rgba, int resolution_independant);
-
-API void sprite_flush();
-
-// -----------------------------------------------------------------------------
-// tilemaps
-
-typedef struct tileset_t {
-    texture_t tex;            // spritesheet
-    unsigned tile_w, tile_h;  // dimensions per tile in pixels
-    unsigned cols, rows;      // tileset num_cols, num_rows
-    unsigned selected;        // active tile (while editing)
-} tileset_t;
-
-API tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols, unsigned rows);
-
-API int       ui_tileset( tileset_t t );
-
-typedef struct tilemap_t {
-    int blank_chr;                // transparent tile
-    unsigned cols, rows;          // map dimensions (in tiles)
-    array(int) map;
-
-    vec3 position;                // x,y,scale
-    float zindex;
-    float tilt;
-    unsigned tint;
-    bool is_additive;
-} tilemap_t;
-
-API tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
-API void      tilemap_render( tilemap_t m, tileset_t style );
-API void      tilemap_render_ext( tilemap_t m, tileset_t style, float zindex, float xy_zoom[3], float tilt, unsigned tint, bool is_additive );
-
-// -----------------------------------------------------------------------------
-// tiled maps
-
-typedef struct tiled_t {
-    char *map_name;
-    unsigned first_gid, tilew, tileh, w, h;
-
-    bool parallax;
-    vec3 position;
-    array(bool) visible;
-    array(tilemap_t) layers;
-    array(tileset_t) sets;
-    array(char*) names;
-} tiled_t;
-
-API tiled_t tiled(const char *file_tmx);
-API void    tiled_render(tiled_t tmx, vec3 pos);
-
-API void    ui_tiled(tiled_t *t);
-
-// -----------------------------------------------------------------------------
-// spines
-
-typedef struct spine_t spine_t;
-
-API spine_t*spine(const char *file_json, const char *file_atlas, unsigned flags);
-API void    spine_skin(spine_t *p, unsigned skin);
-API void    spine_render(spine_t *p, vec3 offset, unsigned flags);
-API void    spine_animate(spine_t *p, float delta);
-
-API void    ui_spine(spine_t *p);
 
 // -----------------------------------------------------------------------------
 // cubemaps
@@ -3801,7 +3692,7 @@ API void*    screenshot(int components); // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 API void*    screenshot_async(int components); // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 #line 0
 
-#line 1 "engine/split/v4k_renderdd.h"
+#line 1 "v4k_renderdd.h"
 // -----------------------------------------------------------------------------
 // debugdraw framework
 // - rlyeh, public domain.
@@ -3868,7 +3759,7 @@ API void ddraw_flush();
 API void ddraw_flush_projview(mat44 proj, mat44 view);
 #line 0
 
-#line 1 "engine/split/v4k_scene.h"
+#line 1 "v4k_scene.h"
 // -----------------------------------------------------------------------------
 // scene framework
 // - rlyeh, public domain
@@ -4005,7 +3896,124 @@ API unsigned  scene_count_light();
 API light_t*  scene_index_light(unsigned index);
 #line 0
 
-#line 1 "engine/split/v4k_string.h"
+#line 1 "v4k_sprite.h"
+// -----------------------------------------------------------------------------
+// sprites
+
+typedef enum SPRITE_FLAGS {
+    SPRITE_PROJECTED = 1,
+    SPRITE_ADDITIVE = 2,
+    SPRITE_CENTERED = 4,
+    SPRITE_RESOLUTION_INDEPENDANT = 128,
+} SPRITE_FLAGS;
+
+// texture id, position(x,y,depth sort), tint color, rotation angle
+API void sprite( texture_t texture, float position[3], float rotation /*0*/, unsigned color /*~0u*/, unsigned flags);
+
+// texture id, rect(x,y,w,h) is [0..1] normalized, then: pos(xyz,z-index), (scale.xy,offset.xy), rotation (degrees), color (rgba)
+API void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+
+// texture id, sheet(frameNumber,X,Y) (frame in a X*Y spritesheet), position(x,y,depth sort), rotation angle, offset(x,y), scale(x,y), is_additive, tint color
+API void sprite_sheet( texture_t texture, float sheet[3], float position[3], float rotation, float offset[2], float scale[2], unsigned rgba, unsigned flags);
+
+API void sprite_flush();
+
+// -----------------------------------------------------------------------------
+// tilemaps
+
+typedef struct tileset_t {
+    texture_t tex;            // spritesheet
+    unsigned tile_w, tile_h;  // dimensions per tile in pixels
+    unsigned cols, rows;      // tileset num_cols, num_rows
+    unsigned selected;        // active tile (while editing)
+} tileset_t;
+
+API tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols, unsigned rows);
+
+API int       ui_tileset( tileset_t t );
+
+typedef struct tilemap_t {
+    int blank_chr;                // transparent tile
+    unsigned cols, rows;          // map dimensions (in tiles)
+    array(int) map;
+
+    vec3 position;                // x,y,scale
+    float zindex;
+    float tilt;
+    unsigned tint;
+    bool is_additive;
+} tilemap_t;
+
+API tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
+API void      tilemap_render( tilemap_t m, tileset_t style );
+API void      tilemap_render_ext( tilemap_t m, tileset_t style, float zindex, float xy_zoom[3], float tilt, unsigned tint, bool is_additive );
+
+// -----------------------------------------------------------------------------
+// tiled maps
+
+typedef struct tiled_t {
+    char *map_name;
+    unsigned first_gid, tilew, tileh, w, h;
+
+    bool parallax;
+    vec3 position;
+    array(bool) visible;
+    array(tilemap_t) layers;
+    array(tileset_t) sets;
+    array(char*) names;
+} tiled_t;
+
+API tiled_t tiled(const char *file_tmx);
+API void    tiled_render(tiled_t tmx, vec3 pos);
+
+API void    ui_tiled(tiled_t *t);
+
+// -----------------------------------------------------------------------------
+// spines
+
+typedef struct spine_t spine_t;
+
+API spine_t*spine(const char *file_json, const char *file_atlas, unsigned flags);
+API void    spine_skin(spine_t *p, unsigned skin);
+API void    spine_render(spine_t *p, vec3 offset, unsigned flags);
+API void    spine_animate(spine_t *p, float delta);
+
+API void    ui_spine(spine_t *p);
+
+// ----------------------------------------------------------------------------
+// sprite v2 api
+
+typedef struct sprite_t { OBJ
+    vec4 gamepad; // up,down,left,right
+    vec2 fire;    // a,b
+
+    vec4 pos;
+    vec2 sca;
+    float tilt;
+    unsigned tint;
+    unsigned frame;
+    unsigned timer, timer_ms;
+    unsigned flip_, flipped;
+    unsigned play;
+    bool paused;
+    // array(unsigned) play_queue; or unsigned play_next;
+    struct atlas_t *a; // shared
+    //atlas_t own; // owned
+} sprite_t;
+
+OBJTYPEDEF(sprite_t,10);
+API void     sprite_ctor(sprite_t *s);
+API void     sprite_dtor(sprite_t *s);
+API void     sprite_tick(sprite_t *s);
+API void     sprite_draw(sprite_t *s);
+API void     sprite_edit(sprite_t *s);
+
+API sprite_t*sprite_new(const char *ase, int bindings[6]);
+API void     sprite_del(sprite_t *s);
+API void     sprite_setanim(sprite_t *s, unsigned name);
+#line 0
+
+#line 1 "v4k_string.h"
 // string framework
 // - rlyeh, public domain
 
@@ -4098,9 +4106,26 @@ typedef struct quarks_db {
 
 API unsigned    quark_intern( quarks_db*, const char *string );
 API const char *quark_string( quarks_db*, unsigned key );
+
+// -----------------------------------------------------------------------------
+// ## localization kit (I18N, L10N)
+
+API bool  kit_load( const char *filename ); // load translations file (xlsx)
+API bool  kit_merge( const char *filename ); // merge translations file into existing context
+API void  kit_insert( const char *id, const char *translation ); // insert single translation unit
+API void  kit_clear(); // delete all translations
+
+API void  kit_set( const char *variable, const char *value ); // set context variable
+API void  kit_reset(); // reset all variables in context
+API void  kit_dump_state( FILE *fp ); // debug
+
+API char* kit_translate2( const char *id, const char *langcode_iso639_1 ); // perform a translation given explicit locale
+
+API void  kit_locale( const char *langcode_iso639_1 ); // set current locale: enUS, ptBR, esES, ...
+API char* kit_translate( const char *id ); // perform a translation, given current locale
 #line 0
 
-#line 1 "engine/split/v4k_system.h"
+#line 1 "v4k_system.h"
 // -----------------------------------------------------------------------------
 // system framework utils
 // - rlyeh, public domain.
@@ -4187,7 +4212,7 @@ API int (test)(const char *file, int line, const char *expr, bool result);
 #endif
 #line 0
 
-#line 1 "engine/split/v4k_time.h"
+#line 1 "v4k_time.h"
 // -----------------------------------------------------------------------------
 // time framework utils
 
@@ -4346,7 +4371,7 @@ API vec3       curve_eval(curve_t *c, float dt, unsigned *color);
 API void    curve_destroy(curve_t *c);
 #line 0
 
-#line 1 "engine/split/v4k_ui.h"
+#line 1 "v4k_ui.h"
 // -----------------------------------------------------------------------------
 // immediate ui framework
 // - rlyeh, public domain
@@ -4440,7 +4465,7 @@ API int ui_demo(int do_windows);
 API void *ui_handle();
 #line 0
 
-#line 1 "engine/split/v4k_video.h"
+#line 1 "v4k_video.h"
 // -----------------------------------------------------------------------------
 // video decoder (mpeg)
 // - rlyeh, public domain
@@ -4483,7 +4508,7 @@ API bool        record_active();
 API void       record_stop(void);
 #line 0
 
-#line 1 "engine/split/v4k_window.h"
+#line 1 "v4k_window.h"
 // -----------------------------------------------------------------------------
 // window framework
 // - rlyeh, public domain
@@ -4583,6 +4608,39 @@ API void     window_cursor_shape(unsigned shape);
 
 API const char *window_clipboard();
 API void        window_setclipboard(const char *text);
+#line 0
+
+// ----
+
+#line 1 "v4k_editor.h"
+// -----------------------------------------------------------------------------
+// in-game editor
+// - rlyeh, public domain.
+
+API int editor_send(const char *command);
+
+//API void  editor();
+//API bool  editor_active();
+API vec3   editor_pick(float mouse_x, float mouse_y);
+API char*  editor_path(const char *path);
+
+API float* engine_getf(const char *key);
+API int*   engine_geti(const char *key);
+API char** engine_gets(const char *key);
+API int    engine_send(const char *cmd, const char *optional_value);
+
+API int    ui_debug();
+
+// open file dialog
+
+API char* dialog_load();
+API char* dialog_save();
+
+// transform gizmos
+
+API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+API bool  gizmo_active();
+API bool  gizmo_hover();
 #line 0
 
 // ----

@@ -124,6 +124,11 @@ char* strcatf(char **src_, const char *fmt, ...) {
 #define ATLASC_IMPLEMENTATION
 #include "3rd_atlasc.h"
 
+#if   defined _WIN32 && defined _MSC_VER
+__declspec(dllexport)
+#elif defined _WIN32 && defined __GNUC__
+__attribute__ ((dllexport))
+#endif
 
 int main(int argc, char* argv[]) {
     const char *help =
@@ -213,12 +218,13 @@ int main(int argc, char* argv[]) {
     }
 
     for( int i = 0; i < array_count(files); ++i)
-        free(files[i]);
+        ATLAS_FREE(files[i], 0);
     array_free(files);
 
     return error ? fprintf(stderr, "%s\n", error), -1 : 0;
 }
 
 // cl  ase2ini.c -I ..\engine\split /DNDEBUG /O2 /Ox /MT
+// cl  ase2ini.c -I ..\engine\split /DNDEBUG /O2 /Ox /MT /LD
 // tcc ase2ini.c -I ..\engine\split -DNDEBUG
 // cc  ase2ini.c -I ../engine/split -lm -O3 -oase2ini.linux 

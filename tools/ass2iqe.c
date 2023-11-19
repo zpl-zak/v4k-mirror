@@ -1,7 +1,7 @@
 // License: BSD unless otherwise stated.
 // https://github.com/ccxvii/asstools
 
-char* base64_encode(const void *inbuffer, unsigned inlen);
+#include "3rd_base64.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -870,7 +870,6 @@ void export_animlist(FILE *out, const struct aiScene *scene)
         fprintf(out, "frame: %s\n", "0-0 Idle");
 }
 
-
 /*
  * For multi-mesh models, sometimes each mesh has its own inv_bind_matrix set
  * for each bone. To export to IQE we must have only one inv_bind_matrix per
@@ -1540,49 +1539,3 @@ flags |= (doflipUV ? aiProcess_FlipUVs : 0);
     return 0;
 }
 
-// base64 de/encoder. Based on code by Jon Mayo - November 13, 2003 (PUBLIC DOMAIN).
-// - rlyeh, public domain
-
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <ctype.h>
-
-unsigned base64_bounds(unsigned size) {
-    return 4 * ((size + 2) / 3);
-}
-
-char* base64_encode(const void *in_, unsigned inlen) {
-    unsigned outlen = base64_bounds(inlen);
-    char *out_ = calloc(1, outlen);
-
-    uint_least32_t v;
-    unsigned ii, io, rem;
-    char *out = (char *)out_;
-    const unsigned char *in = (const unsigned char *)in_;
-    const uint8_t base64enc_tab[]= "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-
-    for(io = 0, ii = 0, v = 0, rem = 0; ii < inlen; ii ++) {
-        unsigned char ch;
-        ch = in[ii];
-        v = (v << 8) | ch;
-        rem += 8;
-        while (rem >= 6) {
-            rem -= 6;
-            if (io >= outlen)
-                return (free(out_), 0); /* truncation is failure */
-            out[io ++] = base64enc_tab[(v >> rem) & 63];
-        }
-    }
-    if (rem) {
-        v <<= (6 - rem);
-        if (io >= outlen)
-            return (free(out_), 0); /* truncation is failure */
-        out[io ++] = base64enc_tab[v & 63];
-    }
-    if (io < outlen)
-        out[io] = 0;
-
-    return out_;
-}

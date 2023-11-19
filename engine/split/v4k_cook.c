@@ -11,7 +11,7 @@
 
 const char *ART = "art/";
 const char *TOOLS = "tools/bin/";
-const char *EDITOR = "tools/editor/";
+const char *EDITOR = "tools/";
 const char *COOK_INI = "tools/cook.ini";
 
 static unsigned ART_SKIP_ROOT; // number of chars to skip the base root in ART folder
@@ -508,11 +508,14 @@ int cook(void *userdata) {
         fclose(in);
     }
 
+//  if(array_count(uncooked))
+//  PRINTF("cook_jobs[%d]=%d\n", job->threadid, array_count(uncooked));
+
     // generate cook metrics. you usually do `game.exe --cook-stats && (type *.csv | sort /R > cook.csv)`
     static __thread FILE *statsfile = 0;
     if(flag("--cook-stats"))
     fseek(statsfile = fopen(va("cook%d.csv",job->threadid), "a+t"), 0L, SEEK_END);
-    if(statsfile && ftell(statsfile) == 0) fprintf(statsfile,"%10s,%10s,%10s,%10s,%10s, %s\n","+total_ms","gen_ms","exe_ms","zip_ms","pass","file");
+    if(statsfile && !job->threadid && ftell(statsfile) == 0) fprintf(statsfile,"%10s,%10s,%10s,%10s,%10s, %s\n","+total_ms","gen_ms","exe_ms","zip_ms","pass","file");
 
     // added or changed files
     for( int i = 0, end = array_count(uncooked); i < end && !cook_cancelling; ++i ) {
@@ -825,10 +828,8 @@ void cook_stop() {
 int cook_progress() {
     int count = 0, sum = 0;
     for( int i = 0, end = cook_jobs(); i < end; ++i ) {
-//        if( jobs[i].progress >= 0 ) {
             sum += jobs[i].progress;
             ++count;
-//        }
     }
     return cook_jobs() ? sum / (count+!count) : 100;
 }

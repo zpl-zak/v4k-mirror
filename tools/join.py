@@ -35,7 +35,7 @@ def process_command(name, value):
         file_path = os.path.join(input_path, value)
         print("Appending file: " + value)
         with open(file_path, "r") as file:
-            res = "#line 1 \"engine/split/" + value + "\"\n"
+            res = "#line 1 \"" + value + "\"\n"
             res += file.read()
             res += "#line 0"
             return res
