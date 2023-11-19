@@ -300,7 +300,7 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
         }
 
         // if script was generated...
-        if( script && script[0]) {
+        if( script && script[0] && strstr(script, ifdef(win32, file_normalize(va("%s",infile)), infile )) ) {
             // update outfile
             cs.outfile = *OUTPUT;
 

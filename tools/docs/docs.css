@@ -584,6 +584,22 @@ details > summary::-webkit-details-marker {
 .hljs-class .hljs-title {color: #00FFC0;}
 .md code { color: rgb(255,255,235); } /* default unclassified #text and punctuation */
 
+#id {
+    width: 100%;
+    text-align: center;
+    display: inline-block;
+}
+
+#id img {
+    width: 256px;
+    transform: translateX(-50%);
+    position: absolute;
+    display: inline-block;
+}
+
 </style>
 
-       **V·4·K**
+       <div id="logo">
+        <img src="https://v4k.dev/logo.png" alt="v4k logo"/>
+        <p>Our go-to framework for game development is fully hackable, FOSS!</p>
+        </div>
