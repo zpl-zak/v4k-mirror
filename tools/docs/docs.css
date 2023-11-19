@@ -599,6 +599,9 @@ details > summary::-webkit-details-marker {
 
 </style>
 
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
        <div id="logo">
         <img src="https://v4k.dev/logo.png" alt="v4k logo"/>
         <p>Our go-to framework for game development is fully hackable, FOSS!</p>

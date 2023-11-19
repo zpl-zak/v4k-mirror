@@ -11,6 +11,7 @@ if "%1"=="help" (
     echo %0 [help]                  ; show this screen
     echo %0 [docs]                  ; generate tools/docs/docs.html file
     echo %0 [cook]                  ; cook .zipfiles with tools/cook.ini cookbook
+    echo %0 [build_cook]            ; build cook tool in release mode
     echo %0 [sync]                  ; sync repo to latest
     echo %0 [fwk_prep]              ; prepare files for fwk PR
     echo %0 [fwk]                   ; update fwk-mirror fork
