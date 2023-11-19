@@ -47,7 +47,7 @@ workspace "project"
 project "engine"
     language "C"
     kind "SharedLib"
-    files {"../engine/fwk.c","../engine/fwk.h"}
+    files {"../engine/v4k.c","../engine/v4k.h"}
     includedirs {"../engine/"}
     defines {"API=EXPORT"}
 

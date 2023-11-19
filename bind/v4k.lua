@@ -1118,18 +1118,6 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC poly    diamond(vec3 from, vec3 to, float size);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: poly    diamond(vec3 from, vec3 to, float size);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: poly    diamond(vec3 from, vec3 to, float size);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3  editor_pick(float mouse_x, float mouse_y);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3  editor_pick(float mouse_x, float mouse_y);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: vec3  editor_pick(float mouse_x, float mouse_y);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
 //lcpp INF [0000] map: macro name but used as C declaration in:typedef struct { map base; struct { pair p; char* key; char* val; } tmp, *ptr; char** tmpval;          int (*typed_cmp)(char*, char*); uint64_t (*typed_hash)(char*); } * ini_t;
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2  font_xy();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2  font_xy();
@@ -1194,15 +1182,15 @@ ffi.cdef([[
 //lcpp INF [0000] vec4: macro name but used as C declaration in:API char* ftoa4(vec4  v);
 //lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC char* ftoa4(vec4  v);
 //lcpp INF [0000] vec4: macro name but used as C declaration in: char* ftoa4(vec4  v);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 atof2(const char *s);
-//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 atof2(const char *s);
-//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 atof2(const char *s);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3 atof3(const char *s);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3 atof3(const char *s);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: vec3 atof3(const char *s);
-//lcpp INF [0000] vec4: macro name but used as C declaration in:API vec4 atof4(const char *s);
-//lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC vec4 atof4(const char *s);
-//lcpp INF [0000] vec4: macro name but used as C declaration in: vec4 atof4(const char *s);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2  atof2(const char *s);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2  atof2(const char *s);
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2  atof2(const char *s);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3  atof3(const char *s);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3  atof3(const char *s);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: vec3  atof3(const char *s);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:API vec4  atof4(const char *s);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC vec4  atof4(const char *s);
+//lcpp INF [0000] vec4: macro name but used as C declaration in: vec4  atof4(const char *s);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:API char* itoa2(vec2i v);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:STATIC char* itoa2(vec2i v);
 //lcpp INF [0000] vec2i: macro name but used as C declaration in: char* itoa2(vec2i v);
@@ -1235,24 +1223,6 @@ ffi.cdef([[
 //lcpp INF [0000] vec4: macro name but used as C declaration in: void        swapf4(vec4 *a, vec4 *b);
 //lcpp INF [0000] map: macro name but used as C declaration in:typedef struct { map base; struct { pair p; char * key; struct profile_t val; } tmp, *ptr; struct profile_t* tmpval;          int (*typed_cmp)(char *, char *); uint64_t (*typed_hash)(char *); } * profiler_t;
 //lcpp INF [0000] vec4: macro name but used as C declaration in:vec4 color;
-//lcpp INF [0000] vec4: macro name but used as C declaration in:API void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
-//lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
-//lcpp INF [0000] vec4: macro name but used as C declaration in: void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
-//lcpp INF [0000] map: macro name but used as C declaration in:int* map;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position;
-//lcpp INF [0000] map: macro name but used as C declaration in:API tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
-//lcpp INF [0000] map: macro name but used as C declaration in:STATIC tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
-//lcpp INF [0000] map: macro name but used as C declaration in: tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position;
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    tiled_render(tiled_t tmx, vec3 pos);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    tiled_render(tiled_t tmx, vec3 pos);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: void    tiled_render(tiled_t tmx, vec3 pos);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    spine_render(spine_t *p, vec3 offset, unsigned flags);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    spine_render(spine_t *p, vec3 offset, unsigned flags);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: void    spine_render(spine_t *p, vec3 offset, unsigned flags);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 sh[9];
 //lcpp INF [0000] vec4: macro name but used as C declaration in:vec4   light_position;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API void shadowmap_set_shadowmatrix(shadowmap_t *s, vec3 aLightPos, vec3 aLightAt, vec3 aLightUp, const mat44 projection);
@@ -1507,6 +1477,31 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    light_dir(light_t* l, vec3 dir);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void    light_dir(light_t* l, vec3 dir);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:API void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:API void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:API void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in: void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in: void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in: void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+//lcpp INF [0000] map: macro name but used as C declaration in:int* map;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position;
+//lcpp INF [0000] map: macro name but used as C declaration in:API tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
+//lcpp INF [0000] map: macro name but used as C declaration in:STATIC tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
+//lcpp INF [0000] map: macro name but used as C declaration in: tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position;
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    tiled_render(tiled_t tmx, vec3 pos);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    tiled_render(tiled_t tmx, vec3 pos);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void    tiled_render(tiled_t tmx, vec3 pos);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API void    spine_render(spine_t *p, vec3 offset, unsigned flags);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void    spine_render(spine_t *p, vec3 offset, unsigned flags);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: void    spine_render(spine_t *p, vec3 offset, unsigned flags);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:vec4 gamepad;
+//lcpp INF [0000] vec2: macro name but used as C declaration in:vec2 fire;
+//lcpp INF [0000] vec4: macro name but used as C declaration in:vec4 pos;
+//lcpp INF [0000] vec2: macro name but used as C declaration in:vec2 sca;
 //lcpp INF [0000] vec2i: macro name but used as C declaration in:vec2i* entries;
 //lcpp INF [0000] test: macro name but used as C declaration in:API int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] test: macro name but used as C declaration in:STATIC int (test)(const char *file, int line, const char *expr, bool result);
@@ -1522,9 +1517,9 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API void      curve_add(curve_t *c, vec3 p);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void      curve_add(curve_t *c, vec3 p);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void      curve_add(curve_t *c, vec3 p);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3      curve_eval(curve_t *c, float dt, unsigned *color);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3      curve_eval(curve_t *c, float dt, unsigned *color);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: vec3      curve_eval(curve_t *c, float dt, unsigned *color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3       curve_eval(curve_t *c, float dt, unsigned *color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3       curve_eval(curve_t *c, float dt, unsigned *color);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: vec3       curve_eval(curve_t *c, float dt, unsigned *color);
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 ui_get_dims();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 ui_get_dims();
@@ -1534,6 +1529,18 @@ ffi.cdef([[
 //lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2     window_dpi();
 //lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2     window_dpi();
 //lcpp INF [0000] vec2: macro name but used as C declaration in: vec2     window_dpi();
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3   editor_pick(float mouse_x, float mouse_y);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3   editor_pick(float mouse_x, float mouse_y);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: vec3   editor_pick(float mouse_x, float mouse_y);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
 typedef struct FILE FILE;
 typedef long int ptrdiff_t;
 typedef long unsigned int size_t;
@@ -1802,8 +1809,8 @@ uintptr_t id_make(void *ptr);
 void *     id_handle(uintptr_t id);
 void       id_dispose(uintptr_t id);
 bool        id_valid(uintptr_t id);
-typedef struct obj { struct {          ifdef(debug, const char *objname;)      union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };          };          struct obj** objchildren;      }; } obj;
-typedef struct entity { struct { struct {          ifdef(debug, const char *objname;)      union {          uintptr_t objheader;          struct {           uintptr_t objtype:8;          uintptr_t objsizew:8;          uintptr_t objrefs:8;          uintptr_t objheap:1;          uintptr_t objcomps:1;           uintptr_t objunused:64-8-8-8-1-1-16-3;           uintptr_t objid:16+3;           };          };          struct obj** objchildren;      }; union { struct { uintptr_t objenabled:32, objflagged:32; }; uintptr_t cflags; }; void *c[32]; }; } entity;
+typedef struct obj { struct {          ifdef(debug, const char *objname;)          union {              uintptr_t objheader;              struct {               uintptr_t objtype:8;              uintptr_t objsizew:8;              uintptr_t objrefs:8;              uintptr_t objheap:1;              uintptr_t objcomps:1;               uintptr_t objunused:64-8-8-8-1-1-16-3;               uintptr_t objid:16+3;               };          };          struct obj** objchildren;      }; } obj;
+typedef struct entity { struct { struct {          ifdef(debug, const char *objname;)          union {              uintptr_t objheader;              struct {               uintptr_t objtype:8;              uintptr_t objsizew:8;              uintptr_t objrefs:8;              uintptr_t objheap:1;              uintptr_t objcomps:1;               uintptr_t objunused:64-8-8-8-1-1-16-3;               uintptr_t objid:16+3;               };          };          struct obj** objchildren;      }; union { struct { uintptr_t objenabled:32, objflagged:32; }; uintptr_t cflags; }; void *c[32]; }; } entity;
   obj *objtmp;
 void*   obj_malloc(unsigned sz);
 void*   obj_free(void *o);
@@ -1819,6 +1826,7 @@ void*   obj_free(void *o);
  extern int   (*obj_lerp[256])();
  extern int   (*obj_edit[256])();
  extern int   (*obj_aabb[256])();
+ extern const char*OBJTYPES[256];
  uintptr_t   obj_header(const void *o);
  uintptr_t   obj_id(const void *o);
  const char* obj_type(const void *o);
@@ -2122,28 +2130,6 @@ SCRIPT_LUA = 1,
 SCRIPT_DEBUGGER = 2,
 };
  void *script_init_env(unsigned flags);
- vec3  editor_pick(float mouse_x, float mouse_y);
- char* editor_path(const char *path);
- float* engine_getf(const char *key);
- int*   engine_geti(const char *key);
- char** engine_gets(const char *key);
- int    engine_send(const char *cmd, const char *optional_value);
- int    ui_debug();
- char* dialog_load();
- char* dialog_save();
- int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
- bool  gizmo_active();
- bool  gizmo_hover();
- bool  kit_load( const char *filename );
- bool  kit_merge( const char *filename );
- void  kit_insert( const char *id, const char *translation );
- void  kit_clear();
- void  kit_set( const char *variable, const char *value );
- void  kit_reset();
- void  kit_dump_state( FILE *fp );
- char* kit_translate2( const char *id, const char *langcode_iso639_1 );
- void  kit_locale( const char *langcode_iso639_1 );
- char* kit_translate( const char *id );
  char** file_list( const char *pathmasks );
  bool         file_write( const char *file, const void *ptr, int len );
  bool         file_append( const char *file, const void *ptr, int len );
@@ -2447,22 +2433,22 @@ cc__a = 'a', cc__b, cc__c, cc__d, cc__e, cc__f,cc__g, cc__h, cc__i, cc__j, cc__k
  char* ftoa3(vec3  v);
  char* ftoa4(vec4  v);
  float atof1(const char *s);
- vec2 atof2(const char *s);
- vec3 atof3(const char *s);
- vec4 atof4(const char *s);
+ vec2  atof2(const char *s);
+ vec3  atof3(const char *s);
+ vec4  atof4(const char *s);
  char* itoa1(int   v);
  char* itoa2(vec2i v);
  char* itoa3(vec3i v);
  int   atoi1(const char *s);
  vec2i atoi2(const char *s);
  vec3i atoi3(const char *s);
- int is_big();
- int is_little();
- uint16_t swap16( uint16_t x );
- uint32_t swap32( uint32_t x );
- uint64_t swap64( uint64_t x );
- float    swap32f(float n);
- double   swap64f(double n);
+ int         is_big();
+ int         is_little();
+ uint16_t    swap16( uint16_t x );
+ uint32_t    swap32( uint32_t x );
+ uint64_t    swap64( uint64_t x );
+ float       swap32f(float n);
+ double      swap64f(double n);
  void        swapf(float *a, float *b);
  void        swapf2(vec2 *a, vec2 *b);
  void        swapf3(vec3 *a, vec3 *b);
@@ -2477,16 +2463,16 @@ cc__a = 'a', cc__b, cc__c, cc__d, cc__e, cc__f,cc__g, cc__h, cc__i, cc__j, cc__k
  uint64_t    big64(uint64_t n);
  float       big32f(float n);
  double      big64f(double n);
- uint16_t* lil16p(void *p, int sz);
- uint32_t* lil32p(void *p, int sz);
- uint64_t* lil64p(void *p, int sz);
- float   * lil32pf(void *p, int sz);
- double  * lil64pf(void *p, int sz);
+ uint16_t*   lil16p(void *p, int sz);
+ uint32_t*   lil32p(void *p, int sz);
+ uint64_t*   lil64p(void *p, int sz);
+ float   *   lil32pf(void *p, int sz);
+ double  *   lil64pf(void *p, int sz);
  uint16_t*   big16p(void *p, int sz);
  uint32_t*   big32p(void *p, int sz);
  uint64_t*   big64p(void *p, int sz);
  float   *   big32pf(void *p, int sz);
- double  * big64pf(void *p, int sz);
+ double  *   big64pf(void *p, int sz);
 typedef uint16_t half;
  float half_to_float(half value);
  half  float_to_half(float value);
@@ -2572,6 +2558,8 @@ typedef unsigned handle;
  unsigned rgbaf( float r, float g, float b, float a );
  unsigned bgraf( float b, float g, float r, float a );
  unsigned alpha( unsigned rgba );
+ unsigned atorgba(const char *s);
+ char *   rgbatoa(unsigned rgba);
 enum IMAGE_FLAGS {
 IMAGE_R     =4096,
 IMAGE_RG    =8192,
@@ -2624,6 +2612,7 @@ unsigned flags;
 char* filename;
 bool transparent;
 unsigned fbo;
+union { unsigned userdata, delay; };
 } texture_t;
  texture_t texture_compressed(const char *filename, unsigned flags);
  texture_t texture_compressed_from_mem(const void *data, int len, unsigned flags);
@@ -2660,50 +2649,6 @@ float specular_shininess;
  void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
  void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
  void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma );
- void sprite( texture_t texture, float position[3], float rotation , uint32_t color );
- void sprite_rect( texture_t t, vec4 rect, float zindex, vec3 pos, float tilt_deg, unsigned tint_rgba);
- void sprite_sheet( texture_t texture, float sheet[3], float position[3], float rotation, float offset[2], float scale[2], int is_additive, uint32_t rgba, int resolution_independant);
- void sprite_flush();
-typedef struct tileset_t {
-texture_t tex;
-unsigned tile_w, tile_h;
-unsigned cols, rows;
-unsigned selected;
-} tileset_t;
- tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols, unsigned rows);
- int       tileset_ui( tileset_t t );
-typedef struct tilemap_t {
-int blank_chr;
-unsigned cols, rows;
-int* map;
-vec3 position;
-float zindex;
-float tilt;
-unsigned tint;
-bool is_additive;
-} tilemap_t;
- tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
- void      tilemap_render( tilemap_t m, tileset_t style );
- void      tilemap_render_ext( tilemap_t m, tileset_t style, float zindex, float xy_zoom[3], float tilt, unsigned tint, bool is_additive );
-typedef struct tiled_t {
-char *map_name;
-unsigned first_gid, tilew, tileh, w, h;
-bool parallax;
-vec3 position;
-bool* visible;
-tilemap_t* layers;
-tileset_t* sets;
-char** names;
-} tiled_t;
- tiled_t tiled(const char *file_tmx);
- void    tiled_render(tiled_t tmx, vec3 pos);
- void    tiled_ui(tiled_t *t);
-typedef struct spine_t spine_t;
- spine_t*spine(const char *file_json, const char *file_atlas, unsigned flags);
- void    spine_skin(spine_t *p, unsigned skin);
- void    spine_render(spine_t *p, vec3 offset, unsigned flags);
- void    spine_animate(spine_t *p, float delta);
- void    spine_ui(spine_t *p);
 typedef struct cubemap_t {
 unsigned id;
 vec3 sh[9];
@@ -3109,6 +3054,79 @@ int u_coefficients_sh;
  light_t*  scene_spawn_light();
  unsigned  scene_count_light();
  light_t*  scene_index_light(unsigned index);
+typedef enum SPRITE_FLAGS {
+SPRITE_PROJECTED = 1,
+SPRITE_ADDITIVE = 2,
+SPRITE_CENTERED = 4,
+SPRITE_RESOLUTION_INDEPENDANT = 128,
+} SPRITE_FLAGS;
+ void sprite( texture_t texture, float position[3], float rotation , unsigned color , unsigned flags);
+ void sprite_rect( texture_t t, vec4 rect, vec4 pos, vec4 scaleoff, float tilt_deg, unsigned tint_rgba, unsigned flags);
+ void sprite_sheet( texture_t texture, float sheet[3], float position[3], float rotation, float offset[2], float scale[2], unsigned rgba, unsigned flags);
+ void sprite_flush();
+typedef struct tileset_t {
+texture_t tex;
+unsigned tile_w, tile_h;
+unsigned cols, rows;
+unsigned selected;
+} tileset_t;
+ tileset_t tileset(texture_t tex, unsigned tile_w, unsigned tile_h, unsigned cols, unsigned rows);
+ int       ui_tileset( tileset_t t );
+typedef struct tilemap_t {
+int blank_chr;
+unsigned cols, rows;
+int* map;
+vec3 position;
+float zindex;
+float tilt;
+unsigned tint;
+bool is_additive;
+} tilemap_t;
+ tilemap_t tilemap(const char *map, int blank_chr, int linefeed_chr);
+ void      tilemap_render( tilemap_t m, tileset_t style );
+ void      tilemap_render_ext( tilemap_t m, tileset_t style, float zindex, float xy_zoom[3], float tilt, unsigned tint, bool is_additive );
+typedef struct tiled_t {
+char *map_name;
+unsigned first_gid, tilew, tileh, w, h;
+bool parallax;
+vec3 position;
+bool* visible;
+tilemap_t* layers;
+tileset_t* sets;
+char** names;
+} tiled_t;
+ tiled_t tiled(const char *file_tmx);
+ void    tiled_render(tiled_t tmx, vec3 pos);
+ void    ui_tiled(tiled_t *t);
+typedef struct spine_t spine_t;
+ spine_t*spine(const char *file_json, const char *file_atlas, unsigned flags);
+ void    spine_skin(spine_t *p, unsigned skin);
+ void    spine_render(spine_t *p, vec3 offset, unsigned flags);
+ void    spine_animate(spine_t *p, float delta);
+ void    ui_spine(spine_t *p);
+typedef struct sprite_t { struct {          ifdef(debug, const char *objname;)          union {              uintptr_t objheader;              struct {               uintptr_t objtype:8;              uintptr_t objsizew:8;              uintptr_t objrefs:8;              uintptr_t objheap:1;              uintptr_t objcomps:1;               uintptr_t objunused:64-8-8-8-1-1-16-3;               uintptr_t objid:16+3;               };          };          struct obj** objchildren;      };
+vec4 gamepad;
+vec2 fire;
+vec4 pos;
+vec2 sca;
+float tilt;
+unsigned tint;
+unsigned frame;
+unsigned timer, timer_ms;
+unsigned flip_, flipped;
+unsigned play;
+bool paused;
+struct atlas_t *a;
+} sprite_t;
+enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on_L__LINE__ : !!(10 <= 255); } static_assert_on_Lconcat(_L,3777)___COUNTER__;       typedef struct { unsigned static_assert_on_L__LINE__ : !!(sizeof(sprite_t)); } static_assert_on_Lconcat(_L,3777)___COUNTER__;;
+ void     sprite_ctor(sprite_t *s);
+ void     sprite_dtor(sprite_t *s);
+ void     sprite_tick(sprite_t *s);
+ void     sprite_draw(sprite_t *s);
+ void     sprite_edit(sprite_t *s);
+ sprite_t*sprite_new(const char *ase, int bindings[6]);
+ void     sprite_del(sprite_t *s);
+ void     sprite_setanim(sprite_t *s, unsigned name);
  char*   tempvl(const char *fmt, va_list);
  char*   tempva(const char *fmt, ...);
  char*   strcatf(char **s, const char *buf);
@@ -3141,6 +3159,16 @@ vec2i* entries;
 } quarks_db;
  unsigned    quark_intern( quarks_db*, const char *string );
  const char *quark_string( quarks_db*, unsigned key );
+ bool  kit_load( const char *filename );
+ bool  kit_merge( const char *filename );
+ void  kit_insert( const char *id, const char *translation );
+ void  kit_clear();
+ void  kit_set( const char *variable, const char *value );
+ void  kit_reset();
+ void  kit_dump_state( FILE *fp );
+ char* kit_translate2( const char *id, const char *langcode_iso639_1 );
+ void  kit_locale( const char *langcode_iso639_1 );
+ char* kit_translate( const char *id );
  void*       thread( int (*thread_func)(void* user_data), void* user_data );
  void        thread_destroy( void *thd );
  int         argc();
@@ -3288,7 +3316,7 @@ int*   indices;
  curve_t curve();
  void      curve_add(curve_t *c, vec3 p);
  void      curve_end(curve_t *c, int num_points);
- vec3      curve_eval(curve_t *c, float dt, unsigned *color);
+ vec3       curve_eval(curve_t *c, float dt, unsigned *color);
  void    curve_destroy(curve_t *c);
 enum PANEL_FLAGS {
 PANEL_OPEN = 1,
@@ -3313,11 +3341,13 @@ PANEL_OPEN = 1,
  int    ui_double(const char *label, double *value);
  int    ui_buffer(const char *label, char *buffer, int buflen);
  int    ui_string(const char *label, char **string);
- int    ui_color3(const char *label, float *color3);
- int    ui_color3f(const char *label, float *color3);
- int    ui_color4(const char *label, float *color4);
- int    ui_color4f(const char *label, float *color4);
+ int    ui_color3(const char *label, unsigned *color);
+ int    ui_color3f(const char *label, float color[3]);
+ int    ui_color4(const char *label, unsigned *color);
+ int    ui_color4f(const char *label, float color[4]);
  int    ui_unsigned(const char *label, unsigned *value);
+ int    ui_unsigned2(const char *label, unsigned *value);
+ int    ui_unsigned3(const char *label, unsigned *value);
  int    ui_button(const char *label);
  int    ui_button_transparent(const char *label);
  int    ui_buttons(int buttons, ...);
@@ -3398,6 +3428,7 @@ WINDOW_LANDSCAPE =128,
 WINDOW_ASPECT =256,
 WINDOW_FIXED =512,
 WINDOW_TRANSPARENT =1024,
+WINDOW_BORDERLESS =2048,
 WINDOW_VSYNC = 0,
 WINDOW_VSYNC_ADAPTIVE =4096,
 WINDOW_VSYNC_DISABLED =8192,
@@ -3460,6 +3491,19 @@ CURSOR_SW_AUTO,
  void     window_cursor_shape(unsigned shape);
  const char *window_clipboard();
  void        window_setclipboard(const char *text);
+ int editor_send(const char *command);
+ vec3   editor_pick(float mouse_x, float mouse_y);
+ char*  editor_path(const char *path);
+ float* engine_getf(const char *key);
+ int*   engine_geti(const char *key);
+ char** engine_gets(const char *key);
+ int    engine_send(const char *cmd, const char *optional_value);
+ int    ui_debug();
+ char* dialog_load();
+ char* dialog_save();
+ int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+ bool  gizmo_active();
+ bool  gizmo_hover();
 ]])
 local _M = {}
 function _M.vec2(x,y)
@@ -3496,11 +3540,11 @@ function _M.mat44()
    return m
 end
 
-local v4k = ffi.load("v4k")
+local fwk = ffi.load("v4k")
 
 return setmetatable( _M, {
    __index = function( table, key )
-      return v4k[ key ]
+      return fwk[ key ]
    end
 } )
 
