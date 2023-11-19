@@ -56,7 +56,7 @@ TODO("obj: free obj_components()/payload2");
 
 TODO("pack: mp2json, json2mp");
 TODO("pack: simplify msgpack API, make it growth similar to va()")
-#if 0 // fwk_pack proposal
+#if 0 // v4k_pack proposal
 static __thread char*    mpin;
 static __thread unsigned mpinlen;
 static __thread char     mpinbuf[256];

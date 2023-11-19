@@ -75,6 +75,13 @@ if "%1"=="cook" (
 
     exit /b
 )
+if "%1"=="build_cook" (
+    pushd tools
+        cl  cook.c      -I..\engine /openmp /Os /Ox /O2 /Oy /MT /DNDEBUG /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
+    popd
+
+    exit /b
+)
 rem generate bindings
 if "%1"=="bind" (
     rem luajit
@@ -324,7 +331,7 @@ if "%1"=="fwk_prep" (
     xcopy /y "engine\split\3rd_*" "_fwk\engine\split"
     xcopy /y "engine\art\shaders\*" "_fwk\engine\art\shaders"
     xcopy /y "demos" "_fwk\demos"
-    xcopy /y "engine\editor.c" "_fwk\engine\editor.c"
+    copy /y "engine\editor.c" "_fwk\engine\editor.c"
     rem xcopy /y/E "tools "_fwk\tools"
     for %%f in ("engine\split\v4k*") do (
         set "filename=%%~nf"
@@ -371,6 +378,7 @@ if "%1"=="back" (
     xcopy /y "_fwk" "."
     xcopy /y "_fwk\engine\split\3rd_*" "engine\split"
     xcopy /y "_fwk\engine\art\shaders\*" "engine\art\shaders"
+    del "demos\*.c"
     xcopy /y "_fwk\demos" "demos"
     xcopy /y "_fwk\engine\editor.c" "engine\editor.c"
     tools\fwkren.exe "engine\editor.c" to
