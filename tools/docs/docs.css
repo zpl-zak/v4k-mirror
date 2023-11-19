@@ -1,4 +1,50 @@
-<meta charset="utf-8" lang="en"><style class="fallback">body{visibility:hidden;}</style><style>
+<meta charset="utf-8">
+<meta content="ie=edge" http-equiv="x-ua-compatible">
+<meta name="handheldfriendly" content="true">
+<meta name="viewport" content="initial-scale=1, width=device-width">
+<meta name="description" content="Envision. Prototype. Perfect.">
+
+<meta name="application-name" content="v4k" />
+<meta name="twitter:title" content="we are v4.games">
+<meta name="twitter:description" content="Envision. Prototype. Perfect.">
+<meta name="twitter:image" content="https://v4k.dev/opengraph.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@hey_v4games">
+<meta name="twitter:site" content="@hey_v4games">
+<meta name="twitter:image:alt" content="v4.games">
+<meta property="og:site_name" content="v4.games">
+<meta property="og:title" content="we are v4.games">
+<meta property="og:description" content="Envision. Prototype. Perfect.">
+<meta property="og:image" content="https://v4k.dev/opengraph.png">
+<meta property="og:url" content="https://v4k.dev/">
+<meta property="og:type" content="website">
+
+<link rel="apple-touch-icon" sizes="57x57" href="/icons/apple-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/icons/apple-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/icons/apple-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/icons/apple-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/icons/apple-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/icons/apple-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-icon-180x180.png">
+<link rel="icon" type="image/png" sizes="192x192"  href="/icons/android-icon-192x192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="/icons/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+<link rel="manifest" href="/icons/manifest.json">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="/icons/ms-icon-144x144.png">
+<meta name="theme-color" content="#ffffff">
+
+<link
+  type="application/json+oembed"
+  href="https://v4k.dev/oembed.json"
+/>
+
+<link rel="canonical" href="https://v4k.dev/">
+
+<style class="fallback">body{visibility:hidden;}</style><style>
 
 /* original .css from: https://autodesk.github.io/standard-surface/style/style.css */
 
@@ -599,10 +645,7 @@ details > summary::-webkit-details-marker {
 
 </style>
 
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-
-       <div id="logo">
-        <img src="https://v4k.dev/logo.png" alt="v4k logo"/>
-        <p>Our go-to framework for game development is fully hackable, FOSS!</p>
-        </div>
+    <div id="logo">
+        <img src="/logo.png" alt="v4k logo"/>
+        <p>Our go-to framework for game development is fully hackable, <strong>FOSS</strong>!</p>
+    </div>
