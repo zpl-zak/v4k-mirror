@@ -118,6 +118,8 @@ char* strcatf(char **src_, const char *fmt, ...) {
 #define DIR_C
 #include "3rd_archive.h"
 
+#define MALLOC(sz) ATLAS_REALLOC(0,(sz))
+#define FREE(p)    ATLAS_REALLOC((p),0)
 #define BASE64_C
 #include "3rd_base64.h"
 
@@ -218,7 +220,7 @@ int main(int argc, char* argv[]) {
     }
 
     for( int i = 0; i < array_count(files); ++i)
-        ATLAS_FREE(files[i], 0);
+        ATLAS_REALLOC(files[i], 0);
     array_free(files);
 
     return error ? fprintf(stderr, "%s\n", error), -1 : 0;

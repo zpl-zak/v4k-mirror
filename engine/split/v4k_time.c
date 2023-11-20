@@ -615,7 +615,6 @@ void curve_end( curve_t *c, int k ) {
 }
 
 vec3 curve_eval(curve_t *c, float dt, unsigned *color) {
-    unsigned nil; if(!color) color = &nil;
     dt = clampf(dt, 0.0f, 1.0f);
     int l = (int)(array_count(c->indices) - 1);
     int p = (int)(dt * l);
@@ -623,7 +622,7 @@ vec3 curve_eval(curve_t *c, float dt, unsigned *color) {
 
     t %= (array_count(c->indices)-1);
     vec3 pos = mix3(c->samples[t], c->samples[t+1], dt * l - p);
-    *color = c->colors[t];
+    if(color) *color = c->colors[t];
 
     return pos;
 }

@@ -1,7 +1,19 @@
-#define COOK_ON_DEMAND 1 // @fixme: these directives should be on client, not within v4k.dll
-#define ENABLE_AUTOTESTS 1
-#include "v4k.c"
-//#include "../tools/labs/objtests.h"
+#include "v4k.h"
+#include "split/3rd_icon_mdi.h"
+
+#if 0 // v4k_pack proposal
+static __thread char*    mpin;
+static __thread unsigned mpinlen;
+static __thread char     mpinbuf[256];
+static __thread char*    mpout;
+static __thread unsigned mpoutlen;
+static __thread char     mpoutbuf[256];
+#define PACKMSG(...) (msgpack_new(mpin = mpinbuf, mpinlen = sizeof(mpinbuf)), mpinlen = msgpack(__VA_ARGS__), cobs_encode(mpin, mpinlen, mpout = mpoutbuf, mpoutlen = cobs_bounds(mpinlen)), mpout)
+#define UNPACKMSG(ptr,fmt,...) (mpin = (char*)ptr, mpinlen = strlen(ptr), mpout = mpoutbuf, mpoutlen = sizeof(mpoutbuf), mpoutlen = cobs_decode(mpin, mpinlen, mpout, mpoutlen), msgunpack_new(mpout, mpoutlen) && msgunpack(fmt, __VA_ARGS__))
+#endif
+
+TODO("COOK_ON_DEMAND 1: this directive should be on client, not within v4k.dll");
+TODO("ENABLE_AUTOTESTS 1: this directive should be on client, not within v4k.dll");
 
 // ----------------------------------------------------------------------------
 
@@ -56,16 +68,6 @@ TODO("obj: free obj_components()/payload2");
 
 TODO("pack: mp2json, json2mp");
 TODO("pack: simplify msgpack API, make it growth similar to va()")
-#if 0 // v4k_pack proposal
-static __thread char*    mpin;
-static __thread unsigned mpinlen;
-static __thread char     mpinbuf[256];
-static __thread char*    mpout;
-static __thread unsigned mpoutlen;
-static __thread char     mpoutbuf[256];
-#define PACKMSG(...) (msgpack_new(mpin = mpinbuf, mpinlen = sizeof(mpinbuf)), mpinlen = msgpack(__VA_ARGS__), cobs_encode(mpin, mpinlen, mpout = mpoutbuf, mpoutlen = cobs_bounds(mpinlen)), mpout)
-#define UNPACKMSG(ptr,fmt,...) (mpin = (char*)ptr, mpinlen = strlen(ptr), mpout = mpoutbuf, mpoutlen = sizeof(mpoutbuf), mpoutlen = cobs_decode(mpin, mpinlen, mpout, mpoutlen), msgunpack_new(mpout, mpoutlen) && msgunpack(fmt, __VA_ARGS__))
-#endif
 
 TODO("serialize array(types)")
 TODO("serialize map(char*,types)")
@@ -82,6 +84,7 @@ TODO("bug: lite key bindings are being sent to editor")
 TODO("bug: not sending quit signal to lite neither at window close nor editor close (see: temporary files)")
 TODO("bug: missing search results window")
 TODO("bug: missing code completions popup")
+
 // TODO("eval:  https://github.com/drmargarido/linters")
 // TODO("eval:  https://github.com/monolifed/theme16")
 // TODO("eval:  https://github.com/vincens2005/lite-formatters")
@@ -89,76 +92,6 @@ TODO("bug: missing code completions popup")
 // https://github.com/takase1121/lite-xl-finder
 // https://github.com/rxi/lite/commit/236a585756cb9fa70130eee6c9a604780aced424 > suru.png
 // https://github.com/rxi/lite/commit/f90b00748e1fe1cd2340aaa06d2526a1b2ea54ec
-
-void editor_gizmos(int dim) {
-    // debugdraw
-    if(dim == 2) ddraw_push_2d();
-    ddraw_ontop_push(0);
-
-    // draw gizmos, aabbs, markers, etc
-    for each_map_ptr(*editor_selected_map(),void*,o,int,selected) {
-        if( !*selected ) continue;
-
-        void *obj = *o;
-
-        // get transform
-        vec3 *p = NULL;
-        vec3 *r = NULL;
-        vec3 *s = NULL;
-        aabb *a = NULL;
-
-        for each_objmember(obj,TYPE,NAME,PTR) {
-            /**/ if( !strcmp(NAME, "position") ) p = PTR;
-            else if( !strcmp(NAME, "pos") ) p = PTR;
-            else if( !strcmp(NAME, "rotation") ) r = PTR;
-            else if( !strcmp(NAME, "rot") ) r = PTR;
-            else if( !strcmp(NAME, "scale") ) s = PTR;
-            else if( !strcmp(NAME, "sca") ) s = PTR;
-            else if( !strcmp(NAME, "aabb") ) a = PTR;
-        }
-
-        ddraw_ontop(0);
-
-        // bounding box 3d
-        if( 0 ) {
-            aabb box;
-            if( obj_hasmethod(*o, aabb) && obj_aabb(*o, &box) ) {
-                ddraw_color_push(YELLOW);
-                ddraw_aabb(box.min, box.max);
-                ddraw_color_pop();
-            }
-        }
-
-        // position marker
-        if( p ) {
-            static map(void*, vec3) prev_dir = 0;
-            do_once map_init_ptr(prev_dir);
-            vec3* dir = map_find_or_add(prev_dir, obj, vec3(1,0,0));
-
-            static map(void*, vec3) prev_pos = 0;
-            do_once map_init_ptr(prev_pos);
-            vec3* found = map_find_or_add(prev_pos, obj, *p), fwd = sub3(*p, *found);
-            if( (fwd.y = 0, len3sq(fwd)) ) {
-                *found = *p;
-                *dir = norm3(fwd);
-            }
-
-            // float diameter = len2( sub2(vec2(box->max.x,box->max.z), vec2(box->min.x,box->min.z) ));
-            // float radius = diameter * 0.5;
-            ddraw_position_dir(*p, *dir, 1);
-        }
-
-        ddraw_ontop(1);
-
-        // transform gizmo
-        if( p && r && s ) {
-            gizmo(p,r,s);
-        }
-    }
-
-    ddraw_ontop_pop();
-    if(dim == 2) ddraw_pop_2d();
-}
 
 // ----------------------------------------------------------------------------
 // demo

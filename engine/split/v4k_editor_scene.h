@@ -3,8 +3,6 @@
 
 EDITOR_BIND(scene, "held(CTRL)&down(1)", { ui_show(SCENE_TITLE, ui_visible(SCENE_TITLE) ^ true); });
 
-EDITOR_PROPERTY(bookmarked,   int,    0);
-
 EDITOR_BIND(node_new, "down(INS)",                      { editor_spawn1(); } );
 EDITOR_BIND(node_del, "down(DEL)",                      { editor_destroy_selected(); } );
 EDITOR_BIND(node_save, "held(CTRL)&down(S)",            { puts("@todo"); } );

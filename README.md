@@ -1,4 +1,4 @@
-<h1 align="center">![V·4·K](https://v4k.dev/logo.png)</h1>
+<h1 align="center"><img src="https://v4k.dev/logo.png" alt="V·4·K"></img></h1>
 <p align="center">
 Envision, Prototype, Perfect<br/>
 </p>

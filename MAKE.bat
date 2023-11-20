@@ -819,7 +819,7 @@ rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND
 rem set edit=-DUI_LESSER_SPACING -DUI_ICONS_SMALL !edit!
-!echo! editor      && !cc! !o! editor.exe engine\editor.c !edit! -Iengine/joint !args! || set rc=1
+!echo! editor      && !cc! !o! editor.exe engine\editor.c engine\v4k.c !edit! -Iengine/joint !args! || set rc=1
 
 rem if "!cc!"=="cl" (
 rem set plug_export=/LD

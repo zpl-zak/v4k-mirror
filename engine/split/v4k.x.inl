@@ -212,6 +212,7 @@ static char *ui_filter = 0;
 {{FILE:3rd_icon_mdi.h}}
 // editor_script
 #define GLEQ_IMPLEMENTATION
+#define GlyphSet GlyphSet_ // linux
 {{FILE:3rd_lite_sys_gleq.h}}
 {{FILE:3rd_lite_sys.h}}
 {{FILE:3rd_lite.h}}

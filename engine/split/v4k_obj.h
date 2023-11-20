@@ -2,10 +2,10 @@
 // factory of handle ids
 
 // convert between hard refs (pointers) and weak refs (ids)
-uintptr_t id_make(void *ptr);
-void *     id_handle(uintptr_t id);
-void       id_dispose(uintptr_t id);
-bool        id_valid(uintptr_t id);
+API uintptr_t id_make(void *ptr);
+API void *     id_handle(uintptr_t id);
+API void       id_dispose(uintptr_t id);
+API bool        id_valid(uintptr_t id);
 
 // configuration:
 // ideally, these two should be 32 each. they were changed to fit our OBJHEADER bits
@@ -210,8 +210,11 @@ API extern int   (*obj_tick[256])(); ///-
 API extern int   (*obj_draw[256])(); ///-
 
 API extern int   (*obj_lerp[256])(); ///-
-API extern int   (*obj_edit[256])(); ///-
+
 API extern int   (*obj_aabb[256])(); ///-
+API extern int   (*obj_edit[256])(); ///-
+API extern int   (*obj_menu[256])(); ///-
+API extern char* (*obj_icon[256])(); ///-
 
 API extern const char*OBJTYPES[256]; /// -
 

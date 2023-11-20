@@ -6399,6 +6399,8 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
                 }
             #endif
         } else {
+            // if( script && script[0] ) system(script); //< @todo: un-comment this line if we want to get the shell command prints invoked per entry
+
             // ... else bypass infile->outfile
             char** INFILE = map_find(symbols, "INFILE");
             cs.outfile = *INFILE;
@@ -24586,7 +24588,6 @@ void curve_end( curve_t *c, int k ) {
 }
 
 vec3 curve_eval(curve_t *c, float dt, unsigned *color) {
-    unsigned nil; if(!color) color = &nil;
     dt = clampf(dt, 0.0f, 1.0f);
     int l = (int)(array_count(c->indices) - 1);
     int p = (int)(dt * l);
@@ -24594,7 +24595,7 @@ vec3 curve_eval(curve_t *c, float dt, unsigned *color) {
 
     t %= (array_count(c->indices)-1);
     vec3 pos = mix3(c->samples[t], c->samples[t+1], dt * l - p);
-    *color = c->colors[t];
+    if(color) *color = c->colors[t];
 
     return pos;
 }
@@ -28511,19 +28512,11 @@ void v4k_init() {
 
 // ----------------------------------------------------------------------------
 
-#define EDITOR_VERSION "2023.10"
-
-// ----------------------------------------------------------------------------
-
-typedef struct editor_bind_t {
-    const char *command;
-    const char *bindings;
-    void (*fn)();
-} editor_bind_t;
-
 array(editor_bind_t) editor_binds;
 
-#define EDITOR_BIND(CMD,KEYS,...) void macro(editor_bind_##CMD##_fn_)() { __VA_ARGS__ }; AUTORUN { array_push(editor_binds, ((editor_bind_t){#CMD,KEYS,macro(editor_bind_##CMD##_fn_)}) ); }
+void editor_addbind(editor_bind_t bind) {
+    array_push(editor_binds, bind);
+}
 
 // ----------------------------------------------------------------------------
 
@@ -28531,8 +28524,7 @@ typedef void (*editor_no_property)(void *);
 array(void*) editor_persist_kv;
 array(editor_no_property) editor_no_properties;
 
-#define EDITOR_PROPERTY(property_name,T,defaults) \
-typedef map(void*,T) editor_##property_name##_map_t; \
+#define EDITOR_PROPERTY(T,property_name,defaults) \
 editor_##property_name##_map_t *editor_##property_name##_map() { \
     static editor_##property_name##_map_t map = 0; do_once map_init_ptr(map); \
     return &map; \
@@ -28553,16 +28545,17 @@ void editor_no##property_name(void *obj) { \
 } \
 AUTORUN { array_push(editor_persist_kv, #T); array_push(editor_persist_kv, editor_##property_name##_map()); array_push(editor_no_properties, editor_no##property_name); }
 
-EDITOR_PROPERTY(open,         int,    0); // whether object is tree opened in tree editor
-EDITOR_PROPERTY(selected,     int,    0); // whether object is displaying a contextual popup or not
-EDITOR_PROPERTY(changed,      int,    0); // whether object is displaying a contextual popup or not
-EDITOR_PROPERTY(popup,        int,    0); // whether object is displaying a contextual popup or not
-EDITOR_PROPERTY(visible,      int,    0);
-EDITOR_PROPERTY(script,       int,    0);
-EDITOR_PROPERTY(event,        int,    0);
-EDITOR_PROPERTY(iconinstance, char*,  0);
-EDITOR_PROPERTY(iconclass,    char*,  0);
-EDITOR_PROPERTY(treeoffsety,  int,    0);
+EDITOR_PROPERTY(int,    open,         0); // whether object is tree opened in tree editor
+EDITOR_PROPERTY(int,    selected,     0); // whether object is displaying a contextual popup or not
+EDITOR_PROPERTY(int,    changed,      0); // whether object is displaying a contextual popup or not
+EDITOR_PROPERTY(int,    popup,        0); // whether object is displaying a contextual popup or not
+EDITOR_PROPERTY(int,    bookmarked,   0);
+EDITOR_PROPERTY(int,    visible,      0);
+EDITOR_PROPERTY(int,    script,       0);
+EDITOR_PROPERTY(int,    event,        0);
+EDITOR_PROPERTY(char*,  iconinstance, 0);
+EDITOR_PROPERTY(char*,  iconclass,    0);
+EDITOR_PROPERTY(int,    treeoffsety,  0);
 // new prop: breakpoint: request to break on any given node
 // new prop: persist: objects with this property will be saved on disk
 
@@ -28620,13 +28613,6 @@ struct editor_t {
     .active = 1,
     .gamepad = 1,
     .hz_high = 60, .hz_medium = 18, .hz_low = 5,
-};
-
-enum {
-    EDITOR_PANEL,
-    EDITOR_WINDOW,
-    EDITOR_WINDOW_NK,
-    EDITOR_WINDOW_NK_SMALL,
 };
 
 int editor_begin(const char *title, int mode) {
@@ -29208,14 +29194,83 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     // draw ui filter (note: render at end-of-frame, so it's hopefully on-top)
     editor_filter();
 }
+
+
+void editor_gizmos(int dim) {
+    // debugdraw
+    if(dim == 2) ddraw_push_2d();
+    ddraw_ontop_push(0);
+
+    // draw gizmos, aabbs, markers, etc
+    for each_map_ptr(*editor_selected_map(),void*,o,int,selected) {
+        if( !*selected ) continue;
+
+        void *obj = *o;
+
+        // get transform
+        vec3 *p = NULL;
+        vec3 *r = NULL;
+        vec3 *s = NULL;
+        aabb *a = NULL;
+
+        for each_objmember(obj,TYPE,NAME,PTR) {
+            /**/ if( !strcmp(NAME, "position") ) p = PTR;
+            else if( !strcmp(NAME, "pos") ) p = PTR;
+            else if( !strcmp(NAME, "rotation") ) r = PTR;
+            else if( !strcmp(NAME, "rot") ) r = PTR;
+            else if( !strcmp(NAME, "scale") ) s = PTR;
+            else if( !strcmp(NAME, "sca") ) s = PTR;
+            else if( !strcmp(NAME, "aabb") ) a = PTR;
+        }
+
+        ddraw_ontop(0);
+
+        // bounding box 3d
+        if( 0 ) {
+            aabb box;
+            if( obj_hasmethod(*o, aabb) && obj_aabb(*o, &box) ) {
+                ddraw_color_push(YELLOW);
+                ddraw_aabb(box.min, box.max);
+                ddraw_color_pop();
+            }
+        }
+
+        // position marker
+        if( p ) {
+            static map(void*, vec3) prev_dir = 0;
+            do_once map_init_ptr(prev_dir);
+            vec3* dir = map_find_or_add(prev_dir, obj, vec3(1,0,0));
+
+            static map(void*, vec3) prev_pos = 0;
+            do_once map_init_ptr(prev_pos);
+            vec3* found = map_find_or_add(prev_pos, obj, *p), fwd = sub3(*p, *found);
+            if( (fwd.y = 0, len3sq(fwd)) ) {
+                *found = *p;
+                *dir = norm3(fwd);
+            }
+
+            // float diameter = len2( sub2(vec2(box->max.x,box->max.z), vec2(box->min.x,box->min.z) ));
+            // float radius = diameter * 0.5;
+            ddraw_position_dir(*p, *dir, 1);
+        }
+
+        ddraw_ontop(1);
+
+        // transform gizmo
+        if( p && r && s ) {
+            gizmo(p,r,s);
+        }
+    }
+
+    ddraw_ontop_pop();
+    if(dim == 2) ddraw_pop_2d();
+}
 #line 0
 #line 1 "v4k_editor_scene.h"
 #define SCENE_ICON ICON_MDI_FILE_TREE
 #define SCENE_TITLE "Scene " SCENE_ICON
 
 EDITOR_BIND(scene, "held(CTRL)&down(1)", { ui_show(SCENE_TITLE, ui_visible(SCENE_TITLE) ^ true); });
-
-EDITOR_PROPERTY(bookmarked,   int,    0);
 
 EDITOR_BIND(node_new, "down(INS)",                      { editor_spawn1(); } );
 EDITOR_BIND(node_del, "down(DEL)",                      { editor_destroy_selected(); } );

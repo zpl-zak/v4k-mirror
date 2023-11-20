@@ -323,6 +323,8 @@ cook_script_t cook_script(const char *rules, const char *infile, const char *out
                 }
             #endif
         } else {
+            // if( script && script[0] ) system(script); //< @todo: un-comment this line if we want to get the shell command prints invoked per entry
+
             // ... else bypass infile->outfile
             char** INFILE = map_find(symbols, "INFILE");
             cs.outfile = *INFILE;
