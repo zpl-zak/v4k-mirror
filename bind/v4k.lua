@@ -2236,6 +2236,7 @@ SCRIPT_DEBUGGER = 2,
  char *       vfs_read(const char *pathfile);
  char *       vfs_load(const char *pathfile, int *size);
  int          vfs_size(const char *pathfile);
+ void 		 vfs_reload();
  const char * vfs_resolve(const char *fuzzyname);
  FILE*        vfs_handle(const char *pathfile);
  void *       cache_insert(const char *key, void *value, int size);
@@ -3186,7 +3187,7 @@ unsigned play;
 bool paused;
 struct atlas_t *a;
 } sprite_t;
-enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on_L__LINE__ : !!(10 <= 255); } static_assert_on_Lconcat(_L,3780)___COUNTER__;       typedef struct { unsigned static_assert_on_L__LINE__ : !!(sizeof(sprite_t)); } static_assert_on_Lconcat(_L,3780)___COUNTER__;;
+enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on_L__LINE__ : !!(10 <= 255); } static_assert_on_Lconcat(_L,3781)___COUNTER__;       typedef struct { unsigned static_assert_on_L__LINE__ : !!(sizeof(sprite_t)); } static_assert_on_Lconcat(_L,3781)___COUNTER__;;
  void     sprite_ctor(sprite_t *s);
  void     sprite_dtor(sprite_t *s);
  void     sprite_tick(sprite_t *s);

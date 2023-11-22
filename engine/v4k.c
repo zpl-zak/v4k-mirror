@@ -8040,9 +8040,11 @@ static array(struct vfs_entry) vfs_hints;   // mounted raw assets
 static array(struct vfs_entry) vfs_entries; // mounted cooked assets
 
 static bool vfs_mount_hints(const char *path);
-static
+
 void vfs_reload() {
     const char *app = app_name();
+
+    dir_cache = 0; // @leak
 
     array_resize(vfs_hints, 0); // @leak
     array_resize(vfs_entries, 0); // @leak
