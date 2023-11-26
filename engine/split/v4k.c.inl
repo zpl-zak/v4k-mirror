@@ -126,6 +126,8 @@
 
 {{FILE:v4k_font.c}}
 
+{{FILE:v4k_gui.c}}
+
 {{FILE:v4k_input.c}}
 
 {{FILE:v4k_math.c}}

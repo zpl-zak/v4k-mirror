@@ -507,22 +507,31 @@ void editor_pump() {
 
 // ----------------------------------------------------------------------------------------
 
-API void editor_cursorpos(int x, int y);
-void editor_cursorpos(int x, int y) {
+void editor_setmouse(int x, int y) {
     glfwSetCursorPos( window_handle(), x, y );
 }
 
-void editor_symbol(int x, int y, const char *sym) {
+vec2 editor_glyph(int x, int y, unsigned cp) {
     // style: atlas size, unicode ranges and 6 font faces max
     do_once font_face(FONT_FACE2, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
+    do_once font_face(FONT_FACE3, "materialdesignicons-webfont.ttf", 24.f, FONT_EM|FONT_2048); //  {0xF68C /*ICON_MDI_MIN*/, 0xF1CC7/*ICON_MDI_MAX*/, 0}},
     // style: 10 colors max
     do_once font_color(FONT_COLOR1,  WHITE);
     do_once font_color(FONT_COLOR2, RGBX(0xE8F1FF,128)); //  GRAY);
     do_once font_color(FONT_COLOR3, YELLOW);
     do_once font_color(FONT_COLOR4, ORANGE);
     do_once font_color(FONT_COLOR5,   CYAN);
+    const char *sym = codepoint_to_utf8(cp);
     font_goto(x,y);
-    font_print(va(FONT_FACE2 /*FONT_WHITE*/ FONT_H1 "%s", sym));
+    return font_print(va("%s" FONT_H1 "%s", cp >= ICON_MDI_MIN ? FONT_FACE3 : FONT_FACE2, sym));
+}
+
+vec2 editor_glyphstr(int x, int y, const char *utf8) {
+    vec2 dim = {x,y};
+    array(unsigned) codepoints = string32(utf8);
+    for( int i = 0, end = array_count(codepoints); i < end; ++i)
+        add2(dim, editor_glyph(dim.x,dim.y,codepoints[i]));
+    return dim;
 }
 
 void editor_frame( void (*game)(unsigned, float, double) ) {

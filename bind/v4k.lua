@@ -1428,6 +1428,15 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC void ddraw_prism(vec3 center, float radius, float height, vec3 normal, int segments);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void ddraw_prism(vec3 center, float radius, float height, vec3 normal, int segments);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: void ddraw_prism(vec3 center, float radius, float height, vec3 normal, int segments);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:API int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec3: macro name but used as C declaration in: int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec3 position, updir, lookdir;
 //lcpp INF [0000] vec2: macro name but used as C declaration in:vec2 last_look; vec3 last_move;
 //lcpp INF [0000] vec3: macro name but used as C declaration in:vec2 last_look; vec3 last_move;
@@ -1510,6 +1519,13 @@ ffi.cdef([[
 //lcpp INF [0000] vec2: macro name but used as C declaration in:vec2 fire;
 //lcpp INF [0000] vec4: macro name but used as C declaration in:vec4 pos;
 //lcpp INF [0000] vec2: macro name but used as C declaration in:vec2 sca;
+//lcpp INF [0000] vec4: macro name but used as C declaration in:void (*draw_rect_func)(void* userdata, gui_state_t state, const char *skin, vec4 rect);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:API void        gui_panel(int id, vec4 rect, const char *skin);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC void        gui_panel(int id, vec4 rect, const char *skin);
+//lcpp INF [0000] vec4: macro name but used as C declaration in: void        gui_panel(int id, vec4 rect, const char *skin);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:API bool        gui_button(int id, vec4 rect, const char *skin);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC bool        gui_button(int id, vec4 rect, const char *skin);
+//lcpp INF [0000] vec4: macro name but used as C declaration in: bool        gui_button(int id, vec4 rect, const char *skin);
 //lcpp INF [0000] test: macro name but used as C declaration in:API int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] test: macro name but used as C declaration in:STATIC int (test)(const char *file, int line, const char *expr, bool result);
 //lcpp INF [0000] test: macro name but used as C declaration in: int (test)(const char *file, int line, const char *expr, bool result);
@@ -1605,15 +1621,12 @@ ffi.cdef([[
 //lcpp INF [0000] vec3: macro name but used as C declaration in:API vec3   editor_pick(float mouse_x, float mouse_y);
 //lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC vec3   editor_pick(float mouse_x, float mouse_y);
 //lcpp INF [0000] vec3: macro name but used as C declaration in: vec3   editor_pick(float mouse_x, float mouse_y);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in:STATIC int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-//lcpp INF [0000] vec3: macro name but used as C declaration in: int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 editor_glyph(int x, int y, unsigned cp);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 editor_glyph(int x, int y, unsigned cp);
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 editor_glyph(int x, int y, unsigned cp);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:API vec2 editor_glyphstr(int x, int y, const char *utf8);
+//lcpp INF [0000] vec2: macro name but used as C declaration in:STATIC vec2 editor_glyphstr(int x, int y, const char *utf8);
+//lcpp INF [0000] vec2: macro name but used as C declaration in: vec2 editor_glyphstr(int x, int y, const char *utf8);
 typedef struct FILE FILE;
 typedef long int ptrdiff_t;
 typedef long unsigned int size_t;
@@ -3032,6 +3045,9 @@ float *pixels;
  void ddraw_demo();
  void ddraw_flush();
  void ddraw_flush_projview(mat44 proj, mat44 view);
+ int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+ bool gizmo_active();
+ bool gizmo_hover();
 typedef struct camera_t {
 mat44 view, proj;
 vec3 position, updir, lookdir;
@@ -3041,6 +3057,8 @@ float move_friction, move_damping;
 float look_friction, look_damping;
 vec2 last_look; vec3 last_move;
 bool damping;
+bool orthographic;
+float distance;
 } camera_t;
  camera_t camera();
  void camera_teleport(camera_t *cam, vec3 pos);
@@ -3154,6 +3172,7 @@ int u_coefficients_sh;
  char*           strjoin(char** list, const char *separator);
  char *          string8(const wchar_t *str);
  uint32_t* string32( const char *utf8 );
+ const char*     codepoint_to_utf8(unsigned cp);
  unsigned    intern( const char *string );
  const char *quark( unsigned key );
 typedef struct quarks_db {
@@ -3269,7 +3288,7 @@ unsigned play;
 bool paused;
 struct atlas_t *a;
 } sprite_t;
-enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on_L__LINE__ : !!(10 <= 255); } static_assert_on_Lconcat(_L,3930)___COUNTER__;       typedef struct { unsigned static_assert_on_L__LINE__ : !!(sizeof(sprite_t)); } static_assert_on_Lconcat(_L,3930)___COUNTER__;;
+enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on_L__LINE__ : !!(10 <= 255); } static_assert_on_Lconcat(_L,3937)___COUNTER__;       typedef struct { unsigned static_assert_on_L__LINE__ : !!(sizeof(sprite_t)); } static_assert_on_Lconcat(_L,3937)___COUNTER__;;
  void     sprite_ctor(sprite_t *s);
  void     sprite_dtor(sprite_t *s);
  void     sprite_tick(sprite_t *s);
@@ -3278,10 +3297,41 @@ enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on
  sprite_t*sprite_new(const char *ase, int bindings[6]);
  void     sprite_del(sprite_t *s);
  void     sprite_setanim(sprite_t *s, unsigned name);
+enum {
+GUI_PANEL,
+GUI_BUTTON,
+};
+typedef struct gui_state_t {
+int kind;
+union {
+struct {
+bool held;
+bool hover;
+};
+};
+} gui_state_t;
+typedef struct guiskin_t {
+void (*draw_rect_func)(void* userdata, gui_state_t state, const char *skin, vec4 rect);
+void (*free)(void* userdata);
+void *userdata;
+} guiskin_t;
+ void    gui_pushskin(guiskin_t skin);
+ void*       gui_userdata();
+ void        gui_panel(int id, vec4 rect, const char *skin);
+ bool        gui_button(int id, vec4 rect, const char *skin);
+ void    gui_popskin();
+ guiskin_t gui_skinned(const char *inifile, float scale);
+typedef struct skinned_t {
+atlas_t atlas;
+float scale;
+char *panel;
+char *button;
+} skinned_t;
  void*       thread( int (*thread_func)(void* user_data), void* user_data );
  void        thread_destroy( void *thd );
  int         argc();
  char*       argv(int);
+ void        argvadd(const char *arg);
  int         flag(const char *commalist);
  const char* option(const char *commalist, const char *defaults);
  int         optioni(const char *commalist, int defaults);
@@ -3620,7 +3670,7 @@ typedef struct { map base; struct { pair p; void* key; int val; } tmp, *ptr; int
  void editor_destroy_properties(void *o);
  void editor_load_on_boot(void);
  void editor_save_on_quit(void);
-enum {
+enum EDITOR_MODE {
 EDITOR_PANEL,
 EDITOR_WINDOW,
 EDITOR_WINDOW_NK,
@@ -3641,25 +3691,21 @@ EDITOR_WINDOW_NK_SMALL,
  void editor_spawn1();
  void editor_destroy_selected();
  void editor_inspect(obj *o);
- int editor_send(const char *cmd);
- const char* editor_recv(int jobid, double timeout_ss);
- void editor_pump();
- void editor_symbol(int x, int y, const char *sym);
- void editor_frame( void (*game)(unsigned, float, double) );
- void editor_gizmos(int dim);
- int editor_send(const char *command);
  vec3   editor_pick(float mouse_x, float mouse_y);
  char*  editor_path(const char *path);
+ void editor_setmouse(int x, int y);
+ vec2 editor_glyph(int x, int y, unsigned cp);
+ vec2 editor_glyphstr(int x, int y, const char *utf8);
+ void editor_gizmos(int dim);
+ int         editor_send(const char *cmd);
+ const char* editor_recv(int jobid, double timeout_ss);
+ void editor_pump();
+ void editor_frame( void (*game)(unsigned, float, double) );
  float* engine_getf(const char *key);
  int*   engine_geti(const char *key);
  char** engine_gets(const char *key);
  int    engine_send(const char *cmd, const char *optional_value);
- int    ui_debug();
- char* dialog_load();
- char* dialog_save();
- int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
- bool  gizmo_active();
- bool  gizmo_hover();
+ int    ui_engine();
 ]])
 local _M = {}
 function _M.vec2(x,y)

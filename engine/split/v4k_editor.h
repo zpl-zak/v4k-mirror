@@ -89,7 +89,9 @@ API void editor_inspect(obj *o);
 API vec3   editor_pick(float mouse_x, float mouse_y);
 API char*  editor_path(const char *path);
 
-API void editor_symbol(int x, int y, const char *sym);
+API void editor_setmouse(int x, int y);
+API vec2 editor_glyph(int x, int y, unsigned cp);
+API vec2 editor_glyphstr(int x, int y, const char *utf8);
 API void editor_gizmos(int dim);
 
 // ----------------------------------------------------------------------------------------

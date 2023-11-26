@@ -1,6 +1,8 @@
 #include "v4k.h"
 #include "split/3rd_icon_mdi.h"
 
+#define SWAP(T,a,b) do { T c = (a); (a) = (b); (b) = c; } while(0)
+
 #if 0 // v4k_pack proposal
 static __thread char*    mpin;
 static __thread unsigned mpinlen;
@@ -127,15 +129,6 @@ right floating icons can be dragged: cam orientation, cam panning, cam zooming, 
 ctrl-z undo, ctrl-shift-z redo
 #endif
 
-static const char* codepoint_to_utf8_(unsigned c) { //< @r-lyeh
-    static char s[4+1];
-    memset(s, 0, 5);
-    /**/ if (c <     0x80) s[0] = c, s[1] = 0;
-    else if (c <    0x800) s[0] = 0xC0 | ((c >>  6) & 0x1F), s[1] = 0x80 | ( c        & 0x3F), s[2] = 0;
-    else if (c <  0x10000) s[0] = 0xE0 | ((c >> 12) & 0x0F), s[1] = 0x80 | ((c >>  6) & 0x3F), s[2] = 0x80 | ( c        & 0x3F), s[3] = 0;
-    else if (c < 0x110000) s[0] = 0xF0 | ((c >> 18) & 0x07), s[1] = 0x80 | ((c >> 12) & 0x3F), s[2] = 0x80 | ((c >>  6) & 0x3F), s[3] = 0x80 | (c & 0x3F), s[4] = 0;
-    return s;
-}
 bool is_hovering(vec4 rect, vec2 mouse) { // rect(x,y,x2,y2)
     if( mouse.x < rect.x ) return 0;
     if( mouse.x > rect.z ) return 0;
@@ -169,8 +162,8 @@ int editor_toolbar(int x, int y, int incw, int inch, const char *sym) {
     for each_array(codepoints, uint32_t, g) {
         int selected = oo ? is_hovering(vec4(ix,iy,ix+inc,iy+inc),vec2(ox,oy)) : 0;
         int hovering = dragging ? 0 : is_hovering(vec4(ix,iy,ix+inc,iy+inc), vec2(mx,my));
-        const char *str8 = va("%s%s", selected || hovering ? FONT_COLOR1 : FONT_COLOR2, codepoint_to_utf8_(g));
-        editor_symbol(ix + inc/8, iy + inc/3 + 2, str8);
+        const char *str8 = va("%s%s", selected || hovering ? FONT_COLOR1 : FONT_COLOR2, codepoint_to_utf8(g));
+        editor_glyphstr(ix + inc/8, iy + inc/3 + 2, str8);
         ix += incw;
         iy += inch;
     }
@@ -191,8 +184,8 @@ int editor_toolbar(int x, int y, int incw, int inch, const char *sym) {
             int mcx = ((ox - x) / inc) + 1, mcy = ((oy - y) / inc) + 1; // mouse cells
             editor_toolbar_drag.x  = mx - editor_toolbar_drag.z;
             editor_toolbar_drag.y  = my - editor_toolbar_drag.w;
-            API void editor_cursorpos(int x, int y);
-            editor_cursorpos(ox, oy);
+            API void editor_setmouse(int x, int y);
+            editor_setmouse(ox, oy);
             editor_toolbar_drag.z  = ox;
             editor_toolbar_drag.w  = oy;
             return incw ? -mcx : -mcy;
@@ -258,13 +251,13 @@ int lit_edit(lit *obj) {
         ICON_MDI_WEATHER_SUNNY               // directional
         ICON_MDI_LIGHTBULB_FLUORESCENT_TUBE_OUTLINE
     ;
-    // editor_symbol(obj->pos.x+16,obj->pos.y-32,all_icons);
+    // editor_glyphstr(obj->pos.x+16,obj->pos.y-32,all_icons);
     if( editor_selected(obj) ) {
     obj->pos.x += input(KEY_RIGHT) - input(KEY_LEFT);
     obj->pos.y += input(KEY_DOWN) - input(KEY_UP);
     obj->type = (obj->type + !!input_down(KEY_SPACE)) % 4;
     }
-    editor_symbol(obj->pos.x,obj->pos.y,lit_icon(obj));
+    editor_glyphstr(obj->pos.x,obj->pos.y,lit_icon(obj));
 
 
 
@@ -338,7 +331,7 @@ int kid_edit(kid *obj) {
         obj->pos.x += input(KEY_RIGHT) - input(KEY_LEFT);
         obj->pos.y += input(KEY_DOWN) - input(KEY_UP);
 
-        editor_symbol(obj->pos.x+16,obj->pos.y-16,ICON_MD_VIDEOGAME_ASSET);
+        editor_glyphstr(obj->pos.x+16,obj->pos.y-16,ICON_MD_VIDEOGAME_ASSET);
     }
     return 1;
 }
@@ -470,15 +463,21 @@ int main(){
     //   https://github.com/glfw/glfw/pull/990
 
     window_title("Editor " EDITOR_VERSION);
-    window_create( flag("--transparent") ? 101 : 80, flag("--windowed") ? 0 : WINDOW_BORDERLESS);
+    window_create( flag("--transparent") ? 101 : 80, WINDOW_MSAA4 | (flag("--windowed") ? 0 : WINDOW_BORDERLESS));
     window_icon("scale-ruler-icon.png");
 
     while( window_swap() ) {
         editor_frame(game);
         editor_gizmos(2);
 
-        int choice1 = editor_toolbar(window_width()-32, ui_has_menubar() ? 34 : 0, 0, 32, ICON_MD_VISIBILITY ICON_MD_360 ICON_MD_ZOOM_OUT_MAP ICON_MD_GRID_ON ); // ICON_MDI_ORBIT ICON_MDI_LOUPE ICON_MDI_GRID );
-        //int choice2 = editor_toolbar(window_width()-32*2, ui_has_menubar() ? 34 : 0, -32, 0, ICON_MD_360 ICON_MD_ZOOM_OUT_MAP ICON_MD_GRID_ON ); // ICON_MDI_ORBIT ICON_MDI_LOUPE ICON_MDI_GRID );
+        camera_t *cam = camera_get_active();
+
+        int choice1 = editor_toolbar(window_width()-32, ui_has_menubar() ? 34 : 0, 0, 32,
+        ICON_MD_VISIBILITY
+ICON_MDI_ORBIT//        ICON_MD_360
+        ICON_MD_ZOOM_IN // ICON_MD_ZOOM_OUT_MAP
+        ICON_MD_GRID_ON ); //  ICON_MDI_LOUPE ICON_MDI_GRID );
+        int choice2 = editor_toolbar(window_width()-32*2, ui_has_menubar() ? 34 : 0, -32, 0, ICON_MD_SQUARE_FOOT );
 
         if( choice1 > 0 ) { // clicked[>0]
             camera_t *cam = camera_get_active();
@@ -487,10 +486,12 @@ int main(){
         if( choice1 < 0 ) { // dragged[<0]
             vec2 mouse_sensitivity = vec2(0.1, -0.1); // sensitivity + polarity
             vec2 drag = mul2( editor_toolbar_dragged(), mouse_sensitivity );
-            camera_t *cam = camera_get_active();
             if( choice1 == -1 ) camera_fps(cam, drag.x, drag.y );
             if( choice1 == -2 ) camera_orbit(cam, drag.x, drag.y, 0); //len3(cam->position) );
             if( choice1 == -3 ) camera_fov(cam, cam->fov += drag.y - drag.x);
         }
+
+        // font demo
+        font_print(va(FONT_BOTTOM FONT_RIGHT FONT_H6 "(CAM: %5.2f,%5.2f,%5.2f)", cam->position.x, cam->position.y, cam->position.z));
     }
 }

@@ -76,6 +76,8 @@ API char*           strjoin(array(char*) list, const char *separator);
 API char *          string8(const wchar_t *str);  /// convert from wchar16(win) to utf8/ascii
 API array(uint32_t) string32( const char *utf8 ); /// convert from utf8 to utf32
 
+API const char*     codepoint_to_utf8(unsigned cp);
+
 // -----------------------------------------------------------------------------
 // ## string interning (quarks)
 // - rlyeh, public domain.

@@ -174,9 +174,9 @@ void* ui_handle() {
 }
 
 static void nk_config_custom_fonts() {
-    #define UI_ICON_MIN ICON_MIN_MD
-    #define UI_ICON_MED ICON_MAX_16_MD
-    #define UI_ICON_MAX ICON_MAX_MD
+    #define UI_ICON_MIN ICON_MD_MIN
+    #define UI_ICON_MED ICON_MD_MAX_16
+    #define UI_ICON_MAX ICON_MD_MAX
 
     #define ICON_BARS        ICON_MD_MENU
     #define ICON_FILE        ICON_MD_INSERT_DRIVE_FILE
@@ -207,7 +207,7 @@ static void nk_config_custom_fonts() {
             const char *file; int yspacing; vec3 sampling; nk_rune range[3];
         } icons[] = {
             {"MaterialIconsSharp-Regular.otf", UI_ICON_SPACING_Y, {1,1,1}, {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0}}, // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf"
-            {"materialdesignicons-webfont.ttf", 2, {1,1,1}, {0xF68C /*ICON_MIN_MDI*/, 0xF1CC7/*ICON_MAX_MDI*/, 0}},
+            {"materialdesignicons-webfont.ttf", 2, {1,1,1}, {0xF68C /*ICON_MDI_MIN*/, 0xF1CC7/*ICON_MDI_MAX*/, 0}},
         };
         for( int f = 0; f < countof(icons); ++f )
         for( char *data = vfs_load(icons[f].file, &datalen); data; data = 0 ) {

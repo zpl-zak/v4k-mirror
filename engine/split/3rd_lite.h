@@ -125,7 +125,7 @@ struct RenFont {
 
 static struct { int left, top, right, bottom; } lt_clip;
 
-static const char* codepoint_to_utf8(unsigned c) { //< @r-lyeh
+static const char* codepoint_to_utf8_(unsigned c) { //< @r-lyeh
     static char s[4+1];
     lt_memset(s, 0, 5);
     /**/ if (c <     0x80) s[0] = c, s[1] = 0;
@@ -134,7 +134,7 @@ static const char* codepoint_to_utf8(unsigned c) { //< @r-lyeh
     else if (c < 0x110000) s[0] = 0xF0 | ((c >> 18) & 0x07), s[1] = 0x80 | ((c >> 12) & 0x3F), s[2] = 0x80 | ((c >>  6) & 0x3F), s[3] = 0x80 | (c & 0x3F), s[4] = 0;
     return s;
 }
-static const char* utf8_to_codepoint(const char *p, unsigned *dst) {
+static const char* utf8_to_codepoint_(const char *p, unsigned *dst) {
     unsigned res, n;
     switch (*p & 0xf0) {
         case 0xf0 :  res = *p & 0x07;  n = 3;  break;
@@ -310,7 +310,7 @@ int ren_get_font_width(RenFont *font, const char *text) {
     const char *p = text;
     unsigned codepoint;
     while (*p) {
-        p = utf8_to_codepoint(p, &codepoint);
+        p = utf8_to_codepoint_(p, &codepoint);
         GlyphSet *set = get_glyphset(font, codepoint);
         stbtt_bakedchar *g = &set->glyphs[codepoint & 0xff];
         x += g->xadvance;
@@ -415,7 +415,7 @@ int ren_draw_text(RenFont *font, const char *text, int x, int y, RenColor color)
     const char *p = text;
     unsigned codepoint;
     while (*p) {
-        p = utf8_to_codepoint(p, &codepoint);
+        p = utf8_to_codepoint_(p, &codepoint);
         GlyphSet *set = get_glyphset(font, codepoint);
         stbtt_bakedchar *g = &set->glyphs[codepoint & 0xff];
         rect.x = g->x0;

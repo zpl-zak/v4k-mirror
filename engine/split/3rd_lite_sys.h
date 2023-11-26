@@ -206,7 +206,7 @@ int printi(int i) {
     return i;
 }
 
-static const char* codepoint_to_utf8(unsigned c);
+static const char* codepoint_to_utf8_(unsigned c);
 int lt_poll_event(lua_State *L) { // init.lua > core.step() wakes on mousemoved || inputtext
     int rc = 0;
     char buf[16];
@@ -250,7 +250,7 @@ int lt_poll_event(lua_State *L) { // init.lua > core.step() wakes on mousemoved 
         goto bottom;
 
         break; case GLEQ_CODEPOINT_INPUT:
-        rc += lt_emit_event(L, "textinput", "s", codepoint_to_utf8(e.codepoint));
+        rc += lt_emit_event(L, "textinput", "s", codepoint_to_utf8_(e.codepoint));
 
         break; case GLEQ_BUTTON_PRESSED:
         rc += lt_emit_event(L, "mousepressed", "sddd", lt_button_name(e.mouse.button), lt_mx, lt_my, printi(1 + clicks));

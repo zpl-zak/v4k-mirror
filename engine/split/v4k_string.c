@@ -343,6 +343,16 @@ array(uint32_t) string32( const char *utf8 ) {
     return out[slot];
 }
 
+const char* codepoint_to_utf8(unsigned c) { //< @r-lyeh
+    static char s[4+1];
+    memset(s, 0, 5);
+    /**/ if (c <     0x80) s[0] = c, s[1] = 0;
+    else if (c <    0x800) s[0] = 0xC0 | ((c >>  6) & 0x1F), s[1] = 0x80 | ( c        & 0x3F), s[2] = 0;
+    else if (c <  0x10000) s[0] = 0xE0 | ((c >> 12) & 0x0F), s[1] = 0x80 | ((c >>  6) & 0x3F), s[2] = 0x80 | ( c        & 0x3F), s[3] = 0;
+    else if (c < 0x110000) s[0] = 0xF0 | ((c >> 18) & 0x07), s[1] = 0x80 | ((c >> 12) & 0x3F), s[2] = 0x80 | ((c >>  6) & 0x3F), s[3] = 0x80 | (c & 0x3F), s[4] = 0;
+    return s;
+}
+
 // -----------------------------------------------------------------------------
 // quarks
 

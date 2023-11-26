@@ -3,11 +3,11 @@
 // for use with https://github.com/Templarian/MaterialDesign-Webfont/raw/master/fonts/materialdesignicons-webfont.ttf
 #pragma once
 
-#define FONT_ICON_FILE_NAME_MDI "materialdesignicons-webfont.ttf"
+#define ICON_MDI_FILENAME "materialdesignicons-webfont.ttf"
 
-#define ICON_MIN_MDI 0xF68C
-#define ICON_MAX_16_MDI 0xF68C
-#define ICON_MAX_MDI 0xF1CC7
+#define ICON_MDI_MIN 0xF68C
+#define ICON_MDI_MAX_16 0xF68C
+#define ICON_MDI_MAX 0xF1CC7
 #define ICON_MDI_AB_TESTING "\xf3\xb0\x87\x89"	// U+F01C9
 #define ICON_MDI_ABACUS "\xf3\xb1\x9b\xa0"	// U+F16E0
 #define ICON_MDI_ABJAD_ARABIC "\xf3\xb1\x8c\xa8"	// U+F1328
