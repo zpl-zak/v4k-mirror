@@ -52,7 +52,9 @@ size_t vlen( void* p ) {
     return p ? 0[ (size_t*)p - 2 ] : 0;
 }
 
-char *STRDUP(const char *s) { size_t n = strlen(s)+1; return ((char*)memcpy(ATLAS_REALLOC(0,n), s, n)); } ///-
+char *vstrdup(const char *s) { size_t n = strlen(s)+1; return ((char*)memcpy(ATLAS_REALLOC(0,n), s, n)); } ///-
+
+#define STRDUP vstrdup
 
 static unsigned array_c;
 #define array(t) t*
@@ -126,6 +128,7 @@ char* strcatf(char **src_, const char *fmt, ...) {
 #define ATLASC_IMPLEMENTATION
 #include "3rd_atlasc.h"
 
+
 #if   defined _WIN32 && defined _MSC_VER
 __declspec(dllexport)
 #elif defined _WIN32 && defined __GNUC__
@@ -164,7 +167,6 @@ int main(int argc, char* argv[]) {
     for( int i = 1; i < argc; ++i) {
         const char *arg = argv[i];
         if( arg[0] != '-' ) {
-            assert(array_count(files) == 0);
             if( path_isfile(arg) )
             array_push(files, STRDUP(arg));
             else
@@ -174,7 +176,6 @@ int main(int argc, char* argv[]) {
                         array_push(files, STRDUP(dir_name(d, i)));
                 }
             }
-            assert(array_count(files) == 1);
         }
         else
         switch( arg[1] ) {
@@ -209,19 +210,23 @@ int main(int argc, char* argv[]) {
 
     char *error = g_error_str;
 
-    atlas_t* atlas = atlas_loadfiles(files, flags);
-    if ( atlas ) {
-        bool r = atlas_save(outfile, atlas, flags);
-        if( r ) {
-            // fprintf(stderr, "Written: %d->%d\n", flags.num_files, !!r);
-            error = 0;
+    if( !files ) {
+        error = "No input file(s)";
+    } else {
+        atlas_t* atlas = atlas_loadfiles(files, flags);
+        if ( atlas ) {
+            bool r = atlas_save(outfile, atlas, flags);
+            if( r ) {
+                // fprintf(stderr, "Written: %d->%d\n", flags.num_files, !!r);
+                error = 0;
+            }
+            atlas_free(atlas);
         }
-        atlas_free(atlas);
-    }
 
-    // for( int i = 0; i < array_count(files); ++i)
-    //     ATLAS_REALLOC(files[i], 0);
-    // array_free(files);
+        for( int i = 0; i < array_count(files); ++i)
+            ATLAS_REALLOC(files[i], 0);
+        array_free(files);
+    }
 
     return error ? fprintf(stderr, "%s\n", error), -1 : 0;
 }
