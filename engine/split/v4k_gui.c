@@ -129,7 +129,7 @@ bool (gui_button)(int id, vec4 r, const char *skin) {
     bool was_clicked=0;
     entry->hover = false;
 
-    if (input(MOUSE_X) > r.x && input(MOUSE_X) < r.z && input(MOUSE_Y) > r.y && input(MOUSE_Y) < r.w) {
+    if (input(MOUSE_X) > r.x && input(MOUSE_X) < (r.x+r.z) && input(MOUSE_Y) > r.y && input(MOUSE_Y) < (r.y+r.w)) {
         if (input_up(MOUSE_L) && entry->held) {
             was_clicked=1;
         }
@@ -180,6 +180,9 @@ void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r
         gui_drawrect(a->tex, v42v2(f->bounds), 0xFFFFFFFF, v42v2(r));
         return;
     }
+
+    r.z += r.x;
+    r.w += r.y;
 
     vec4 outer = f->bounds;
     vec4 core  = f->core;
