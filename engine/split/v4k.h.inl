@@ -142,9 +142,9 @@ extern "C" {
 
 {{FILE:v4k_scene.h}}
 
-{{FILE:v4k_sprite.h}}
-
 {{FILE:v4k_string.h}}
+
+{{FILE:v4k_sprite.h}}
 
 {{FILE:v4k_system.h}}
 

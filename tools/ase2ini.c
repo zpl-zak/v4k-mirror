@@ -219,9 +219,9 @@ int main(int argc, char* argv[]) {
         atlas_free(atlas);
     }
 
-    for( int i = 0; i < array_count(files); ++i)
-        ATLAS_REALLOC(files[i], 0);
-    array_free(files);
+    // for( int i = 0; i < array_count(files); ++i)
+    //     ATLAS_REALLOC(files[i], 0);
+    // array_free(files);
 
     return error ? fprintf(stderr, "%s\n", error), -1 : 0;
 }

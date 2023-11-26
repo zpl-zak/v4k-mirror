@@ -607,6 +607,7 @@ atlas_t* atlas_loadimages(array(atlas_image) images, atlas_flags flags)
 }
 
 static char *atlas_anims = 0;
+static char *atlas_slices = 0;
 static char *atlas_current_anim = 0;
 
 atlas_t* atlas_loadfiles(array(char*) files, atlas_flags flags)
@@ -677,7 +678,34 @@ atlas_t* atlas_loadfiles(array(char*) files, atlas_flags flags)
                     array_push(images, img);
                 }
 
-                static int count = 0;
+                static int slice_idx = -1;
+                static int slice_frame_idx = 0;
+                static const char *slice_name = 0;
+                if(!atlas_slices) strcatf(&atlas_slices, "[slices]\n");
+
+                for( int t = 0; t < ase->slice_count; ++t) {
+                    ase_slice_t *slice = ase->slices + t;
+                    if (!slice_name || strcmp(slice_name, slice->name)) {
+                        ++slice_idx;
+                        strcatf(&atlas_slices, "[%d].sl_name=%s\n", slice_idx, slice->name);
+                        strcatf(&atlas_slices, "[%d].sl_frames=", slice_idx);
+                        for( int u = 0; u < ase->slice_count; ++u) {
+                            if (!strcmp(slice->name, ase->slices[u].name)) {
+                                strcatf(&atlas_slices, "%d,", u);
+                            }
+                        }
+                        strcatf(&atlas_slices, "\n");
+                    }
+                    strcatf(&atlas_slices, "[%d].sl_bounds=%d,%d,%d,%d\n", slice_idx, slice->origin_x, slice->origin_y, slice->w, slice->h);
+                    strcatf(&atlas_slices, "[%d].sl_9slice=%d\n", slice_idx, slice->has_center_as_9_slice);
+                    if (slice->has_center_as_9_slice)
+                        strcatf(&atlas_slices, "[%d].sl_core=%d,%d,%d,%d\n", slice_idx, slice->center_x, slice->center_y, slice->center_w, slice->center_h);
+
+                    slice_name = slice->name;
+                    ++slice_frame_idx;
+                }
+
+                static int anim_idx = 0;
                 if(!atlas_anims) strcatf(&atlas_anims, "[anims]\n");
 
                 for( int t = 0; t < ase->tag_count; ++t) {
@@ -694,8 +722,8 @@ atlas_t* atlas_loadfiles(array(char*) files, atlas_flags flags)
                     trimspace(name);
 
                     char *sep = "";
-                    strcatf(&atlas_anims, "[%d].name=%s.%s\n", count, atlas_current_anim, name+1);
-                    strcatf(&atlas_anims, "[%d].frames=", count);
+                    strcatf(&atlas_anims, "[%d].name=%s.%s\n", anim_idx, atlas_current_anim, name+1);
+                    strcatf(&atlas_anims, "[%d].frames=", anim_idx);
                     if( tag->loop_animation_direction != ASE_ANIMATION_DIRECTION_BACKWARDS)
                     for( int from = tag->from_frame; from <= tag->to_frame; ++from ) {
                         strcatf(&atlas_anims, "%s%d,%d", sep, from, ase->frames[from].duration_milliseconds), sep = ",";
@@ -707,7 +735,7 @@ atlas_t* atlas_loadfiles(array(char*) files, atlas_flags flags)
                     }
                     strcatf(&atlas_anims,"\n");
 
-                    ++count;
+                    ++anim_idx;
                 }
             }
 
@@ -813,8 +841,8 @@ bool atlas_save(const char *outfile, const atlas_t *atlas, atlas_flags flags)
         int result = stbi_write_png_to_func(stbi_write_mem, &ctx, dst_w, dst_h, 4, dst, dst_w*4);
         char *b64 = base64_encode(ctx.buffer, ctx.offset);
         fprintf(writer, "bitmap=%s\n", b64); // %d:%s\n", ctx.offset, b64);
-        ATLAS_FREE(ctx.buffer);
-        free(b64);
+        // ATLAS_FREE(ctx.buffer);
+        // free(b64);
     }
 
     fprintf(writer, "size=%d,%d\n", dst_w, dst_h);
@@ -849,6 +877,7 @@ bool atlas_save(const char *outfile, const atlas_t *atlas, atlas_flags flags)
     }
 
     if( atlas_anims ) fprintf(writer, "%s\n", atlas_anims);
+    if( atlas_slices ) fprintf(writer, "%s\n", atlas_slices);
 
     if(writer != stdout) fclose(writer);
     return true;

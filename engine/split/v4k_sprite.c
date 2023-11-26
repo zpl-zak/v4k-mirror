@@ -1174,35 +1174,19 @@ int ui_obj(const char *fmt, obj *o) {
 // ----------------------------------------------------------------------------
 // atlas
 
-typedef struct atlas_frame_t {
-    unsigned delay;
-    vec4 sheet;
-    vec2 anchor; // @todo
-    array(vec3i) indices;
-    array(vec2) coords;
-    array(vec2) uvs;
-} atlas_frame_t;
-
-typedef struct atlas_anim_t {
-    quark_t name;
-    array(unsigned) frames;
-} atlas_anim_t;
-
-typedef struct atlas_t {
-    texture_t tex;
-
-    array(atlas_frame_t) frames;
-    array(atlas_anim_t)  anims;
-
-    quarks_db db;
-} atlas_t;
-
 int ui_atlas_frame(atlas_frame_t *f) {
     ui_unsigned("delay", &f->delay);
     ui_vec4("sheet", &f->sheet);
     ui_array("indices", vec3i, &f->indices);
     ui_array("coords", vec2, &f->coords);
     ui_array("uvs", vec2, &f->uvs);
+    return 0;
+}
+
+int ui_atlas_slice_frame(atlas_slice_frame_t *f) {
+    ui_vec4("bounds", &f->bounds);
+    ui_bool("9-slice", &f->has_9slice);
+    ui_vec4("core", &f->core);
     return 0;
 }
 
@@ -1216,6 +1200,19 @@ int ui_atlas(atlas_t *a) {
                 if( ui_collapse(va("[%d]",j), va("%p%d.%d", a, a->anims[i].name,j) ) ) {
                     ui_unsigned("Frame", &a->anims[i].frames[j]);
                     ui_atlas_frame(a->frames + a->anims[i].frames[j]);
+                    ui_collapse_end();
+                }
+            }
+            ui_collapse_end();
+        }
+    }
+    for( int i = 0; i < array_count(a->slices); ++i ) {
+        if( ui_collapse(quark_string(&a->db, a->slices[i].name), va("%p%d", a, a->slices[i].name) ) ) {
+            changed = i+1;
+            for( int j = 0; j < array_count(a->slices[i].frames); ++j ) {
+                if( ui_collapse(va("[%d]",j), va("%p%d.%d", a, a->slices[i].name,j) ) ) {
+                    // ui_unsigned("Frame", &a->slices[i].frames[j]);
+                    ui_atlas_slice_frame(a->slice_frames + a->slices[i].frames[j]);
                     ui_collapse_end();
                 }
             }
@@ -1238,10 +1235,47 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
     ini_t kv = ini(inifile);
     for each_map(kv, char*,k, char*,v ) {
         unsigned index = atoi(k);
+        // printf("aaa %s=%s\n", k, v);
         /**/ if( strend(k, ".name") ) {
             array_reserve_(a.anims, index);
 
             a.anims[index].name = quark_intern(&a.db, v);
+        }
+        else if ( strend(k, ".sl_name") ) {
+            array_reserve_(a.slices, index);
+
+            a.slices[index].name = quark_intern(&a.db, v);
+        }
+        else if ( strend(k, ".sl_frames") ) {
+            array_reserve_(a.slices, index);
+
+            const char *text = v;
+            array(char*) frames = strsplit(text, ",");
+            for( int i = 0; i < array_count(frames); i++ ) {
+                unsigned frame = atoi(frames[i]);
+                array_push(a.slices[index].frames, frame);
+            }
+        }
+        else if ( strend(k, ".sl_bounds") ) {
+            array_reserve_(a.slice_frames, index);
+
+            float x,y,z,w;
+            sscanf(v, "%f,%f,%f,%f", &x, &y, &z, &w);
+
+            a.slice_frames[index].bounds = vec4(x,y,x+z,y+w);
+        }
+        else if ( strend(k, ".sl_9slice") ) {
+            array_reserve_(a.slice_frames, index);
+
+            a.slice_frames[index].has_9slice = atoi(v);
+        }
+        else if ( strend(k, ".sl_core") ) {
+            array_reserve_(a.slice_frames, index);
+
+            float x,y,z,w;
+            sscanf(v, "%f,%f,%f,%f", &x, &y, &z, &w);
+
+            a.slice_frames[index].core = vec4(x,y,x+z,y+w);
         }
         else if( strend(k, ".frames") ) {
             array_reserve_(a.anims, index);
@@ -1331,6 +1365,16 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
             xy->y /= a.tex.h;
         }
         // @todo: adjust padding/border
+    }
+    for each_array_ptr(a.slice_frames, atlas_slice_frame_t, f) {
+        f->bounds.x += padding+border;
+        f->bounds.y += padding+border;
+        f->bounds.z += padding+border;
+        f->bounds.w += padding+border;
+        // f->core.x += f->bounds.x;
+        // f->core.y += f->bounds.y;
+        // f->core.z += f->bounds.x;
+        // f->core.w += f->bounds.y;
     }
 #if 0
     // post-process: specify an anchor for each anim based on 1st frame dims

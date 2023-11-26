@@ -82,6 +82,49 @@ API void    spine_animate(spine_t *p, float delta);
 API void    ui_spine(spine_t *p);
 
 // ----------------------------------------------------------------------------
+// atlas api
+typedef struct atlas_frame_t {
+    unsigned delay;
+    vec4 sheet;
+    vec2 anchor; // @todo
+    array(vec3i) indices;
+    array(vec2) coords;
+    array(vec2) uvs;
+} atlas_frame_t;
+
+typedef struct atlas_anim_t {
+    unsigned name;
+    array(unsigned) frames;
+} atlas_anim_t;
+
+typedef struct atlas_slice_frame_t {
+    vec4 bounds;
+    bool has_9slice;
+    vec4 core;
+} atlas_slice_frame_t;
+
+typedef struct atlas_slice_t {
+    unsigned name;
+    array(unsigned) frames;
+} atlas_slice_t;
+
+typedef struct atlas_t {
+    texture_t tex;
+
+    array(atlas_frame_t) frames;
+    array(atlas_anim_t)  anims;
+    array(atlas_slice_t) slices;
+    array(atlas_slice_frame_t) slice_frames;
+
+    quarks_db db;
+} atlas_t;
+
+API atlas_t atlas_create(const char *inifile, unsigned flags);
+API int         ui_atlas(atlas_t *a);
+API int         ui_atlas_frame(atlas_frame_t *f);
+API void    atlas_destroy(atlas_t *a);
+
+// ----------------------------------------------------------------------------
 // sprite v2 api
 
 typedef struct sprite_t { OBJ
