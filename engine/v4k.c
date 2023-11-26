@@ -10038,6 +10038,7 @@ static const unsigned table_middle_east[] = {
 static const unsigned table_emoji[] = {
 //  0xE000, 0xEB4C, // Private use (emojis)
     0xE000, 0xF8FF, // Private use (emojis+webfonts)
+    0xF0001,0xF1CC7,// Private use (icon mdi)
     0
 };
 
@@ -10225,6 +10226,7 @@ typedef struct font_t {
     unsigned num_glyphs;
     unsigned *cp2iter;
     unsigned *iter2cp;
+    unsigned begin; // first glyph. used in cp2iter table to clamp into a lesser range
 
     // font info and data
     int height;      // bitmap height
@@ -10321,7 +10323,8 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     if( font_size <= 0 || font_size > 72 ) return;
     if( !ttf_data || !ttf_len ) return;
 
-    flags |= FONT_ASCII; // ensure this minimal range [0020-00FF] is always in
+    if(!(flags & FONT_EM))
+    flags |= FONT_ASCII; // ensure this minimal range [0020-00FF] is almost always in
 
     font_t *f = &fonts[index];
     f->initialized = 1;
@@ -10381,12 +10384,13 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     // pack and create bitmap
     unsigned char *bitmap = (unsigned char*)MALLOC(f->height*f->width);
 
-        int charCount = 0xFFFF;
+        int charCount = *array_back(sorted) - sorted[0] + 1; // 0xEFFFF;
+        f->begin = sorted[0];
         f->cdata = (stbtt_packedchar*)CALLOC(1, sizeof(stbtt_packedchar) * charCount);
-        f->iter2cp = (unsigned*)CALLOC( 1, sizeof(unsigned) * charCount );
-        for( int i = 0; i < charCount; ++i ) f->iter2cp[i] = 0xFFFD; // default invalid glyph
-        f->cp2iter = (unsigned*)CALLOC( 1, sizeof(unsigned) * charCount );
-        for( int i = 0; i < charCount; ++i ) f->cp2iter[i] = 0xFFFD; // default invalid glyph
+        f->iter2cp = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
+        f->cp2iter = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
+        for( int i = 0; i < charCount; ++i )
+            f->iter2cp[i] = f->cp2iter[i] = 0xFFFD; // default invalid glyph
 
         stbtt_pack_context pc;
         if( !stbtt_PackBegin(&pc, bitmap, f->width, f->height, 0, 1, NULL) ) {
@@ -10400,11 +10404,11 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
             while( i < (num-1) && (sorted[i+1]-sorted[i]) == 1 ) end = sorted[++i];
             //printf("(%d,%d)", (unsigned)begin, (unsigned)end);
 
-            if( stbtt_PackFontRange(&pc, ttf_data, 0, f->font_size, begin, end - begin + 1, (stbtt_packedchar*)f->cdata + begin) ) {
-                for( int j = begin; j <= end; ++j ) {
+            if( stbtt_PackFontRange(&pc, ttf_data, 0, f->font_size, begin, end - begin + 1, (stbtt_packedchar*)f->cdata + begin - f->begin) ) {
+                for( uint64_t cp = begin; cp <= end; ++cp ) {
                     // unicode->index runtime lookup
-                    f->cp2iter[ j ] = count;
-                    f->iter2cp[ count++ ] = j;
+                    f->cp2iter[ cp - f->begin ] = count;
+                    f->iter2cp[ count++ ] = cp;
                 }
             } else {
                 PRINTF("!Failed to pack atlas font. Likely out of texture mem.");
@@ -10436,7 +10440,7 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
         for (int i = 0; i < f->num_glyphs; i++) {
             int cp = f->iter2cp[i];
             if( cp == 0xFFFD ) continue;
-            stbtt_packedchar *cd = &f->cdata[ cp ];
+            stbtt_packedchar *cd = &f->cdata[ cp - f->begin ];
             if (cd->y1 > max_y1) {
                 max_y1 = cd->y1;
             }
@@ -10503,8 +10507,8 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
         unsigned cp = f->iter2cp[ i ];
         if(cp == 0xFFFD) continue;
 
-        stbtt_packedchar *cd = &f->cdata[ cp ];
-//      if(cd->x1==cd->x0) { f->iter2cp[i] = f->cp2iter[cp] = 0xFFFD; continue; }
+        stbtt_packedchar *cd = &f->cdata[ cp - f->begin ];
+//      if(cd->x1==cd->x0) { f->iter2cp[i] = f->cp2iter[cp - f->begin] = 0xFFFD; continue; }
 
         int k1 = 0*f->num_glyphs + count;
         int k2 = 1*f->num_glyphs + count; ++count;
@@ -10708,7 +10712,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         }
 
         // convert to vbo data
-        int cp = ch; // f->cp2iter[ch];
+        int cp = ch - f->begin; // f->cp2iter[ch - f->begin];
         //if(cp == 0xFFFD) continue;
         //if(cp > f->num_glyphs) cp = 0xFFFD;
 
@@ -11124,6 +11128,12 @@ void *gui_userdata() {
     return last_skin->userdata;
 }
 
+vec2 gui_getskinsize(const char *skin) {
+    vec2 size={0};
+    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, &size);
+    return size;
+}
+
 static
 gui_state_t *gui_getstate(int id) {
     if (!ctl_states) map_init(ctl_states, less_int, hash_int);
@@ -11148,13 +11158,13 @@ bool (gui_button)(int id, vec4 r, const char *skin) {
     }
 
     char *btn = va("%s%s", skin?skin:"button", entry->held?"_press":entry->hover?"_hover":"");
-    if (last_skin->draw_rect_func) last_skin->draw_rect_func(last_skin->userdata, btn, r);
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, btn, r);
 
     return was_clicked;
 }
 
 void (gui_panel)(int id, vec4 r, const char *skin) {
-    if (last_skin->draw_rect_func) last_skin->draw_rect_func(last_skin->userdata, skin?skin:"panel", r);
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin?skin:"panel", r);
 }
 
 /* skinned */
@@ -11182,15 +11192,25 @@ void skinned_draw_missing_rect(vec4 r) {
 
 static
 void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r) {
+    vec4 outer = f->bounds;
+    r.x -= f->pivot.x*scale;
+    r.y -= f->pivot.y*scale;
+    r.z += r.x;
+    r.w += r.y;
+
+    // Ensure dest rectangle is large enough to render the whole element
+    if ((r.z-r.x) < (outer.z-outer.x) * scale) {
+        r.z = r.x + (outer.z-outer.x) * scale;
+    }
+    if ((r.w-r.y) < (outer.w-outer.y) * scale) {
+        r.w = r.y + (outer.w-outer.y) * scale;
+    }
+
     if (!f->has_9slice) {
         gui_drawrect(a->tex, v42v2(f->bounds), 0xFFFFFFFF, v42v2(r));
         return;
     }
 
-    r.z += r.x;
-    r.w += r.y;
-
-    vec4 outer = f->bounds;
     vec4 core  = f->core;
     core.x += outer.x;
     core.y += outer.y;
@@ -11209,14 +11229,6 @@ void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r
     vec4 bottom_left_slice = {outer.x, core.w, core.x, outer.w};
     vec4 bottom_middle_slice = {core.x, core.w, core.z, outer.w};
     vec4 bottom_right_slice = {core.z, core.w, outer.z, outer.w};
-
-    // Ensure dest rectangle is large enough to render the whole element
-    if ((r.z-r.x) < (outer.z-outer.x) * scale) {
-        r.z = r.x + (outer.z-outer.x) * scale;
-    }
-    if ((r.w-r.y) < (outer.w-outer.y) * scale) {
-        r.w = r.y + (outer.w-outer.y) * scale;
-    }
 
     vec4 top_left = {r.x, r.y, r.x + (core.x - outer.x) * scale, r.y + (core.y - outer.y) * scale};
     vec4 top_right = {r.z - (outer.z - core.z) * scale, r.y, r.z, r.y + (core.y - outer.y) * scale};
@@ -11250,13 +11262,24 @@ void skinned_draw_rect(void* userdata, const char *skin, vec4 r) {
     else skinned_draw_sprite(a->scale, &a->atlas, f, r);
 }
 
+void skinned_getskinsize(void *userdata, const char *skin, vec2 *size) {
+    skinned_t *a = C_CAST(skinned_t*, userdata);
+
+    atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin);
+    if (f) {
+        size->x = (f->bounds.z-f->bounds.x)*a->scale;
+        size->y = (f->bounds.w-f->bounds.y)*a->scale;
+    }
+}
+
 guiskin_t gui_skinned(const char *inifile, float scale) {
     skinned_t *a = REALLOC(0, sizeof(skinned_t));
     a->atlas = atlas_create(inifile, 0);
     a->scale = scale?scale:1.0f;
     guiskin_t skin={0};
     skin.userdata = a;
-    skin.draw_rect_func = skinned_draw_rect;
+    skin.drawrect = skinned_draw_rect;
+    skin.getskinsize = skinned_getskinsize;
     skin.free = skinned_free;
     return skin;
 }
@@ -23216,6 +23239,14 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
 
             a.slice_frames[index].core = vec4(x,y,x+z,y+w);
         }
+        else if ( strend(k, ".sl_pivot") ) {
+            array_reserve_(a.slice_frames, index);
+
+            float x,y;
+            sscanf(v, "%f,%f", &x, &y);
+
+            a.slice_frames[index].pivot = vec2(x,y);
+        }
         else if( strend(k, ".frames") ) {
             array_reserve_(a.anims, index);
 
@@ -29325,27 +29356,31 @@ void editor_setmouse(int x, int y) {
     glfwSetCursorPos( window_handle(), x, y );
 }
 
-vec2 editor_glyph(int x, int y, unsigned cp) {
+vec2 editor_glyph(int x, int y, const char *style, unsigned codepoint) {
+    do_once {
     // style: atlas size, unicode ranges and 6 font faces max
-    do_once font_face(FONT_FACE2, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
-    do_once font_face(FONT_FACE3, "materialdesignicons-webfont.ttf", 24.f, FONT_EM|FONT_2048); //  {0xF68C /*ICON_MDI_MIN*/, 0xF1CC7/*ICON_MDI_MAX*/, 0}},
+    font_face(FONT_FACE2, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
+    font_face(FONT_FACE3, "materialdesignicons-webfont.ttf", 24.f, FONT_EM|FONT_2048); //  {0xF68C /*ICON_MDI_MIN*/, 0xF1CC7/*ICON_MDI_MAX*/, 0}},
     // style: 10 colors max
-    do_once font_color(FONT_COLOR1,  WHITE);
-    do_once font_color(FONT_COLOR2, RGBX(0xE8F1FF,128)); //  GRAY);
-    do_once font_color(FONT_COLOR3, YELLOW);
-    do_once font_color(FONT_COLOR4, ORANGE);
-    do_once font_color(FONT_COLOR5,   CYAN);
-    const char *sym = codepoint_to_utf8(cp);
+    font_color(FONT_COLOR1,  WHITE);
+    font_color(FONT_COLOR2, RGBX(0xE8F1FF,128)); //  GRAY);
+    font_color(FONT_COLOR3, YELLOW);
+    font_color(FONT_COLOR4, ORANGE);
+    font_color(FONT_COLOR5,   CYAN);
+    }
+
     font_goto(x,y);
-    return font_print(va("%s" FONT_H1 "%s", cp >= ICON_MDI_MIN ? FONT_FACE3 : FONT_FACE2, sym));
+    vec2 pos = {x,y};
+    const char *sym = codepoint_to_utf8(codepoint);
+    return add2(pos, font_print(va("%s%s%s", style ? style : "", codepoint >= ICON_MDI_MIN ? FONT_FACE3 : FONT_FACE2, sym)));
 }
 
-vec2 editor_glyphstr(int x, int y, const char *utf8) {
-    vec2 dim = {x,y};
+vec2 editor_glyphs(int x, int y, const char *style, const char *utf8) {
+    vec2 pos = {x,y};
     array(unsigned) codepoints = string32(utf8);
     for( int i = 0, end = array_count(codepoints); i < end; ++i)
-        add2(dim, editor_glyph(dim.x,dim.y,codepoints[i]));
-    return dim;
+        pos = add2(pos, editor_glyph(pos.x,pos.y,style,codepoints[i]));
+    return pos;
 }
 
 void editor_frame( void (*game)(unsigned, float, double) ) {

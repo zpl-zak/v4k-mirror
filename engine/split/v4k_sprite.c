@@ -1277,6 +1277,14 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
 
             a.slice_frames[index].core = vec4(x,y,x+z,y+w);
         }
+        else if ( strend(k, ".sl_pivot") ) {
+            array_reserve_(a.slice_frames, index);
+
+            float x,y;
+            sscanf(v, "%f,%f", &x, &y);
+
+            a.slice_frames[index].pivot = vec2(x,y);
+        }
         else if( strend(k, ".frames") ) {
             array_reserve_(a.anims, index);
 

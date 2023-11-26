@@ -162,8 +162,8 @@ int editor_toolbar(int x, int y, int incw, int inch, const char *sym) {
     for each_array(codepoints, uint32_t, g) {
         int selected = oo ? is_hovering(vec4(ix,iy,ix+inc,iy+inc),vec2(ox,oy)) : 0;
         int hovering = dragging ? 0 : is_hovering(vec4(ix,iy,ix+inc,iy+inc), vec2(mx,my));
-        const char *str8 = va("%s%s", selected || hovering ? FONT_COLOR1 : FONT_COLOR2, codepoint_to_utf8(g));
-        editor_glyphstr(ix + inc/8, iy + inc/3 + 2, str8);
+        const char *str8 = codepoint_to_utf8(g);
+        editor_glyphs(ix + inc/8, iy + inc/3 + 2, selected || hovering ? FONT_COLOR1 FONT_H1 : FONT_COLOR2 FONT_H1, str8);
         ix += incw;
         iy += inch;
     }
@@ -251,13 +251,13 @@ int lit_edit(lit *obj) {
         ICON_MDI_WEATHER_SUNNY               // directional
         ICON_MDI_LIGHTBULB_FLUORESCENT_TUBE_OUTLINE
     ;
-    // editor_glyphstr(obj->pos.x+16,obj->pos.y-32,all_icons);
+    // editor_glyphs(obj->pos.x+16,obj->pos.y-32,all_icons);
     if( editor_selected(obj) ) {
     obj->pos.x += input(KEY_RIGHT) - input(KEY_LEFT);
     obj->pos.y += input(KEY_DOWN) - input(KEY_UP);
     obj->type = (obj->type + !!input_down(KEY_SPACE)) % 4;
     }
-    editor_glyphstr(obj->pos.x,obj->pos.y,lit_icon(obj));
+    editor_glyphs(obj->pos.x,obj->pos.y,0,lit_icon(obj));
 
 
 
@@ -331,7 +331,7 @@ int kid_edit(kid *obj) {
         obj->pos.x += input(KEY_RIGHT) - input(KEY_LEFT);
         obj->pos.y += input(KEY_DOWN) - input(KEY_UP);
 
-        editor_glyphstr(obj->pos.x+16,obj->pos.y-16,ICON_MD_VIDEOGAME_ASSET);
+        editor_glyphs(obj->pos.x+16,obj->pos.y-16,0,ICON_MD_VIDEOGAME_ASSET);
     }
     return 1;
 }
@@ -474,9 +474,9 @@ int main(){
 
         int choice1 = editor_toolbar(window_width()-32, ui_has_menubar() ? 34 : 0, 0, 32,
         ICON_MD_VISIBILITY
-ICON_MDI_ORBIT//        ICON_MD_360
-        ICON_MD_ZOOM_IN // ICON_MD_ZOOM_OUT_MAP
-        ICON_MD_GRID_ON ); //  ICON_MDI_LOUPE ICON_MDI_GRID );
+        ICON_MD_360 // ICON_MDI_ORBIT
+        ICON_MD_LOUPE // ZOOM_OUT_MAP // ICON_MD_ZOOM_IN
+        ICON_MD_GRID_ON ); // ICON_MDI_GRID );
         int choice2 = editor_toolbar(window_width()-32*2, ui_has_menubar() ? 34 : 0, -32, 0, ICON_MD_SQUARE_FOOT );
 
         if( choice1 > 0 ) { // clicked[>0]

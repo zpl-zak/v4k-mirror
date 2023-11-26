@@ -90,8 +90,8 @@ API vec3   editor_pick(float mouse_x, float mouse_y);
 API char*  editor_path(const char *path);
 
 API void editor_setmouse(int x, int y);
-API vec2 editor_glyph(int x, int y, unsigned cp);
-API vec2 editor_glyphstr(int x, int y, const char *utf8);
+API vec2 editor_glyph(int x, int y, const char *style, unsigned codepoint);
+API vec2 editor_glyphs(int x, int y, const char *style, const char *utf8);
 API void editor_gizmos(int dim);
 
 // ----------------------------------------------------------------------------------------

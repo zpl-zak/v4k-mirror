@@ -37,11 +37,16 @@ int main() {
             printf("%s\n", "Button pressed!");
         }
 
-        gui_panel(vec4(40,140, 320, 40), "vial");
-        gui_panel(vec4(40+9*skinned->scale,140+2*skinned->scale, 200, 64), "hp");
+        gui_panel(vec4(40,140, 320, 20*skinned->scale), "vial");
+        gui_panel(vec4(40,140, 200, 14*skinned->scale), "hp");
+        gui_panel(vec4(40,240, 240, 20*skinned->scale), "vial");
+        gui_panel(vec4(40,240, 160, 14*skinned->scale), "mp");
 
-        gui_panel(vec4(40,230, 280, 40), "vial");
-        gui_panel(vec4(40+9*skinned->scale,230+2*skinned->scale, 280-18*skinned->scale, 64), "mp");
+        vec2 badge_size = gui_getskinsize("badge");
+        badge_size.x += 2; // padding
+        gui_panel(vec4(60+badge_size.x*0,320, 1, 1), "badge");
+        gui_panel(vec4(60+badge_size.x*1,320, 1, 1), "badge");
+        gui_panel(vec4(60+badge_size.x*2,320, 1, 1), "badge_empty");
     }
 
     gui_popskin();

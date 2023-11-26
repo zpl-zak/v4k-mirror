@@ -511,27 +511,31 @@ void editor_setmouse(int x, int y) {
     glfwSetCursorPos( window_handle(), x, y );
 }
 
-vec2 editor_glyph(int x, int y, unsigned cp) {
+vec2 editor_glyph(int x, int y, const char *style, unsigned codepoint) {
+    do_once {
     // style: atlas size, unicode ranges and 6 font faces max
-    do_once font_face(FONT_FACE2, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
-    do_once font_face(FONT_FACE3, "materialdesignicons-webfont.ttf", 24.f, FONT_EM|FONT_2048); //  {0xF68C /*ICON_MDI_MIN*/, 0xF1CC7/*ICON_MDI_MAX*/, 0}},
+    font_face(FONT_FACE2, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
+    font_face(FONT_FACE3, "materialdesignicons-webfont.ttf", 24.f, FONT_EM|FONT_2048); //  {0xF68C /*ICON_MDI_MIN*/, 0xF1CC7/*ICON_MDI_MAX*/, 0}},
     // style: 10 colors max
-    do_once font_color(FONT_COLOR1,  WHITE);
-    do_once font_color(FONT_COLOR2, RGBX(0xE8F1FF,128)); //  GRAY);
-    do_once font_color(FONT_COLOR3, YELLOW);
-    do_once font_color(FONT_COLOR4, ORANGE);
-    do_once font_color(FONT_COLOR5,   CYAN);
-    const char *sym = codepoint_to_utf8(cp);
+    font_color(FONT_COLOR1,  WHITE);
+    font_color(FONT_COLOR2, RGBX(0xE8F1FF,128)); //  GRAY);
+    font_color(FONT_COLOR3, YELLOW);
+    font_color(FONT_COLOR4, ORANGE);
+    font_color(FONT_COLOR5,   CYAN);
+    }
+
     font_goto(x,y);
-    return font_print(va("%s" FONT_H1 "%s", cp >= ICON_MDI_MIN ? FONT_FACE3 : FONT_FACE2, sym));
+    vec2 pos = {x,y};
+    const char *sym = codepoint_to_utf8(codepoint);
+    return add2(pos, font_print(va("%s%s%s", style ? style : "", codepoint >= ICON_MDI_MIN ? FONT_FACE3 : FONT_FACE2, sym)));
 }
 
-vec2 editor_glyphstr(int x, int y, const char *utf8) {
-    vec2 dim = {x,y};
+vec2 editor_glyphs(int x, int y, const char *style, const char *utf8) {
+    vec2 pos = {x,y};
     array(unsigned) codepoints = string32(utf8);
     for( int i = 0, end = array_count(codepoints); i < end; ++i)
-        add2(dim, editor_glyph(dim.x,dim.y,codepoints[i]));
-    return dim;
+        pos = add2(pos, editor_glyph(pos.x,pos.y,style,codepoints[i]));
+    return pos;
 }
 
 void editor_frame( void (*game)(unsigned, float, double) ) {

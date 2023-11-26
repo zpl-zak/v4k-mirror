@@ -118,6 +118,12 @@ void *gui_userdata() {
     return last_skin->userdata;
 }
 
+vec2 gui_getskinsize(const char *skin) {
+    vec2 size={0};
+    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, &size);
+    return size;
+}
+
 static
 gui_state_t *gui_getstate(int id) {
     if (!ctl_states) map_init(ctl_states, less_int, hash_int);
@@ -142,13 +148,13 @@ bool (gui_button)(int id, vec4 r, const char *skin) {
     }
 
     char *btn = va("%s%s", skin?skin:"button", entry->held?"_press":entry->hover?"_hover":"");
-    if (last_skin->draw_rect_func) last_skin->draw_rect_func(last_skin->userdata, btn, r);
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, btn, r);
 
     return was_clicked;
 }
 
 void (gui_panel)(int id, vec4 r, const char *skin) {
-    if (last_skin->draw_rect_func) last_skin->draw_rect_func(last_skin->userdata, skin?skin:"panel", r);
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin?skin:"panel", r);
 }
 
 /* skinned */
@@ -176,15 +182,25 @@ void skinned_draw_missing_rect(vec4 r) {
 
 static
 void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r) {
+    vec4 outer = f->bounds;
+    r.x -= f->pivot.x*scale;
+    r.y -= f->pivot.y*scale;
+    r.z += r.x;
+    r.w += r.y;
+
+    // Ensure dest rectangle is large enough to render the whole element
+    if ((r.z-r.x) < (outer.z-outer.x) * scale) {
+        r.z = r.x + (outer.z-outer.x) * scale;
+    }
+    if ((r.w-r.y) < (outer.w-outer.y) * scale) {
+        r.w = r.y + (outer.w-outer.y) * scale;
+    }
+
     if (!f->has_9slice) {
         gui_drawrect(a->tex, v42v2(f->bounds), 0xFFFFFFFF, v42v2(r));
         return;
     }
 
-    r.z += r.x;
-    r.w += r.y;
-
-    vec4 outer = f->bounds;
     vec4 core  = f->core;
     core.x += outer.x;
     core.y += outer.y;
@@ -203,14 +219,6 @@ void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r
     vec4 bottom_left_slice = {outer.x, core.w, core.x, outer.w};
     vec4 bottom_middle_slice = {core.x, core.w, core.z, outer.w};
     vec4 bottom_right_slice = {core.z, core.w, outer.z, outer.w};
-
-    // Ensure dest rectangle is large enough to render the whole element
-    if ((r.z-r.x) < (outer.z-outer.x) * scale) {
-        r.z = r.x + (outer.z-outer.x) * scale;
-    }
-    if ((r.w-r.y) < (outer.w-outer.y) * scale) {
-        r.w = r.y + (outer.w-outer.y) * scale;
-    }
 
     vec4 top_left = {r.x, r.y, r.x + (core.x - outer.x) * scale, r.y + (core.y - outer.y) * scale};
     vec4 top_right = {r.z - (outer.z - core.z) * scale, r.y, r.z, r.y + (core.y - outer.y) * scale};
@@ -244,13 +252,24 @@ void skinned_draw_rect(void* userdata, const char *skin, vec4 r) {
     else skinned_draw_sprite(a->scale, &a->atlas, f, r);
 }
 
+void skinned_getskinsize(void *userdata, const char *skin, vec2 *size) {
+    skinned_t *a = C_CAST(skinned_t*, userdata);
+
+    atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin);
+    if (f) {
+        size->x = (f->bounds.z-f->bounds.x)*a->scale;
+        size->y = (f->bounds.w-f->bounds.y)*a->scale;
+    }
+}
+
 guiskin_t gui_skinned(const char *inifile, float scale) {
     skinned_t *a = REALLOC(0, sizeof(skinned_t));
     a->atlas = atlas_create(inifile, 0);
     a->scale = scale?scale:1.0f;
     guiskin_t skin={0};
     skin.userdata = a;
-    skin.draw_rect_func = skinned_draw_rect;
+    skin.drawrect = skinned_draw_rect;
+    skin.getskinsize = skinned_getskinsize;
     skin.free = skinned_free;
     return skin;
 }

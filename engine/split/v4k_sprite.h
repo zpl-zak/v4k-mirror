@@ -101,6 +101,7 @@ typedef struct atlas_slice_frame_t {
     vec4 bounds;
     bool has_9slice;
     vec4 core;
+    vec2 pivot;
 } atlas_slice_frame_t;
 
 typedef struct atlas_slice_t {

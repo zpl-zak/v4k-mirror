@@ -700,7 +700,8 @@ atlas_t* atlas_loadfiles(array(char*) files, atlas_flags flags)
                     strcatf(&atlas_slices, "[%d].sl_9slice=%d\n", slice_idx, slice->has_center_as_9_slice);
                     if (slice->has_center_as_9_slice)
                         strcatf(&atlas_slices, "[%d].sl_core=%d,%d,%d,%d\n", slice_idx, slice->center_x, slice->center_y, slice->center_w, slice->center_h);
-
+                    if (slice->has_pivot)
+                        strcatf(&atlas_slices, "[%d].sl_pivot=%d,%d\n", slice_idx, slice->pivot_x, slice->pivot_y);
                     slice_name = slice->name;
                     ++slice_frame_idx;
                 }

@@ -1148,7 +1148,7 @@ ase_t* cute_aseprite_load_from_memory(const void* memory, int size, void* mem_ct
 					last_udata->has_text = 1;
 					last_udata->text = s_read_string(s);
 				}
-				if (flags & 2) {
+				if (flags & 2) { //< @zpl-zak: removed else
 					last_udata->color.r = s_read_uint8(s);
 					last_udata->color.g = s_read_uint8(s);
 					last_udata->color.b = s_read_uint8(s);
@@ -1178,7 +1178,8 @@ ase_t* cute_aseprite_load_from_memory(const void* memory, int size, void* mem_ct
 						slice.center_y = (int)s_read_int32(s);
 						slice.center_w = (int)s_read_uint32(s);
 						slice.center_h = (int)s_read_uint32(s);
-					} else if (flags & 2) {
+					}
+					if (flags & 2) {
 						// Has pivot information.
 						slice.has_pivot = 1;
 						slice.pivot_x = (int)s_read_int32(s);

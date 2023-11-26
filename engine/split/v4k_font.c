@@ -1388,6 +1388,7 @@ static const unsigned table_middle_east[] = {
 static const unsigned table_emoji[] = {
 //  0xE000, 0xEB4C, // Private use (emojis)
     0xE000, 0xF8FF, // Private use (emojis+webfonts)
+    0xF0001,0xF1CC7,// Private use (icon mdi)
     0
 };
 
@@ -1575,6 +1576,7 @@ typedef struct font_t {
     unsigned num_glyphs;
     unsigned *cp2iter;
     unsigned *iter2cp;
+    unsigned begin; // first glyph. used in cp2iter table to clamp into a lesser range
 
     // font info and data
     int height;      // bitmap height
@@ -1671,7 +1673,8 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     if( font_size <= 0 || font_size > 72 ) return;
     if( !ttf_data || !ttf_len ) return;
 
-    flags |= FONT_ASCII; // ensure this minimal range [0020-00FF] is always in
+    if(!(flags & FONT_EM))
+    flags |= FONT_ASCII; // ensure this minimal range [0020-00FF] is almost always in
 
     font_t *f = &fonts[index];
     f->initialized = 1;
@@ -1731,12 +1734,13 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     // pack and create bitmap
     unsigned char *bitmap = (unsigned char*)MALLOC(f->height*f->width);
 
-        int charCount = 0xFFFF;
+        int charCount = *array_back(sorted) - sorted[0] + 1; // 0xEFFFF;
+        f->begin = sorted[0];
         f->cdata = (stbtt_packedchar*)CALLOC(1, sizeof(stbtt_packedchar) * charCount);
-        f->iter2cp = (unsigned*)CALLOC( 1, sizeof(unsigned) * charCount );
-        for( int i = 0; i < charCount; ++i ) f->iter2cp[i] = 0xFFFD; // default invalid glyph
-        f->cp2iter = (unsigned*)CALLOC( 1, sizeof(unsigned) * charCount );
-        for( int i = 0; i < charCount; ++i ) f->cp2iter[i] = 0xFFFD; // default invalid glyph
+        f->iter2cp = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
+        f->cp2iter = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
+        for( int i = 0; i < charCount; ++i )
+            f->iter2cp[i] = f->cp2iter[i] = 0xFFFD; // default invalid glyph
 
         stbtt_pack_context pc;
         if( !stbtt_PackBegin(&pc, bitmap, f->width, f->height, 0, 1, NULL) ) {
@@ -1750,11 +1754,11 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
             while( i < (num-1) && (sorted[i+1]-sorted[i]) == 1 ) end = sorted[++i];
             //printf("(%d,%d)", (unsigned)begin, (unsigned)end);
 
-            if( stbtt_PackFontRange(&pc, ttf_data, 0, f->font_size, begin, end - begin + 1, (stbtt_packedchar*)f->cdata + begin) ) {
-                for( int j = begin; j <= end; ++j ) {
+            if( stbtt_PackFontRange(&pc, ttf_data, 0, f->font_size, begin, end - begin + 1, (stbtt_packedchar*)f->cdata + begin - f->begin) ) {
+                for( uint64_t cp = begin; cp <= end; ++cp ) {
                     // unicode->index runtime lookup
-                    f->cp2iter[ j ] = count;
-                    f->iter2cp[ count++ ] = j;
+                    f->cp2iter[ cp - f->begin ] = count;
+                    f->iter2cp[ count++ ] = cp;
                 }
             } else {
                 PRINTF("!Failed to pack atlas font. Likely out of texture mem.");
@@ -1786,7 +1790,7 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
         for (int i = 0; i < f->num_glyphs; i++) {
             int cp = f->iter2cp[i];
             if( cp == 0xFFFD ) continue;
-            stbtt_packedchar *cd = &f->cdata[ cp ];
+            stbtt_packedchar *cd = &f->cdata[ cp - f->begin ];
             if (cd->y1 > max_y1) {
                 max_y1 = cd->y1;
             }
@@ -1853,8 +1857,8 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
         unsigned cp = f->iter2cp[ i ];
         if(cp == 0xFFFD) continue;
 
-        stbtt_packedchar *cd = &f->cdata[ cp ];
-//      if(cd->x1==cd->x0) { f->iter2cp[i] = f->cp2iter[cp] = 0xFFFD; continue; }
+        stbtt_packedchar *cd = &f->cdata[ cp - f->begin ];
+//      if(cd->x1==cd->x0) { f->iter2cp[i] = f->cp2iter[cp - f->begin] = 0xFFFD; continue; }
 
         int k1 = 0*f->num_glyphs + count;
         int k2 = 1*f->num_glyphs + count; ++count;
@@ -2058,7 +2062,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         }
 
         // convert to vbo data
-        int cp = ch; // f->cp2iter[ch];
+        int cp = ch - f->begin; // f->cp2iter[ch - f->begin];
         //if(cp == 0xFFFD) continue;
         //if(cp > f->num_glyphs) cp = 0xFFFD;
 

@@ -2,13 +2,15 @@
 // game ui
 
 typedef struct guiskin_t {
-    void (*draw_rect_func)(void* userdata, const char *skin, vec4 rect);
+    void (*drawrect)(void* userdata, const char *skin, vec4 rect);
+    void (*getskinsize)(void* userdata, const char *skin, vec2 *size);
     void (*free)(void* userdata);
     void *userdata;
 } guiskin_t;
 
 API void    gui_pushskin(guiskin_t skin);
 API void*       gui_userdata();
+API vec2        gui_getskinsize(const char *skin);
 // --
 API void        gui_panel(int id, vec4 rect, const char *skin);
 API bool        gui_button(int id, vec4 rect, const char *skin);
