@@ -398,12 +398,6 @@ extern "C" {
     static void fn(void)
 #endif
 
-#if 0 // autorun demo
-void byebye(void) { puts("seen after main()"); }
-AUTORUN { puts("seen before main()"); }
-AUTORUN { puts("seen before main() too"); atexit( byebye ); }
-#endif
-
 // -----------------------------------------------------------------------------
 // build info
 
@@ -1401,32 +1395,32 @@ void*   obj_free(void *o);
 #define obj_vtable(method,RC,...)   RC macro(obj_##method)(){ __VA_ARGS__ }; RC (*obj_##method[256])() = { REPEAT256(macro(obj_##method)) };
 #define obj_vtable_null(method,RC)  RC (*obj_##method[256])() = { 0 }; // null virtual table. will crash unless obj_extend'ed
 
-#define REPEAT16(f)  f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f
-#define REPEAT64(f)  REPEAT16(f),REPEAT16(f),REPEAT16(f),REPEAT16(f)
-#define REPEAT256(f) REPEAT64(f),REPEAT64(f),REPEAT64(f),REPEAT64(f)
+#define REPEAT16(f)  f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f ///-
+#define REPEAT64(f)  REPEAT16(f),REPEAT16(f),REPEAT16(f),REPEAT16(f) ///-
+#define REPEAT256(f) REPEAT64(f),REPEAT64(f),REPEAT64(f),REPEAT64(f) ///-
 
 #undef  EXTEND
 #define EXTEND(...) EXPAND(EXTEND, __VA_ARGS__)
-#define EXTEND2(o,F1) obj_extend(o,F1)
-#define EXTEND3(o,F1,F2) obj_extend(o,F1), obj_extend(o,F2)
-#define EXTEND4(o,F1,F2,F3) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3)
-#define EXTEND5(o,F1,F2,F3,F4) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4)
-#define EXTEND6(o,F1,F2,F3,F4,F5) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5)
-#define EXTEND7(o,F1,F2,F3,F4,F5,F6) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6)
-#define EXTEND8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7)
-#define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8)
-#define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9)
+#define EXTEND2(o,F1) obj_extend(o,F1) ///-
+#define EXTEND3(o,F1,F2) obj_extend(o,F1), obj_extend(o,F2) ///-
+#define EXTEND4(o,F1,F2,F3) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3) ///-
+#define EXTEND5(o,F1,F2,F3,F4) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4) ///-
+#define EXTEND6(o,F1,F2,F3,F4,F5) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5) ///-
+#define EXTEND7(o,F1,F2,F3,F4,F5,F6) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6) ///-
+#define EXTEND8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7) ///-
+#define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8) ///-
+#define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9) ///-
 
 #define EXTEND_T(...) EXPAND(EXTEND_T, __VA_ARGS__)
-#define EXTEND_T2(o,F1) obj_extend_t(o,F1)
-#define EXTEND_T3(o,F1,F2) obj_extend_t(o,F1), obj_extend_t(o,F2)
-#define EXTEND_T4(o,F1,F2,F3) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3)
-#define EXTEND_T5(o,F1,F2,F3,F4) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4)
-#define EXTEND_T6(o,F1,F2,F3,F4,F5) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5)
-#define EXTEND_T7(o,F1,F2,F3,F4,F5,F6) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6)
-#define EXTEND_T8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7)
-#define EXTEND_T9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8)
-#define EXTEND_T10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8), obj_extend_t(o,F9)
+#define EXTEND_T2(o,F1) obj_extend_t(o,F1) ///-
+#define EXTEND_T3(o,F1,F2) obj_extend_t(o,F1), obj_extend_t(o,F2) ///-
+#define EXTEND_T4(o,F1,F2,F3) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3) ///-
+#define EXTEND_T5(o,F1,F2,F3,F4) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4) ///-
+#define EXTEND_T6(o,F1,F2,F3,F4,F5) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5) ///-
+#define EXTEND_T7(o,F1,F2,F3,F4,F5,F6) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6) ///-
+#define EXTEND_T8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7) ///-
+#define EXTEND_T9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8) ///-
+#define EXTEND_T10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8), obj_extend_t(o,F9) ///-
 
 // --- declare vtables
 
@@ -3761,6 +3755,12 @@ API void ddraw_prism(vec3 center, float radius, float height, vec3 normal, int s
 API void ddraw_demo();
 API void ddraw_flush();
 API void ddraw_flush_projview(mat44 proj, mat44 view);
+
+// transform gizmos
+
+API int  gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
+API bool gizmo_active();
+API bool gizmo_hover();
 #line 0
 
 #line 1 "v4k_scene.h"
@@ -3780,6 +3780,11 @@ typedef struct camera_t {
     float look_friction, look_damping;
     vec2 last_look; vec3 last_move; // used for friction and damping
     bool damping;
+
+    bool orthographic; // 0 perspective, 1 orthographic; when ortho: dimetric[if pitch == -30o], isometric[if pitch == 35.264o]
+    float distance;    // distance to pivot, when orbiting
+    // vec2 polarity = { +1,-1 }; // @todo
+    // vec2 sensitivity = { 2,2 }; // @todo
 } camera_t;
 
 API camera_t camera();
@@ -4185,6 +4190,7 @@ API void        thread_destroy( void *thd );
 
 API int         argc();
 API char*       argv(int);
+API void        argvadd(const char *arg);
 
 API int         flag(const char *commalist); // --arg // app_flag?
 API const char* option(const char *commalist, const char *defaults); // --arg=string or --arg string
@@ -4667,6 +4673,7 @@ API void        window_setclipboard(const char *text);
 #define EDITOR_VERSION "2023.10"
 
 // ----------------------------------------------------------------------------
+// editor bindings
 
 typedef struct editor_bind_t {
     const char *command;
@@ -4680,6 +4687,7 @@ API void editor_addbind(editor_bind_t bind);
     void macro(editor_bind_##CMD##_fn_)() { __VA_ARGS__ }; AUTORUN { array_push(editor_binds, ((editor_bind_t){#CMD,KEYS,macro(editor_bind_##CMD##_fn_)}) ); }
 
 // ----------------------------------------------------------------------------
+// editor properties
 
 #define EDITOR_PROPERTYDEF(T,property_name) \
     typedef map(void*,T) editor_##property_name##_map_t; \
@@ -4689,25 +4697,26 @@ API void editor_set##property_name(const void *obj, T value); \
 API void editor_alt##property_name(const void *obj); \
 API void editor_no##property_name(void *obj);
 
-EDITOR_PROPERTYDEF(int,  open);     // whether object is tree opened in tree editor
-EDITOR_PROPERTYDEF(int,  selected); // whether object is displaying a contextual popup or not
-EDITOR_PROPERTYDEF(int,  changed);  // whether object is displaying a contextual popup or not
-EDITOR_PROPERTYDEF(int,  popup);    // whether object is displaying a contextual popup or not
-EDITOR_PROPERTYDEF(int,  bookmarked);
-EDITOR_PROPERTYDEF(int,  visible);
-EDITOR_PROPERTYDEF(int,  script);
-EDITOR_PROPERTYDEF(int,  event);
-EDITOR_PROPERTYDEF(char*,iconinstance);
-EDITOR_PROPERTYDEF(char*,iconclass);
-EDITOR_PROPERTYDEF(int,  treeoffsety);
+EDITOR_PROPERTYDEF(int,  open);     ///- whether object is tree opened in tree editor
+EDITOR_PROPERTYDEF(int,  selected); ///- whether object is displaying a contextual popup or not
+EDITOR_PROPERTYDEF(int,  changed);  ///- whether object is displaying a contextual popup or not
+EDITOR_PROPERTYDEF(int,  popup);    ///- whether object is displaying a contextual popup or not
+EDITOR_PROPERTYDEF(int,  bookmarked); ///-
+EDITOR_PROPERTYDEF(int,  visible); ///-
+EDITOR_PROPERTYDEF(int,  script); ///-
+EDITOR_PROPERTYDEF(int,  event); ///-
+EDITOR_PROPERTYDEF(char*,iconinstance); ///-
+EDITOR_PROPERTYDEF(char*,iconclass); ///-
+EDITOR_PROPERTYDEF(int,  treeoffsety); ///-
 
 API void editor_destroy_properties(void *o);
 API void editor_load_on_boot(void);
 API void editor_save_on_quit(void);
 
 // ----------------------------------------------------------------------------
+// editor ui
 
-enum {
+enum EDITOR_MODE {
     EDITOR_PANEL,
     EDITOR_WINDOW,
     EDITOR_WINDOW_NK,
@@ -4716,6 +4725,9 @@ enum {
 
 API int editor_begin(const char *title, int mode);
 API int editor_end(int mode);
+
+// ----------------------------------------------------------------------------------------
+// editor selection
 
 API int editor_filter();
 API void editor_select(const char *mask);
@@ -4727,6 +4739,7 @@ API void* editor_first_selected();
 API void* editor_last_selected();
 
 // ----------------------------------------------------------------------------------------
+// editor instancing
 
 API void editor_addtoworld(obj *o);
 API void editor_watch(const void *o);
@@ -4737,44 +4750,34 @@ API void editor_destroy_selected();
 API void editor_inspect(obj *o);
 
 // ----------------------------------------------------------------------------------------
-// tty
-
-API int editor_send(const char *cmd); // return job-id
-API const char* editor_recv(int jobid, double timeout_ss);
-API void editor_pump();
-
-// ----------------------------------------------------------------------------------------
-
-API void editor_symbol(int x, int y, const char *sym);
-API void editor_frame( void (*game)(unsigned, float, double) );
-API void editor_gizmos(int dim);
-
-// ----------------------------------------------------------------------------------------
-
-API int editor_send(const char *command);
+// editor utils
 
 //API void  editor();
 //API bool  editor_active();
 API vec3   editor_pick(float mouse_x, float mouse_y);
 API char*  editor_path(const char *path);
 
+API void editor_symbol(int x, int y, const char *sym);
+API void editor_gizmos(int dim);
+
+// ----------------------------------------------------------------------------------------
+// editor loop
+
+API int         editor_send(const char *cmd); // returns job-id
+API const char* editor_recv(int jobid, double timeout_ss);
+
+API void editor_pump();
+API void editor_frame( void (*game)(unsigned, float, double) );
+
+// ----------------------------------------------------------------------------------------
+// engine section: @todo: expand me
+
 API float* engine_getf(const char *key);
 API int*   engine_geti(const char *key);
 API char** engine_gets(const char *key);
 API int    engine_send(const char *cmd, const char *optional_value);
 
-API int    ui_debug();
-
-// open file dialog
-
-API char* dialog_load();
-API char* dialog_save();
-
-// transform gizmos
-
-API int   gizmo(vec3 *pos, vec3 *rot, vec3 *sca);
-API bool  gizmo_active();
-API bool  gizmo_hover();
+API int    ui_engine();
 #line 0
 
 // ----
@@ -4789,13 +4792,13 @@ API bool  gizmo_hover();
     #include <GLFW/glfw3.h>
     #include <emscripten.h>
     #include <emscripten/html5.h>
-    #define gladLoadGL(func) (glewExperimental = true, glewInit() == GLEW_OK)
+    #define gladLoadGL(func) (glewExperimental = true, glewInit() == GLEW_OK) ///-
 #else
     #if is(win32) /*&& is(tcc)*/ // && ENABLE_DLL
     #ifdef GLAD_API_CALL
     #undef GLAD_API_CALL
     #endif
-    #define GLAD_API_CALL extern API
+    #define GLAD_API_CALL extern API ///-
     #endif
     #ifndef GLAD_GL_H_
     #include "v4k"

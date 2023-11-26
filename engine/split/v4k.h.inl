@@ -172,13 +172,13 @@ extern "C" {
     #include <GLFW/glfw3.h>
     #include <emscripten.h>
     #include <emscripten/html5.h>
-    #define gladLoadGL(func) (glewExperimental = true, glewInit() == GLEW_OK)
+    #define gladLoadGL(func) (glewExperimental = true, glewInit() == GLEW_OK) ///-
 #else
     #if is(win32) /*&& is(tcc)*/ // && ENABLE_DLL
     #ifdef GLAD_API_CALL
     #undef GLAD_API_CALL
     #endif
-    #define GLAD_API_CALL extern API
+    #define GLAD_API_CALL extern API ///-
     #endif
     #ifndef GLAD_GL_H_
     #include "v4k"

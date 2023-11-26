@@ -539,8 +539,7 @@ int window_frame_begin() {
     // generate Debug panel contents
     if( may_render_debug_panel ) {
         if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
-            API int ui_debug();
-            ui_debug();
+            ui_engine();
 
             (has_menu ? ui_window_end : ui_panel_end)();
         }

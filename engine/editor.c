@@ -93,6 +93,122 @@ TODO("bug: missing code completions popup")
 // https://github.com/rxi/lite/commit/236a585756cb9fa70130eee6c9a604780aced424 > suru.png
 // https://github.com/rxi/lite/commit/f90b00748e1fe1cd2340aaa06d2526a1b2ea54ec
 
+#if 0 // good UI/UX blender ideas
+ui density is perfect: font face, font size and icon sizes are perfect even in a low res 1366x768 scenario
+viewport: not cluttered at all. vertical floating toolbar on the left, floating icons on the right
+left icons are tools related to current edition mode, right icons are camera only.
+left icons can be long pressed for a hovered submenu, right icons can be clicked or dragged.
+non-matching text filtering works by disabling widgets, not by hiding them
+window contents can be promoted to any display any other window content by clicking their [icon V]
+there are no windows or minimize/maximize buttons
+windows are grouped with a vertical toolbar inside the right bar docked section
+you can only display 1 window at time.
+panels can be dragged within a window and make much more sense than our approach
+scene tree: can make collections/groups
+widget tree drawing is much simpler than us, just a vertical parent line per collection and indented arrows per child
+context menus are always like: optional icon (white), text (white), either optional input binding (gray) or submenu arrow
+input boxes are super reactive
+< > are hidden unless hovered
+< > can be clicked to de/increment (release)
+< > can be horizontally dragged to de/increment larger quantities (hold)
+< > can be vertically dragged to include other Y,Z properties in the selection (hold)
+0.53m can be clicked (release) or dragged (<-> hovered icon) (hold).
+0.53m whole text is automatically selected when clicked.
+you can enter units when entering values 350m, 350km, 12mi
+you can enter math values: 30+20+sin(1)
+numeric: units always specified: 0 m, 90o, 1.25x
+numeric: epsilons (non-zero) displayed as -0.00000 even if digits cannot fit widget rect
+
+operation context is split into different sections in menu bar: modeling, sculpting, uv editing, shading, anim, etc
+cam 3d orientation gizmo top right: can be dragged (orbit cam) or clicked (reposition)
+rotation gizmo: anchor can be positioned within world
+gizmo: will display always initial position while dragging, and tape distance so far
+right floating icons can be dragged: cam orientation, cam panning, cam zooming, cam iso/dimetric
+ctrl-z undo, ctrl-shift-z redo
+#endif
+
+static const char* codepoint_to_utf8_(unsigned c) { //< @r-lyeh
+    static char s[4+1];
+    memset(s, 0, 5);
+    /**/ if (c <     0x80) s[0] = c, s[1] = 0;
+    else if (c <    0x800) s[0] = 0xC0 | ((c >>  6) & 0x1F), s[1] = 0x80 | ( c        & 0x3F), s[2] = 0;
+    else if (c <  0x10000) s[0] = 0xE0 | ((c >> 12) & 0x0F), s[1] = 0x80 | ((c >>  6) & 0x3F), s[2] = 0x80 | ( c        & 0x3F), s[3] = 0;
+    else if (c < 0x110000) s[0] = 0xF0 | ((c >> 18) & 0x07), s[1] = 0x80 | ((c >> 12) & 0x3F), s[2] = 0x80 | ((c >>  6) & 0x3F), s[3] = 0x80 | (c & 0x3F), s[4] = 0;
+    return s;
+}
+bool is_hovering(vec4 rect, vec2 mouse) { // rect(x,y,x2,y2)
+    if( mouse.x < rect.x ) return 0;
+    if( mouse.x > rect.z ) return 0;
+    if( mouse.y < rect.y ) return 0;
+    if( mouse.y > rect.w ) return 0;
+    return 1;
+}
+vec4 editor_toolbar_drag; // xy mouse, z time
+vec4 editor_toolbar_rect;
+int editor_toolbar_hovered() {
+    return is_hovering(editor_toolbar_rect, vec2(input(MOUSE_X),input(MOUSE_Y)));
+}
+vec2 editor_toolbar_dragged() {
+    return vec2( editor_toolbar_drag.x, editor_toolbar_drag.y );
+}
+int editor_toolbar(int x, int y, int incw, int inch, const char *sym) {
+    array(uint32_t) codepoints = string32(sym);
+    if( incw < 0 ) return editor_toolbar(x + incw * (array_count(codepoints)-1), y, -incw, inch, sym);
+    if( inch < 0 ) return editor_toolbar(x, y + inch * (array_count(codepoints)-1), incw, -inch, sym);
+
+    int mx = input(MOUSE_X);
+    int my = input(MOUSE_Y);
+    int inc = maxi(incw, inch);
+
+    static int ox = 0, oy = 0, dragging = 0; // drag origin
+
+    editor_toolbar_rect = vec4(x,y,x + (incw ? incw * array_count(codepoints) : inch), y + (inch ? inch * array_count(codepoints) : incw) );
+    int oo = is_hovering(editor_toolbar_rect, vec2(ox,oy));
+
+    int ix = x, iy = y;
+    for each_array(codepoints, uint32_t, g) {
+        int selected = oo ? is_hovering(vec4(ix,iy,ix+inc,iy+inc),vec2(ox,oy)) : 0;
+        int hovering = dragging ? 0 : is_hovering(vec4(ix,iy,ix+inc,iy+inc), vec2(mx,my));
+        const char *str8 = va("%s%s", selected || hovering ? FONT_COLOR1 : FONT_COLOR2, codepoint_to_utf8_(g));
+        editor_symbol(ix + inc/8, iy + inc/3 + 2, str8);
+        ix += incw;
+        iy += inch;
+    }
+//  debug:
+//  ddraw_push_2d();
+//  ddraw_aabb(vec3(editor_toolbar_rect.x,editor_toolbar_rect.y,0),vec3(editor_toolbar_rect.z,editor_toolbar_rect.w,0));
+//  ddraw_pop_2d();
+    if( 1 ) // is_hovering(editor_toolbar_rect, vec2(mx,my)) )
+    {
+        if( input_down(MOUSE_L) && editor_toolbar_hovered() ) {
+            window_cursor_shape(0);
+            editor_toolbar_drag = vec4(0,0, mx,my);
+            ox = mx, oy = my, dragging = 1;
+            int mcx = ((ox - x) / inc) + 1, mcy = ((oy - y) / inc) + 1; // mouse cells
+            return incw ? -mcx : -mcy;
+        }
+        if( input(MOUSE_L) && dragging ) {
+            int mcx = ((ox - x) / inc) + 1, mcy = ((oy - y) / inc) + 1; // mouse cells
+            editor_toolbar_drag.x  = mx - editor_toolbar_drag.z;
+            editor_toolbar_drag.y  = my - editor_toolbar_drag.w;
+            API void editor_cursorpos(int x, int y);
+            editor_cursorpos(ox, oy);
+            editor_toolbar_drag.z  = ox;
+            editor_toolbar_drag.w  = oy;
+            return incw ? -mcx : -mcy;
+        }
+        if( input_up(MOUSE_L) && dragging ) {
+            int mcx = ((ox - x) / inc) + 1, mcy = ((oy - y) / inc) + 1; // mouse cells
+            window_cursor_shape(CURSOR_SW_AUTO);
+            ox = oy = 0, dragging = 0;
+            return incw ? mcx : mcy;
+        }
+    }
+    editor_toolbar_drag = vec4(0,0,0,0);
+    return 0;
+}
+
+
 // ----------------------------------------------------------------------------
 // demo
 
@@ -327,13 +443,14 @@ void game(unsigned frame, float dt, double t) {
     window_cursor( !active );
     if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
     vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
-    vec3 wasdecq = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-(input(KEY_C)||input(KEY_Q)),input(KEY_W)-input(KEY_S)), cam.speed);
+    vec3 wasdecq = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-(input(KEY_C)||input(KEY_Q)),input(KEY_W)-input(KEY_S)), cam.speed * active);
     camera_moveby(&cam, wasdecq);
     camera_fps(&cam, mouse.x,mouse.y);
 
     // draw world
     ddraw_ontop_push(0);
-    ddraw_grid(0);
+    ddraw_grid(0); // 1+10+100
+  ddraw_grid(1000);
     ddraw_ontop_pop();
     ddraw_flush();
 
@@ -344,6 +461,8 @@ void game(unsigned frame, float dt, double t) {
 }
 
 int main(){
+    argvadd("--cook-on-demand");
+
     // borderless, see:
     // https://github.com/glfw/glfw/pull/1420
     //   https://github.com/glfw/glfw/pull/987
@@ -351,14 +470,27 @@ int main(){
     //   https://github.com/glfw/glfw/pull/990
 
     window_title("Editor " EDITOR_VERSION);
-    if( flag("--transparent") )
-    window_create(101, 0);
-    else
-    window_create(80, flag("--windowed") ? 0 : WINDOW_BORDERLESS);
+    window_create( flag("--transparent") ? 101 : 80, flag("--windowed") ? 0 : WINDOW_BORDERLESS);
     window_icon("scale-ruler-icon.png");
 
     while( window_swap() ) {
         editor_frame(game);
         editor_gizmos(2);
+
+        int choice1 = editor_toolbar(window_width()-32, ui_has_menubar() ? 34 : 0, 0, 32, ICON_MD_VISIBILITY ICON_MD_360 ICON_MD_ZOOM_OUT_MAP ICON_MD_GRID_ON ); // ICON_MDI_ORBIT ICON_MDI_LOUPE ICON_MDI_GRID );
+        //int choice2 = editor_toolbar(window_width()-32*2, ui_has_menubar() ? 34 : 0, -32, 0, ICON_MD_360 ICON_MD_ZOOM_OUT_MAP ICON_MD_GRID_ON ); // ICON_MDI_ORBIT ICON_MDI_LOUPE ICON_MDI_GRID );
+
+        if( choice1 > 0 ) { // clicked[>0]
+            camera_t *cam = camera_get_active();
+            if( choice1 == 4 ) cam->orthographic ^= 1, camera_fps(cam, 0, 0);
+        }
+        if( choice1 < 0 ) { // dragged[<0]
+            vec2 mouse_sensitivity = vec2(0.1, -0.1); // sensitivity + polarity
+            vec2 drag = mul2( editor_toolbar_dragged(), mouse_sensitivity );
+            camera_t *cam = camera_get_active();
+            if( choice1 == -1 ) camera_fps(cam, drag.x, drag.y );
+            if( choice1 == -2 ) camera_orbit(cam, drag.x, drag.y, 0); //len3(cam->position) );
+            if( choice1 == -3 ) camera_fov(cam, cam->fov += drag.y - drag.x);
+        }
     }
 }

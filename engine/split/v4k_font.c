@@ -2060,6 +2060,8 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         // convert to vbo data
         int cp = ch; // f->cp2iter[ch];
         //if(cp == 0xFFFD) continue;
+        //if(cp > f->num_glyphs) cp = 0xFFFD;
+
         *t++ = X;
         *t++ = Y;
         *t++ = f->cp2iter[cp];

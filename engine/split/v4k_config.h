@@ -300,12 +300,6 @@
     static void fn(void)
 #endif
 
-#if 0 // autorun demo
-void byebye(void) { puts("seen after main()"); }
-AUTORUN { puts("seen before main()"); }
-AUTORUN { puts("seen before main() too"); atexit( byebye ); }
-#endif
-
 // -----------------------------------------------------------------------------
 // build info
 

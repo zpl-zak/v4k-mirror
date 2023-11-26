@@ -1343,6 +1343,10 @@ static int ui_using_v2_menubar = 0;
     #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #endif
 
+    #define UI_FONT_REGULAR_SAMPLING  UI_FONT_ENUM(vec3(1,1,1),vec3(1,1,1))
+    #define UI_FONT_HEADING_SAMPLING  UI_FONT_ENUM(vec3(1,1,1),vec3(1,1,1))
+    #define UI_FONT_TERMINAL_SAMPLING UI_FONT_ENUM(vec3(1,1,1),vec3(1,1,1))
+
 #if UI_ICONS_SMALL
     #define UI_ICON_FONTSIZE        UI_FONT_ENUM(16.5f,16.5f)
     #define UI_ICON_SPACING_X       UI_FONT_ENUM(-2,-2)
@@ -1381,8 +1385,12 @@ static void nk_config_custom_fonts() {
         for( char *data = vfs_load(UI_FONT_REGULAR, &datalen); data; data = 0 ) {
             float font_size = UI_FONT_REGULAR_SIZE;
                 struct nk_font_config cfg = nk_font_config(font_size);
-                cfg.oversample_v = 2;
-                cfg.pixel_snap = 0;
+                cfg.oversample_h = UI_FONT_REGULAR_SAMPLING.x;
+                cfg.oversample_v = UI_FONT_REGULAR_SAMPLING.y;
+                cfg.pixel_snap   = UI_FONT_REGULAR_SAMPLING.z;
+                #if UI_LESSER_SPACING
+                cfg.spacing.x -= 1.0;
+                #endif
             // win32: struct nk_font *arial = nk_font_atlas_add_from_file(atlas, va("%s/fonts/arial.ttf",getenv("windir")), font_size, &cfg); font = arial ? arial : font;
             // struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "nuklear/extra_font/DroidSans.ttf", font_size, &cfg); font = droid ? droid : font;
             struct nk_font *regular = nk_font_atlas_add_from_memory(atlas, data, datalen, font_size, &cfg); font = regular ? regular : font;
@@ -1390,10 +1398,10 @@ static void nk_config_custom_fonts() {
 
         // ...with icons embedded on it.
         static struct icon_font {
-            const char *file; int yspacing; nk_rune range[3];
+            const char *file; int yspacing; vec3 sampling; nk_rune range[3];
         } icons[] = {
-            {"MaterialIconsSharp-Regular.otf", UI_ICON_SPACING_Y, {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0}}, // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf"
-            {"materialdesignicons-webfont.ttf", 2, {0xF68C /*ICON_MIN_MDI*/, 0xF1CC7/*ICON_MAX_MDI*/, 0}},
+            {"MaterialIconsSharp-Regular.otf", UI_ICON_SPACING_Y, {1,1,1}, {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0}}, // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf"
+            {"materialdesignicons-webfont.ttf", 2, {1,1,1}, {0xF68C /*ICON_MIN_MDI*/, 0xF1CC7/*ICON_MAX_MDI*/, 0}},
         };
         for( int f = 0; f < countof(icons); ++f )
         for( char *data = vfs_load(icons[f].file, &datalen); data; data = 0 ) {
@@ -1406,9 +1414,13 @@ static void nk_config_custom_fonts() {
          // cfg.font->ascent += ICON_ASCENT;
          // cfg.font->height += ICON_HEIGHT;
 
-            cfg.oversample_h = 1;
-            cfg.oversample_v = 1;
-            cfg.pixel_snap = 1;
+            cfg.oversample_h = icons[f].sampling.x;
+            cfg.oversample_v = icons[f].sampling.y;
+            cfg.pixel_snap   = icons[f].sampling.z;
+
+            #if UI_LESSER_SPACING
+            cfg.spacing.x -= 1.0;
+            #endif
 
             struct nk_font *icons = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_ICON_FONTSIZE, &cfg);
         }
@@ -1416,15 +1428,19 @@ static void nk_config_custom_fonts() {
         // Monospaced font. Used in terminals or consoles.
 
         for( char *data = vfs_load(UI_FONT_TERMINAL, &datalen); data; data = 0 ) {
-            const float font_size = UI_FONT_REGULAR_SIZE;
+            const float font_size = UI_FONT_TERMINAL_SIZE;
             static const nk_rune icon_range[] = {32, 127, 0};
 
             struct nk_font_config cfg = nk_font_config(font_size);
             cfg.range = icon_range;
 
-            cfg.oversample_h = 1;
-            cfg.oversample_v = 1;
-            cfg.pixel_snap = 1;
+            cfg.oversample_h = UI_FONT_TERMINAL_SAMPLING.x;
+            cfg.oversample_v = UI_FONT_TERMINAL_SAMPLING.y;
+            cfg.pixel_snap   = UI_FONT_TERMINAL_SAMPLING.z;
+
+            #if UI_LESSER_SPACING
+            cfg.spacing.x -= 1.0;
+            #endif
 
             // struct nk_font *proggy = nk_font_atlas_add_default(atlas, font_size, &cfg);
             struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, font_size, &cfg);
@@ -1433,7 +1449,17 @@ static void nk_config_custom_fonts() {
         // Extra optional fonts from here...
 
         for( char *data = vfs_load(UI_FONT_HEADING, &datalen); data; data = 0 ) {
-            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_FONT_HEADING_SIZE, 0); // font = bold ? bold : font;
+            struct nk_font_config cfg = nk_font_config(UI_FONT_HEADING_SIZE);
+            cfg.oversample_h = UI_FONT_HEADING_SAMPLING.x;
+            cfg.oversample_v = UI_FONT_HEADING_SAMPLING.y;
+            cfg.pixel_snap   = UI_FONT_HEADING_SAMPLING.z;
+
+            #if UI_LESSER_SPACING
+            cfg.spacing.x -= 1.0;
+            #endif
+
+            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_FONT_HEADING_SIZE, &cfg);
+            // font = bold ? bold : font;
         }
 
     nk_glfw3_font_stash_end(&nk_glfw); // nk_sdl_font_stash_end();
@@ -1588,7 +1614,7 @@ int ui_menu_editbox(char *buf, int bufcap) {
 }
 
 int ui_has_menubar() {
-    return ui_using_v2_menubar || !!ui_items; // array_count(ui_items) > 0;
+    return ui_using_v2_menubar || !!ui_items; // ? UI_MENUROW_HEIGHT + 8 : 0; // array_count(ui_items) > 0;
 }
 
 static
@@ -7091,9 +7117,8 @@ static void *xml_path(struct xml *node, char *path, int down) {
 
 const char *(xml_string)(char *key) {
     struct xml *node = xml_path(*array_back(xml_docs), key, 0);
-    if( !node ) return "";
-    if( strchr(key, '@') ) return (const char *)node;
-    if( strchr(key, '$') ) return (const char *)node;
+    if( node && strchr(key, '@') ) return (const char *)node;
+    if( node && strchr(key, '$') ) return (const char *)node;
     return "";
 }
 unsigned (xml_count)(char *key) {
@@ -7680,7 +7705,10 @@ array(char*) file_list(const char *pathmasks) {
 
         ASSERT(strend(cwd, "/"), "Error: dirs like '%s' must end with slash", cwd);
 
-        dir *d = dir_open(cwd, strstr(masks,"**") ? "r" : "");
+        int recurse = strstr(cwd, "**") || strstr(masks, "**");
+        strswap(cwd, "**", "./");
+
+        dir *d = dir_open(cwd, recurse ? "r" : "");
         if( d ) {
             for( int i = 0; i < dir_count(d); ++i ) {
                 if( dir_file(d,i) ) {
@@ -8043,8 +8071,6 @@ static bool vfs_mount_hints(const char *path);
 
 void vfs_reload() {
     const char *app = app_name();
-
-    dir_cache = 0; // @leak
 
     array_resize(vfs_hints, 0); // @leak
     array_resize(vfs_entries, 0); // @leak
@@ -10674,6 +10700,8 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         // convert to vbo data
         int cp = ch; // f->cp2iter[ch];
         //if(cp == 0xFFFD) continue;
+        //if(cp > f->num_glyphs) cp = 0xFFFD;
+
         *t++ = X;
         *t++ = Y;
         *t++ = f->cp2iter[cp];
@@ -18794,6 +18822,13 @@ int fx_load(const char *filemask) {
         set_insert(added, name);
         (void)postfx_load_from_mem(&fx, file_name(name), vfs_read(name));
     }
+    if( 1 )
+    for each_array( file_list(filemask), char*, list ) {
+        if( set_find(added, list) ) continue;
+        char *name = STRDUP(list); // @leak
+        set_insert(added, name);
+        (void)postfx_load_from_mem(&fx, file_name(name), file_read(name));
+    }
     return 1;
 }
 void fx_begin() {
@@ -20957,6 +20992,117 @@ void ddraw_demo() {
 
     ddraw_color_pop();
 }
+
+static int gizmo__mode;
+static int gizmo__active;
+static int gizmo__hover;
+bool gizmo_active() {
+    return gizmo__active;
+}
+bool gizmo_hover() {
+    return gizmo__hover;
+}
+int gizmo(vec3 *pos, vec3 *rot, vec3 *sca) {
+#if 0
+    ddraw_flush();
+    mat44 copy; copy44(copy, camera_get_active()->view);
+    if( 1 ) {
+        float *mv = camera_get_active()->view;
+        float d = sqrt(mv[4*0+0] * mv[4*0+0] + mv[4*1+1] * mv[4*1+1] + mv[4*2+2] * mv[4*2+2]);
+        if(4) mv[4*0+0] = d, mv[4*0+1] = 0, mv[4*0+2] = 0;
+        if(2) mv[4*1+0] = 0, mv[4*1+1] = d, mv[4*1+2] = 0;
+        if(1) mv[4*2+0] = 0, mv[4*2+1] = 0, mv[4*2+2] = d;
+    }
+#endif
+
+    ddraw_color_push(dd_color);
+    ddraw_ontop_push(1);
+
+    int enabled = !ui_active() && !ui_hover();
+    vec3 mouse = enabled ? vec3(input(MOUSE_X),input(MOUSE_Y),input_down(MOUSE_L)) : vec3(0,0,0); // x,y,l
+    vec3 from = camera_get_active()->position;
+    vec3 to = editor_pick(mouse.x, mouse.y);
+    ray r = ray(from, to);
+
+    static vec3 src3, hit3, off3; static vec2 src2;
+    #define on_gizmo_dragged(X,Y,Z,COLOR,DRAWCMD, ...) do { \
+        vec3 dir = vec3(X,Y,Z); \
+        line axis = {add3(*pos, scale3(dir,100)), add3(*pos, scale3(dir,-100))}; \
+        plane ground = { vec3(0,0,0), vec3(Y?1:0,Y?0:1,0) }; \
+        vec3 unit = vec3(X+(1.0-X)*0.3,Y+(1.0-Y)*0.3,Z+(1.0-Z)*0.3); \
+        aabb arrow = { sub3(*pos,unit), add3(*pos,unit) }; \
+        hit *hit_arrow = ray_hit_aabb(r, arrow), *hit_ground = ray_hit_plane(r, ground); \
+        ddraw_color( hit_arrow || gizmo__active == (X*4+Y*2+Z) ? gizmo__hover = 1, YELLOW : COLOR ); \
+        DRAWCMD; \
+        if( !gizmo__active && hit_arrow && mouse.z ) src2 = vec2(mouse.x,mouse.y), src3 = *pos, hit3 = hit_ground->p, off3 = mul3(sub3(src3,hit3),vec3(X,Y,Z)), gizmo__active = X*4+Y*2+Z; \
+        if( (gizmo__active && gizmo__active==(X*4+Y*2+Z)) || (!gizmo__active && hit_arrow) ) { ddraw_color( COLOR ); ( 1 ? ddraw_line : ddraw_line_dashed)(axis.a, axis.b); } \
+        if( gizmo__active == (X*4+Y*2+Z) && hit_ground ) {{ __VA_ARGS__ }; modified = 1; gizmo__active *= !!input(MOUSE_L); } \
+    } while(0)
+    #define gizmo_translate(X,Y,Z,COLOR) \
+        on_gizmo_dragged(X,Y,Z,COLOR, ddraw_arrow(*pos,add3(*pos,vec3(X,Y,Z))), { \
+            *pos = add3(line_closest_point(axis, hit_ground->p), off3); \
+        } )
+    #define gizmo_scale(X,Y,Z,COLOR) \
+        on_gizmo_dragged(X,Y,Z,COLOR, (ddraw_line(*pos,add3(*pos,vec3(X,Y,Z))),ddraw_sphere(add3(*pos,vec3(X-0.1*X,Y-0.1*Y,Z-0.1*Z)),0.1)), { /*ddraw_aabb(arrow.min,arrow.max)*/ \
+            int component = (X*1+Y*2+Z*3)-1; \
+            float mag = len2(sub2(vec2(mouse.x, mouse.y), src2)); \
+            float magx = (mouse.x - src2.x) * (mouse.x - src2.x); \
+            float magy = (mouse.y - src2.y) * (mouse.y - src2.y); \
+            float sgn = (magx > magy ? mouse.x > src2.x : mouse.y > src2.y) ? 1 : -1; \
+            sca->v3[component] -= sgn * mag * 0.01; \
+            src2 = vec2(mouse.x, mouse.y); \
+        } )
+    #define gizmo_rotate(X,Y,Z,COLOR) do { \
+            vec3 dir = vec3(X,Y,Z); \
+            line axis = {add3(*pos, scale3(dir,100)), add3(*pos, scale3(dir,-100))}; \
+            plane ground = { vec3(0,0,0), vec3(0,1,0) }; \
+                vec3 unit = vec3(X+(1.0-X)*0.3,Y+(1.0-Y)*0.3,Z+(1.0-Z)*0.3); \
+                aabb arrow = { sub3(*pos,unit), add3(*pos,unit) }; \
+                hit *hit_arrow = ray_hit_aabb(r, arrow), *hit_ground = ray_hit_plane(r, ground); \
+                int hover = (hit_arrow ? (X*4+Y*2+Z) : 0); \
+            if( gizmo__active == (X*4+Y*2+Z) ) { ddraw_color(gizmo__active ? gizmo__hover = 1, YELLOW : WHITE); ddraw_circle(*pos, vec3(X,Y,Z), 1); } \
+            else if( !gizmo__active && hover == (X*4+Y*2+Z) ) { gizmo__hover = 1; ddraw_color(COLOR); ddraw_circle(*pos, vec3(X,Y,Z), 1); } \
+            else if( !gizmo__active ) { ddraw_color(WHITE); ddraw_circle(*pos, vec3(X,Y,Z), 1); } \
+            if( !gizmo__active && hit_arrow && mouse.z ) src2 = vec2(mouse.x,mouse.y), gizmo__active = hover; \
+            if( (!gizmo__active && hover == (X*4+Y*2+Z)) || gizmo__active == (X*4+Y*2+Z) ) { gizmo__hover = 1; ddraw_color( COLOR ); ( 1 ? ddraw_line_thin : ddraw_line_dashed)(axis.a, axis.b); } \
+            if( gizmo__active && gizmo__active == (X*4+Y*2+Z) && hit_ground && enabled ) { \
+                int component = (Y*1+X*2+Z*3)-1; /*pitch,yaw,roll*/ \
+                float mag = len2(sub2(vec2(mouse.x, mouse.y), src2)); \
+                float magx = (mouse.x - src2.x) * (mouse.x - src2.x); \
+                float magy = (mouse.y - src2.y) * (mouse.y - src2.y); \
+                float sgn = (magx > magy ? mouse.x > src2.x : mouse.y > src2.y) ? 1 : -1; \
+                rot->v3[component] += sgn * mag; \
+                /*rot->v3[component] = clampf(rot->v3[component], -360, +360);*/ \
+                src2 = vec2(mouse.x, mouse.y); \
+                \
+            } \
+            gizmo__active *= enabled && !!input(MOUSE_L); \
+        } while(0)
+
+    gizmo__hover = 0;
+
+    int modified = 0;
+    if(enabled && input_down(KEY_SPACE)) gizmo__active = 0, gizmo__mode = (gizmo__mode + 1) % 3;
+    if(gizmo__mode == 0) gizmo_translate(1,0,0, RED);
+    if(gizmo__mode == 0) gizmo_translate(0,1,0, GREEN);
+    if(gizmo__mode == 0) gizmo_translate(0,0,1, BLUE);
+    if(gizmo__mode == 1) gizmo_scale(1,0,0, RED);
+    if(gizmo__mode == 1) gizmo_scale(0,1,0, GREEN);
+    if(gizmo__mode == 1) gizmo_scale(0,0,1, BLUE);
+    if(gizmo__mode == 2) gizmo_rotate(1,0,0, RED);
+    if(gizmo__mode == 2) gizmo_rotate(0,1,0, GREEN);
+    if(gizmo__mode == 2) gizmo_rotate(0,0,1, BLUE);
+
+#if 0
+    ddraw_flush();
+    copy44(camera_get_active()->view, copy);
+#endif
+
+    ddraw_ontop_pop();
+    ddraw_color_pop();
+
+    return modified;
+}
 #line 0
 
 #line 1 "v4k_scene.c"
@@ -20974,6 +21120,8 @@ camera_t camera() {
         cam.position = vec3(10,10,10);
         cam.updir = vec3(0,1,0);
         cam.fov = 45;
+        cam.orthographic = false;
+        cam.distance = 3; // len3(cam.position);
 
         cam.damping = false;
         cam.move_friction = 0.09f;
@@ -21065,19 +21213,18 @@ void camera_enable(camera_t *cam) {
 void camera_fov(camera_t *cam, float fov) {
     last_camera = cam;
 
-#if 0 // isometric/dimetric
-    #define orthogonal(proj, fov, aspect, znear, zfar) \
-    ortho44((proj), -(fov) * (aspect), (fov) * (aspect), -(fov), (fov), (znear), (zfar))
-
-    float DIMETRIC = 30.000f;
-    float ISOMETRIC = 35.264f;
     float aspect = window_width() / ((float)window_height()+!window_height());
-    orthogonal(cam->proj, 45, aspect, -1000, 1000); // why -1000?
-    // cam->yaw = 45;
-    cam->pitch = -ISOMETRIC;
-#endif
+
     cam->fov = fov;
-    perspective44(cam->proj, cam->fov, window_width() / ((float)window_height()+!window_height()), 0.01f, 1000.f);
+
+    if( cam->orthographic ) {
+        ortho44(cam->proj, -cam->fov * aspect, cam->fov * aspect, -cam->fov, cam->fov, 0.01f, 2000);
+        // [ref] https://commons.wikimedia.org/wiki/File:Isometric_dimetric_camera_views.png
+        // float pitch = cam->dimetric ? 30.000f : 35.264f; // dimetric or isometric
+        // cam->pitch = -pitch; // quickly reorient towards origin
+    } else {
+        perspective44(cam->proj, cam->fov, aspect, 0.01f, 2000.f);
+    }
 }
 
 void camera_fps(camera_t *cam, float yaw, float pitch) {
@@ -21108,34 +21255,21 @@ void camera_fps(camera_t *cam, float yaw, float pitch) {
 void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
     last_camera = cam;
 
-    vec2 inc_mouse = vec2(yaw, pitch);
-
-    // @todo: worth moving all these members into camera_t ?
-    static vec2 _mouse = {0,0};
-    static vec2 _polarity = { +1,-1 };
-    static vec2 _sensitivity = { 2,2 };
-    static float _friction = 0.75; //99;
-    static float _distance; do_once _distance = len3(cam->position);
-
     // update dummy state
     camera_fps(cam, 0,0);
 
-    // add smooth input
-    _mouse = mix2(_mouse, add2(_mouse, mul2(mul2(inc_mouse,_sensitivity),_polarity)), _friction);
-    _distance = mixf(_distance, _distance+inc_distance, _friction);
+    // @todo: add damping
+    vec3 _mouse = vec3(yaw, pitch, inc_distance);
+    cam->yaw += _mouse.x;
+    cam->pitch += _mouse.y;
+    cam->distance += _mouse.z;
 
-    // look: update angles
-    vec2 offset = sub2( _mouse, ptr2(&cam->last_move.x) );
-    if( 1 ) { // if _enabled
-        cam->yaw += offset.x;
-        cam->pitch += offset.y;
         // look: limit pitch angle [-89..89]
         cam->pitch = cam->pitch > 89 ? 89 : cam->pitch < -89 ? -89 : cam->pitch;
-    }
 
     // compute view matrix
-    float x = rad(cam->yaw), y = rad(cam->pitch), cx = cosf(x), cy = cosf(y), sx = sinf(x), sy = sinf(y);
-    lookat44(cam->view, vec3( cx*cy*_distance, sy*_distance, sx*cy*_distance ), vec3(0,0,0), vec3(0,1,0) );
+    float x = rad(cam->yaw), y = rad(-cam->pitch), cx = cosf(x), cy = cosf(y), sx = sinf(x), sy = sinf(y);
+    lookat44(cam->view, vec3( cx*cy*cam->distance, sy*cam->distance, sx*cy*cam->distance ), vec3(0,0,0), vec3(0,1,0) );
 
     // save for next call
     cam->last_move.x = _mouse.x;
@@ -21144,6 +21278,7 @@ void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
 
 int ui_camera( camera_t *cam ) {
     int changed = 0;
+    changed |= ui_bool("Orthographic", &cam->orthographic);
     changed |= ui_bool("Damping", &cam->damping);
     if( !cam->damping ) ui_disable();
     changed |= ui_slider2("Move friction", &cam->move_friction, va("%5.3f", cam->move_friction));
@@ -21161,6 +21296,7 @@ int ui_camera( camera_t *cam ) {
     ui_enable();
     ui_separator();
     changed |= ui_float("FOV (degrees)", &cam->fov);
+    changed |= ui_float("Orbit distance", &cam->distance);
     ui_disable();
     changed |= ui_mat44("Projection matrix", cam->proj);
     ui_enable();
@@ -23051,6 +23187,16 @@ int __argc; char **__argv;
 __attribute__((constructor)) void init_argcv(int argc, char **argv) { __argc = argc; __argv = argv; }
 #endif
 #endif
+
+void argvadd(const char *arg) {
+    char **argv = MALLOC( sizeof(char*) * (__argc+1) );
+    for( int i = 0; i < __argc; ++i ) {
+        argv[i] = __argv[i];
+    }
+    argv[__argc] = STRDUP(arg);
+    __argv = argv;
+    ++__argc;
+}
 
 const char *app_path() { // @fixme: should return absolute path always. see tcc -g -run
     static char buffer[1024] = {0};
@@ -25487,8 +25633,7 @@ int window_frame_begin() {
     // generate Debug panel contents
     if( may_render_debug_panel ) {
         if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
-            API int ui_debug();
-            ui_debug();
+            ui_engine();
 
             (has_menu ? ui_window_end : ui_panel_end)();
         }
@@ -28077,7 +28222,7 @@ int engine_tick() {
     return 0;
 }
 
-int ui_debug() {
+int ui_engine() {
     static int time_factor = 0;
     static int playing = 0;
     static int paused = 0;
@@ -28305,118 +28450,6 @@ int ui_debug() {
 
     return 0;
 }
-
-static int gizmo__mode;
-static int gizmo__active;
-static int gizmo__hover;
-bool gizmo_active() {
-    return gizmo__active;
-}
-bool gizmo_hover() {
-    return gizmo__hover;
-}
-int gizmo(vec3 *pos, vec3 *rot, vec3 *sca) {
-#if 0
-    ddraw_flush();
-    mat44 copy; copy44(copy, camera_get_active()->view);
-    if( 1 ) {
-        float *mv = camera_get_active()->view;
-        float d = sqrt(mv[4*0+0] * mv[4*0+0] + mv[4*1+1] * mv[4*1+1] + mv[4*2+2] * mv[4*2+2]);
-        if(4) mv[4*0+0] = d, mv[4*0+1] = 0, mv[4*0+2] = 0;
-        if(2) mv[4*1+0] = 0, mv[4*1+1] = d, mv[4*1+2] = 0;
-        if(1) mv[4*2+0] = 0, mv[4*2+1] = 0, mv[4*2+2] = d;
-    }
-#endif
-
-    ddraw_color_push(dd_color);
-    ddraw_ontop_push(1);
-
-    int enabled = !ui_active() && !ui_hover();
-    vec3 mouse = enabled ? vec3(input(MOUSE_X),input(MOUSE_Y),input_down(MOUSE_L)) : vec3(0,0,0); // x,y,l
-    vec3 from = camera_get_active()->position;
-    vec3 to = editor_pick(mouse.x, mouse.y);
-    ray r = ray(from, to);
-
-    static vec3 src3, hit3, off3; static vec2 src2;
-    #define on_gizmo_dragged(X,Y,Z,COLOR,DRAWCMD, ...) do { \
-        vec3 dir = vec3(X,Y,Z); \
-        line axis = {add3(*pos, scale3(dir,100)), add3(*pos, scale3(dir,-100))}; \
-        plane ground = { vec3(0,0,0), vec3(Y?1:0,Y?0:1,0) }; \
-        vec3 unit = vec3(X+(1.0-X)*0.3,Y+(1.0-Y)*0.3,Z+(1.0-Z)*0.3); \
-        aabb arrow = { sub3(*pos,unit), add3(*pos,unit) }; \
-        hit *hit_arrow = ray_hit_aabb(r, arrow), *hit_ground = ray_hit_plane(r, ground); \
-        ddraw_color( hit_arrow || gizmo__active == (X*4+Y*2+Z) ? gizmo__hover = 1, YELLOW : COLOR ); \
-        DRAWCMD; \
-        if( !gizmo__active && hit_arrow && mouse.z ) src2 = vec2(mouse.x,mouse.y), src3 = *pos, hit3 = hit_ground->p, off3 = mul3(sub3(src3,hit3),vec3(X,Y,Z)), gizmo__active = X*4+Y*2+Z; \
-        if( (gizmo__active && gizmo__active==(X*4+Y*2+Z)) || (!gizmo__active && hit_arrow) ) { ddraw_color( COLOR ); ( 1 ? ddraw_line : ddraw_line_dashed)(axis.a, axis.b); } \
-        if( gizmo__active == (X*4+Y*2+Z) && hit_ground ) {{ __VA_ARGS__ }; modified = 1; gizmo__active *= !!input(MOUSE_L); } \
-    } while(0)
-    #define gizmo_translate(X,Y,Z,COLOR) \
-        on_gizmo_dragged(X,Y,Z,COLOR, ddraw_arrow(*pos,add3(*pos,vec3(X,Y,Z))), { \
-            *pos = add3(line_closest_point(axis, hit_ground->p), off3); \
-        } )
-    #define gizmo_scale(X,Y,Z,COLOR) \
-        on_gizmo_dragged(X,Y,Z,COLOR, (ddraw_line(*pos,add3(*pos,vec3(X,Y,Z))),ddraw_sphere(add3(*pos,vec3(X-0.1*X,Y-0.1*Y,Z-0.1*Z)),0.1)), { /*ddraw_aabb(arrow.min,arrow.max)*/ \
-            int component = (X*1+Y*2+Z*3)-1; \
-            float mag = len2(sub2(vec2(mouse.x, mouse.y), src2)); \
-            float magx = (mouse.x - src2.x) * (mouse.x - src2.x); \
-            float magy = (mouse.y - src2.y) * (mouse.y - src2.y); \
-            float sgn = (magx > magy ? mouse.x > src2.x : mouse.y > src2.y) ? 1 : -1; \
-            sca->v3[component] -= sgn * mag * 0.01; \
-            src2 = vec2(mouse.x, mouse.y); \
-        } )
-    #define gizmo_rotate(X,Y,Z,COLOR) do { \
-            vec3 dir = vec3(X,Y,Z); \
-            line axis = {add3(*pos, scale3(dir,100)), add3(*pos, scale3(dir,-100))}; \
-            plane ground = { vec3(0,0,0), vec3(0,1,0) }; \
-                vec3 unit = vec3(X+(1.0-X)*0.3,Y+(1.0-Y)*0.3,Z+(1.0-Z)*0.3); \
-                aabb arrow = { sub3(*pos,unit), add3(*pos,unit) }; \
-                hit *hit_arrow = ray_hit_aabb(r, arrow), *hit_ground = ray_hit_plane(r, ground); \
-                int hover = (hit_arrow ? (X*4+Y*2+Z) : 0); \
-            if( gizmo__active == (X*4+Y*2+Z) ) { ddraw_color(gizmo__active ? gizmo__hover = 1, YELLOW : WHITE); ddraw_circle(*pos, vec3(X,Y,Z), 1); } \
-            else if( !gizmo__active && hover == (X*4+Y*2+Z) ) { gizmo__hover = 1; ddraw_color(COLOR); ddraw_circle(*pos, vec3(X,Y,Z), 1); } \
-            else if( !gizmo__active ) { ddraw_color(WHITE); ddraw_circle(*pos, vec3(X,Y,Z), 1); } \
-            if( !gizmo__active && hit_arrow && mouse.z ) src2 = vec2(mouse.x,mouse.y), gizmo__active = hover; \
-            if( (!gizmo__active && hover == (X*4+Y*2+Z)) || gizmo__active == (X*4+Y*2+Z) ) { gizmo__hover = 1; ddraw_color( COLOR ); ( 1 ? ddraw_line_thin : ddraw_line_dashed)(axis.a, axis.b); } \
-            if( gizmo__active && gizmo__active == (X*4+Y*2+Z) && hit_ground && enabled ) { \
-                int component = (Y*1+X*2+Z*3)-1; /*pitch,yaw,roll*/ \
-                float mag = len2(sub2(vec2(mouse.x, mouse.y), src2)); \
-                float magx = (mouse.x - src2.x) * (mouse.x - src2.x); \
-                float magy = (mouse.y - src2.y) * (mouse.y - src2.y); \
-                float sgn = (magx > magy ? mouse.x > src2.x : mouse.y > src2.y) ? 1 : -1; \
-                rot->v3[component] += sgn * mag; \
-                /*rot->v3[component] = clampf(rot->v3[component], -360, +360);*/ \
-                src2 = vec2(mouse.x, mouse.y); \
-                \
-            } \
-            gizmo__active *= enabled && !!input(MOUSE_L); \
-        } while(0)
-
-    gizmo__hover = 0;
-
-    int modified = 0;
-    if(enabled && input_down(KEY_SPACE)) gizmo__active = 0, gizmo__mode = (gizmo__mode + 1) % 3;
-    if(gizmo__mode == 0) gizmo_translate(1,0,0, RED);
-    if(gizmo__mode == 0) gizmo_translate(0,1,0, GREEN);
-    if(gizmo__mode == 0) gizmo_translate(0,0,1, BLUE);
-    if(gizmo__mode == 1) gizmo_scale(1,0,0, RED);
-    if(gizmo__mode == 1) gizmo_scale(0,1,0, GREEN);
-    if(gizmo__mode == 1) gizmo_scale(0,0,1, BLUE);
-    if(gizmo__mode == 2) gizmo_rotate(1,0,0, RED);
-    if(gizmo__mode == 2) gizmo_rotate(0,1,0, GREEN);
-    if(gizmo__mode == 2) gizmo_rotate(0,0,1, BLUE);
-
-#if 0
-    ddraw_flush();
-    copy44(camera_get_active()->view, copy);
-#endif
-
-    ddraw_ontop_pop();
-    ddraw_color_pop();
-
-    return modified;
-}
-
 #line 0
 
 #line 1 "v4k_main.c"
@@ -29023,21 +29056,22 @@ void editor_pump() {
 
 // ----------------------------------------------------------------------------------------
 
+API void editor_cursorpos(int x, int y);
+void editor_cursorpos(int x, int y) {
+    glfwSetCursorPos( window_handle(), x, y );
+}
+
 void editor_symbol(int x, int y, const char *sym) {
-    #define FONT_SYMBOLS   FONT_FACE2
-    #define FONT_WHITE     FONT_COLOR1
-    #define FONT_YELLOW    FONT_COLOR2
-    #define FONT_ORANGE    FONT_COLOR3
-    #define FONT_CYAN      FONT_COLOR4
     // style: atlas size, unicode ranges and 6 font faces max
-    do_once font_face(FONT_SYMBOLS, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
+    do_once font_face(FONT_FACE2, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
     // style: 10 colors max
-    do_once font_color(FONT_WHITE,  WHITE);
-    do_once font_color(FONT_YELLOW, YELLOW);
-    do_once font_color(FONT_CYAN,   CYAN);
-    do_once font_color(FONT_ORANGE, ORANGE);
+    do_once font_color(FONT_COLOR1,  WHITE);
+    do_once font_color(FONT_COLOR2, RGBX(0xE8F1FF,128)); //  GRAY);
+    do_once font_color(FONT_COLOR3, YELLOW);
+    do_once font_color(FONT_COLOR4, ORANGE);
+    do_once font_color(FONT_COLOR5,   CYAN);
     font_goto(x,y);
-    font_print(va(FONT_SYMBOLS FONT_WHITE FONT_H1 "%s", sym));
+    font_print(va(FONT_FACE2 /*FONT_WHITE*/ FONT_H1 "%s", sym));
 }
 
 void editor_frame( void (*game)(unsigned, float, double) ) {
@@ -29050,7 +29084,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         window_cursor_shape(CURSOR_SW_AUTO);
         editor.hz_high = window_fps_target();
 
-        fx_load("editorOutline.fs");
+        fx_load("**/editorOutline.fs");
         fx_enable(0, 1);
 
         obj_setname(editor.root = obj_new(obj), "Signals");
@@ -29106,26 +29140,27 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     int is_borderless = !glfwGetWindowAttrib(window, GLFW_DECORATED);
     int ingame = !editor.active;
     static double clicked_titlebar = 0;
-    UI_MENU(14+is_borderless, \
+    UI_MENU(14+2*is_borderless, \
         if(ingame) ui_disable(); \
-        UI_MENU_ITEM(ICON_MDI_FILE_TREE, editor_send("scene")) \
+        UI_MENU_POPUP(ICON_MD_SETTINGS, vec2(0.33,1.00), ui_engine()) \
         if(ingame) ui_enable(); \
         UI_MENU_ITEM(ICON_PL4Y, if(editor.t == 0) editor_send("eject"); editor_send(window_has_pause() ? "play" : "pause")) \
         UI_MENU_ITEM(ICON_SKIP, editor_send(window_has_pause() ? "frame" : "slomo")) \
         UI_MENU_ITEM(ICON_MDI_STOP, editor_send("stop")) \
         UI_MENU_ITEM(ICON_MDI_EJECT, editor_send("eject")) \
         UI_MENU_ITEM(STATS, stats_mode = (++stats_mode) % 3) \
-        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+34 + 32*is_borderless, clicked_titlebar = time_ms()) \
+        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+32 + 32*2*is_borderless + 10, clicked_titlebar = time_ms()) \
         if(ingame) ui_disable(); \
         UI_MENU_ITEM(ICON_MD_FOLDER_SPECIAL, editor_send("browser")) \
+        UI_MENU_ITEM(ICON_MDI_FILE_TREE, editor_send("scene")) \
         UI_MENU_ITEM(ICON_MDI_SCRIPT_TEXT, editor_send("script")) \
         UI_MENU_ITEM(ICON_MDI_CHART_TIMELINE, editor_send("timeline")) \
         UI_MENU_ITEM(ICON_MDI_CONSOLE, editor_send("console")) \
         UI_MENU_ITEM(ICON_MDI_GRAPH, editor_send("nodes")) \
-        UI_MENU_ITEM(ICON_MD_SEARCH, editor_send("filter")) \
-        UI_MENU_POPUP(ICON_MD_SETTINGS, vec2(0.33,1.00), ui_debug()) \
+        UI_MENU_ITEM(ICON_MDI_MAGNIFY, editor_send("filter")) /*MD_SEARCH*/ \
         if(ingame) ui_enable(); \
-        UI_MENU_ITEM(ICON_MD_CLOSE, editor_send("quit")) \
+        UI_MENU_ITEM(window_has_maximize() ? ICON_MDI_WINDOW_MINIMIZE : ICON_MDI_WINDOW_MAXIMIZE, window_maximize(1 ^ window_has_maximize())) \
+        UI_MENU_ITEM(ICON_MDI_CLOSE, editor_send("quit")) \
     );
 
     if( is_borderless ) {
@@ -29170,7 +29205,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     fx_end();
 
     // draw box selection
-    if( !ui_active() ) { //< check that we're not moving a window
+    if( !ui_active() && window_has_cursor() && cursorshape ) { //< check that we're not moving a window + not in fps cam
         static vec2 from = {0}, to = {0};
         if( input_down(MOUSE_L) ) to = vec2(input(MOUSE_X), input(MOUSE_Y)), from = to;
         if( input(MOUSE_L)      ) to = vec2(input(MOUSE_X), input(MOUSE_Y));

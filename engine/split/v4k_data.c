@@ -153,9 +153,8 @@ static void *xml_path(struct xml *node, char *path, int down) {
 
 const char *(xml_string)(char *key) {
     struct xml *node = xml_path(*array_back(xml_docs), key, 0);
-    if( !node ) return "";
-    if( strchr(key, '@') ) return (const char *)node;
-    if( strchr(key, '$') ) return (const char *)node;
+    if( node && strchr(key, '@') ) return (const char *)node;
+    if( node && strchr(key, '$') ) return (const char *)node;
     return "";
 }
 unsigned (xml_count)(char *key) {

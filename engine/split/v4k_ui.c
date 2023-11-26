@@ -149,6 +149,10 @@ static int ui_using_v2_menubar = 0;
     #define UI_FONT_TERMINAL_SIZE   UI_FONT_ENUM(14,14)
 #endif
 
+    #define UI_FONT_REGULAR_SAMPLING  UI_FONT_ENUM(vec3(1,1,1),vec3(1,1,1))
+    #define UI_FONT_HEADING_SAMPLING  UI_FONT_ENUM(vec3(1,1,1),vec3(1,1,1))
+    #define UI_FONT_TERMINAL_SAMPLING UI_FONT_ENUM(vec3(1,1,1),vec3(1,1,1))
+
 #if UI_ICONS_SMALL
     #define UI_ICON_FONTSIZE        UI_FONT_ENUM(16.5f,16.5f)
     #define UI_ICON_SPACING_X       UI_FONT_ENUM(-2,-2)
@@ -187,8 +191,12 @@ static void nk_config_custom_fonts() {
         for( char *data = vfs_load(UI_FONT_REGULAR, &datalen); data; data = 0 ) {
             float font_size = UI_FONT_REGULAR_SIZE;
                 struct nk_font_config cfg = nk_font_config(font_size);
-                cfg.oversample_v = 2;
-                cfg.pixel_snap = 0;
+                cfg.oversample_h = UI_FONT_REGULAR_SAMPLING.x;
+                cfg.oversample_v = UI_FONT_REGULAR_SAMPLING.y;
+                cfg.pixel_snap   = UI_FONT_REGULAR_SAMPLING.z;
+                #if UI_LESSER_SPACING
+                cfg.spacing.x -= 1.0;
+                #endif
             // win32: struct nk_font *arial = nk_font_atlas_add_from_file(atlas, va("%s/fonts/arial.ttf",getenv("windir")), font_size, &cfg); font = arial ? arial : font;
             // struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "nuklear/extra_font/DroidSans.ttf", font_size, &cfg); font = droid ? droid : font;
             struct nk_font *regular = nk_font_atlas_add_from_memory(atlas, data, datalen, font_size, &cfg); font = regular ? regular : font;
@@ -196,10 +204,10 @@ static void nk_config_custom_fonts() {
 
         // ...with icons embedded on it.
         static struct icon_font {
-            const char *file; int yspacing; nk_rune range[3];
+            const char *file; int yspacing; vec3 sampling; nk_rune range[3];
         } icons[] = {
-            {"MaterialIconsSharp-Regular.otf", UI_ICON_SPACING_Y, {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0}}, // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf"
-            {"materialdesignicons-webfont.ttf", 2, {0xF68C /*ICON_MIN_MDI*/, 0xF1CC7/*ICON_MAX_MDI*/, 0}},
+            {"MaterialIconsSharp-Regular.otf", UI_ICON_SPACING_Y, {1,1,1}, {UI_ICON_MIN, UI_ICON_MED /*MAX*/, 0}}, // "MaterialIconsOutlined-Regular.otf" "MaterialIcons-Regular.ttf"
+            {"materialdesignicons-webfont.ttf", 2, {1,1,1}, {0xF68C /*ICON_MIN_MDI*/, 0xF1CC7/*ICON_MAX_MDI*/, 0}},
         };
         for( int f = 0; f < countof(icons); ++f )
         for( char *data = vfs_load(icons[f].file, &datalen); data; data = 0 ) {
@@ -212,9 +220,13 @@ static void nk_config_custom_fonts() {
          // cfg.font->ascent += ICON_ASCENT;
          // cfg.font->height += ICON_HEIGHT;
 
-            cfg.oversample_h = 1;
-            cfg.oversample_v = 1;
-            cfg.pixel_snap = 1;
+            cfg.oversample_h = icons[f].sampling.x;
+            cfg.oversample_v = icons[f].sampling.y;
+            cfg.pixel_snap   = icons[f].sampling.z;
+
+            #if UI_LESSER_SPACING
+            cfg.spacing.x -= 1.0;
+            #endif
 
             struct nk_font *icons = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_ICON_FONTSIZE, &cfg);
         }
@@ -222,15 +234,19 @@ static void nk_config_custom_fonts() {
         // Monospaced font. Used in terminals or consoles.
 
         for( char *data = vfs_load(UI_FONT_TERMINAL, &datalen); data; data = 0 ) {
-            const float font_size = UI_FONT_REGULAR_SIZE;
+            const float font_size = UI_FONT_TERMINAL_SIZE;
             static const nk_rune icon_range[] = {32, 127, 0};
 
             struct nk_font_config cfg = nk_font_config(font_size);
             cfg.range = icon_range;
 
-            cfg.oversample_h = 1;
-            cfg.oversample_v = 1;
-            cfg.pixel_snap = 1;
+            cfg.oversample_h = UI_FONT_TERMINAL_SAMPLING.x;
+            cfg.oversample_v = UI_FONT_TERMINAL_SAMPLING.y;
+            cfg.pixel_snap   = UI_FONT_TERMINAL_SAMPLING.z;
+
+            #if UI_LESSER_SPACING
+            cfg.spacing.x -= 1.0;
+            #endif
 
             // struct nk_font *proggy = nk_font_atlas_add_default(atlas, font_size, &cfg);
             struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, font_size, &cfg);
@@ -239,7 +255,17 @@ static void nk_config_custom_fonts() {
         // Extra optional fonts from here...
 
         for( char *data = vfs_load(UI_FONT_HEADING, &datalen); data; data = 0 ) {
-            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_FONT_HEADING_SIZE, 0); // font = bold ? bold : font;
+            struct nk_font_config cfg = nk_font_config(UI_FONT_HEADING_SIZE);
+            cfg.oversample_h = UI_FONT_HEADING_SAMPLING.x;
+            cfg.oversample_v = UI_FONT_HEADING_SAMPLING.y;
+            cfg.pixel_snap   = UI_FONT_HEADING_SAMPLING.z;
+
+            #if UI_LESSER_SPACING
+            cfg.spacing.x -= 1.0;
+            #endif
+
+            struct nk_font *bold = nk_font_atlas_add_from_memory(atlas, data, datalen, UI_FONT_HEADING_SIZE, &cfg);
+            // font = bold ? bold : font;
         }
 
     nk_glfw3_font_stash_end(&nk_glfw); // nk_sdl_font_stash_end();
@@ -394,7 +420,7 @@ int ui_menu_editbox(char *buf, int bufcap) {
 }
 
 int ui_has_menubar() {
-    return ui_using_v2_menubar || !!ui_items; // array_count(ui_items) > 0;
+    return ui_using_v2_menubar || !!ui_items; // ? UI_MENUROW_HEIGHT + 8 : 0; // array_count(ui_items) > 0;
 }
 
 static

@@ -286,8 +286,12 @@ static void gleq_key_callback(GLFWwindow* window, int key, int scancode, int act
         event->type = GLEQ_KEY_REPEATED;
 }
 
+static void (*gleq_char_callback_prev)(GLFWwindow* window, unsigned int codepoint) = 0;
 static void gleq_char_callback(GLFWwindow* window, unsigned int codepoint)
 {
+    if( gleq_char_callback_prev )
+    gleq_char_callback_prev(window, codepoint);
+
     GLEQevent* event = gleq_new_event();
     event->type = GLEQ_CODEPOINT_INPUT;
     event->window = window;
@@ -376,6 +380,7 @@ GLEQDEF void gleqTrackWindow(GLFWwindow* window)
     glfwSetCursorEnterCallback(window, gleq_cursor_enter_callback);
     glfwSetScrollCallback(window, gleq_scroll_callback);
     glfwSetKeyCallback(window, gleq_key_callback);
+    gleq_char_callback_prev = //< @r-lyeh
     glfwSetCharCallback(window, gleq_char_callback);
 #if GLFW_VERSION_MINOR >= 1
     glfwSetDropCallback(window, gleq_file_drop_callback);

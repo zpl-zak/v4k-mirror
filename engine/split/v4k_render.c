@@ -2390,6 +2390,13 @@ int fx_load(const char *filemask) {
         set_insert(added, name);
         (void)postfx_load_from_mem(&fx, file_name(name), vfs_read(name));
     }
+    if( 1 )
+    for each_array( file_list(filemask), char*, list ) {
+        if( set_find(added, list) ) continue;
+        char *name = STRDUP(list); // @leak
+        set_insert(added, name);
+        (void)postfx_load_from_mem(&fx, file_name(name), file_read(name));
+    }
     return 1;
 }
 void fx_begin() {

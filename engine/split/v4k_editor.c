@@ -507,21 +507,22 @@ void editor_pump() {
 
 // ----------------------------------------------------------------------------------------
 
+API void editor_cursorpos(int x, int y);
+void editor_cursorpos(int x, int y) {
+    glfwSetCursorPos( window_handle(), x, y );
+}
+
 void editor_symbol(int x, int y, const char *sym) {
-    #define FONT_SYMBOLS   FONT_FACE2
-    #define FONT_WHITE     FONT_COLOR1
-    #define FONT_YELLOW    FONT_COLOR2
-    #define FONT_ORANGE    FONT_COLOR3
-    #define FONT_CYAN      FONT_COLOR4
     // style: atlas size, unicode ranges and 6 font faces max
-    do_once font_face(FONT_SYMBOLS, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
+    do_once font_face(FONT_FACE2, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
     // style: 10 colors max
-    do_once font_color(FONT_WHITE,  WHITE);
-    do_once font_color(FONT_YELLOW, YELLOW);
-    do_once font_color(FONT_CYAN,   CYAN);
-    do_once font_color(FONT_ORANGE, ORANGE);
+    do_once font_color(FONT_COLOR1,  WHITE);
+    do_once font_color(FONT_COLOR2, RGBX(0xE8F1FF,128)); //  GRAY);
+    do_once font_color(FONT_COLOR3, YELLOW);
+    do_once font_color(FONT_COLOR4, ORANGE);
+    do_once font_color(FONT_COLOR5,   CYAN);
     font_goto(x,y);
-    font_print(va(FONT_SYMBOLS FONT_WHITE FONT_H1 "%s", sym));
+    font_print(va(FONT_FACE2 /*FONT_WHITE*/ FONT_H1 "%s", sym));
 }
 
 void editor_frame( void (*game)(unsigned, float, double) ) {
@@ -534,7 +535,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         window_cursor_shape(CURSOR_SW_AUTO);
         editor.hz_high = window_fps_target();
 
-        fx_load("editorOutline.fs");
+        fx_load("**/editorOutline.fs");
         fx_enable(0, 1);
 
         obj_setname(editor.root = obj_new(obj), "Signals");
@@ -590,26 +591,27 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     int is_borderless = !glfwGetWindowAttrib(window, GLFW_DECORATED);
     int ingame = !editor.active;
     static double clicked_titlebar = 0;
-    UI_MENU(14+is_borderless, \
+    UI_MENU(14+2*is_borderless, \
         if(ingame) ui_disable(); \
-        UI_MENU_ITEM(ICON_MDI_FILE_TREE, editor_send("scene")) \
+        UI_MENU_POPUP(ICON_MD_SETTINGS, vec2(0.33,1.00), ui_engine()) \
         if(ingame) ui_enable(); \
         UI_MENU_ITEM(ICON_PL4Y, if(editor.t == 0) editor_send("eject"); editor_send(window_has_pause() ? "play" : "pause")) \
         UI_MENU_ITEM(ICON_SKIP, editor_send(window_has_pause() ? "frame" : "slomo")) \
         UI_MENU_ITEM(ICON_MDI_STOP, editor_send("stop")) \
         UI_MENU_ITEM(ICON_MDI_EJECT, editor_send("eject")) \
         UI_MENU_ITEM(STATS, stats_mode = (++stats_mode) % 3) \
-        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+34 + 32*is_borderless, clicked_titlebar = time_ms()) \
+        UI_MENU_ALIGN_RIGHT(32+32+32+32+32+32+32 + 32*2*is_borderless + 10, clicked_titlebar = time_ms()) \
         if(ingame) ui_disable(); \
         UI_MENU_ITEM(ICON_MD_FOLDER_SPECIAL, editor_send("browser")) \
+        UI_MENU_ITEM(ICON_MDI_FILE_TREE, editor_send("scene")) \
         UI_MENU_ITEM(ICON_MDI_SCRIPT_TEXT, editor_send("script")) \
         UI_MENU_ITEM(ICON_MDI_CHART_TIMELINE, editor_send("timeline")) \
         UI_MENU_ITEM(ICON_MDI_CONSOLE, editor_send("console")) \
         UI_MENU_ITEM(ICON_MDI_GRAPH, editor_send("nodes")) \
-        UI_MENU_ITEM(ICON_MD_SEARCH, editor_send("filter")) \
-        UI_MENU_POPUP(ICON_MD_SETTINGS, vec2(0.33,1.00), ui_debug()) \
+        UI_MENU_ITEM(ICON_MDI_MAGNIFY, editor_send("filter")) /*MD_SEARCH*/ \
         if(ingame) ui_enable(); \
-        UI_MENU_ITEM(ICON_MD_CLOSE, editor_send("quit")) \
+        UI_MENU_ITEM(window_has_maximize() ? ICON_MDI_WINDOW_MINIMIZE : ICON_MDI_WINDOW_MAXIMIZE, window_maximize(1 ^ window_has_maximize())) \
+        UI_MENU_ITEM(ICON_MDI_CLOSE, editor_send("quit")) \
     );
 
     if( is_borderless ) {
@@ -654,7 +656,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     fx_end();
 
     // draw box selection
-    if( !ui_active() ) { //< check that we're not moving a window
+    if( !ui_active() && window_has_cursor() && cursorshape ) { //< check that we're not moving a window + not in fps cam
         static vec2 from = {0}, to = {0};
         if( input_down(MOUSE_L) ) to = vec2(input(MOUSE_X), input(MOUSE_Y)), from = to;
         if( input(MOUSE_L)      ) to = vec2(input(MOUSE_X), input(MOUSE_Y));

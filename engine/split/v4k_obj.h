@@ -168,32 +168,32 @@ void*   obj_free(void *o);
 #define obj_vtable(method,RC,...)   RC macro(obj_##method)(){ __VA_ARGS__ }; RC (*obj_##method[256])() = { REPEAT256(macro(obj_##method)) };
 #define obj_vtable_null(method,RC)  RC (*obj_##method[256])() = { 0 }; // null virtual table. will crash unless obj_extend'ed
 
-#define REPEAT16(f)  f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f
-#define REPEAT64(f)  REPEAT16(f),REPEAT16(f),REPEAT16(f),REPEAT16(f)
-#define REPEAT256(f) REPEAT64(f),REPEAT64(f),REPEAT64(f),REPEAT64(f)
+#define REPEAT16(f)  f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f ///-
+#define REPEAT64(f)  REPEAT16(f),REPEAT16(f),REPEAT16(f),REPEAT16(f) ///-
+#define REPEAT256(f) REPEAT64(f),REPEAT64(f),REPEAT64(f),REPEAT64(f) ///-
 
 #undef  EXTEND
 #define EXTEND(...) EXPAND(EXTEND, __VA_ARGS__)
-#define EXTEND2(o,F1) obj_extend(o,F1)
-#define EXTEND3(o,F1,F2) obj_extend(o,F1), obj_extend(o,F2)
-#define EXTEND4(o,F1,F2,F3) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3)
-#define EXTEND5(o,F1,F2,F3,F4) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4)
-#define EXTEND6(o,F1,F2,F3,F4,F5) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5)
-#define EXTEND7(o,F1,F2,F3,F4,F5,F6) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6)
-#define EXTEND8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7)
-#define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8)
-#define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9)
+#define EXTEND2(o,F1) obj_extend(o,F1) ///-
+#define EXTEND3(o,F1,F2) obj_extend(o,F1), obj_extend(o,F2) ///-
+#define EXTEND4(o,F1,F2,F3) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3) ///-
+#define EXTEND5(o,F1,F2,F3,F4) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4) ///-
+#define EXTEND6(o,F1,F2,F3,F4,F5) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5) ///-
+#define EXTEND7(o,F1,F2,F3,F4,F5,F6) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6) ///-
+#define EXTEND8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7) ///-
+#define EXTEND9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8) ///-
+#define EXTEND10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend(o,F1), obj_extend(o,F2), obj_extend(o,F3), obj_extend(o,F4), obj_extend(o,F5), obj_extend(o,F6), obj_extend(o,F7), obj_extend(o,F8), obj_extend(o,F9) ///-
 
 #define EXTEND_T(...) EXPAND(EXTEND_T, __VA_ARGS__)
-#define EXTEND_T2(o,F1) obj_extend_t(o,F1)
-#define EXTEND_T3(o,F1,F2) obj_extend_t(o,F1), obj_extend_t(o,F2)
-#define EXTEND_T4(o,F1,F2,F3) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3)
-#define EXTEND_T5(o,F1,F2,F3,F4) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4)
-#define EXTEND_T6(o,F1,F2,F3,F4,F5) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5)
-#define EXTEND_T7(o,F1,F2,F3,F4,F5,F6) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6)
-#define EXTEND_T8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7)
-#define EXTEND_T9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8)
-#define EXTEND_T10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8), obj_extend_t(o,F9)
+#define EXTEND_T2(o,F1) obj_extend_t(o,F1) ///-
+#define EXTEND_T3(o,F1,F2) obj_extend_t(o,F1), obj_extend_t(o,F2) ///-
+#define EXTEND_T4(o,F1,F2,F3) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3) ///-
+#define EXTEND_T5(o,F1,F2,F3,F4) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4) ///-
+#define EXTEND_T6(o,F1,F2,F3,F4,F5) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5) ///-
+#define EXTEND_T7(o,F1,F2,F3,F4,F5,F6) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6) ///-
+#define EXTEND_T8(o,F1,F2,F3,F4,F5,F6,F7) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7) ///-
+#define EXTEND_T9(o,F1,F2,F3,F4,F5,F6,F7,F8) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8) ///-
+#define EXTEND_T10(o,F1,F2,F3,F4,F5,F6,F7,F8,F9) obj_extend_t(o,F1), obj_extend_t(o,F2), obj_extend_t(o,F3), obj_extend_t(o,F4), obj_extend_t(o,F5), obj_extend_t(o,F6), obj_extend_t(o,F7), obj_extend_t(o,F8), obj_extend_t(o,F9) ///-
 
 // --- declare vtables
 

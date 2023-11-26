@@ -5,6 +5,16 @@ __attribute__((constructor)) void init_argcv(int argc, char **argv) { __argc = a
 #endif
 #endif
 
+void argvadd(const char *arg) {
+    char **argv = MALLOC( sizeof(char*) * (__argc+1) );
+    for( int i = 0; i < __argc; ++i ) {
+        argv[i] = __argv[i];
+    }
+    argv[__argc] = STRDUP(arg);
+    __argv = argv;
+    ++__argc;
+}
+
 const char *app_path() { // @fixme: should return absolute path always. see tcc -g -run
     static char buffer[1024] = {0};
     if( buffer[0] ) return buffer;

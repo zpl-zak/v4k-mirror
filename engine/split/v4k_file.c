@@ -221,7 +221,10 @@ array(char*) file_list(const char *pathmasks) {
 
         ASSERT(strend(cwd, "/"), "Error: dirs like '%s' must end with slash", cwd);
 
-        dir *d = dir_open(cwd, strstr(masks,"**") ? "r" : "");
+        int recurse = strstr(cwd, "**") || strstr(masks, "**");
+        strswap(cwd, "**", "./");
+
+        dir *d = dir_open(cwd, recurse ? "r" : "");
         if( d ) {
             for( int i = 0; i < dir_count(d); ++i ) {
                 if( dir_file(d,i) ) {
@@ -584,8 +587,6 @@ static bool vfs_mount_hints(const char *path);
 
 void vfs_reload() {
     const char *app = app_name();
-
-    dir_cache = 0; // @leak
 
     array_resize(vfs_hints, 0); // @leak
     array_resize(vfs_entries, 0); // @leak
