@@ -11281,6 +11281,12 @@ void skinned_draw_rect(void* userdata, gui_state_t state, const char *skin, vec4
             if (!f) skinned_draw_missing_rect(r);
             else skinned_draw_sprite(a->scale, &a->atlas, f, r);
         } break;
+
+        case GUI_PANEL: {
+            atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin?skin:a->panel, "");
+            if (!f) skinned_draw_missing_rect(r);
+            else skinned_draw_sprite(a->scale, &a->atlas, f, r);
+        } break;
     }
 }
 
@@ -23351,10 +23357,6 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
         f->bounds.y += padding+border;
         f->bounds.z += padding+border;
         f->bounds.w += padding+border;
-        // f->core.x += f->bounds.x;
-        // f->core.y += f->bounds.y;
-        // f->core.z += f->bounds.x;
-        // f->core.w += f->bounds.y;
     }
 #if 0
     // post-process: specify an anchor for each anim based on 1st frame dims

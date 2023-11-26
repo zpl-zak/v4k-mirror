@@ -1371,10 +1371,6 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
         f->bounds.y += padding+border;
         f->bounds.z += padding+border;
         f->bounds.w += padding+border;
-        // f->core.x += f->bounds.x;
-        // f->core.y += f->bounds.y;
-        // f->core.z += f->bounds.x;
-        // f->core.w += f->bounds.y;
     }
 #if 0
     // post-process: specify an anchor for each anim based on 1st frame dims

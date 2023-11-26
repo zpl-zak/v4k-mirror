@@ -1,16 +1,16 @@
 #include "v4k.h"
 
 int main() {
-    window_create(75.0, 0); // 75% size, no extra flags
+    window_create(65.0, 0 );
 
-    font_face(FONT_FACE2, "lilita_one_regular.ttf", 32.0f, FONT_EU | FONT_2048);
-
-    gui_pushskin(gui_skinned("golden.ase", 1.0f));
+    gui_pushskin(gui_skinned("golden.ase", 4.0));
     atlas_t *atlas = &C_CAST(skinned_t*, gui_userdata())->atlas;
 
-    vec4 pos = vec4(100,100,350,300);
+    vec4 pos = vec4(100,100,850,750);
 
     while( window_swap() && !input(KEY_ESC) ) { // game loop
+        vec4 panel_pos = vec4(0, 0, window_width(), window_height());
+        
         if (ui_panel("Atlas", 0)) {
             ui_atlas(atlas);
             ui_panel_end();
@@ -26,12 +26,11 @@ int main() {
         }
 
         //
-        if (gui_button(pos, "button")) {
+
+        gui_panel(panel_pos, 0);
+        if (gui_button(pos, 0)) {
             printf("%s\n", "Button pressed!");
         }
-
-        font_color(FONT_COLOR9, WHITE);
-        font_print(va(FONT_MIDDLE FONT_CENTER FONT_FACE2 FONT_COLOR9 "%s", "Hello"));
     }
 
     gui_popskin();

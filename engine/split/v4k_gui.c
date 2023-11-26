@@ -275,6 +275,12 @@ void skinned_draw_rect(void* userdata, gui_state_t state, const char *skin, vec4
             if (!f) skinned_draw_missing_rect(r);
             else skinned_draw_sprite(a->scale, &a->atlas, f, r);
         } break;
+
+        case GUI_PANEL: {
+            atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin?skin:a->panel, "");
+            if (!f) skinned_draw_missing_rect(r);
+            else skinned_draw_sprite(a->scale, &a->atlas, f, r);
+        } break;
     }
 }
 
