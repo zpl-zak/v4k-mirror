@@ -11007,39 +11007,11 @@ vec2 font_rect(const char *str) {
 // ----------------------------------------------------------------------------
 // game ui (utils)
 
-API vec2i draw_window_ui();
+API void gui_drawrect( texture_t spritesheet, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end );
 
-API void draw_rect(int rgba, vec2 start, vec2 end );
-API void draw_rect_tex( texture_t texture, int rgba, vec2 start, vec2 end );
-API void draw_rect_sheet( texture_t spritesheet, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end );
-
-#define draw_rect_borders(color, x, y, w, h, borderWeight) do { \
-        int x1 = (x); \
-        int y1 = (y); \
-        int x2 = (x) + (w) - 1; \
-        int y2 = (y) + (h) - 1; \
-        draw_rect(color, vec2(x1, y1), vec2(x2, y1 + (borderWeight) - 1)); \
-        draw_rect(color, vec2(x1, y1), vec2(x1 + (borderWeight) - 1, y2)); \
-        draw_rect(color, vec2(x1, y2 - (borderWeight) + 1), vec2(x2, y2)); \
-        draw_rect(color, vec2(x2 - (borderWeight) + 1, y1), vec2(x2, y2)); \
-    } while(0)
-
-// #define lay_draw_rect(rgba, rect) draw_rect(rgba, vec2(rect.e[0], rect.e[1]), vec2(rect.e[0]+rect.e[2], rect.e[1]+rect.e[3]))
-// #define lay_draw_rect_borders(rgba, rect, borderWeight) draw_rect_borders(rgba, rect.e[0], rect.e[1], rect.e[2], rect.e[3], borderWeight)
-// #define lay_draw_rect_tex(tex, rgba, rect) draw_rect_tex(tex, rgba, vec2(rect.e[0], rect.e[1]), vec2(rect.e[0]+rect.e[2], rect.e[1]+rect.e[3]))
-// #define l2m(rect) (vec4(rect.e[0]+rect.e[2], rect.e[1]+rect.e[3]))
 #define v42v2(rect) vec2(rect.x,rect.y), vec2(rect.z,rect.w)
 
-
-
-vec2i draw_window_ui() {
-    vec2 dpi = ifdef(osx, window_dpi(), vec2(1,1));
-    int w = window_width();
-    int h = window_height();
-    return vec2i(w/dpi.x, h/dpi.y);
-}
-
-void draw_rect_sheet( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end ) {
+void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end ) {
     float gamma = 1;
     static int program = -1, vbo = -1, vao = -1, u_inv_gamma = -1, u_tint = -1, u_has_tex = -1, u_window_width = -1, u_window_height = -1;
     vec2 dpi = ifdef(osx, window_dpi(), vec2(1,1));
@@ -11067,7 +11039,6 @@ void draw_rect_sheet( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba,
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
-//    glEnable( GL_BLEND );
     glUseProgram( program );
     glUniform1f( u_inv_gamma, 1.0f / (gamma + !gamma) );
 
@@ -11119,19 +11090,19 @@ void draw_rect_sheet( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba,
     glBindVertexArray( 0 );
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram( 0 );
-//    glDisable( GL_BLEND );
-}
-
-void draw_rect_tex( texture_t texture, int rgba, vec2 start, vec2 end ) {
-    draw_rect_sheet(texture, vec2(0, 0), vec2(texture.w, texture.h), rgba, start, end);
-}
-
-void draw_rect(int rgba, vec2 start, vec2 end ) {
-    draw_rect_tex((texture_t){0}, rgba, start, end);
 }
 
 // ----------------------------------------------------------------------------
 // game ui
+
+typedef struct gui_state_t {
+    union {
+        struct {
+            bool held;
+            bool hover;
+        };
+    };
+} gui_state_t;
 
 static __thread array(guiskin_t) skins=0;
 static __thread guiskin_t *last_skin=0;
@@ -11154,15 +11125,13 @@ void *gui_userdata() {
 }
 
 static
-gui_state_t *gui_getstate(int id, int kind) {
+gui_state_t *gui_getstate(int id) {
     if (!ctl_states) map_init(ctl_states, less_int, hash_int);
-    static gui_state_t st={0};
-    st.kind=kind;
-    return map_find_or_add(ctl_states, id, st);
+    return map_find_or_add(ctl_states, id, (gui_state_t){0});
 }
 
 bool (gui_button)(int id, vec4 r, const char *skin) {
-    gui_state_t *entry = gui_getstate(id, GUI_BUTTON);
+    gui_state_t *entry = gui_getstate(id);
     bool was_clicked=0;
     entry->hover = false;
 
@@ -11178,20 +11147,14 @@ bool (gui_button)(int id, vec4 r, const char *skin) {
         entry->held = false;
     }
 
-    if (last_skin->draw_rect_func) last_skin->draw_rect_func(last_skin->userdata, *entry, skin, r);
-    else {
-        draw_rect(entry->held ? 0x111111FF : entry->hover ? 0xEEEEEEFF : 0xFFFFFFFF, v42v2(r));
-    }
+    char *btn = va("%s%s", skin?skin:"button", entry->held?"_press":entry->hover?"_hover":"");
+    if (last_skin->draw_rect_func) last_skin->draw_rect_func(last_skin->userdata, btn, r);
 
     return was_clicked;
 }
 
 void (gui_panel)(int id, vec4 r, const char *skin) {
-    gui_state_t *entry = gui_getstate(id, GUI_PANEL);
-    if (last_skin->draw_rect_func) last_skin->draw_rect_func(last_skin->userdata, *entry, skin?skin:"panel", r);
-    else {
-        draw_rect(0xFFFFFFFF, v42v2(r));
-    }
+    if (last_skin->draw_rect_func) last_skin->draw_rect_func(last_skin->userdata, skin?skin:"panel", r);
 }
 
 /* skinned */
@@ -11204,26 +11167,23 @@ void skinned_free(void* userdata) {
 }
 
 static
-atlas_slice_frame_t *skinned_getsliceframe(atlas_t *a, const char *name, const char *fallback) {
-    #define atlas_loop(n)\
-        for (int i = 0; i < array_count(a->slices); i++)\
-            if (!strcmp(quark_string(&a->db, a->slices[i].name), n))\
-                return &a->slice_frames[a->slices[i].frames[0]];
-    atlas_loop(name);
-    atlas_loop(fallback);
+atlas_slice_frame_t *skinned_getsliceframe(atlas_t *a, const char *name) {
+    for (int i = 0; i < array_count(a->slices); i++) 
+        if (!strcmp(quark_string(&a->db, a->slices[i].name), name))
+            return &a->slice_frames[a->slices[i].frames[0]];
     return NULL;
-    #undef atlas_loop
 }
 
 static
 void skinned_draw_missing_rect(vec4 r) {
-    draw_rect_tex(texture_checker(), 0xFFFFFFFF, v42v2(r));
+    vec4 size = vec4(0, 0, texture_checker().w, texture_checker().h);
+    gui_drawrect(texture_checker(), v42v2(size), 0x800080FF, v42v2(r));
 }
 
 static
 void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r) {
     if (!f->has_9slice) {
-        draw_rect_sheet(a->tex, v42v2(f->bounds), 0xFFFFFFFF, v42v2(r));
+        gui_drawrect(a->tex, v42v2(f->bounds), 0xFFFFFFFF, v42v2(r));
         return;
     }
 
@@ -11247,6 +11207,14 @@ void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r
     vec4 bottom_middle_slice = {core.x, core.w, core.z, outer.w};
     vec4 bottom_right_slice = {core.z, core.w, outer.z, outer.w};
 
+    // Ensure dest rectangle is large enough to render the whole element
+    if ((r.z-r.x) < (outer.z-outer.x) * scale) {
+        r.z = r.x + (outer.z-outer.x) * scale;
+    }
+    if ((r.w-r.y) < (outer.w-outer.y) * scale) {
+        r.w = r.y + (outer.w-outer.y) * scale;
+    }
+
     vec4 top_left = {r.x, r.y, r.x + (core.x - outer.x) * scale, r.y + (core.y - outer.y) * scale};
     vec4 top_right = {r.z - (outer.z - core.z) * scale, r.y, r.z, r.y + (core.y - outer.y) * scale};
     vec4 bottom_left = {r.x, r.w - (outer.w - core.w) * scale, r.x + (core.x - outer.x) * scale, r.w};
@@ -11259,41 +11227,24 @@ void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r
 
     vec4 center = {top_left.z, top_left.w, top_right.x, bottom_right.y};
 
-    draw_rect_sheet(a->tex, v42v2(center_slice), 0xFFFFFFFF, v42v2(center));
-    draw_rect_sheet(a->tex, v42v2(top_left_slice), 0xFFFFFFFF, v42v2(top_left));
-    draw_rect_sheet(a->tex, v42v2(top_right_slice), 0xFFFFFFFF, v42v2(top_right));
-    draw_rect_sheet(a->tex, v42v2(bottom_left_slice), 0xFFFFFFFF, v42v2(bottom_left));
-    draw_rect_sheet(a->tex, v42v2(bottom_right_slice), 0xFFFFFFFF, v42v2(bottom_right));
-    draw_rect_sheet(a->tex, v42v2(top_middle_slice), 0xFFFFFFFF, v42v2(top));
-    draw_rect_sheet(a->tex, v42v2(bottom_middle_slice), 0xFFFFFFFF, v42v2(bottom));
-    draw_rect_sheet(a->tex, v42v2(middle_left_slice), 0xFFFFFFFF, v42v2(left));
-    draw_rect_sheet(a->tex, v42v2(middle_right_slice), 0xFFFFFFFF, v42v2(right));
+    gui_drawrect(a->tex, v42v2(center_slice), 0xFFFFFFFF, v42v2(center));
+    gui_drawrect(a->tex, v42v2(top_left_slice), 0xFFFFFFFF, v42v2(top_left));
+    gui_drawrect(a->tex, v42v2(top_right_slice), 0xFFFFFFFF, v42v2(top_right));
+    gui_drawrect(a->tex, v42v2(bottom_left_slice), 0xFFFFFFFF, v42v2(bottom_left));
+    gui_drawrect(a->tex, v42v2(bottom_right_slice), 0xFFFFFFFF, v42v2(bottom_right));
+    gui_drawrect(a->tex, v42v2(top_middle_slice), 0xFFFFFFFF, v42v2(top));
+    gui_drawrect(a->tex, v42v2(bottom_middle_slice), 0xFFFFFFFF, v42v2(bottom));
+    gui_drawrect(a->tex, v42v2(middle_left_slice), 0xFFFFFFFF, v42v2(left));
+    gui_drawrect(a->tex, v42v2(middle_right_slice), 0xFFFFFFFF, v42v2(right));
 }
 
 static
-void skinned_draw_rect(void* userdata, gui_state_t state, const char *skin, vec4 r) {
+void skinned_draw_rect(void* userdata, const char *skin, vec4 r) {
     skinned_t *a = C_CAST(skinned_t*, userdata);
 
-    switch (state.kind) {
-        case GUI_BUTTON: {
-            char *btn = va("%s%s", skin?skin:a->button, state.held?"_press":state.hover?"_hover":"");
-            atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, btn, skin?skin:a->button);
-            if (!f) skinned_draw_missing_rect(r);
-            else skinned_draw_sprite(a->scale, &a->atlas, f, r);
-        } break;
-
-        case GUI_PANEL: {
-            atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin?skin:a->panel, "");
-            if (!f) skinned_draw_missing_rect(r);
-            else skinned_draw_sprite(a->scale, &a->atlas, f, r);
-        } break;
-    }
-}
-
-static
-void skinned_preset_skins(skinned_t *s) {
-    s->panel = "panel";
-    s->button = "button";
+    atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin);
+    if (!f) skinned_draw_missing_rect(r);
+    else skinned_draw_sprite(a->scale, &a->atlas, f, r);
 }
 
 guiskin_t gui_skinned(const char *inifile, float scale) {
@@ -11304,7 +11255,6 @@ guiskin_t gui_skinned(const char *inifile, float scale) {
     skin.userdata = a;
     skin.draw_rect_func = skinned_draw_rect;
     skin.free = skinned_free;
-    skinned_preset_skins(a);
     return skin;
 }
 #line 0

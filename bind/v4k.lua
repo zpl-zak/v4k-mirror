@@ -1519,7 +1519,7 @@ ffi.cdef([[
 //lcpp INF [0000] vec2: macro name but used as C declaration in:vec2 fire;
 //lcpp INF [0000] vec4: macro name but used as C declaration in:vec4 pos;
 //lcpp INF [0000] vec2: macro name but used as C declaration in:vec2 sca;
-//lcpp INF [0000] vec4: macro name but used as C declaration in:void (*draw_rect_func)(void* userdata, gui_state_t state, const char *skin, vec4 rect);
+//lcpp INF [0000] vec4: macro name but used as C declaration in:void (*draw_rect_func)(void* userdata, const char *skin, vec4 rect);
 //lcpp INF [0000] vec4: macro name but used as C declaration in:API void        gui_panel(int id, vec4 rect, const char *skin);
 //lcpp INF [0000] vec4: macro name but used as C declaration in:STATIC void        gui_panel(int id, vec4 rect, const char *skin);
 //lcpp INF [0000] vec4: macro name but used as C declaration in: void        gui_panel(int id, vec4 rect, const char *skin);
@@ -3297,21 +3297,8 @@ enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on
  sprite_t*sprite_new(const char *ase, int bindings[6]);
  void     sprite_del(sprite_t *s);
  void     sprite_setanim(sprite_t *s, unsigned name);
-enum {
-GUI_PANEL,
-GUI_BUTTON,
-};
-typedef struct gui_state_t {
-int kind;
-union {
-struct {
-bool held;
-bool hover;
-};
-};
-} gui_state_t;
 typedef struct guiskin_t {
-void (*draw_rect_func)(void* userdata, gui_state_t state, const char *skin, vec4 rect);
+void (*draw_rect_func)(void* userdata, const char *skin, vec4 rect);
 void (*free)(void* userdata);
 void *userdata;
 } guiskin_t;
@@ -3320,13 +3307,11 @@ void *userdata;
  void        gui_panel(int id, vec4 rect, const char *skin);
  bool        gui_button(int id, vec4 rect, const char *skin);
  void    gui_popskin();
- guiskin_t gui_skinned(const char *inifile, float scale);
 typedef struct skinned_t {
 atlas_t atlas;
 float scale;
-char *panel;
-char *button;
 } skinned_t;
+ guiskin_t gui_skinned(const char *inifile, float scale);
  void*       thread( int (*thread_func)(void* user_data), void* user_data );
  void        thread_destroy( void *thd );
  int         argc();
