@@ -3,7 +3,7 @@
 int main() {
     window_create(65.0, 0 );
 
-    gui_pushskin(gui_skinned("golden.ase", 4.0f));
+    gui_pushskin(gui_skinned("golden.ase", 1.0f));
     skinned_t *skinned = C_CAST(skinned_t*, gui_userdata());
 
     vec4 pos = vec4(400,400,100, 30);

@@ -11237,7 +11237,7 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
         *value = posx2slider(usablerect, min, max, input(MOUSE_X), step);
     }
     float sliderx = slider2posx(min, max, *value, step, usablerect.z);
-    vec2 cursorpos = vec2(sliderx+usablerect.x*.5f-cursorsize.x*.75f, (slidersize.y*.5f - cursorsize.y*.5f));
+    vec2 cursorpos = vec2(sliderx+(usablerect.x-rect.x)-cursorsize.x*.5f, (slidersize.y*.5f - cursorsize.y*.5f));
     vec4 cursorrect = rect;
     cursorrect.x += cursorpos.x;
     cursorrect.y += cursorpos.y;

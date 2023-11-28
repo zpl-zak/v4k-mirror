@@ -468,6 +468,10 @@ if "%1"=="fwk_mir" (
     )
 
     tools\fwkren.exe _fwk\tools\cook.ini from
+    tools\fwkren.exe _fwk\engine\v4k.c from
+    tools\fwkren.exe _fwk\engine\v4k.h from
+    move _fwk\engine\v4k.h _fwk\engine\fwk.h
+    move _fwk\engine\v4k.c _fwk\engine\fwk.c
 
     echo All done.
     endlocal
