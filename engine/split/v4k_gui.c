@@ -164,13 +164,15 @@ bool gui_button_id(int id, vec4 r, const char *skin) {
 
     skin=skin?skin:"button";
     char *btn = va("%s%s", skin, entry->held?"_press":entry->hover?"_hover":"");
-    if (gui_ismouseinrect(btn, r) && !any_widget_used) {
+    if (gui_ismouseinrect(btn, r)) {
         if (input_up(MOUSE_L) && entry->held) {
             was_clicked=1;
         }
 
-        any_widget_used = entry->held = input_held(MOUSE_L);
-        entry->hover = true;
+        if (!any_widget_used) {
+            any_widget_used = entry->held = input_held(MOUSE_L);
+            entry->hover = true;
+        }
     }
     else if (input_up(MOUSE_L) && entry->held) {
         entry->held = false;
@@ -261,11 +263,12 @@ bool gui_slider_label_id(int id, const char *text, vec4 rect, const char *skin, 
     bool state = gui_slider_id(id, rect, skin, min, max, step, value);
     vec2 slidersize={0};
     skin=skin?skin:"slider";
+    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, &slidersize);
 
     vec2 textsize = font_rect(text);
     vec2 pos;
     pos.x = rect.x + max(slidersize.x, rect.z) + 8 /*padding*/;
-    pos.y = rect.y - max(slidersize.y*.5f, rect.w*.5f) + textsize.y*.5f;
+    pos.y = rect.y + max(slidersize.y*.5f, rect.w*.5f) - textsize.y*.5f;
     font_goto(pos.x, pos.y);
     font_print(text);
     return state;
