@@ -4213,29 +4213,29 @@ API void    gui_popskin();
 // default renderers
 
 /// skinned
-/* The skinning engine depends on an Aseprite asset with slices set up.
-   While you can specify your own skins for various GUI widgets, some
-   skin variants are hardcoded and expected to be present in your asset:
-
-   gui_panel():
-    - "panel" (overridable)
-   gui_button():
-    - "button" (base overridable)
-      - "_hover" (ex. "scarybtn_hover")
-      - "_press"
-   gui_rect():
-    - no defaults, always pass your own skin/slice name
-   gui_slider():
-    - "slider" (overridable)
-    - "slider_cursor" (partially overridable, ex. "bigslider_cursor")
-      - "_hover" (ex. "slider_cursor_hover")
-      - "_press"
-*/
 typedef struct skinned_t {
     atlas_t atlas;
     float scale;
 } skinned_t;
 
+// The skinning engine depends on an Aseprite asset with slices set up.
+//   While you can specify your own skins for various GUI widgets, some
+//   skin variants are hardcoded and expected to be present in your asset:
+//
+//   gui_panel():
+//    - "panel" (overridable)
+//   gui_button():
+//    - "button" (base overridable)
+//      - "_hover" (ex. "scarybtn_hover")
+//      - "_press"
+//   gui_rect():
+//    - no defaults, always pass your own skin/slice name
+//   gui_slider():
+//    - "slider" (overridable)
+//    - "slider_cursor" (partially overridable, ex. "bigslider_cursor")
+//      - "_hover" (ex. "slider_cursor_hover")
+//      - "_press"
+//
 API guiskin_t gui_skinned(const char *asefile, float scale);
 #line 0
 
