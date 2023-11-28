@@ -11402,9 +11402,9 @@ void skinned_getscissorrect(void* userdata, const char *skin, vec4 rect, vec4 *d
     dims->w -= (skinsize.y - coresize.y);
 }
 
-guiskin_t gui_skinned(const char *inifile, float scale) {
+guiskin_t gui_skinned(const char *asefile, float scale) {
     skinned_t *a = REALLOC(0, sizeof(skinned_t));
-    a->atlas = atlas_create(inifile, 0);
+    a->atlas = atlas_create(asefile, 0);
     a->scale = scale?scale:1.0f;
     guiskin_t skin={0};
     skin.userdata = a;

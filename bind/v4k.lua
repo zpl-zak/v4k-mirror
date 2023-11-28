@@ -3337,7 +3337,7 @@ typedef struct skinned_t {
 atlas_t atlas;
 float scale;
 } skinned_t;
- guiskin_t gui_skinned(const char *inifile, float scale);
+ guiskin_t gui_skinned(const char *asefile, float scale);
  void*       thread( int (*thread_func)(void* user_data), void* user_data );
  void        thread_destroy( void *thd );
  int         argc();
