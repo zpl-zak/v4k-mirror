@@ -11225,7 +11225,7 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
         entry->hover = false;
     }
 
-
+    float old_value = *value;
     if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, rect);
 
     vec2 slidersize={0}, cursorsize={0};
@@ -11245,7 +11245,7 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
     cursorrect.w = cursorsize.y;
     if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, cursorskin, cursorrect);
 
-    return false;
+    return (old_value!=*value);
 }
 
 void gui_rect_id(int id, vec4 r, const char *skin) {
