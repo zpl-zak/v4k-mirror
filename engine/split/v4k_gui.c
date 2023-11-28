@@ -235,7 +235,7 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
     cursorrect.w = cursorsize.y;
     if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, cursorskin, cursorrect);
 
-    return (old_value!=*value);
+    return entry->held && (old_value!=*value);
 }
 
 void gui_rect_id(int id, vec4 r, const char *skin) {
