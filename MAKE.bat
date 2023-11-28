@@ -149,7 +149,7 @@ if "%1"=="git" (
     call make.bat bind
     rem call make.bat docs
 
-    call make.bat amalgamation
+    rem call make.bat amalgamation
     rem call make.bat split
 
 rem rd /q /s engine\split
@@ -229,7 +229,7 @@ if "%1"=="push" (
 )
 
 if "%1"=="prep" (
-    call make.bat join
+    call make.bat split
     call make.bat amalgamation
     exit /b
 )
@@ -311,7 +311,8 @@ if "%1"=="vps" (
 
 if "%1"=="fwk" (
     pushd ..\fwk-mirror
-        call MAKE.bat sync
+        git fetch
+        git reset --hard origin/main
     popd
     call MAKE.bat fwk_prep
     start "" fwk_diff.WinMerge
@@ -319,6 +320,7 @@ if "%1"=="fwk" (
 )
 
 if "%1"=="fwk_prep" (
+    call make.bat split
     if not exist "_fwk" mkdir "_fwk"
     if not exist "_fwk\demos" mkdir "_fwk\demos"
     if not exist "_fwk\tools" mkdir "_fwk\tools"
@@ -418,6 +420,9 @@ if "%1"=="back" (
     rem )
 
     rem tools\fwkren.exe tools\cook.ini to
+
+    call make.bat join
+    call make.bat amalgamation
 
     echo All done.
     endlocal

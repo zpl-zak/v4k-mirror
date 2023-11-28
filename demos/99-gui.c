@@ -8,6 +8,9 @@ int main() {
 
     vec4 pos = vec4(400,400,100, 30);
 
+    float testval=7.5f;
+    float testval2=7.5f;
+
     while( window_swap() && !input(KEY_ESC) ) { // game loop
         vec4 panel_pos = vec4(0, 0, window_width(), window_height());
         
@@ -32,21 +35,26 @@ int main() {
         }
 
         //
-        gui_panel(panel_pos, 0);
-        if (gui_button(pos, 0)) {
-            printf("%s\n", "Button pressed!");
-        }
+        gui_panel(panel_pos, "panel");
+            if (gui_button(pos, 0)) {
+                printf("%s\n", "Button pressed!");
+            }
 
-        gui_panel(vec4(40,140, 320, 20*skinned->scale), "vial");
-        gui_panel(vec4(40,140, 200, 14*skinned->scale), "hp");
-        gui_panel(vec4(40,240, 240, 20*skinned->scale), "vial");
-        gui_panel(vec4(40,240, 160, 14*skinned->scale), "mp");
+            gui_rect(vec4(40,140, 320, 20*skinned->scale), "vial");
+            gui_rect(vec4(40,140, 200, 14*skinned->scale), "hp");
+            gui_rect(vec4(40,240, 240, 20*skinned->scale), "vial");
+            gui_rect(vec4(40,240, 160, 14*skinned->scale), "mp");
 
-        vec2 badge_size = gui_getskinsize("badge");
-        badge_size.x += 2; // padding
-        gui_panel(vec4(60+badge_size.x*0,320, 1, 1), "badge");
-        gui_panel(vec4(60+badge_size.x*1,320, 1, 1), "badge");
-        gui_panel(vec4(60+badge_size.x*2,320, 1, 1), "badge_empty");
+            vec2 badge_size = gui_getskinsize("badge");
+            badge_size.x += 2; // padding
+            gui_rect(vec4(60+badge_size.x*0,320, 1, 1), "badge");
+            gui_rect(vec4(60+badge_size.x*1,320, 1, 1), "badge");
+            gui_rect(vec4(60+badge_size.x*2,320, 1, 1), "badge_empty");
+
+            vec2 slider_size = gui_getskinsize("slider");
+            gui_slider(vec4(60, 480, 80*skinned->scale, 1), 0, 0.0f, 15.0f, 1.0f, &testval);
+            gui_slider(vec4(60, 480+slider_size.y+10, 120*skinned->scale, 1), 0, -5.0f, 20.0f, 0.0f, &testval2);
+        gui_panel_end();
     }
 
     gui_popskin();
