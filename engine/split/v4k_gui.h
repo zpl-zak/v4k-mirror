@@ -17,16 +17,22 @@ API bool        gui_ismouseinrect(const char *skin, vec4 rect);
 // --
 API void        gui_panel_id(int id, vec4 rect, const char *skin);
 API void            gui_rect_id(int id, vec4 rect, const char *skin);
+API void            gui_label_id(int id, const char *text, vec4 rect);
 API bool            gui_button_id(int id, vec4 rect, const char *skin);
+API bool            gui_button_label_id(int id, const char *text, vec4 rect, const char *skin);
 API bool            gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, float step, float *value);
+API bool            gui_slider_label_id(int id, const char *text, vec4 rect, const char *skin, float min, float max, float step, float *value);
 API void        gui_panel_end();
 API void    gui_popskin();
 
 // helpers
 #define gui_panel(...) gui_panel_id(__LINE__, __VA_ARGS__)
 #define gui_rect(...) gui_rect_id(__LINE__, __VA_ARGS__)
+#define gui_label(...) gui_label_id(__LINE__, __VA_ARGS__)
 #define gui_button(...) gui_button_id(__LINE__, __VA_ARGS__)
+#define gui_button_label(...) gui_button_label_id(__LINE__, __VA_ARGS__)
 #define gui_slider(...) gui_slider_id(__LINE__, __VA_ARGS__)
+#define gui_slider_label(...) gui_slider_label_id(__LINE__, __VA_ARGS__)
 
 // default renderers
 

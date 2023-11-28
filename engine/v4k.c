@@ -11110,6 +11110,7 @@ static __thread array(guiskin_t) skins=0;
 static __thread guiskin_t *last_skin=0;
 static __thread map(int, gui_state_t) ctl_states=0; //@leak
 static __thread array(vec4) scissor_rects=0;
+static __thread bool any_widget_used=0;
 
 void gui_pushskin(guiskin_t skin) {
     array_push(skins, skin);
@@ -11171,17 +11172,19 @@ bool gui_button_id(int id, vec4 r, const char *skin) {
     gui_state_t *entry = gui_getstate(id);
     bool was_clicked=0;
 
-    char *btn = va("%s%s", skin?skin:"button", entry->held?"_press":entry->hover?"_hover":"");
-    if (gui_ismouseinrect(btn, r)) {
+    skin=skin?skin:"button";
+    char *btn = va("%s%s", skin, entry->held?"_press":entry->hover?"_hover":"");
+    if (gui_ismouseinrect(btn, r) && !any_widget_used) {
         if (input_up(MOUSE_L) && entry->held) {
             was_clicked=1;
         }
 
-        entry->held = input_held(MOUSE_L);
+        any_widget_used = entry->held = input_held(MOUSE_L);
         entry->hover = true;
     }
     else if (input_up(MOUSE_L) && entry->held) {
         entry->held = false;
+        any_widget_used = false;
     }
     else {
         entry->hover = false;
@@ -11190,6 +11193,21 @@ bool gui_button_id(int id, vec4 r, const char *skin) {
     if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, btn, r);
 
     return was_clicked;
+}
+
+bool gui_button_label_id(int id, const char *text, vec4 rect, const char *skin) {
+    bool state = gui_button_id(id, rect, skin);
+    vec2 buttonsize={0};
+    skin=skin?skin:"button";
+    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, &buttonsize);
+
+    vec2 textsize = font_rect(text);
+    vec2 pos;
+    pos.x = rect.x + max(buttonsize.x*.5f, rect.z*.5f) - textsize.x*.5f;
+    pos.y = rect.y + max(buttonsize.y*.5f, rect.w*.5f) - textsize.y*.5f;
+    font_goto(pos.x, pos.y);
+    font_print(text);
+    return state;
 }
 
 static
@@ -11214,12 +11232,13 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
 
     skin = skin?skin:"slider";
     char *cursorskin = va("%s_cursor%s", skin, entry->held?"_press":entry->hover?"_hover":"");
-    if (gui_ismouseinrect(skin, rect)) {
-        entry->held = input_held(MOUSE_L);
+    if (gui_ismouseinrect(skin, rect) && !any_widget_used) {
+        any_widget_used = entry->held = input_held(MOUSE_L);
         entry->hover = true;
     }
     else if (input_up(MOUSE_L) && entry->held) {
         entry->held = false;
+        any_widget_used = false;
     }
     else {
         entry->hover = false;
@@ -11248,9 +11267,29 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
     return entry->held && (old_value!=*value);
 }
 
+bool gui_slider_label_id(int id, const char *text, vec4 rect, const char *skin, float min, float max, float step, float *value) {
+    bool state = gui_slider_id(id, rect, skin, min, max, step, value);
+    vec2 slidersize={0};
+    skin=skin?skin:"slider";
+
+    vec2 textsize = font_rect(text);
+    vec2 pos;
+    pos.x = rect.x + max(slidersize.x, rect.z) + 8 /*padding*/;
+    pos.y = rect.y - max(slidersize.y*.5f, rect.w*.5f) + textsize.y*.5f;
+    font_goto(pos.x, pos.y);
+    font_print(text);
+    return state;
+}
+
 void gui_rect_id(int id, vec4 r, const char *skin) {
     (void)id;
     if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, r);
+}
+
+void gui_label_id(int id, const char *text, vec4 rect) {
+    (void)id;
+    font_goto(rect.x, rect.y);
+    font_print(text);
 }
 
 /* skinned */
@@ -11264,6 +11303,7 @@ void skinned_free(void* userdata) {
 
 static
 atlas_slice_frame_t *skinned_getsliceframe(atlas_t *a, const char *name) {
+    if (!name) return NULL;
     for (int i = 0; i < array_count(a->slices); i++) 
         if (!strcmp(quark_string(&a->db, a->slices[i].name), name))
             return &a->slice_frames[a->slices[i].frames[0]];

@@ -3,7 +3,7 @@
 int main() {
     window_create(65.0, 0 );
 
-    gui_pushskin(gui_skinned("golden.ase", 1.0f));
+    gui_pushskin(gui_skinned("golden.ase", 4.0f));
     skinned_t *skinned = C_CAST(skinned_t*, gui_userdata());
 
     vec4 pos = vec4(400,400,100, 30);
@@ -36,7 +36,7 @@ int main() {
 
         //
         gui_panel(panel_pos, "panel");
-            if (gui_button(pos, 0)) {
+            if (gui_button_label(FONT_H1 "PRESS", pos, 0)) {
                 printf("%s\n", "Button pressed!");
             }
 
@@ -53,7 +53,7 @@ int main() {
 
             vec2 slider_size = gui_getskinsize("slider");
             gui_slider(vec4(60, 480, 80*skinned->scale, 1), 0, 0.0f, 15.0f, 1.0f, &testval);
-            gui_slider(vec4(60, 480+slider_size.y+10, 120*skinned->scale, 1), 0, -5.0f, 20.0f, 0.0f, &testval2);
+            gui_slider_label(va(FONT_H1 "%.02f", testval2), vec4(60, 480+slider_size.y+10, 120*skinned->scale, 1), 0, -5.0f, 20.0f, 0.0f, &testval2);
         gui_panel_end();
     }
 
