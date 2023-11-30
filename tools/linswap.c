@@ -1,3 +1,4 @@
+#define STACK_ALLOC_SIZE (128*1024*1024)
 #include "v4k.c"
 
 int main(int argc, char **argv) {
@@ -18,16 +19,17 @@ int main(int argc, char **argv) {
 	char mode = strstri(buf, "//@#line 1 \"") == NULL;
 	char **lines = strsplit(buf, "\n");
 
+	printf("Switching #line %s\n", mode?"ON":"OFF");
+
 	for (int i = 0; i < array_count(lines); i++) {
-		char *line = STRDUP(lines[i]);
+		char *line = STRDUP(lines[i]); //@leak
 		if (!mode) {
 			strrepl(&line, "//@#line 1 \"", "#line 1 \"");
 		} else {
 			strrepl(&line, "#line 1 \"", "//@#line 1 \"");
 		}
 
-		// printf("%s\n", line);
-		file_append(argv[1], line, strlen(line));
+		file_append(argv[1], va("%s\n", line), strlen(line)+1);
 	}
 
 	return 0;
