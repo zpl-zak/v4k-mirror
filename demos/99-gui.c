@@ -45,13 +45,13 @@ int main() {
             gui_rect(vec4(40,240, 240, 20*skinned->scale), "vial");
             gui_rect(vec4(40,240, 160, 14*skinned->scale), "mp");
 
-            vec2 badge_size = gui_getskinsize("badge");
+            vec2 badge_size = gui_getskinsize("badge", 0);
             badge_size.x += 2; // padding
             gui_rect(vec4(60+badge_size.x*0,320, 1, 1), "badge");
             gui_rect(vec4(60+badge_size.x*1,320, 1, 1), "badge");
             gui_rect(vec4(60+badge_size.x*2,320, 1, 1), "badge_empty");
 
-            vec2 slider_size = gui_getskinsize("slider");
+            vec2 slider_size = gui_getskinsize("slider", 0);
             gui_slider(vec4(60, 480, 80*skinned->scale, 1), 0, 0.0f, 15.0f, 1.0f, &testval);
             gui_slider_label(va(FONT_H1 "%.02f", testval2), vec4(60, 480+slider_size.y+10, 120*skinned->scale, 1), 0, -5.0f, 20.0f, 0.0f, &testval2);
         gui_panel_end();

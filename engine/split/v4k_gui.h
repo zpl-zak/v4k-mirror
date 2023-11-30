@@ -2,18 +2,19 @@
 // game ui
 
 typedef struct guiskin_t {
-    void (*drawrect)(void* userdata, const char *skin, vec4 rect);
-    void (*getskinsize)(void* userdata, const char *skin, vec2 *size);
-    void (*getscissorrect)(void* userdata, const char *skin, vec4 rect, vec4 *dims);
-    bool (*ismouseinrect)(void* userdata, const char *skin, vec4 rect);
+    void (*drawrect)(void* userdata, const char *skin, const char *fallback, vec4 rect);
+    void (*getskinsize)(void* userdata, const char *skin, const char *fallback, vec2 *size);
+    void (*getscissorrect)(void* userdata, const char *skin, const char *fallback, vec4 rect, vec4 *dims);
+    bool (*ismouseinrect)(void* userdata, const char *skin, const char *fallback, vec4 rect);
     void (*free)(void* userdata);
     void *userdata;
 } guiskin_t;
 
 API void    gui_pushskin(guiskin_t skin);
 API void*       gui_userdata();
-API vec2        gui_getskinsize(const char *skin);
-API bool        gui_ismouseinrect(const char *skin, vec4 rect);
+API vec2        gui_getskinsize(const char *skin, const char *fallback);
+API bool        gui_ismouseinrect(const char *skin, const char *fallback, vec4 rect);
+API vec4        gui_getscissorrect(const char *skin, const char *fallback, vec4 rect);
 // --
 API void        gui_panel_id(int id, vec4 rect, const char *skin);
 API void            gui_rect_id(int id, vec4 rect, const char *skin);

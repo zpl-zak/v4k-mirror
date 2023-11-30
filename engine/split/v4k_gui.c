@@ -118,15 +118,21 @@ void *gui_userdata() {
     return last_skin->userdata;
 }
 
-vec2 gui_getskinsize(const char *skin) {
+vec2 gui_getskinsize(const char *skin, const char *fallback) {
     vec2 size={0};
-    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, &size);
+    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, fallback, &size);
     return size;
 }
 
-bool gui_ismouseinrect(const char *skin, vec4 rect) {
-    if (last_skin->ismouseinrect) return last_skin->ismouseinrect(last_skin->userdata, skin, rect);
+bool gui_ismouseinrect(const char *skin, const char *fallback, vec4 rect) {
+    if (last_skin->ismouseinrect) return last_skin->ismouseinrect(last_skin->userdata, skin, fallback, rect);
     return false; 
+}
+
+vec4 gui_getscissorrect(const char *skin, const char *fallback, vec4 rect) {
+    vec4 scissor = rect;
+    if (last_skin->getscissorrect) last_skin->getscissorrect(last_skin->userdata, skin, fallback, rect, &scissor);
+    return scissor;
 }
 
 static
@@ -138,8 +144,8 @@ gui_state_t *gui_getstate(int id) {
 void gui_panel_id(int id, vec4 rect, const char *skin) {
     (void)id;
     vec4 scissor={0, 0, window_width(), window_height()};
-    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, rect);
-    if (last_skin->getscissorrect) last_skin->getscissorrect(last_skin->userdata, skin, rect, &scissor);
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, NULL, rect);
+    scissor = gui_getscissorrect(skin, NULL, rect);
 
     if (!array_count(scissor_rects))
         glEnable(GL_SCISSOR_TEST);
@@ -164,7 +170,7 @@ bool gui_button_id(int id, vec4 r, const char *skin) {
 
     skin=skin?skin:"button";
     char *btn = va("%s%s", skin, entry->held?"_press":entry->hover?"_hover":"");
-    if (gui_ismouseinrect(btn, r)) {
+    if (gui_ismouseinrect(btn, skin, r)) {
         if (input_up(MOUSE_L) && entry->held) {
             was_clicked=1;
         }
@@ -174,24 +180,27 @@ bool gui_button_id(int id, vec4 r, const char *skin) {
             entry->hover = true;
         }
     }
-    else if (input_up(MOUSE_L) && entry->held) {
-        entry->held = false;
-        any_widget_used = false;
-    }
     else {
         entry->hover = false;
     }
 
-    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, btn, r);
+    if (input_up(MOUSE_L) && entry->held) {
+        entry->held = false;
+        any_widget_used = false;
+    }
+
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, btn, skin, r);
 
     return was_clicked;
 }
 
 bool gui_button_label_id(int id, const char *text, vec4 rect, const char *skin) {
+    gui_state_t *entry = gui_getstate(id);
     bool state = gui_button_id(id, rect, skin);
     vec2 buttonsize={0};
     skin=skin?skin:"button";
-    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, &buttonsize);
+    char *btn = va("%s%s", skin, entry->held?"_press":entry->hover?"_hover":"");
+    buttonsize = gui_getskinsize(btn, skin);
 
     vec2 textsize = font_rect(text);
     vec2 pos;
@@ -224,7 +233,8 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
 
     skin = skin?skin:"slider";
     char *cursorskin = va("%s_cursor%s", skin, entry->held?"_press":entry->hover?"_hover":"");
-    if (gui_ismouseinrect(skin, rect) && !any_widget_used) {
+    char *fbcursor = va("%s_cursor", skin);
+    if (gui_ismouseinrect(skin, NULL, rect) && !any_widget_used) {
         any_widget_used = entry->held = input_held(MOUSE_L);
         entry->hover = true;
     }
@@ -237,13 +247,12 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
     }
 
     float old_value = *value;
-    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, rect);
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, NULL, rect);
 
     vec2 slidersize={0}, cursorsize={0};
-    vec4 usablerect=rect;
-    if (last_skin->getscissorrect) last_skin->getscissorrect(last_skin->userdata, skin, rect, &usablerect);
-    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, &slidersize);
-    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, cursorskin, &cursorsize);
+    vec4 usablerect = gui_getscissorrect(skin, NULL, rect);
+    slidersize = gui_getskinsize(skin, NULL);
+    cursorsize = gui_getskinsize(cursorskin, fbcursor);
     if (entry->held) {
         *value = posx2slider(usablerect, min, max, input(MOUSE_X), step);
     }
@@ -254,7 +263,7 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
     cursorrect.y += cursorpos.y;
     cursorrect.z = cursorsize.x;
     cursorrect.w = cursorsize.y;
-    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, cursorskin, cursorrect);
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, cursorskin, fbcursor, cursorrect);
 
     return entry->held && (old_value!=*value);
 }
@@ -263,7 +272,7 @@ bool gui_slider_label_id(int id, const char *text, vec4 rect, const char *skin, 
     bool state = gui_slider_id(id, rect, skin, min, max, step, value);
     vec2 slidersize={0};
     skin=skin?skin:"slider";
-    if (last_skin->getskinsize) last_skin->getskinsize(last_skin->userdata, skin, &slidersize);
+    slidersize = gui_getskinsize(skin, NULL);
 
     vec2 textsize = font_rect(text);
     vec2 pos;
@@ -276,7 +285,7 @@ bool gui_slider_label_id(int id, const char *text, vec4 rect, const char *skin, 
 
 void gui_rect_id(int id, vec4 r, const char *skin) {
     (void)id;
-    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, r);
+    if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, NULL, r);
 }
 
 void gui_label_id(int id, const char *text, vec4 rect) {
@@ -300,7 +309,7 @@ atlas_slice_frame_t *skinned_getsliceframe(atlas_t *a, const char *name) {
     for (int i = 0; i < array_count(a->slices); i++) 
         if (!strcmp(quark_string(&a->db, a->slices[i].name), name))
             return &a->slice_frames[a->slices[i].frames[0]];
-    PRINTF("slice name: '%s' is missing in atlas!\n", name);
+    // PRINTF("slice name: '%s' is missing in atlas!\n", name);
     return NULL;
 }
 
@@ -311,9 +320,10 @@ void skinned_draw_missing_rect(vec4 r) {
 }
 
 static
-bool skinned_ismouseinrect(void *userdata, const char *skin, vec4 r) {
+bool skinned_ismouseinrect(void *userdata, const char *skin, const char *fallback, vec4 r) {
     skinned_t *a = C_CAST(skinned_t*, userdata);
     atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin);
+    if (!f && fallback) f = skinned_getsliceframe(&a->atlas, fallback);
     if (!f) return false;
 
     vec4 outer = f->bounds;
@@ -396,18 +406,20 @@ void skinned_draw_sprite(float scale, atlas_t *a, atlas_slice_frame_t *f, vec4 r
 }
 
 static
-void skinned_draw_rect(void* userdata, const char *skin, vec4 r) {
+void skinned_draw_rect(void* userdata, const char *skin, const char *fallback, vec4 r) {
     skinned_t *a = C_CAST(skinned_t*, userdata);
 
     atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin);
+    if (!f && fallback) f = skinned_getsliceframe(&a->atlas, fallback);
     if (!f) skinned_draw_missing_rect(r);
     else skinned_draw_sprite(a->scale, &a->atlas, f, r);
 }
 
-void skinned_getskinsize(void *userdata, const char *skin, vec2 *size) {
+void skinned_getskinsize(void *userdata, const char *skin, const char *fallback, vec2 *size) {
     skinned_t *a = C_CAST(skinned_t*, userdata);
 
     atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin);
+    if (!f && fallback) f = skinned_getsliceframe(&a->atlas, fallback);
     if (f) {
         size->x = (f->bounds.z-f->bounds.x)*a->scale;
         size->y = (f->bounds.w-f->bounds.y)*a->scale;
@@ -415,9 +427,10 @@ void skinned_getskinsize(void *userdata, const char *skin, vec2 *size) {
 }
 
 static
-void skinned_getscissorrect(void* userdata, const char *skin, vec4 rect, vec4 *dims) {
+void skinned_getscissorrect(void* userdata, const char *skin, const char *fallback, vec4 rect, vec4 *dims) {
     skinned_t *a = C_CAST(skinned_t*, userdata);
     atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin);
+    if (!f && fallback) f = skinned_getsliceframe(&a->atlas, fallback);
     if (!f) return;
 
     *dims = rect;

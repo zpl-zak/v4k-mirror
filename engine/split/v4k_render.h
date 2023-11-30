@@ -578,6 +578,13 @@ typedef struct anims_t {
 API anims_t animations(const char *pathfile, int flags);
 
 // -----------------------------------------------------------------------------
+// lightmapping utils
+
+typedef struct lightmap_t {
+    struct lm_context *ctx; // private
+} lightmap_t;
+
+// -----------------------------------------------------------------------------
 // skyboxes
 
 typedef struct skybox_t {

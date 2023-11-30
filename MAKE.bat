@@ -31,6 +31,7 @@ if "%1"=="help" (
     echo %0 [test]                  ; check untracked allocators in V4K
     echo %0 [todo]                  ; check for @fixme and @todo
     echo %0 [v4web]                 ; sync v4 website
+    echo %0 [swap]                  ; toggle #line directives on/off
     echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
@@ -241,6 +242,13 @@ if "%1"=="split" (
 )
 if "%1"=="join" (
     call tools\join
+    exit /b
+)
+if "%1"=="swap" (
+    echo Swapping #line on v4k.h
+    call tools\linswap engine\v4k.h
+    echo Swapping #line on v4k.c
+    call tools\linswap engine\v4k.c
     exit /b
 )
 
