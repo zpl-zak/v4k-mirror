@@ -834,7 +834,7 @@ const char *extract_utf32(const char *s, uint32_t *out) {
     /**/ if( (s[0] & 0x80) == 0x00 ) return *out = (s[0]), s + 1;
     else if( (s[0] & 0xe0) == 0xc0 ) return *out = (s[0] & 31) <<  6 | (s[1] & 63), s + 2;
     else if( (s[0] & 0xf0) == 0xe0 ) return *out = (s[0] & 15) << 12 | (s[1] & 63) <<  6 | (s[2] & 63), s + 3;
-    else if( (s[0] & 0xf8) == 0xf0 ) return *out = (s[0] &  7) << 18 | (s[1] & 63) << 12 | (s[2] & 63) << 8 | (s[3] & 63), s + 4;
+    else if( (s[0] & 0xf8) == 0xf0 ) return *out = (s[0] &  7) << 18 | (s[1] & 63) << 12 | (s[2] & 63) << 6 | (s[3] & 63), s + 4;
     return *out = 0, s + 0;
 }
 array(uint32_t) string32( const char *utf8 ) {
@@ -10041,7 +10041,8 @@ static const unsigned table_middle_east[] = {
 
 static const unsigned table_emoji[] = {
 //  0xE000, 0xEB4C, // Private use (emojis)
-    0xE000, 0xF8FF, // Private use (emojis+webfonts)
+    0xE000, 0xF68B, // Private use (emojis+webfonts). U+F68C excluded
+    0xF68D, 0xF8FF, // Private use (emojis+webfonts)
     0xF0001,0xF1CC7,// Private use (icon mdi)
     0
 };
@@ -10389,12 +10390,24 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     unsigned char *bitmap = (unsigned char*)MALLOC(f->height*f->width);
 
         int charCount = *array_back(sorted) - sorted[0] + 1; // 0xEFFFF;
-        f->begin = sorted[0];
         f->cdata = (stbtt_packedchar*)CALLOC(1, sizeof(stbtt_packedchar) * charCount);
         f->iter2cp = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
         f->cp2iter = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
         for( int i = 0; i < charCount; ++i )
             f->iter2cp[i] = f->cp2iter[i] = 0xFFFD; // default invalid glyph
+
+        // find first char
+        {
+            stbtt_fontinfo info = {0};
+            stbtt_InitFont(&info, ttf_data, stbtt_GetFontOffsetForIndex(ttf_data,0));
+
+            for( int i = 0, end = array_count(sorted); i < end; ++i ) {
+                unsigned glyph = sorted[i];
+                if(!stbtt_FindGlyphIndex(&info, glyph)) continue;
+                f->begin = glyph;
+                break;
+            }
+        }
 
         stbtt_pack_context pc;
         if( !stbtt_PackBegin(&pc, bitmap, f->width, f->height, 0, 1, NULL) ) {
@@ -10407,6 +10420,8 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
             uint64_t begin = sorted[i], end = sorted[i];
             while( i < (num-1) && (sorted[i+1]-sorted[i]) == 1 ) end = sorted[++i];
             //printf("(%d,%d)", (unsigned)begin, (unsigned)end);
+
+            if( begin < f->begin ) continue;
 
             if( stbtt_PackFontRange(&pc, ttf_data, 0, f->font_size, begin, end - begin + 1, (stbtt_packedchar*)f->cdata + begin - f->begin) ) {
                 for( uint64_t cp = begin; cp <= end; ++cp ) {
@@ -10718,7 +10733,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         // convert to vbo data
         int cp = ch - f->begin; // f->cp2iter[ch - f->begin];
         //if(cp == 0xFFFD) continue;
-        //if(cp > f->num_glyphs) cp = 0xFFFD;
+        //if (cp > f->num_glyphs) continue;
 
         *t++ = X;
         *t++ = Y;
@@ -25029,7 +25044,8 @@ guid guid_create() {
 // ----------------------------------------------------------------------------
 // ease
 
-float ease_nop(float t) { return 0; }
+float ease_zero(float t) { return 0; }
+float ease_one(float t) { return 1; }
 float ease_linear(float t) { return t; }
 
 float ease_out_sine(float t) { return sinf(t*(C_PI*0.5f)); }
@@ -25103,7 +25119,8 @@ float ease(float t01, unsigned mode) {
         ease_inout_elastic,
         ease_inout_bounce,
 
-        ease_nop,
+        ease_zero,
+        ease_one,
         ease_linear,
         ease_inout_perlin,
     };
@@ -25150,7 +25167,8 @@ const char **ease_enums() {
         "ease_inout_elastic",
         "ease_inout_bounce",
 
-        "ease_nop",
+        "ease_zero",
+        "ease_one",
         "ease_linear",
         "ease_inout_perlin",
 
@@ -25198,7 +25216,8 @@ const char *ease_enum(unsigned mode) {
     ENUM(EASE_ELASTIC|EASE_INOUT);
     ENUM(EASE_BOUNCE|EASE_INOUT);
 
-    ENUM(EASE_NOP);
+    ENUM(EASE_ZERO);
+    ENUM(EASE_ONE);
     ENUM(EASE_LINEAR);
     ENUM(EASE_INOUT_PERLIN);
 };*/
@@ -30254,7 +30273,7 @@ int ui_tween(const char *label, tween_t *t) {
         ui_hue = (hash & 0x3F) / (float)0x3F; ui_hue += !ui_hue;
 
         struct nk_color c = nk_hsva_f(ui_hue, 0.75f, 0.8f, ui_alpha);
-        nk_fill_rect(canvas, pos, ROUNDING, k->ease == EASE_NOP ? AS_NKCOLOR(0) : c); // AS_NKCOLOR(track_color));
+        nk_fill_rect(canvas, pos, ROUNDING, k->ease == EASE_ZERO ? AS_NKCOLOR(0) : c); // AS_NKCOLOR(track_color));
     }
 
     // horizontal line

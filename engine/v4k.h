@@ -4402,7 +4402,8 @@ AUTORUN {
 // ----------------------------------------------------------------------------
 // ease
 
-API float ease_nop(float t);
+API float ease_zero(float t);
+API float ease_one(float t);
 API float ease_linear(float t);
 
 API float ease_out_sine(float t);
@@ -4456,7 +4457,8 @@ enum EASE_FLAGS {
     EASE_OUT = 0,
     EASE_INOUT = EASE_IN * 2,
 
-    EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
+    EASE_ZERO = EASE_INOUT | (EASE_BOUNCE + 1),
+    EASE_ONE,
     EASE_LINEAR,
     EASE_INOUT_PERLIN,
 

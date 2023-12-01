@@ -1387,7 +1387,8 @@ static const unsigned table_middle_east[] = {
 
 static const unsigned table_emoji[] = {
 //  0xE000, 0xEB4C, // Private use (emojis)
-    0xE000, 0xF8FF, // Private use (emojis+webfonts)
+    0xE000, 0xF68B, // Private use (emojis+webfonts). U+F68C excluded
+    0xF68D, 0xF8FF, // Private use (emojis+webfonts)
     0xF0001,0xF1CC7,// Private use (icon mdi)
     0
 };
@@ -1735,12 +1736,24 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     unsigned char *bitmap = (unsigned char*)MALLOC(f->height*f->width);
 
         int charCount = *array_back(sorted) - sorted[0] + 1; // 0xEFFFF;
-        f->begin = sorted[0];
         f->cdata = (stbtt_packedchar*)CALLOC(1, sizeof(stbtt_packedchar) * charCount);
         f->iter2cp = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
         f->cp2iter = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
         for( int i = 0; i < charCount; ++i )
             f->iter2cp[i] = f->cp2iter[i] = 0xFFFD; // default invalid glyph
+
+        // find first char
+        {
+            stbtt_fontinfo info = {0};
+            stbtt_InitFont(&info, ttf_data, stbtt_GetFontOffsetForIndex(ttf_data,0));
+
+            for( int i = 0, end = array_count(sorted); i < end; ++i ) {
+                unsigned glyph = sorted[i];
+                if(!stbtt_FindGlyphIndex(&info, glyph)) continue;
+                f->begin = glyph;
+                break;
+            }
+        }
 
         stbtt_pack_context pc;
         if( !stbtt_PackBegin(&pc, bitmap, f->width, f->height, 0, 1, NULL) ) {
@@ -1753,6 +1766,8 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
             uint64_t begin = sorted[i], end = sorted[i];
             while( i < (num-1) && (sorted[i+1]-sorted[i]) == 1 ) end = sorted[++i];
             //printf("(%d,%d)", (unsigned)begin, (unsigned)end);
+
+            if( begin < f->begin ) continue;
 
             if( stbtt_PackFontRange(&pc, ttf_data, 0, f->font_size, begin, end - begin + 1, (stbtt_packedchar*)f->cdata + begin - f->begin) ) {
                 for( uint64_t cp = begin; cp <= end; ++cp ) {
@@ -2064,7 +2079,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         // convert to vbo data
         int cp = ch - f->begin; // f->cp2iter[ch - f->begin];
         //if(cp == 0xFFFD) continue;
-        //if(cp > f->num_glyphs) cp = 0xFFFD;
+        //if (cp > f->num_glyphs) continue;
 
         *t++ = X;
         *t++ = Y;

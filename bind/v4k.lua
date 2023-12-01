@@ -3440,7 +3440,8 @@ float scale;
  void        timer_destroy(unsigned timer_handle);
 typedef vec3i guid;
  guid        guid_create();
- float ease_nop(float t);
+ float ease_zero(float t);
+ float ease_one(float t);
  float ease_linear(float t);
  float ease_out_sine(float t);
  float ease_out_quad(float t);
@@ -3487,7 +3488,8 @@ EASE_BOUNCE,
 EASE_IN,
 EASE_OUT = 0,
 EASE_INOUT = EASE_IN * 2,
-EASE_NOP = EASE_INOUT | (EASE_BOUNCE + 1),
+EASE_ZERO = EASE_INOUT | (EASE_BOUNCE + 1),
+EASE_ONE,
 EASE_LINEAR,
 EASE_INOUT_PERLIN,
 EASE_NUM

@@ -53,7 +53,6 @@
 #define BQ_PLATFORM_IMPLEMENTATION            // websocket
 #define BQ_WEBSOCKET_IMPLEMENTATION           // websocket
 #define XML_C                                 // xml
-#define LIGHTMAPPER_IMPLEMENTATION            // lightmapper
 #ifdef __APPLE__
 #define MA_NO_RUNTIME_LINKING                 // miniaudio osx
 #define _GLFW_COCOA                           // glfw osx
@@ -218,6 +217,8 @@ static char *ui_filter = 0;
 {{FILE:3rd_lite_sys.h}}
 {{FILE:3rd_lite.h}}
 
+#define LIGHTMAPPER_IMPLEMENTATION
+//#define LM_DEBUG_INTERPOLATION
 {{FILE:3rd_lightmapper.h}}
 
 #endif // V4K_3RD
