@@ -20683,7 +20683,7 @@ void lightmap_setup(lightmap_t *lm, int w, int h) {
     lm->h = h;
 }
 
-void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void *userdata) {
+void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void (*progressupdate)(float progress), void *userdata) {
     ASSERT(lm->ready);
     // @fixme: use xatlas to UV pack all models, update their UV1 and upload them to GPU.
 
@@ -20726,6 +20726,7 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
                 // render to lightmapper framebuffer
                 glViewport(vp[0], vp[1], vp[2], vp[3]);
                 drawscene(lm, m, view, projection, userdata);
+                if (progressupdate) progressupdate(lmProgress(lm->ctx));
                 lmEnd(lm->ctx);
             }
         }

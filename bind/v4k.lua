@@ -3015,7 +3015,7 @@ unsigned shader;
 } lightmap_t;
  lightmap_t lightmap(int hmsize , float near, float far, vec3 color , int passes , float threshold , float distmod );
  void       lightmap_setup(lightmap_t *lm, int w, int h);
- void          lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void *userdata);
+ void          lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void (*progressupdate)(float progress), void *userdata);
  void       lightmap_destroy(lightmap_t *lm);
 typedef struct skybox_t {
 handle program;

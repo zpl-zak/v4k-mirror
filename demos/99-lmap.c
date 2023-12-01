@@ -10,9 +10,20 @@ void bakedrawmodel(lightmap_t *lm, model_t *m, float *view, float *proj, void *u
     model_render(litm, proj, view, litm.pivot, lm->shader);
 }
 
+void progressupdate(float progress) {
+    static double lastUpdateTime = 0.0;
+    double time = time_ss();
+    if (time - lastUpdateTime > 1.0) {
+        lastUpdateTime = time;
+        PRINTF("progress: %.02f%%", progress*100);
+    }
+    // window_swap();
+}
+
 int main()
 {
-    window_create(0.5, WINDOW_VSYNC_DISABLED);
+    window_create(0.5, 0);
+    window_title(__FILE__);
     camera_t cam = camera();
     sky = skybox(0, 0); skybox_mie_calc_sh(&sky, 2.0f);
     model_t mdl = model("gazebo.obj", 0);
@@ -31,11 +42,12 @@ int main()
     texture_t emission = texture_create(1,1,4,emissive,TEXTURE_LINEAR);
     model_set_texture(litm, emission);
 
-    lightmap_t baker = lightmap(64, 0.001, 1000, vec3(0,0,0), 2, 0.01, 0.0);
-    lightmap_setup(&baker, 640, 640);
+    lightmap_t baker = lightmap(64, 0.01, 100, vec3(0,0,0), 2, 0.01, 0.0);
+    lightmap_setup(&baker, 512, 512);
     array_push(baker.models, &mdl);
 
-    window_title("AO Baking demo");
+    bool do_bake=0;
+    int b=1;
 
     while (window_swap() && !input(KEY_ESC)) {
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
@@ -53,11 +65,16 @@ int main()
         if( ui_panel("Lightmapper", PANEL_OPEN) ) {
             ui_label2("Freecam", "Mouse + W/A/S/D/E/Q keys");
             ui_label("Warning " ICON_MD_WARNING "@This will take a few seconds and bake a lightmap illuminated by: The mesh itself (initially black) + A white sky (1.0f, 1.0f, 1.0f)");
-            int b=2;
+            ui_int("Bounces", &b);
             if( ui_button(va("Bake %d light bounce", b)) ) {
-                lightmap_bake(&baker, b, bakedrawmodel, 0);
+                do_bake=1;
             }
             ui_panel_end();
+        }
+
+        if (do_bake) {
+            do_bake=0;
+            lightmap_bake(&baker, b, bakedrawmodel, progressupdate, 0);
         }
     }
 }

@@ -3656,7 +3656,7 @@ typedef struct lightmap_t {
 
 API lightmap_t lightmap(int hmsize /*64*/, float near, float far, vec3 color /*1,1,1 for AO*/, int passes /*2*/, float threshold /*0.01f*/, float distmod /*0.0f*/);
 API void       lightmap_setup(lightmap_t *lm, int w, int h);
-API void          lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void *userdata);
+API void          lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void (*progressupdate)(float progress), void *userdata);
 API void       lightmap_destroy(lightmap_t *lm);
 
 // -----------------------------------------------------------------------------
