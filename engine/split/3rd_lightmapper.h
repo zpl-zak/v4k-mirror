@@ -356,6 +356,7 @@ struct lm_context
 		{
 			GLuint texture;
 			lm_ivec2 writePosition;
+			int	width, height;
 			lm_ivec2 *toLightmapLocation;
 		} storage;
 	} hemisphere;
@@ -616,10 +617,72 @@ static lm_bool lm_findNextConservativeTriangleRasterizerPosition(lm_context *ctx
 	return lm_findFirstConservativeTriangleRasterizerPosition(ctx);
 }
 
-static void lm_integrateHemisphereBatch(lm_context *ctx)
+static void lm_writeResultsToLightmap(lm_context* ctx)
+{
+	// do the GPU->CPU transfer of downsampled hemispheres
+	float* hemi = (float*)LM_CALLOC(ctx->hemisphere.storage.width * ctx->hemisphere.storage.height, 4 * sizeof(float));
+	glBindTexture(GL_TEXTURE_2D, ctx->hemisphere.storage.texture);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, hemi);
+
+	// write results to lightmap texture
+	for (int y = 0; y < ctx->hemisphere.storage.writePosition.y + (int)ctx->hemisphere.fbHemiCountY; y++)
+	{
+		for (int x = 0; x < ctx->hemisphere.storage.width; x++)
+		{
+			int index = y * ctx->hemisphere.storage.width + x;
+			lm_ivec2 lmUV = ctx->hemisphere.storage.toLightmapLocation[index];
+			if (lmUV.x >= 0)
+			{
+				float* c = hemi + index * 4;
+				float validity = c[3];
+				float* lm = ctx->lightmap.data + (lmUV.y * ctx->lightmap.width + lmUV.x) * ctx->lightmap.channels;
+				if (!lm[0] && validity > 0.9)
+				{
+					float scale = 1.0f / validity;
+					switch (ctx->lightmap.channels)
+					{
+					case 1:
+						lm[0] = lm_maxf((c[0] + c[1] + c[2]) * scale / 3.0f, FLT_MIN);
+						break;
+					case 2:
+						lm[0] = lm_maxf((c[0] + c[1] + c[2]) * scale / 3.0f, FLT_MIN);
+						lm[1] = 1.0f; // do we want to support this format?
+						break;
+					case 3:
+						lm[0] = lm_maxf(c[0] * scale, FLT_MIN);
+						lm[1] = lm_maxf(c[1] * scale, FLT_MIN);
+						lm[2] = lm_maxf(c[2] * scale, FLT_MIN);
+						break;
+					case 4:
+						lm[0] = lm_maxf(c[0] * scale, FLT_MIN);
+						lm[1] = lm_maxf(c[1] * scale, FLT_MIN);
+						lm[2] = lm_maxf(c[2] * scale, FLT_MIN);
+						lm[3] = 1.0f;
+						break;
+					default:
+						assert(LM_FALSE);
+						break;
+					}
+
+#ifdef LM_DEBUG_INTERPOLATION
+					// set sampled pixel to red in debug output
+					ctx->lightmap.debug[(lmUV.y * ctx->lightmap.width + lmUV.x) * 3 + 0] = 255;
+#endif
+				}
+			}
+			ctx->hemisphere.storage.toLightmapLocation[index].x = -1; // reset
+		}
+	}
+
+	LM_FREE(hemi);
+	ctx->hemisphere.storage.writePosition = lm_i2(0, 0);
+}
+
+
+static lm_bool lm_integrateHemisphereBatch(lm_context *ctx)
 {
 	if (!ctx->hemisphere.fbHemiIndex)
-		return; // nothing to do
+		return LM_FALSE; // nothing to do
 
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(ctx->hemisphere.vao);
@@ -687,83 +750,30 @@ static void lm_integrateHemisphereBatch(lm_context *ctx)
 		{
 			int sx = ctx->hemisphere.storage.writePosition.x + x;
 			unsigned int hemiIndex = y * ctx->hemisphere.fbHemiCountX + x;
-			if (hemiIndex >= ctx->hemisphere.fbHemiIndex)
-				ctx->hemisphere.storage.toLightmapLocation[sy * ctx->lightmap.width + sx] = lm_i2(-1, -1);
-			else
-				ctx->hemisphere.storage.toLightmapLocation[sy * ctx->lightmap.width + sx] = ctx->hemisphere.fbHemiToLightmapLocation[hemiIndex];
+			ctx->hemisphere.storage.toLightmapLocation[sy * ctx->hemisphere.storage.width + sx] =
+				(hemiIndex >= ctx->hemisphere.fbHemiIndex) ? 
+				lm_i2(-1, -1) :
+				ctx->hemisphere.fbHemiToLightmapLocation[hemiIndex];
 		}
 	}
 
+	lm_bool needWrite = LM_TRUE;
 	// advance storage texture write position
 	ctx->hemisphere.storage.writePosition.x += ctx->hemisphere.fbHemiCountX;
-	if (ctx->hemisphere.storage.writePosition.x + (int)ctx->hemisphere.fbHemiCountX > ctx->lightmap.width)
+	if (ctx->hemisphere.storage.writePosition.x + (int)ctx->hemisphere.fbHemiCountX > ctx->hemisphere.storage.width)
 	{
 		ctx->hemisphere.storage.writePosition.x = 0;
-		ctx->hemisphere.storage.writePosition.y += ctx->hemisphere.fbHemiCountY;
-		assert(ctx->hemisphere.storage.writePosition.y + (int)ctx->hemisphere.fbHemiCountY < ctx->lightmap.height);
+		// storage is full
+		if (ctx->hemisphere.storage.writePosition.y + (int)ctx->hemisphere.fbHemiCountY >= ctx->hemisphere.storage.height) {
+			lm_writeResultsToLightmap(ctx); // read storage data from gpu memory and write it to the lightmap
+			needWrite = LM_FALSE;
+		} else {
+			ctx->hemisphere.storage.writePosition.y += ctx->hemisphere.fbHemiCountY;
+		}
 	}
 
 	ctx->hemisphere.fbHemiIndex = 0;
-}
-
-static void lm_writeResultsToLightmap(lm_context *ctx)
-{
-	// do the GPU->CPU transfer of downsampled hemispheres
-	float *hemi = (float*)LM_CALLOC(ctx->lightmap.width * ctx->lightmap.height, 4 * sizeof(float));
-	glBindTexture(GL_TEXTURE_2D, ctx->hemisphere.storage.texture);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, hemi);
-
-	// write results to lightmap texture
-	for (int y = 0; y < ctx->hemisphere.storage.writePosition.y + (int)ctx->hemisphere.fbHemiCountY; y++)
-	{
-		for (int x = 0; x < ctx->lightmap.width; x++)
-		{
-			lm_ivec2 lmUV = ctx->hemisphere.storage.toLightmapLocation[y * ctx->lightmap.width + x];
-			if (lmUV.x >= 0)
-			{
-				float *c = hemi + (y * ctx->lightmap.width + x) * 4;
-				float validity = c[3];
-				float *lm = ctx->lightmap.data + (lmUV.y * ctx->lightmap.width + lmUV.x) * ctx->lightmap.channels;
-				if (!lm[0] && validity > 0.9)
-				{
-					float scale = 1.0f / validity;
-					switch (ctx->lightmap.channels)
-					{
-					case 1:
-						lm[0] = lm_maxf((c[0] + c[1] + c[2]) * scale / 3.0f, FLT_MIN);
-						break;
-					case 2:
-						lm[0] = lm_maxf((c[0] + c[1] + c[2]) * scale / 3.0f, FLT_MIN);
-						lm[1] = 1.0f; // do we want to support this format?
-						break;
-					case 3:
-						lm[0] = lm_maxf(c[0] * scale, FLT_MIN);
-						lm[1] = lm_maxf(c[1] * scale, FLT_MIN);
-						lm[2] = lm_maxf(c[2] * scale, FLT_MIN);
-						break;
-					case 4:
-						lm[0] = lm_maxf(c[0] * scale, FLT_MIN);
-						lm[1] = lm_maxf(c[1] * scale, FLT_MIN);
-						lm[2] = lm_maxf(c[2] * scale, FLT_MIN);
-						lm[3] = 1.0f;
-						break;
-					default:
-						assert(LM_FALSE);
-						break;
-					}
-
-#ifdef LM_DEBUG_INTERPOLATION
-					// set sampled pixel to red in debug output
-					ctx->lightmap.debug[(lmUV.y * ctx->lightmap.width + lmUV.x) * 3 + 0] = 255;
-#endif
-				}
-			}
-			ctx->hemisphere.storage.toLightmapLocation[y * ctx->lightmap.width + x].x = -1; // reset
-		}
-	}
-
-	LM_FREE(hemi);
-	ctx->hemisphere.storage.writePosition = lm_i2(0, 0);
+	return needWrite;
 }
 
 static void lm_setView(
@@ -1040,6 +1050,7 @@ static void lm_setMeshPosition(lm_context *ctx, unsigned int indicesTriangleBase
 		// TODO: signed formats
 		case LM_FLOAT: {
 			n = *(const lm_vec3*)nPtr;
+			n = lm_normalize3(lm_transformNormal(ctx->mesh.normalMatrix, n));
 		} break;
 		case LM_NONE: {
 			n = flatNormal;
@@ -1048,7 +1059,7 @@ static void lm_setMeshPosition(lm_context *ctx, unsigned int indicesTriangleBase
 			assert(LM_FALSE);
 		} break;
 		}
-		ctx->meshPosition.triangle.n[i] = lm_normalize3(lm_transformNormal(ctx->mesh.normalMatrix, n));
+		ctx->meshPosition.triangle.n[i] = n;
 	}
 
 	// calculate area of interest (on lightmap) for conservative rasterization
@@ -1405,16 +1416,13 @@ void lmSetHemisphereWeights(lm_context *ctx, lm_weight_func f, void *userdata)
 	LM_FREE(weights);
 }
 
-void lmSetTargetLightmap(lm_context *ctx, float *outLightmap, int w, int h, int c)
+static void lm_initStorage(lm_context *ctx, int w, int h)
 {
-	ctx->lightmap.data = outLightmap;
-	ctx->lightmap.width = w;
-	ctx->lightmap.height = h;
-	ctx->lightmap.channels = c;
-
 	// allocate storage texture
 	if (!ctx->hemisphere.storage.texture)
 		glGenTextures(1, &ctx->hemisphere.storage.texture);
+	ctx->hemisphere.storage.width = w;
+	ctx->hemisphere.storage.height = h;
 	glBindTexture(GL_TEXTURE_2D, ctx->hemisphere.storage.texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1429,6 +1437,18 @@ void lmSetTargetLightmap(lm_context *ctx, float *outLightmap, int w, int h, int 
 	// invalidate all positions
 	for (int i = 0; i < w * h; i++)
 		ctx->hemisphere.storage.toLightmapLocation[i].x = -1;
+}
+
+void lmSetTargetLightmap(lm_context *ctx, float *outLightmap, int w, int h, int c)
+{
+	ctx->lightmap.data = outLightmap;
+	ctx->lightmap.width = w;
+	ctx->lightmap.height = h;
+	ctx->lightmap.channels = c;
+
+	unsigned int sw = w > ctx->hemisphere.fbHemiCountX ? w : ctx->hemisphere.fbHemiCountX;
+	unsigned int sh = h > ctx->hemisphere.fbHemiCountY ? h : ctx->hemisphere.fbHemiCountY;
+	lm_initStorage(ctx, sw, sh);
 
 #ifdef LM_DEBUG_INTERPOLATION
 	if (ctx->lightmap.debug)
@@ -1482,8 +1502,8 @@ lm_bool lmBegin(lm_context *ctx, int* outViewport4, float* outView4x4, float* ou
 			}
 			else
 			{ // ...and there are no triangles left: finish
-				lm_integrateHemisphereBatch(ctx); // integrate and store last batch
-				lm_writeResultsToLightmap(ctx); // read storage data from gpu memory and write it to the lightmap
+				if (lm_integrateHemisphereBatch(ctx)) // integrate and store last batch
+					lm_writeResultsToLightmap(ctx); // read storage data from gpu memory and write it to the lightmap
 
 				if (++ctx->meshPosition.pass == ctx->meshPosition.passCount)
 				{
