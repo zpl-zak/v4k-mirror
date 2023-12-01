@@ -327,6 +327,21 @@ if "%1"=="fwk" (
     exit /b
 )
 
+if "%1"=="gwk" (
+    pushd ..\fwk-mirror
+        git fetch
+        git reset --hard origin/main
+    popd
+    call MAKE.bat fwk_prep
+    copy/y ..\fwk-mirror\engine\fwk.h _fwk\engine\fwk.h
+    copy/y ..\fwk-mirror\engine\fwk.c _fwk\engine\fwk.c
+    copy/y ..\fwk-mirror\engine\fwk _fwk\engine\fwk
+    copy/y ..\fwk-mirror\engine\split\*.inl _fwk\engine\split\
+    rem copy/y ..\fwk-mirror\engine\split\3rd_*.c _fwk\engine\split\
+
+    exit /b
+)
+
 if "%1"=="fwk_prep" (
     call make.bat split
     if not exist "_fwk" mkdir "_fwk"
@@ -343,6 +358,9 @@ if "%1"=="fwk_prep" (
     xcopy /y "engine\art\shaders\*" "_fwk\engine\art\shaders"
     xcopy /y "demos" "_fwk\demos"
     copy /y "engine\editor.c" "_fwk\engine\editor.c"
+    copy /y "engine\v4k.c" "_fwk\engine\fwk.c"
+    copy /y "engine\v4k.h" "_fwk\engine\fwk.h"
+    copy /y "engine\v4k" "_fwk\engine\fwk"
     rem xcopy /y/E "tools "_fwk\tools"
     for %%f in ("engine\split\v4k*") do (
         set "filename=%%~nf"
@@ -392,7 +410,13 @@ if "%1"=="back" (
     del "demos\*.c"
     xcopy /y "_fwk\demos" "demos"
     xcopy /y "_fwk\engine\editor.c" "engine\editor.c"
+    copy /y "_fwk\engine\fwk.c" "engine\v4k.c"
+    copy /y "_fwk\engine\fwk.h" "engine\v4k.h"
+    copy /y "_fwk\engine\fwk" "engine\v4k"
     tools\fwkren.exe "engine\editor.c" to
+    tools\fwkren.exe "engine\v4k.c" to
+    tools\fwkren.exe "engine\v4k.h" to
+    tools\fwkren.exe "engine\v4k" to
     tools\fwkren.exe "hello.c" to
 
     rem xcopy /y/E "_fwk\tools "tools"
