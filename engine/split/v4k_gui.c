@@ -126,7 +126,7 @@ vec2 gui_getskinsize(const char *skin, const char *fallback) {
 
 bool gui_ismouseinrect(const char *skin, const char *fallback, vec4 rect) {
     if (last_skin->ismouseinrect) return last_skin->ismouseinrect(last_skin->userdata, skin, fallback, rect);
-    return false; 
+    return false;
 }
 
 vec4 gui_getscissorrect(const char *skin, const char *fallback, vec4 rect) {
@@ -306,7 +306,7 @@ void skinned_free(void* userdata) {
 static
 atlas_slice_frame_t *skinned_getsliceframe(atlas_t *a, const char *name) {
     if (!name) return NULL;
-    for (int i = 0; i < array_count(a->slices); i++) 
+    for (int i = 0; i < array_count(a->slices); i++)
         if (!strcmp(quark_string(&a->db, a->slices[i].name), name))
             return &a->slice_frames[a->slices[i].frames[0]];
     // PRINTF("slice name: '%s' is missing in atlas!\n", name);

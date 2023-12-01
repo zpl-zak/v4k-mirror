@@ -208,7 +208,6 @@ API extern int   (*obj_init[256])(); ///-
 API extern int   (*obj_quit[256])(); ///-
 API extern int   (*obj_tick[256])(); ///-
 API extern int   (*obj_draw[256])(); ///-
-
 API extern int   (*obj_lerp[256])(); ///-
 
 API extern int   (*obj_aabb[256])(); ///-
@@ -216,7 +215,7 @@ API extern int   (*obj_edit[256])(); ///-
 API extern int   (*obj_menu[256])(); ///-
 API extern char* (*obj_icon[256])(); ///-
 
-API extern const char*OBJTYPES[256]; /// -
+API extern const char*OBJTYPES[256]; ///-
 
 // ----------------------------------------------------------------------------
 // core

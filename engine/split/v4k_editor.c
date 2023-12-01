@@ -6,10 +6,10 @@
 // - network replication can be done by external tools by comparing the filesystems and by sending the resulting diff zipped
 //
 // ## Editor roadmap
-// - Gizmos?, scene tree, property editor?, load/save?, undo/redo?, copy/paste, on/off (vis,tick,ddraw,log), vcs.
-// - Scenenode pass: node singleton display, node console, node labels, node outlines?.<!-- node == gameobj ? -->
-// - Render pass: billboards?, materials, un/lit, cast shadows, wireframe, skybox?/mie?, fog/atmosphere
-// - Level pass: volumes, triggers, platforms, level streaming, collide?, physics
+// - Gizmos✱, scene tree, property editor✱, load/save✱, undo/redo✱, copy/paste, on/off (vis,tick,ddraw,log), vcs.
+// - Scenenode pass: node singleton display, node console, node labels, node outlines✱.<!-- node == gameobj ? -->
+// - Render pass: billboards✱, materials, un/lit, cast shadows, wireframe, skybox✱/mie✱, fog/atmosphere
+// - Level pass: volumes, triggers, platforms, level streaming, collide✱, physics
 // - Edit pass: Procedural content, brushes, noise and CSG.
 // - GUI pass: timeline and data tracks, node graphs. <!-- worthy: will be reused into materials, animgraphs and blueprints -->
 
@@ -194,20 +194,20 @@ int editor_filter() {
         if (nk_begin(ui_ctx, "Filter", nk_rect(window_width()-window_width()*0.33,32, window_width()*0.33, 40),
             NK_WINDOW_NO_SCROLLBAR)) {
 
-        char *bak = ui_filter; ui_filter = 0;
-        ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &bak);
-        ui_filter = bak;
+            char *bak = ui_filter; ui_filter = 0;
+            ui_string(ICON_MD_CLOSE " Filter " ICON_MD_SEARCH, &bak);
+            ui_filter = bak;
 
             if( input(KEY_ESC) || ( ui_label_icon_clicked_L.x > 0 && ui_label_icon_clicked_L.x <= 24 )) {
                 if( ui_filter ) ui_filter[0] = '\0';
                 editor.filter = 0;
-    }
-    }
+            }
+        }
         nk_end(ui_ctx);
     }
 
     return editor.filter;
-    }
+}
 
 static
 int editor_select_(void *o, const char *mask) {
@@ -231,7 +231,7 @@ void editor_unselect() { // same than editor_select("!**");
     for each_map_ptr(*editor_selected_map(), void*,o, int, k) {
         if( *k ) *k = 0;
     }
-    }
+}
 
 void editor_select_aabb(aabb box) {
     int is_inv = input_held(KEY_CTRL);
@@ -271,8 +271,8 @@ void editor_selectgroup(obj *first, obj *last) {
                 editor_selectgroup_(o, first, last);
             }
         }
-        }
     }
+}
 
 static obj *find_any_selected_(obj *o) {
     if( editor_selected(o) ) return o;
@@ -288,7 +288,7 @@ void* editor_first_selected() {
         obj *oo = find_any_selected_(o);
         // if( oo ) printf("1st found: %s\n", obj_name(oo));
         if( oo ) return oo;
-}
+    }
     return 0;
 }
 
@@ -299,7 +299,7 @@ static obj *find_last_selected_(obj *o) {
         obj *ooo = find_last_selected_(oo);
         if( ooo )
             last = ooo;
-}
+    }
     return last;
 }
 void* editor_last_selected() {
@@ -308,7 +308,7 @@ void* editor_last_selected() {
         obj *oo = find_last_selected_(o);
         // if( oo ) printf("last found: %s\n", obj_name(oo));
         if( oo ) last = oo;
-}
+    }
     return last;
 }
 
@@ -318,7 +318,7 @@ void editor_addtoworld(obj *o) {
     set_find_or_add(editor.world, o);
     for each_objchild(o, obj*, oo) {
         editor_addtoworld(oo);
-}
+    }
 }
 
 void editor_watch(const void *o) {
@@ -499,8 +499,8 @@ void editor_pump() {
 
                 if( (*cmd)[0] ) {
                     (*cmd)[0] = '\0'; strcatf(&(*cmd), "\1%s\n", "Ok\n"); (*cmd)[0] = '\0';
+                }
             }
-        }
         }
     }
 }
@@ -650,8 +650,8 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
     for each_set_ptr(editor.world,obj*,o) {
         if( obj_hasmethod(*o,edit) ) {
             obj_edit(*o);
+        }
     }
-}
 
     // draw silhouettes
     sprite_flush();
@@ -663,8 +663,8 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         }
         if( obj_hasmethod(*o,edit) ) {
             obj_edit(*o);
-}
-}
+        }
+    }
     sprite_flush();
     fx_end();
 
@@ -722,9 +722,9 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
                 editor_end(EDITOR_WINDOW_NK_SMALL);
             } else {
                 editor_setpopup(o, 0);
+            }
+        }
     }
-    }
-}
 
 
     // draw subeditors

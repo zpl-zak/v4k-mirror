@@ -322,6 +322,7 @@ if "%1"=="fwk" (
         git fetch
         git reset --hard origin/main
     popd
+    call make.bat split
     call MAKE.bat fwk_prep
     start "" fwk_diff.WinMerge
     exit /b
@@ -338,12 +339,12 @@ if "%1"=="gwk" (
     copy/y ..\fwk-mirror\engine\fwk _fwk\engine\fwk
     copy/y ..\fwk-mirror\engine\split\*.inl _fwk\engine\split\
     rem copy/y ..\fwk-mirror\engine\split\3rd_*.c _fwk\engine\split\
+    make back
 
     exit /b
 )
 
 if "%1"=="fwk_prep" (
-    call make.bat split
     if not exist "_fwk" mkdir "_fwk"
     if not exist "_fwk\demos" mkdir "_fwk\demos"
     if not exist "_fwk\tools" mkdir "_fwk\tools"
@@ -453,8 +454,8 @@ if "%1"=="back" (
 
     rem tools\fwkren.exe tools\cook.ini to
 
-    call make.bat join
-    call make.bat amalgamation
+    rem call make.bat join
+    rem call make.bat amalgamation
 
     echo All done.
     endlocal

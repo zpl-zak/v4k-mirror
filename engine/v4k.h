@@ -135,6 +135,10 @@ extern "C" {
 #define COOK_DISABLED           0 // ifdef(nocook, 1, 0) ///+
 #endif
 
+#ifndef ENABLE_RPMALLOC
+#define ENABLE_RPMALLOC         0 // ifdef(tcc, 0, 1) // forbidden on tcc because of lacking TLS support
+#endif
+
 // -----------------------------------------------------------------------------
 // if/n/def hell
 
@@ -1435,7 +1439,6 @@ API extern int   (*obj_init[256])(); ///-
 API extern int   (*obj_quit[256])(); ///-
 API extern int   (*obj_tick[256])(); ///-
 API extern int   (*obj_draw[256])(); ///-
-
 API extern int   (*obj_lerp[256])(); ///-
 
 API extern int   (*obj_aabb[256])(); ///-
@@ -1443,7 +1446,7 @@ API extern int   (*obj_edit[256])(); ///-
 API extern int   (*obj_menu[256])(); ///-
 API extern char* (*obj_icon[256])(); ///-
 
-API extern const char*OBJTYPES[256]; /// -
+API extern const char*OBJTYPES[256]; ///-
 
 // ----------------------------------------------------------------------------
 // core
@@ -3802,7 +3805,7 @@ typedef struct camera_t {
     vec2 last_look; vec3 last_move; // used for friction and damping
     bool damping;
 
-    bool orthographic; // 0 perspective, 1 orthographic; when ortho: dimetric[if pitch == -30o], isometric[if pitch == 35.264o]
+    bool orthographic; // 0 perspective, 1 orthographic; when ortho: dimetric[if pitch == -30º], isometric[if pitch == 35.264º]
     float distance;    // distance to pivot, when orbiting
     // vec2 polarity = { +1,-1 }; // @todo
     // vec2 sensitivity = { 2,2 }; // @todo
@@ -4002,7 +4005,7 @@ API array(char*)    strsplit(const char *string, const char *delimiters);
 /// > char *joint = strjoin(tokens, "+"); // joint="hello+world"
 API char*           strjoin(array(char*) list, const char *separator);
 
-API char *          string8(const wchar_t *str);  /// convert from wchar16(win) to utf8/ascii
+API char*           string8(const wchar_t *str);  /// convert from wchar16(win) to utf8/ascii
 API array(uint32_t) string32( const char *utf8 ); /// convert from utf8 to utf32
 
 API const char*     codepoint_to_utf8(unsigned cp);

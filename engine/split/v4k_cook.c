@@ -830,8 +830,8 @@ void cook_stop() {
 int cook_progress() {
     int count = 0, sum = 0;
     for( int i = 0, end = cook_jobs(); i < end; ++i ) {
-            sum += jobs[i].progress;
-            ++count;
+        sum += jobs[i].progress;
+        ++count;
     }
     return cook_jobs() ? sum / (count+!count) : 100;
 }

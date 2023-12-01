@@ -751,7 +751,7 @@ static lm_bool lm_integrateHemisphereBatch(lm_context *ctx)
 			int sx = ctx->hemisphere.storage.writePosition.x + x;
 			unsigned int hemiIndex = y * ctx->hemisphere.fbHemiCountX + x;
 			ctx->hemisphere.storage.toLightmapLocation[sy * ctx->hemisphere.storage.width + sx] =
-				(hemiIndex >= ctx->hemisphere.fbHemiIndex) ? 
+				(hemiIndex >= ctx->hemisphere.fbHemiIndex) ?
 				lm_i2(-1, -1) :
 				ctx->hemisphere.fbHemiToLightmapLocation[hemiIndex];
 		}

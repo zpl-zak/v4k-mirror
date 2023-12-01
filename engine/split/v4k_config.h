@@ -37,6 +37,10 @@
 #define COOK_DISABLED           0 // ifdef(nocook, 1, 0) ///+
 #endif
 
+#ifndef ENABLE_RPMALLOC
+#define ENABLE_RPMALLOC         0 // ifdef(tcc, 0, 1) // forbidden on tcc because of lacking TLS support
+#endif
+
 // -----------------------------------------------------------------------------
 // if/n/def hell
 

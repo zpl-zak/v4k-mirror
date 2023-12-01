@@ -156,8 +156,8 @@ void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
     cam->pitch += _mouse.y;
     cam->distance += _mouse.z;
 
-        // look: limit pitch angle [-89..89]
-        cam->pitch = cam->pitch > 89 ? 89 : cam->pitch < -89 ? -89 : cam->pitch;
+    // look: limit pitch angle [-89..89]
+    cam->pitch = cam->pitch > 89 ? 89 : cam->pitch < -89 ? -89 : cam->pitch;
 
     // compute view matrix
     float x = rad(cam->yaw), y = rad(-cam->pitch), cx = cosf(x), cy = cosf(y), sx = sinf(x), sy = sinf(y);
