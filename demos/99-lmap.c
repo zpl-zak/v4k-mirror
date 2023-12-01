@@ -2,11 +2,12 @@
 
 skybox_t sky;
 model_t litm;
+lightmap_t baker;
 
 void bakedrawmodel(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata) {
     shader_bind(lm->shader);
     model_render(*m, proj, view, m->pivot, lm->shader);
-    shader_float("u_litboost", 4.0);
+    shader_float("u_litboost", 8.0);
     model_render(litm, proj, view, litm.pivot, lm->shader);
 }
 
@@ -27,9 +28,11 @@ int main()
     camera_t cam = camera();
     sky = skybox(0, 0); skybox_mie_calc_sh(&sky, 2.0f);
     model_t mdl = model("gazebo.obj", 0);
-    litm = model("cube.obj", MODEL_MATCAPS);
+    litm = model("kgirls01.fbx", 0);
     {
-        mat44 lp; scaling44(lp, 0.3, 0.3, 0.3); translate44(lp, 8,4,0);
+        mat44 lp; id44(lp);
+        // scaling44(lp, 10, 10, 10); 
+        translate44(lp, 0,2,0);
         copy44(litm.pivot, lp);
     }
     rotate44(mdl.pivot, -90, 1, 0, 0);
@@ -38,11 +41,11 @@ int main()
     shader_vec3v("u_coefficients_sh", 9, sky.cubemap.sh);
     // shader_bool("u_texmod", 0);
 
-    unsigned char emissive[] = { 255, 180, 0, 255 };
-    texture_t emission = texture_create(1,1,4,emissive,TEXTURE_LINEAR);
-    model_set_texture(litm, emission);
+    // unsigned char emissive[] = { 255, 180, 0, 255 };
+    // texture_t emission = texture_create(1,1,4,emissive,TEXTURE_LINEAR);
+    // model_set_texture(litm, emission);
 
-    lightmap_t baker = lightmap(64, 0.01, 100, vec3(0,0,0), 2, 0.01, 0.0);
+    baker = lightmap(64, 0.01, 100, vec3(0,0,0), 2, 0.01, -1.0);
     lightmap_setup(&baker, 512, 512);
     array_push(baker.models, &mdl);
 

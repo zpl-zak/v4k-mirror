@@ -20698,10 +20698,6 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
             texture_destroy(&m->lightmap);
         }
         m->lightmap = texture_create(w, h, 4, 0, TEXTURE_LINEAR|TEXTURE_FLOAT);
-        glBindTexture(GL_TEXTURE_2D, m->lightmap.id);
-        unsigned char emissive[] = { 0, 0, 0, 255 };
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, emissive);
-        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     for (int b = 0; b < bounces; b++) {

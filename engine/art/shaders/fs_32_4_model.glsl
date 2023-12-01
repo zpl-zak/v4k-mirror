@@ -9,7 +9,7 @@ uniform vec4 u_diffuse = vec4(1.0,1.0,1.0,1.0);
 // lightmapping
 uniform sampler2D u_lightmap;
 uniform bool u_texlit;
-uniform bool u_texmod = true;
+uniform bool u_texmod = false;
 uniform float u_litboost = 1.0;
 
 in vec3 v_position;
@@ -157,7 +157,7 @@ void main() {
 
     vec4 lit = vec4(1.0, 1.0, 1.0, 1.0);
     // SH lighting
-    if (!u_texlit) {
+    /* if (!u_texlit) */ {
         vec3 result = sh_lighting(n);
         if( (result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) lit = vec4(result, 1.0);
     }
@@ -181,12 +181,10 @@ void main() {
         vec4 litsample = texture(u_lightmap, v_texcoord);
 
         if (u_texmod) {
-            diffuse *= litsample;
+            diffuse.rgb *= litsample.rgb;
         } else {
-            diffuse += litsample;
+            diffuse.rgb += litsample.rgb;
         }
-
-        diffuse.rgb += sh_lighting(n);
     }
     
     // lighting mix
