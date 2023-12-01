@@ -49,6 +49,7 @@ uniform sampler2DArray blend_shapes; // @todo: implement me
 
 in vec3 att_position; // @todo: reorder ass2iqe to emit p3 n3 u2 t3 b3 c4B i4 w4 instead
 in vec2 att_texcoord;
+in vec2 att_texcoord2;
 in vec3 att_normal;
 in vec4 att_tangent; // vec3 + bi sign
 in mat4 att_instanced_matrix; // for instanced rendering

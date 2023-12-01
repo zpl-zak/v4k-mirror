@@ -2766,6 +2766,7 @@ struct iqmbounds {
 typedef struct iqm_vertex {
     GLfloat position[3];
     GLfloat texcoord[2];
+    GLfloat texcoord2[2];
     GLfloat normal[3];
     GLfloat tangent[4];
     GLubyte blendindexes[4];
@@ -2925,26 +2926,28 @@ void model_set_state(model_t m) {
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, position) );
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, texcoord) );
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, normal) );
-    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, tangent) );
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, texcoord2) );
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, normal) );
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, tangent) );
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
 
     // vertex color
-    glVertexAttribPointer(11, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,color) );
-    glEnableVertexAttribArray(11);
+    glVertexAttribPointer(12, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,color) );
+    glEnableVertexAttribArray(12);
 
     // animation
     if(numframes > 0) {
-        glVertexAttribPointer( 8, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,blendindexes) );
-        glVertexAttribPointer( 9, 4, GL_UNSIGNED_BYTE, GL_TRUE,  sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,blendweights) );
-        glVertexAttribPointer(10, 1, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, blendvertexindex) );
-        glEnableVertexAttribArray(8);
+        glVertexAttribPointer( 9, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,blendindexes) );
+        glVertexAttribPointer( 10, 4, GL_UNSIGNED_BYTE, GL_TRUE,  sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,blendweights) );
+        glVertexAttribPointer(11, 1, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, blendvertexindex) );
         glEnableVertexAttribArray(9);
         glEnableVertexAttribArray(10);
+        glEnableVertexAttribArray(11);
     }
 
     // mat4 attribute; for instanced rendering
@@ -2956,20 +2959,20 @@ void model_set_state(model_t m) {
         glBindBuffer(GL_ARRAY_BUFFER, m.vao_instanced);
         glBufferData(GL_ARRAY_BUFFER, m.num_instances * mat4_size, m.instanced_matrices, GL_STATIC_DRAW);
 
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(0 * vec4_size)));
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(1 * vec4_size)));
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(2 * vec4_size)));
-        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(3 * vec4_size)));
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(0 * vec4_size)));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(1 * vec4_size)));
+        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(2 * vec4_size)));
+        glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(3 * vec4_size)));
 
-        glEnableVertexAttribArray(4);
         glEnableVertexAttribArray(5);
         glEnableVertexAttribArray(6);
         glEnableVertexAttribArray(7);
+        glEnableVertexAttribArray(8);
 
-        glVertexAttribDivisor(4, 1);
         glVertexAttribDivisor(5, 1);
         glVertexAttribDivisor(6, 1);
         glVertexAttribDivisor(7, 1);
+        glVertexAttribDivisor(8, 1);
     }
 
     // 7 bitangent? into texcoord.z?
@@ -3051,7 +3054,10 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
         if(inposition) memcpy(v->position, &inposition[i*3], sizeof(v->position));
         if(innormal) memcpy(v->normal, &innormal[i*3], sizeof(v->normal));
         if(intangent) memcpy(v->tangent, &intangent[i*4], sizeof(v->tangent));
-        if(intexcoord) memcpy(v->texcoord, &intexcoord[i*2], sizeof(v->texcoord));
+        if(intexcoord) {
+            memcpy(v->texcoord, &intexcoord[i*2], sizeof(v->texcoord));
+            memcpy(v->texcoord2, &intexcoord[i*2], sizeof(v->texcoord2)); // populate UV1 with the same value, used by lightmapper
+        }
         if(inblendindex8) memcpy(v->blendindexes, &inblendindex8[i*4], sizeof(v->blendindexes));
         if(inblendweight8) memcpy(v->blendweights, &inblendweight8[i*4], sizeof(v->blendweights));
         if(inblendindexi) {
@@ -3321,8 +3327,8 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     // static int shaderprog = -1;
     // if( shaderprog < 0 ) {
         const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
-        int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_332_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
-            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
+        int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_3223444143_16_332_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
+            "att_position,att_texcoord,att_texcoord2,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent","fragColor",
             va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
     // }
     // ASSERT(shaderprog > 0);
@@ -3712,3 +3718,126 @@ anims_t animations(const char *pathfile, int flags) {
     }
     return a;
 }
+
+// -----------------------------------------------------------------------------
+// lightmapping utils
+// @fixme: support xatlas uv packing, add UV1 coords to vertex model specs
+lightmap_t lightmap(int hmsize, float cnear, float cfar, vec3 color, int passes, float threshold, float distmod) {
+    lightmap_t lm = {0};
+    lm.ctx = lmCreate(hmsize, cnear, cfar, color.x, color.y, color.z, passes, threshold, distmod);
+
+    if (!lm.ctx) {
+        PANIC("Error: Could not initialize lightmapper.\n");
+        return lm;
+    }
+
+    return lm;
+}
+
+static
+void lightmap_destroytexture(lightmap_t *lm) {
+    texture_destroy(&lm->lightmap);
+    for (int i = 0; i < array_count(lm->models); i++) {
+        lm->models[i]->lightmap = NULL;
+    }
+}
+
+void lightmap_destroy(lightmap_t *lm) {
+    lmDestroy(lm->ctx);
+    lightmap_destroytexture(lm);
+    //
+}
+
+void lightmap_setup(lightmap_t *lm, int w, int h) {
+    if (lm->ready) {
+        lightmap_destroytexture(lm);
+    }
+    lm->ready=1;
+
+    lm->lightmap = texture_create(w, h, 4, 0, TEXTURE_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, lm->lightmap.id);
+    unsigned char emissive[] = { 0, 0, 0, 255 };
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, emissive);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void lightmap_addmodel(lightmap_t *lm, model_t *m) {
+    array_push(lm->models, m);
+}
+
+void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, float *view, float *proj, void *userdata), void *userdata) {
+    ASSERT(lm->ready);
+    // @fixme: use xatlas to UV pack all models, update their UV1 and upload them to GPU.
+    // @fixme: combine all verts data together and push to lmSetGeometry
+
+    // int w = lm->lightmap->w, h = lm->lightmap->h;
+    // float *data = CALLOC(w * h * 4, sizeof(float));
+    // memset(data, 0, w*h*4);
+    // for (int b = 0; b < bounces; b++) {
+    //     lmSetTargetLightmap(lm->ctx, data, w, h, 4);
+
+    //     lmSetGeometry(lm->ctx, NULL,
+    //         LM_FLOAT, (unsigned char*)scene->vertices + offsetof(vertex_t, p), sizeof(vertex_t),
+    //         LM_NONE , NULL                                                   , 0               , // no interpolated normals in this example
+    //         LM_FLOAT, (unsigned char*)scene->vertices + offsetof(vertex_t, t), sizeof(vertex_t),
+    //         scene->indexCount, LM_UNSIGNED_SHORT, scene->indices);
+
+
+    //     glDisable(GL_BLEND);
+
+    //     int vp[4];
+    //     float view[16], projection[16];
+    //     double lastUpdateTime = 0.0;
+    //     while (lmBegin(ctx, vp, view, projection))
+    //     {
+    //         // render to lightmapper framebuffer
+    //         glViewport(vp[0], vp[1], vp[2], vp[3]);
+    //         drawScene(scene, view, projection);
+
+    //         // display progress every second (printf is expensive)
+    //         double time = time_ms() / 1000.0;
+    //         if (time - lastUpdateTime > 1.0)
+    //         {
+    //             lastUpdateTime = time;
+    //             printf("\r%6.2f%%", lmProgress(ctx) * 100.0f);
+    //             fflush(stdout);
+    //         }
+
+    //         lmEnd(ctx);
+    // //      window_swap();
+    //     }
+    //     printf("\rFinished baking %d triangles.\n", scene->indexCount / 3);
+    // }
+
+    // lmDestroy(ctx);
+
+    // // postprocess texture
+    // float *temp = CALLOC(w * h * 4, sizeof(float));
+    // for (int i = 0; i < 16; i++)
+    // {
+    //     lmImageDilate(data, temp, w, h, 4);
+    //     lmImageDilate(temp, data, w, h, 4);
+    // }
+    // lmImageSmooth(data, temp, w, h, 4);
+    // lmImageDilate(temp, data, w, h, 4);
+    // lmImagePower(data, w, h, 4, 1.0f / 2.2f, 0x7); // gamma correct color channels
+    // FREE(temp);
+
+    // // save result to a file
+    // if (lmImageSaveTGAf("result.tga", data, w, h, 4, 1.0f))
+    //     printf("Saved result.tga\n");
+
+    // // upload result
+    // glBindTexture(GL_TEXTURE_2D, scene->lightmap);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_FLOAT, data);
+    // FREE(data); 
+}
+
+void lightmap_clear(lightmap_t *lm) {
+    ASSERT(lm->ready);
+    glBindTexture(GL_TEXTURE_2D, lm->lightmap.id);
+    unsigned char emissive[] = { 0, 0, 0, 255 };
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, emissive);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+

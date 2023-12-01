@@ -1,7 +1,7 @@
 #include "v4k.h"
 
 #define LIGHTMAPPER_IMPLEMENTATION
-// #define LM_DEBUG_INTERPOLATION
+//#define LM_DEBUG_INTERPOLATION
 #include "3rd_lightmapper.h"
 
 #define scene_t scene_t2

@@ -1997,9 +1997,6 @@ API void script_call(const char *lua_function);
 
 API bool script_tests();
 
-// -----------------------------------------------------------------------------
-// script framework
-
 enum {
     SCRIPT_LUA = 1,
     SCRIPT_DEBUGGER = 2,
@@ -3581,6 +3578,7 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     array(material_t) materials;
+    texture_t *lightmap;
 
     unsigned num_meshes;
     unsigned num_triangles;
@@ -3591,7 +3589,7 @@ typedef struct model_t {
     float curframe;
     mat44 pivot;
 
-    int stride; // usually 60 bytes (12*4+4*3) for a p3 u2 n3 t4 i4B w4B c4B vertex stream
+    int stride; // usually 68 bytes for a p3 u2 u2 n3 t4 i4B w4B c4B vertex stream
     void *verts;
     int num_verts;
     handle vao, ibo, vbo, vao_instanced;
@@ -3640,10 +3638,21 @@ API anims_t animations(const char *pathfile, int flags);
 
 // -----------------------------------------------------------------------------
 // lightmapping utils
+// @fixme: support xatlas uv packing
 
 typedef struct lightmap_t {
     struct lm_context *ctx; // private
+    bool ready;
+    texture_t lightmap; //@fixme: do we need it per-model?
+    array(model_t*) models;
 } lightmap_t;
+
+API lightmap_t lightmap(int hmsize /*64*/, float near, float far, vec3 color /*1,1,1 for AO*/, int passes /*2*/, float threshold /*0.01f*/, float distmod /*0.0f*/);
+API void       lightmap_setup(lightmap_t *lm, int w, int h);
+API void          lightmap_addmodel(lightmap_t *lm, model_t *m);
+API void          lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, float *view, float *proj, void *userdata), void *userdata);
+API void          lightmap_clear(lightmap_t *lm);
+API void       lightmap_destroy(lightmap_t *lm);
 
 // -----------------------------------------------------------------------------
 // skyboxes
