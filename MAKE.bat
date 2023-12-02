@@ -344,7 +344,7 @@ if "%1"=="gwk" (
     copy/y ..\fwk-mirror\engine\fwk _fwk\engine\fwk
     copy/y ..\fwk-mirror\engine\split\*.inl _fwk\engine\split\
     rem copy/y ..\fwk-mirror\engine\split\3rd_*.c _fwk\engine\split\
-    make back
+    call MAKE.bat back
 
     exit /b
 )

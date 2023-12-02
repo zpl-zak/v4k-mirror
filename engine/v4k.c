@@ -17719,11 +17719,18 @@ texture_t texture_checker() {
                 pixels[i++] = (rgb>>8) & 255;
                 pixels[i++] = (rgb>>0) & 255;
                 pixels[i++] = 255;
-#else
+#elif 0
                 extern const uint32_t secret_palette[32];
                 uint32_t lum = (x^y) & 8 ? 128 : (x^y) & 128 ? 192 : 255;
                 uint32_t rgb = rgba(lum,lum,lum,255);
                 pixels[i++] = rgb;
+#else
+                int j = y, i = x;
+                unsigned char *p = (unsigned char *)&pixels[x + y * 256];
+                p[0] = (i / 16) % 2 == (j / 16) % 2 ? 255 : 0; // r
+                p[1] = ((i - j) / 16) % 2 == 0 ? 255 : 0; // g
+                p[2] = ((i + j) / 16) % 2 == 0 ? 255 : 0; // b
+                p[3] = 255; // a
 #endif
             }
         }
@@ -20726,9 +20733,9 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
             lmSetGeometry(lm->ctx, m->pivot,
                 LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, position), sizeof(iqm_vertex),
                 LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, normal), sizeof(iqm_vertex),
-                LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, texcoord2), sizeof(iqm_vertex),
+                LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, texcoord), sizeof(iqm_vertex),
                 m->num_tris*3, LM_UNSIGNED_INT, m->tris);
-            
+
             glDisable(GL_BLEND);
             int vp[4];
             float view[16], projection[16];
@@ -20741,7 +20748,7 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
                 lmEnd(lm->ctx);
             }
         }
-        
+
         // postprocess texture
         for (int i = 0; i < array_count(lm->models); i++) {
             model_t *m = lm->models[i];
@@ -20755,7 +20762,7 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
             lmImageDilate(temp, m->lmdata, w, h, 4);
             lmImagePower(m->lmdata, w, h, 4, 1.0f / 2.2f, 0x7); // gamma correct color channels
             FREE(temp);
-            
+
             // save result to a file
             // if (lmImageSaveTGAf("result.tga", m->lmdata, w, h, 4, 1.0f))
             //     printf("Saved result.tga\n");
