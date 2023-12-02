@@ -178,7 +178,7 @@ void main() {
     }
 
     if (u_texlit) {
-        vec4 litsample = texture(u_lightmap, v_texcoord);
+        vec4 litsample = texture(u_lightmap, v_texcoord2);
 
         if (u_texmod) {
             diffuse.rgb *= litsample.rgb;

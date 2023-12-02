@@ -19876,6 +19876,10 @@ void model_set_state(model_t m) {
     glVertexAttribPointer(11, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,color) );
     glEnableVertexAttribArray(11);
 
+    // lmap data
+    glVertexAttribPointer(12, 2, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, texcoord2) );
+    glEnableVertexAttribArray(12);
+
     // animation
     if(numframes > 0) {
         glVertexAttribPointer( 8, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,blendindexes) );
@@ -19910,10 +19914,6 @@ void model_set_state(model_t m) {
         glVertexAttribDivisor(6, 1);
         glVertexAttribDivisor(7, 1);
     }
-
-    // lmap data
-    glVertexAttribPointer(12, 2, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, texcoord2) );
-    glEnableVertexAttribArray(12);
 
     // 7 bitangent? into texcoord.z?
 
@@ -20270,7 +20270,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     // if( shaderprog < 0 ) {
         const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
         int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
-            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
+            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_texcoord2,att_bitangent","fragColor",
             va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
     // }
     // ASSERT(shaderprog > 0);
@@ -20679,7 +20679,7 @@ lightmap_t lightmap(int hmsize, float cnear, float cfar, vec3 color, int passes,
 
     const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
     lm.shader = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
-        "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
+        "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_texcoord2,att_bitangent","fragColor",
         va("%s", "LIGHTMAP_BAKING"));
 
     return lm;
@@ -20726,7 +20726,7 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
             lmSetGeometry(lm->ctx, m->pivot,
                 LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, position), sizeof(iqm_vertex),
                 LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, normal), sizeof(iqm_vertex),
-                LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, texcoord), sizeof(iqm_vertex),
+                LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, texcoord2), sizeof(iqm_vertex),
                 m->num_tris*3, LM_UNSIGNED_INT, m->tris);
             
             glDisable(GL_BLEND);

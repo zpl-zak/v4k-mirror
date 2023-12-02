@@ -218,8 +218,13 @@ if "%1"=="push" (
     if "%2"=="dp" (
         call MAKE.bat dpush auto
     )
-    git add .
+    rem git add .
     git commit
+    git diff --quiet --exit-code --cached
+    if !ERRORLEVEL! neq 0 (
+        echo Commit was cancelled or failed
+        exit /b %ERRORLEVEL%
+    )
     if not "%2"=="local" (
         git push
     )
