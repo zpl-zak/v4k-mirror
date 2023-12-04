@@ -231,7 +231,8 @@ int main(int argc, char* argv[]) {
     return error ? fprintf(stderr, "%s\n", error), -1 : 0;
 }
 
-// cl  ase2ini.c -I ..\engine\split /DNDEBUG /O2 /Ox /MT
-// cl  ase2ini.c -I ..\engine\split /DNDEBUG /O2 /Ox /MT /LD
 // tcc ase2ini.c -I ..\engine\split -DNDEBUG
+// cl  ase2ini.c -I ..\engine\split /DNDEBUG /O2 /Ox /MT /LD
+// cl  ase2ini.c -I ..\engine\split /DNDEBUG /O2 /Ox /MT
 // cc  ase2ini.c -I ../engine/split -lm -O3 -oase2ini.linux 
+// cc  ase2ini.c -I ../engine/split -lm -O3 -oase2ini.osx
