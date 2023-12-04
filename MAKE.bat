@@ -343,6 +343,8 @@ if "%1"=="gwk" (
     copy/y ..\fwk-mirror\engine\fwk.c _fwk\engine\fwk.c
     copy/y ..\fwk-mirror\engine\fwk _fwk\engine\fwk
     copy/y ..\fwk-mirror\engine\split\*.inl _fwk\engine\split\
+    copy/y ..\fwk-mirror\engine\art\shaders\* _fwk\engine\art\shaders\
+    copy/y ..\fwk-mirror\tools\*.c _fwk\tools\
     rem copy/y ..\fwk-mirror\engine\split\3rd_*.c _fwk\engine\split\
     call MAKE.bat back
 

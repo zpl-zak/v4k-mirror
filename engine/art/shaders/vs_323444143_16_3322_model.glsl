@@ -56,8 +56,8 @@ in vec4 att_indexes; // @fixme: gles might use ivec4 instead?
 in vec4 att_weights; // @todo: downgrade from float to byte
 in float att_vertexindex; // for blendshapes
 in vec4 att_color;
-in vec2 att_texcoord2;
 in vec3 att_bitangent; // @todo: remove? also, ass2iqe might output this
+in vec2 att_texcoord2;
 out vec4 v_color;
 out vec3 v_position, v_position_ws;
 out vec3 v_normal, v_normal_ws;

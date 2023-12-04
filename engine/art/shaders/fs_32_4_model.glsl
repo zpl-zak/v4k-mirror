@@ -9,7 +9,7 @@ uniform vec4 u_diffuse = vec4(1.0,1.0,1.0,1.0);
 // lightmapping
 uniform sampler2D u_lightmap;
 uniform bool u_texlit;
-uniform bool u_texmod = false;
+uniform bool u_texmod = true;
 uniform float u_litboost = 1.0;
 
 in vec3 v_position;
@@ -137,7 +137,7 @@ vec3 sh_lighting(vec3 n) {
 void main() {
     vec3 n = normalize(v_normal_ws);
     vec4 diffuse;
-    
+
     if(u_textured) {
         diffuse = texture(u_texture2d, v_texcoord);
     } else {
@@ -157,7 +157,7 @@ void main() {
 
     vec4 lit = vec4(1.0, 1.0, 1.0, 1.0);
     // SH lighting
-    /* if (!u_texlit) */ {
+    if (!u_texlit) {
         vec3 result = sh_lighting(n);
         if( (result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) lit = vec4(result, 1.0);
     }
@@ -167,7 +167,7 @@ void main() {
 
     // base
     vec4 diffuse;
- 
+
     if(u_matcaps) {
         vec2 muv = vec2(view * vec4(v_normal_ws, 0))*0.5+vec2(0.5,0.5); // normal (model space) to view space
         diffuse = texture(u_texture2d, vec2(muv.x, 1.0-muv.y));
@@ -178,13 +178,15 @@ void main() {
     }
 
     if (u_texlit) {
-        vec4 litsample = texture(u_lightmap, v_texcoord2);
+        vec4 litsample = texture(u_lightmap, v_texcoord);
 
         if (u_texmod) {
-            diffuse.rgb *= litsample.rgb;
+            diffuse *= litsample;
         } else {
-            diffuse.rgb += litsample.rgb;
+            diffuse += litsample;
         }
+
+        diffuse.rgb += sh_lighting(n);
     }
     
     // lighting mix
