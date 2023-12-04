@@ -63,7 +63,7 @@ if "%1"=="help" (
 rem sync repo to latest
 if "%1"=="sync" (
     call MAKE.bat tidy
-    git reset --hard HEAD~1 && git pull
+    git reset --hard origin/main
     exit /b
 )
 
@@ -326,18 +326,18 @@ if "%1"=="vps" (
     exit /b
 )
 
-if "%1"=="fwk" (
-    pushd ..\fwk-mirror
-        git fetch
-        git reset --hard origin/main
-    popd
-    call make.bat split
-    call MAKE.bat fwk_prep
-    start "" fwk_diff.WinMerge
-    exit /b
-)
+rem if "%1"=="fwk" (
+rem     pushd ..\fwk-mirror
+rem         git fetch
+rem         git reset --hard origin/main
+rem     popd
+rem     call make.bat split
+rem     call MAKE.bat fwk_prep
+rem     start "" fwk_diff.WinMerge
+rem     exit /b
+rem )
 
-if "%1"=="gwk" (
+if "%1"=="fwk" (
     pushd ..\fwk-mirror
         git fetch
         git reset --hard origin/main
@@ -349,6 +349,7 @@ if "%1"=="gwk" (
     copy/y ..\fwk-mirror\engine\split\*.inl _fwk\engine\split\
     copy/y ..\fwk-mirror\engine\art\shaders\* _fwk\engine\art\shaders\
     copy/y ..\fwk-mirror\tools\*.c _fwk\tools\
+    copy/y ..\fwk-mirror\demos\*.c _fwk\demos\
     rem copy/y ..\fwk-mirror\engine\split\3rd_*.c _fwk\engine\split\
     call MAKE.bat back
 
@@ -931,6 +932,8 @@ if not "!other!"=="" (
     rem         set "args=!args! /SUBSYSTEM:WINDOWS"
     rem     )
     rem )
+    for /f "tokens=*" %%a in ("%other%") do set exename=%%~na.exe
+    del !exename! >NUL
     !echo! !other! && !cc! !other! !import! !args! || set rc=1
 )
 
