@@ -114,8 +114,8 @@ if "%1"=="docs" (
     git --no-pager log --pretty="format:[%%h](https://dev.v4.games/v4games/v4k/commit/%%H): %%s (**%%cN**)" > changelog.txt
 
     rem ...and generate docs
-    cl   tools\docs\docs.c engine\v4k.c -Iengine %2
-    docs engine\v4k.h --excluded=3rd_glad.h,v4k.h,v4k_compat.h, > v4k.html
+    rem cl   tools\docs\docs.c engine\v4k.c -Iengine /Od /DNDEBUG %2
+    tools\docs engine\v4k.h --excluded=3rd_glad.h,v4k.h,v4k_compat.h, > v4k.html
     move /y v4k.html engine\
     del changelog.txt
     del info.obj
