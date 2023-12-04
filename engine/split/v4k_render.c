@@ -3215,6 +3215,27 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) 
     for(int i = 0; i < (int)hdr->num_meshes; i++) {
         struct iqmmesh *m = &meshes[i];
 
+        // reuse texture+material if already decoded
+        bool reused = 0;
+        for( int j = 0; !reused && j < model->num_textures; ++j ) {
+            if( !strcmpi(model->texture_names[j], &str[m->material])) {
+
+                *out++ = model->materials[j].layer[0].texture;
+
+                {
+                    model->num_textures++;
+                    array_push(model->texture_names, STRDUP(&str[m->material]));
+
+                    array_push(model->materials, model->materials[j]);
+                    array_back(model->materials)->name = STRDUP(&str[m->material]);
+                }
+
+                reused = true;
+            }
+        }
+        if( reused ) continue;
+
+        // decode texture+material
         int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT; // LINEAR, NEAREST
         int invalid = texture_checker().id;
 
@@ -3226,7 +3247,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) 
             array(char) embedded_texture = base64_decode(material_embedded_texture, strlen(material_embedded_texture));
             //printf("%s %d\n", material_embedded_texture, array_count(embedded_texture));
             //hexdump(embedded_texture, array_count(embedded_texture));
-            *out = texture_compressed_from_mem( embedded_texture, array_count(embedded_texture), 0 ).id;
+            *out = texture_compressed_from_mem( embedded_texture, array_count(embedded_texture), flags ).id;
             array_free(embedded_texture);
         }
 
@@ -3279,6 +3300,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) 
             *out = texture_checker().id; // placeholder
         }
 
+        inscribe_tex:;
         {
             model->num_textures++;
             array_push(model->texture_names, STRDUP(&str[m->material]));
@@ -3346,7 +3368,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     // if( shaderprog < 0 ) {
         const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
         int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
-            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_texcoord2,att_bitangent","fragColor",
+            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
             va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
     // }
     // ASSERT(shaderprog > 0);
@@ -3755,7 +3777,7 @@ lightmap_t lightmap(int hmsize, float cnear, float cfar, vec3 color, int passes,
 
     const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
     lm.shader = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
-        "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_texcoord2,att_bitangent","fragColor",
+        "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
         va("%s", "LIGHTMAP_BAKING"));
 
     return lm;
@@ -3789,6 +3811,10 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
             texture_destroy(&m->lightmap);
         }
         m->lightmap = texture_create(w, h, 4, 0, TEXTURE_LINEAR|TEXTURE_FLOAT);
+        glBindTexture(GL_TEXTURE_2D, m->lightmap.id);
+        unsigned char emissive[] = { 0, 0, 0, 255 };
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, emissive);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     for (int b = 0; b < bounces; b++) {
