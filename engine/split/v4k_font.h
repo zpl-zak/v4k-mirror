@@ -70,6 +70,13 @@ enum FONT_FLAGS {
     // FONT_DEFAULTS = FONT_512 | FONT_NO_OVERSAMPLE | FONT_ASCII,
 };
 
+typedef struct font_metrics_t {
+	float ascent;   // max distance above baseline for all glyphs
+    float descent;  // max distance below baseline for all glyphs
+    float linegap;  // distance betwen ascent of next line and descent of current line
+    float linedist; // distance between the baseline of two lines (ascent - descent + linegap)
+} font_metrics_t;
+
 // configures
 API void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
 API void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
@@ -78,10 +85,11 @@ API void  font_color(const char *color_tag, uint32_t color);
 API void  ui_font();
 
 // commands
-API vec2  font_xy();
-API void  font_goto(float x, float y);
-API vec2  font_print(const char *text);
-API vec2  font_rect(const char *text);
+API vec2  		   font_xy();
+API void  		   font_goto(float x, float y);
+API vec2  		   font_print(const char *text);
+API vec2  		   font_rect(const char *text);
+API font_metrics_t font_metrics(const char *text);
 //  void  font_clip(vec2 topleft, vec2 bottomright);
 //  void  font_wrap(vec2 topleft, vec2 bottomright);
 
