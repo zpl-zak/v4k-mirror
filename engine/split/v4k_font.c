@@ -1583,6 +1583,7 @@ typedef struct font_t {
     int height;      // bitmap height
     int width;       // bitmap width
     float font_size; // font size in pixels (matches scale[0+1] size below)
+    float factor;    // font factor (font_size / (ascent - descent))
     float scale[7];  // user defined font scale (match H1..H6 tags)
 
     // displacement info
@@ -1642,6 +1643,27 @@ void font_color(const char *tag, uint32_t color) {
                 glBindTexture(GL_TEXTURE_1D, f->texture_colors);
                 glTexSubImage1D(GL_TEXTURE_1D, 0, 0, FONT_MAX_COLORS, GL_RGBA, GL_UNSIGNED_BYTE, font_palette);
             }
+        }
+    }
+}
+
+void ui_font() {
+    for( int i = 0; i < countof(fonts); ++i ) {
+        if( ui_collapse(va("Font %d", i), va("%p%d", &fonts[i], i) ) ) {
+            font_t *f = &fonts[i];
+            // changed = i+1;
+            // for( int j = 0; j < array_count(a->anims[i].frames); ++j ) {
+            //     if( ui_collapse(va("[%d]",j), va("%p%d.%d", a, a->anims[i].name,j) ) ) {
+            //         ui_unsigned("Frame", &a->anims[i].frames[j]);
+            //         ui_atlas_frame(a->frames + a->anims[i].frames[j]);
+            //         ui_collapse_end();
+            //     }
+            // }
+            ui_float("Ascent", &f->ascent);
+            ui_float("Descent", &f->descent);
+            ui_float("Line Gap", &f->linegap);
+            f->linedist = (f->ascent-f->descent+f->linegap);
+            ui_collapse_end();
         }
     }
 }
@@ -1791,13 +1813,14 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     stbtt_InitFont(&info, ttf_data, stbtt_GetFontOffsetForIndex(ttf_data,0));
 
     int a, d, l;
-    float s = stbtt_ScaleForPixelHeight(&info, f->font_size);
-    stbtt_GetFontVMetrics(&info, &a, &d, &l);
+    if (!stbtt_GetFontVMetricsOS2(&info, &a, &d, &l))
+        stbtt_GetFontVMetrics(&info, &a, &d, &l);
 
-    f->ascent = a * s;
-    f->descent = d * s;
-    f->linegap = l * s;
-    f->linedist = (a - d + l) * s;
+    f->ascent = a;
+    f->descent = d;
+    f->linegap = l;
+    f->linedist = (a - d + l);
+    f->factor = (f->font_size / (f->ascent - f->descent));
 
     // save some gpu memory by truncating unused vertical space in atlas texture
     {
@@ -1915,8 +1938,6 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     glUniform2f(glGetUniformLocation(f->program, "res_bitmap"), f->width, f->height);
     glUniform2f(glGetUniformLocation(f->program, "res_meta"), f->num_glyphs, 2);
     glUniform1f(glGetUniformLocation(f->program, "num_colors"), FONT_MAX_COLORS);
-    glUniform1f(glGetUniformLocation(f->program, "offset_firstline"), f->linedist-f->linegap);
-
     (void)flags;
 }
 
@@ -1977,6 +1998,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glUseProgram(f->program);
     glUniform1f(glGetUniformLocation(f->program, "scale_factor"), factor);
     glUniform2fv(glGetUniformLocation(f->program, "string_offset"), 1, &offset.x);
+    glUniform1f(glGetUniformLocation(f->program, "offset_firstline"), f->ascent*f->factor);
 
     GLint dims[4] = {0};
     glGetIntegerv(GL_VIEWPORT, dims);
@@ -2028,7 +2050,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
     font_t *f = &fonts[0];
     int S = 3;
     uint32_t color = 0;
-    float X = 0, Y = 0, W = 0, L = f->linedist*f->scale[S], LL = L; // LL=largest linedist
+    float X = 0, Y = 0, W = 0, L = f->ascent*f->factor*f->scale[S], LL = L; // LL=largest linedist
     offset.y = -offset.y; // invert y polarity
 
     // utf8 to utf32
@@ -2043,7 +2065,10 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
             // change cursor, advance y, record largest x as width, increase height
             if( X > W ) W = X;
             X = 0.0;
-            Y -= L;
+            Y -= f->linedist*f->factor*f->scale[S];
+            if (i+1==end) { //@hack: ensures we terminate the height at the correct position
+                Y -= (f->descent+f->linegap)*f->factor*f->scale[S];
+            }
             continue;
         }
         if( ch >= 1 && ch <= 6 ) {
@@ -2052,11 +2077,12 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
             t = text_glyph_data;
 
             // reposition offset to align new baseline
-            offset.y += (f->linedist - f->linegap) * ( f->scale[ch] - f->scale[S] );
+            // @fixme:
+            // offset.y += (f->linedist - f->linegap) * ( f->scale[ch] - f->scale[S] );
 
             // change size
             S = ch;
-            L = f->linedist*f->scale[S];
+            L = f->ascent*f->factor*f->scale[S];
             if(L > LL) LL = L;
             continue;
         }

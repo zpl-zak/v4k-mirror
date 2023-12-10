@@ -2327,6 +2327,7 @@ FONT_CJK = FONT_ZH|FONT_JP|FONT_KR,
  void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
  void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
  void  font_color(const char *color_tag, uint32_t color);
+ void  ui_font();
  vec2  font_xy();
  void  font_goto(float x, float y);
  vec2  font_print(const char *text);
@@ -3341,7 +3342,7 @@ unsigned play;
 bool paused;
 struct atlas_t *a;
 } sprite_t;
-enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on_L__LINE__ : !!(10 <= 255); } static_assert_on_Lconcat(_L,3962)___COUNTER__;       typedef struct { unsigned static_assert_on_L__LINE__ : !!(sizeof(sprite_t)); } static_assert_on_Lconcat(_L,3962)___COUNTER__;;
+enum { OBJTYPE_sprite_t = 10 };       typedef struct { unsigned static_assert_on_L__LINE__ : !!(10 <= 255); } static_assert_on_Lconcat(_L,3963)___COUNTER__;       typedef struct { unsigned static_assert_on_L__LINE__ : !!(sizeof(sprite_t)); } static_assert_on_Lconcat(_L,3963)___COUNTER__;;
  void     sprite_ctor(sprite_t *s);
  void     sprite_dtor(sprite_t *s);
  void     sprite_tick(sprite_t *s);

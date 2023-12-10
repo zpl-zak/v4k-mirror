@@ -262,7 +262,7 @@ bool gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, fl
     cursorrect.x += cursorpos.x;
     cursorrect.y += cursorpos.y;
     cursorrect.z = cursorsize.x;
-    cursorrect.w = cursorsize.y;
+    cursorrect.w = max(cursorsize.y, rect.w);
     if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, cursorskin, fbcursor, cursorrect);
 
     return entry->held && (old_value!=*value);
