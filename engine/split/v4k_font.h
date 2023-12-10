@@ -73,7 +73,7 @@ enum FONT_FLAGS {
 typedef struct font_metrics_t {
 	float ascent;   // max distance above baseline for all glyphs
     float descent;  // max distance below baseline for all glyphs
-    float linegap;  // distance betwen ascent of next line and descent of current line
+    float linegap;  // distance between ascent of next line and descent of current line
     float linedist; // distance between the baseline of two lines (ascent - descent + linegap)
 } font_metrics_t;
 
