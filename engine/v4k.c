@@ -11050,6 +11050,37 @@ vec2 font_highlight(const char *text, const void *colors) {
 vec2 font_rect(const char *str) {
     return font_draw_ex(str, gotoxy, NULL, NULL);
 }
+
+font_metrics_t font_metrics(const char *text) {
+    font_metrics_t m={0};
+    int S = 3;
+    font_t *f = &fonts[0];
+
+    // utf8 to utf32
+    array(uint32_t) unicode = string32(text);
+
+    // parse string
+    for( int i = 0, end = array_count(unicode); i < end; ++i ) {
+        uint32_t ch = unicode[i];
+        if( ch >= 1 && ch <= 6 ) {
+            S = ch;
+            continue;
+        }
+        if( ch >= 0x1a && ch <= 0x1f ) {
+            if( fonts[ ch - 0x1a ].initialized) {
+                // change face
+                f = &fonts[ ch - 0x1a ];
+            }
+            continue;
+        }
+    }
+
+    m.ascent = f->ascent*f->factor*f->scale[S];
+    m.descent = f->descent*f->factor*f->scale[S];
+    m.linegap = f->linegap*f->factor*f->scale[S];
+    m.linedist = f->linedist*f->factor*f->scale[S];
+    return m;
+}
 #line 0
 
 #line 1 "v4k_gui.c"

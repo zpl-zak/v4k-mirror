@@ -117,7 +117,8 @@ int main() {
             char *txt = "This is the first line.\nAnd now the second line.\nYou can do a third great line, too!\n";
             font_goto(pos.x, pos.y);
             vec2 size=font_rect(txt);
-            ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y,0));
+            font_metrics_t m=font_metrics(txt);
+            ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y-m.descent+m.linegap,0));
             font_print(txt);
             ddraw_pop_2d();
         }
