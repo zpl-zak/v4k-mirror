@@ -29,9 +29,9 @@ void demo_kids(vec3 offs) {
         float position[3] = {pos[i].x,pos[i].y,pos[i].y}, offset[2]={0,0}, scale[2]={0.5,0.5};
         float spritesheet[3]={num_frame,4,4};
         sprite_sheet(kids,
-            spritesheet,        // num_frame in a 4x4 spritesheet
-            position, 0,        // position(x,y,depth:sort-by-Y), angle
-            offset, scale,      // offset(x,y), scale(x,y)
+            spritesheet,   // num_frame in a 4x4 spritesheet
+            position, 0,   // position(x,y,depth:sort-by-Y), angle
+            offset, scale, // offset(x,y), scale(x,y)
             WHITE, 0       // tint_color, no flags
         );
     }
