@@ -145,11 +145,12 @@ void gui_panel_id(int id, vec4 rect, const char *skin) {
     (void)id;
     vec4 scissor={0, 0, window_width(), window_height()};
     if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, NULL, rect);
-    scissor = gui_getscissorrect(skin, NULL, rect);
+    // scissor = gui_getscissorrect(skin, NULL, rect);
+    scissor = rect;
 
     if (!array_count(scissor_rects))
         glEnable(GL_SCISSOR_TEST);
-    glScissor(scissor.x, scissor.y, scissor.z, scissor.w);
+    glScissor(scissor.x, window_height()-scissor.w-scissor.y, scissor.z, scissor.w);
     array_push(scissor_rects, scissor);
 }
 
