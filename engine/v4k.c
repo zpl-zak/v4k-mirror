@@ -10305,14 +10305,6 @@ void ui_font() {
     for( int i = 0; i < countof(fonts); ++i ) {
         if( ui_collapse(va("Font %d", i), va("%p%d", &fonts[i], i) ) ) {
             font_t *f = &fonts[i];
-            // changed = i+1;
-            // for( int j = 0; j < array_count(a->anims[i].frames); ++j ) {
-            //     if( ui_collapse(va("[%d]",j), va("%p%d.%d", a, a->anims[i].name,j) ) ) {
-            //         ui_unsigned("Frame", &a->anims[i].frames[j]);
-            //         ui_atlas_frame(a->frames + a->anims[i].frames[j]);
-            //         ui_collapse_end();
-            //     }
-            // }
             ui_float("Ascent", &f->ascent);
             ui_float("Descent", &f->descent);
             ui_float("Line Gap", &f->linegap);
@@ -29071,6 +29063,10 @@ int ui_engine() {
         }
     }
 
+    EDITOR_UI_COLLAPSE(ICON_MD_TEXT_FIELDS " Fonts", "Debug.Fonts") {
+        ui_font();
+    }
+
 
     EDITOR_UI_COLLAPSE(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts") {
         // @todo
@@ -29750,8 +29746,9 @@ void editor_setmouse(int x, int y) {
 vec2 editor_glyph(int x, int y, const char *style, unsigned codepoint) {
     do_once {
     // style: atlas size, unicode ranges and 6 font faces max
-    font_face(FONT_FACE2, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
-    font_face(FONT_FACE3, "materialdesignicons-webfont.ttf", 24.f, FONT_EM|FONT_2048); //  {0xF68C /*ICON_MDI_MIN*/, 0xF1CC7/*ICON_MDI_MAX*/, 0}},
+    font_face(FONT_FACE2, "B612-Regular.ttf", 12.f, 0);
+    font_face(FONT_FACE3, "MaterialIconsSharp-Regular.otf", 24.f, FONT_EM|FONT_2048);
+    font_face(FONT_FACE4, "materialdesignicons-webfont.ttf", 24.f, FONT_EM|FONT_2048); //  {0xF68C /*ICON_MDI_MIN*/, 0xF1CC7/*ICON_MDI_MAX*/, 0}},
     // style: 10 colors max
     font_color(FONT_COLOR1,  WHITE);
     font_color(FONT_COLOR2, RGBX(0xE8F1FF,128)); //  GRAY);
@@ -29763,7 +29760,7 @@ vec2 editor_glyph(int x, int y, const char *style, unsigned codepoint) {
     font_goto(x,y);
     vec2 pos = {x,y};
     const char *sym = codepoint_to_utf8(codepoint);
-    return add2(pos, font_print(va("%s%s%s", style ? style : "", codepoint >= ICON_MDI_MIN ? FONT_FACE3 : FONT_FACE2, sym)));
+    return add2(pos, font_print(va("%s%s%s", style ? style : "", codepoint >= ICON_MDI_MIN ? FONT_FACE4 : codepoint >= ICON_MD_MIN ? FONT_FACE3 : FONT_FACE2, sym)));
 }
 
 vec2 editor_glyphs(int x, int y, const char *style, const char *utf8) {

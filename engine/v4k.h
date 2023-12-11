@@ -2079,7 +2079,7 @@ API char *       vfs_read(const char *pathfile);
 API char *       vfs_load(const char *pathfile, int *size);
 API int          vfs_size(const char *pathfile);
 
-API void 		 vfs_reload();
+API void         vfs_reload();
 API const char * vfs_resolve(const char *fuzzyname); // guess best match. @todo: fuzzy path
 //API const char*vfs_extract(const char *pathfile); // extracts vfs file into local filesystem (temporary file), so it can be read by foreign/3rd party libs
 API FILE*        vfs_handle(const char *pathfile); // same as above, but returns file handle instead. preferred way, will clean descriptors at exit
@@ -2531,7 +2531,7 @@ enum {
 };
 
 /* errcode and errstr are optional arguments, pass NULL to ignore them,
-	errstr is filled by va() */
+    errstr is filled by va() */
 API int network_event(const char *msg, int *errcode, char **errstr);
 
 enum { NETWORK_RANK = 0 }; // [0..N] where 0 is server
@@ -3464,25 +3464,25 @@ typedef struct mesh_t {
     unsigned index_count;
     unsigned flags;
 
-	array(int) lod_collapse_map; // to which neighbor each vertex collapses. ie, [10] -> 7 (used by LODs) @leak
+    array(int) lod_collapse_map; // to which neighbor each vertex collapses. ie, [10] -> 7 (used by LODs) @leak
 
     // @leaks: following members are totally unused. convenient for end-users to keep their custom datas somewhere while processing.
     union {
-	array(unsigned) in_index;
-	array(vec3i)    in_index3;
+    array(unsigned) in_index;
+    array(vec3i)    in_index3;
     };
     union {
-	array(unsigned) out_index;
-	array(vec3i)    out_index3;
+    array(unsigned) out_index;
+    array(vec3i)    out_index3;
     };
-	union {
+    union {
     array(float) in_vertex;
     array(vec3) in_vertex3;
-	};
-	union {
+    };
+    union {
     array(float) out_vertex;
     array(vec3) out_vertex3;
-	};
+    };
 } mesh_t;
 
 API mesh_t mesh();
@@ -3590,7 +3590,7 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     array(material_t) materials;
-    
+
     texture_t lightmap;
     float *lmdata;
 
@@ -4027,8 +4027,8 @@ API unsigned    intern( const char *string );
 API const char *quark( unsigned key );
 
 typedef struct quarks_db {
-	array(char) blob;
-	array(vec2i) entries;
+    array(char) blob;
+    array(vec2i) entries;
 } quarks_db;
 
 API unsigned    quark_intern( quarks_db*, const char *string );

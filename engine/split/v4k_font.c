@@ -1651,14 +1651,6 @@ void ui_font() {
     for( int i = 0; i < countof(fonts); ++i ) {
         if( ui_collapse(va("Font %d", i), va("%p%d", &fonts[i], i) ) ) {
             font_t *f = &fonts[i];
-            // changed = i+1;
-            // for( int j = 0; j < array_count(a->anims[i].frames); ++j ) {
-            //     if( ui_collapse(va("[%d]",j), va("%p%d.%d", a, a->anims[i].name,j) ) ) {
-            //         ui_unsigned("Frame", &a->anims[i].frames[j]);
-            //         ui_atlas_frame(a->frames + a->anims[i].frames[j]);
-            //         ui_collapse_end();
-            //     }
-            // }
             ui_float("Ascent", &f->ascent);
             ui_float("Descent", &f->descent);
             ui_float("Line Gap", &f->linegap);

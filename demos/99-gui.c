@@ -24,12 +24,6 @@ int main() {
             ui_panel_end();
         }
 
-        if (ui_panel("Fonts", 0)) {
-            ui_font();
-
-            ui_panel_end();
-        }
-
         if (input_down(MOUSE_R)) {
             pos.x = input(MOUSE_X);
             pos.y = input(MOUSE_Y);

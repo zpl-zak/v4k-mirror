@@ -316,6 +316,10 @@ int ui_engine() {
         }
     }
 
+    EDITOR_UI_COLLAPSE(ICON_MD_TEXT_FIELDS " Fonts", "Debug.Fonts") {
+        ui_font();
+    }
+
 
     EDITOR_UI_COLLAPSE(ICON_MD_CONTENT_PASTE " Scripts", "Debug.Scripts") {
         // @todo

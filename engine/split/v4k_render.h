@@ -394,25 +394,25 @@ typedef struct mesh_t {
     unsigned index_count;
     unsigned flags;
 
-	array(int) lod_collapse_map; // to which neighbor each vertex collapses. ie, [10] -> 7 (used by LODs) @leak
+    array(int) lod_collapse_map; // to which neighbor each vertex collapses. ie, [10] -> 7 (used by LODs) @leak
 
     // @leaks: following members are totally unused. convenient for end-users to keep their custom datas somewhere while processing.
     union {
-	array(unsigned) in_index;
-	array(vec3i)    in_index3;
+    array(unsigned) in_index;
+    array(vec3i)    in_index3;
     };
     union {
-	array(unsigned) out_index;
-	array(vec3i)    out_index3;
+    array(unsigned) out_index;
+    array(vec3i)    out_index3;
     };
-	union {
+    union {
     array(float) in_vertex;
     array(vec3) in_vertex3;
-	};
-	union {
+    };
+    union {
     array(float) out_vertex;
     array(vec3) out_vertex3;
-	};
+    };
 } mesh_t;
 
 API mesh_t mesh();
@@ -520,7 +520,7 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     array(material_t) materials;
-    
+
     texture_t lightmap;
     float *lmdata;
 

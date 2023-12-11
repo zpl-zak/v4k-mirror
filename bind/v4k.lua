@@ -2291,7 +2291,7 @@ SCRIPT_DEBUGGER = 2,
  char *       vfs_read(const char *pathfile);
  char *       vfs_load(const char *pathfile, int *size);
  int          vfs_size(const char *pathfile);
- void 		 vfs_reload();
+ void         vfs_reload();
  const char * vfs_resolve(const char *fuzzyname);
  FILE*        vfs_handle(const char *pathfile);
  void *       cache_insert(const char *key, void *value, int size);
