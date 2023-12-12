@@ -555,6 +555,7 @@ if "%1"=="tidy" (
     del *.mp4                       > nul 2> nul
     del *.def                       > nul 2> nul
     del *.dll                       > nul 2> nul
+    del *.ini                       > nul 2> nul
     del *.csv                       > nul 2> nul
     del 3rd_*.*                     > nul 2> nul
     del v4k_*.*                     > nul 2> nul
