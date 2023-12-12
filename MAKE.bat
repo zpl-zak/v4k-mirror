@@ -33,6 +33,7 @@ if "%1"=="help" (
     echo %0 [v4web]                 ; sync v4 website
     echo %0 [swap]                  ; toggle #line directives on/off
     echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
+    echo %0 [3rd]                   ; join 3rd parties together
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
     echo %0 [prep]                  ; combine split files into a single-header file, ready for use
@@ -251,6 +252,10 @@ if "%1"=="split" (
 )
 if "%1"=="join" (
     call tools\join
+    exit /b
+)
+if "%1"=="3rd" (
+    call tools\join_3rd
     exit /b
 )
 if "%1"=="swap" (
