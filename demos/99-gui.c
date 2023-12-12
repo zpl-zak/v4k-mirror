@@ -35,8 +35,8 @@ int main() {
 
         // font
         do_once font_face(FONT_FACE2, "lilita_one_regular.ttf", 48.0f, FONT_EU | FONT_2048);
-        do_once font_color(FONT_COLOR9, WHITE);
-        font_print(va(FONT_MIDDLE FONT_CENTER FONT_FACE2 FONT_COLOR9 "%s", "Hello"));
+        do_once font_color(FONT_COLOR6, WHITE);
+        font_print(va(FONT_MIDDLE FONT_CENTER FONT_FACE2 FONT_COLOR6 "%s", "Hello"));
 
         // background
         vec4 panel_pos = vec4(0, 0, window_width(), window_height());

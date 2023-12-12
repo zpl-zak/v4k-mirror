@@ -1614,7 +1614,9 @@ typedef struct font_t {
     GLuint vbo_instances; // vec4: (char_pos_x, char_pos_y, char_index, color_index)
 } font_t;
 
-static font_t fonts[8] = {0};
+enum { FONTS_MAX = 10 };
+
+static font_t fonts[FONTS_MAX] = {0};
 
 static
 void font_init() {
@@ -1625,6 +1627,10 @@ void font_init() {
         font_face_from_mem(FONT_FACE4, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
         font_face_from_mem(FONT_FACE5, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
         font_face_from_mem(FONT_FACE6, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE7, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE8, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE9, bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
+        font_face_from_mem(FONT_FACE10,bm_mini_ttf,countof(bm_mini_ttf), 42.5f, 0);
     }
 }
 
@@ -1636,7 +1642,7 @@ void font_color(const char *tag, uint32_t color) {
     if( index < FONT_MAX_COLORS ) {
         font_palette[index] = color;
 
-        for( int i = 0; i < 8; ++i ) {
+        for( int i = 0; i < FONTS_MAX; ++i ) {
             font_t *f = &fonts[i];
             if( f->initialized ) {
                 glActiveTexture(GL_TEXTURE2);
@@ -1664,7 +1670,7 @@ void font_scales(const char *tag, float h1, float h2, float h3, float h4, float 
     font_init();
 
     unsigned index = *tag - FONT_FACE1[0];
-    if( index >= 8 ) return;
+    if( index > FONTS_MAX ) return;
 
     font_t *f = &fonts[index];
     if (!f->initialized) return;
@@ -1684,7 +1690,7 @@ void font_scales(const char *tag, float h1, float h2, float h3, float h4, float 
 // 1. Calculate and save a bunch of useful variables and put them in the global font variable.
 void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len, float font_size, unsigned flags) {
     unsigned index = *tag - FONT_FACE1[0];
-    if( index >= 8 ) return;
+    if( index > FONTS_MAX ) return;
     if( font_size <= 0 || font_size > 72 ) return;
     if( !ttf_data || !ttf_len ) return;
 
@@ -2035,8 +2041,8 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
     }
 
     // pre-init
-    static __thread float *text_glyph_data, **init = 0;
-    if(!init) *(init = &text_glyph_data) = (float*)MALLOC(4 * FONT_MAX_STRING_LEN * sizeof(float));
+    static __thread float *text_glyph_data;
+    do_once text_glyph_data = MALLOC(4 * FONT_MAX_STRING_LEN * sizeof(float));
 
     // ready
     font_t *f = &fonts[0];
@@ -2078,18 +2084,18 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
             if(L > LL) LL = L;
             continue;
         }
-        if( ch >= 0x10 && ch <= 0x19 ) {
-            color = ch - 0x10;
+        if( ch >= 0x1a && ch <= 0x1f ) {
+            color = ch - 0x1a;
             continue;
         }
-        if( ch >= 0x1a && ch <= 0x1f ) {
-            if( fonts[ ch - 0x1a ].initialized) {
+        if( ch >= 0x10 && ch <= 0x19 ) {
+            if( fonts[ ch - 0x10 ].initialized) {
             // flush previous state
             if(draw_cmd) draw_cmd(f, text_glyph_data, (t - text_glyph_data)/4, f->scale[S], offset);
             t = text_glyph_data;
 
             // change face
-            f = &fonts[ ch - 0x1a ];
+            f = &fonts[ ch - 0x10 ];
             }
             continue;
         }
