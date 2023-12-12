@@ -560,6 +560,7 @@ if "%1"=="tidy" (
     del v4k_*.*                     > nul 2> nul
     del v4k.html                    > nul 2> nul
     del changelog.txt               > nul 2> nul
+    del steam_appid.txt             > nul 2> nul
 rem del ??-*.*                      > nul 2> nul
     del temp_*.*                    > nul 2> nul
     rd /q /s .vs                    > nul 2> nul
@@ -568,7 +569,7 @@ rem del ??-*.*                      > nul 2> nul
     rd /q /s _release               > nul 2> nul
     rd /q /s _fwk                   > nul 2> nul
     rd /q /s _cache                 > nul 2> nul
-    rd /q /s _deploy                 > nul 2> nul
+    rd /q /s _deploy                > nul 2> nul
 rem rd /q /s _project               > nul 2> nul
     del tcc.bat                     > nul 2> nul
     del sh.bat                      > nul 2> nul
