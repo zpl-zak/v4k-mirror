@@ -4,6 +4,7 @@
 typedef struct guiskin_t {
     void (*drawrect)(void* userdata, const char *skin, const char *fallback, vec4 rect);
     void (*getskinsize)(void* userdata, const char *skin, const char *fallback, vec2 *size);
+    void (*getskincolor)(void* userdata, const char *skin, const char *fallback, unsigned *color);
     void (*getscissorrect)(void* userdata, const char *skin, const char *fallback, vec4 rect, vec4 *dims);
     bool (*ismouseinrect)(void* userdata, const char *skin, const char *fallback, vec4 rect);
     void (*free)(void* userdata);
@@ -13,12 +14,13 @@ typedef struct guiskin_t {
 API void    gui_pushskin(guiskin_t skin);
 API void*       gui_userdata();
 API vec2        gui_getskinsize(const char *skin, const char *fallback);
+API unsigned    gui_getskincolor(const char *skin, const char *fallback);
 API bool        gui_ismouseinrect(const char *skin, const char *fallback, vec4 rect);
 API vec4        gui_getscissorrect(const char *skin, const char *fallback, vec4 rect);
 // --
 API void        gui_panel_id(int id, vec4 rect, const char *skin);
 API void            gui_rect_id(int id, vec4 rect, const char *skin);
-API void            gui_label_id(int id, const char *text, vec4 rect);
+API void            gui_label_id(int id, const char *skin, const char *text, vec4 rect);
 API bool            gui_button_id(int id, vec4 rect, const char *skin);
 API bool            gui_button_label_id(int id, const char *text, vec4 rect, const char *skin);
 API bool            gui_slider_id(int id, vec4 rect, const char *skin, float min, float max, float step, float *value);

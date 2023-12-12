@@ -124,6 +124,12 @@ vec2 gui_getskinsize(const char *skin, const char *fallback) {
     return size;
 }
 
+unsigned gui_getskincolor(const char *skin, const char *fallback) {
+    unsigned color = 0xFFFFFFFF;
+    if (last_skin->getskincolor) last_skin->getskincolor(last_skin->userdata, skin, fallback, &color);
+    return color;
+}
+
 bool gui_ismouseinrect(const char *skin, const char *fallback, vec4 rect) {
     if (last_skin->ismouseinrect) return last_skin->ismouseinrect(last_skin->userdata, skin, fallback, rect);
     return false;
@@ -203,11 +209,10 @@ bool gui_button_label_id(int id, const char *text, vec4 rect, const char *skin) 
     buttonsize = gui_getskinsize(btn, skin);
 
     vec2 textsize = font_rect(text);
-    vec2 pos;
+    vec4 pos;
     pos.x = rect.x + max(buttonsize.x*.5f, rect.z*.5f) - textsize.x*.5f;
     pos.y = rect.y + max(buttonsize.y*.5f, rect.w*.5f) - textsize.y*.5f;
-    font_goto(pos.x, pos.y);
-    font_print(text);
+    gui_label(btn, text, pos);
     return state;
 }
 
@@ -275,11 +280,10 @@ bool gui_slider_label_id(int id, const char *text, vec4 rect, const char *skin, 
     slidersize = gui_getskinsize(skin, NULL);
 
     vec2 textsize = font_rect(text);
-    vec2 pos;
+    vec4 pos;
     pos.x = rect.x + max(slidersize.x, rect.z) + 8 /*padding*/;
     pos.y = rect.y + max(slidersize.y*.5f, rect.w*.5f) - textsize.y*.5f;
-    font_goto(pos.x, pos.y);
-    font_print(text);
+    gui_label(skin, text, pos);
     return state;
 }
 
@@ -288,10 +292,11 @@ void gui_rect_id(int id, vec4 r, const char *skin) {
     if (last_skin->drawrect) last_skin->drawrect(last_skin->userdata, skin, NULL, r);
 }
 
-void gui_label_id(int id, const char *text, vec4 rect) {
+void gui_label_id(int id, const char *skin, const char *text, vec4 rect) {
     (void)id;
+    font_color(FONT_COLOR6, gui_getskincolor(skin, NULL));
     font_goto(rect.x, rect.y);
-    font_print(text);
+    font_print(va(FONT_COLOR6 "%s", text));
 }
 
 /* skinned */
@@ -311,6 +316,16 @@ atlas_slice_frame_t *skinned_getsliceframe(atlas_t *a, const char *name) {
             return &a->slice_frames[a->slices[i].frames[0]];
     // PRINTF("slice name: '%s' is missing in atlas!\n", name);
     return NULL;
+}
+
+static
+void skinned_getskincolor(void *userdata, const char *skin, const char *fallback, unsigned *color) {
+    skinned_t *a = C_CAST(skinned_t*, userdata);
+    atlas_slice_frame_t *f = skinned_getsliceframe(&a->atlas, skin);
+    if (!f && fallback) f = skinned_getsliceframe(&a->atlas, fallback);
+    if (!f) return;
+
+    if (f->text && f->text[0] == '#') *color = atorgba(f->text);
 }
 
 static
@@ -456,6 +471,7 @@ guiskin_t gui_skinned(const char *asefile, float scale) {
     skin.userdata = a;
     skin.drawrect = skinned_draw_rect;
     skin.getskinsize = skinned_getskinsize;
+    skin.getskincolor = skinned_getskincolor;
     skin.ismouseinrect = skinned_ismouseinrect;
     skin.getscissorrect = skinned_getscissorrect;
     skin.free = skinned_free;
