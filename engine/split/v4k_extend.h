@@ -23,6 +23,9 @@ API void script_call(const char *lua_function);
 
 API bool script_tests();
 
+// -----------------------------------------------------------------------------
+// script framework
+
 enum {
     SCRIPT_LUA = 1,
     SCRIPT_DEBUGGER = 2,
