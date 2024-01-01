@@ -147,6 +147,8 @@ extern "C" {
 {{FILE:v4k_sprite.h}}
 {{FILE:v4k_gui.h}}
 
+{{FILE:v4k_steam.h}}
+
 {{FILE:v4k_system.h}}
 
 {{FILE:v4k_time.h}}
