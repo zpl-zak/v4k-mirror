@@ -7273,7 +7273,10 @@ int main() { int (*adder)() = dll("demo.dll", "add2"); printf("%d\n", adder(2,3)
 
 typedef lua_State lua;
 
-// the Lua interpreter
+// the Lua interpreter(s)
+static array(lua*) Ls;
+
+// the **current** Lua interpreter
 static lua *L;
 
 #if is(linux)
@@ -7517,6 +7520,16 @@ void *script_init_env(unsigned flags) {
     }
 
     return 0;
+}
+
+bool script_push(void *env) {
+    array_push(Ls, L = env);
+    return true;
+}
+
+bool script_pop() {
+    L = array_count(Ls) && (array_pop(Ls), array_count(Ls)) ? *array_back(Ls) : NULL;
+    return !!array_count(Ls);
 }
 #line 0
 

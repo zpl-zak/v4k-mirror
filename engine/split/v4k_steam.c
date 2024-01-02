@@ -88,7 +88,8 @@ bool steam_init(unsigned app_id) {
         return !strcpy(steam.status, "Err: steam not running");
     }
 
-    SteamAPI_RestartAppIfNecessary(app_id);
+    if( SteamAPI_RestartAppIfNecessary(app_id) )
+        exit(0); // restarting app thru Steam client if needed
 
     // Create interfaces
     steam.iclient = (intptr_t)SteamInternal_CreateInterface("SteamClient020");
