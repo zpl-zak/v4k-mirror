@@ -114,7 +114,7 @@ void main() {
     
     //   vec3 tangent = att_tangent.xyz;
     //   vec3 bitangent = cross(att_normal, att_tangent.xyz) * att_tangent.w;
-    v_normal_ws = normalize(vec3(model * vec4(v_normal, 0.))); // normal to world/model space
+    v_normal_ws = normalize(vec3(att_instanced_matrix * vec4(v_normal, 0.))); // normal to world/model space
     v_normal = normalize(v_normal);
     v_position = att_position;
     v_texcoord = att_texcoord;
