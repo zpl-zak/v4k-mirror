@@ -19,3 +19,4 @@ v4k.osx
 libv4k.*
 *.dSYM
 .DS_store
+*.raddbg
