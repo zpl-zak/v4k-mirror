@@ -2,7 +2,7 @@
 setlocal enableDelayedExpansion
 cd /d "%~dp0"
 
-echo Args: %*
+rem echo Args: %*
 
 rem show help
 if "%1"=="-?" goto showhelp
