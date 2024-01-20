@@ -2,6 +2,8 @@
 setlocal enableDelayedExpansion
 cd /d "%~dp0"
 
+echo Args: %*
+
 rem show help
 if "%1"=="-?" goto showhelp
 if "%1"=="-h" goto showhelp
@@ -38,6 +40,7 @@ if "%1"=="help" (
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
     echo %0 [prep]                  ; combine split files into a single-header file, ready for use
     echo %0 [sln]                   ; generate a xcode/gmake/ninja/visual studio solution
+    echo %0 [addons[ names ] ]     ; specify list of addons you want to compile with the engine
     echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel^|ret] [static^|dll] [nov4k^|nodemos^|editor] [vis] [-- args]
     echo    cl       \
     echo    tcc      ^|
@@ -592,6 +595,29 @@ set vis=no
 set proj=no
 set rc=0
 set run=no
+set addons=
+set addons_names=
+set addons_includes=
+
+if "%1"=="addons[" (
+    shift && goto parse_addons
+:parse_addons
+    if "%1"=="]" (
+        shift
+    ) else (
+        set "addon_names=%1 %addon_names%"
+        set "addon_includes=-Idepot\deps\%1 %addon_includes%"
+        if exist "depot\deps\%1\%1.cpp" (
+            set "addons=depot\deps\%1\%1.cpp %addons%"
+        ) else (
+            set "addons=depot\deps\%1\%1.c %addons%"
+        )
+        if exist "depot\deps\%1\include" (
+            set "addon_includes=-Idepot\deps\%1\include %addon_includes%"
+        )
+        shift && goto parse_addons
+    )
+)
 
 :parse_args
     if "%1"=="--"       shift && goto parse_compiler_args
@@ -822,6 +848,7 @@ if "!cc!"=="cl" (
 
 echo build=!build!, type=!dll!, cc=!cc!, other=!other!, args=!args!
 echo import=!import!, export=!export!
+echo addons=!addon_names!
 
 rem set BUILD_VERSION symbol
 git describe --tags --abbrev=0 > info.obj
@@ -847,7 +874,7 @@ if not "!other!"=="" (
 
 rem framework
 if "!v4k!"=="yes" (
-    tools\file2hash engine\v4k.c engine\v4k.h engine\v4k. engine\joint\v4k.h -- !build! !import! !export! !args! !dll! > nul
+    tools\file2hash engine\v4k.c engine\v4k.h engine\v4k. engine\joint\v4k.h !addons! -- !build! !import! !export! !args! !dll! > nul
     set cache=_cache\.!errorlevel!
     md _cache 2>nul >nul
 
@@ -860,7 +887,7 @@ if "!v4k!"=="yes" (
     if exist !cache!.pdb copy /y !cache!.pdb v4k.pdb 2>nul >nul
 
     if not exist "!cache!" (
-        !echo! v4k          && !cc! engine\v4k.c !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll bind\v4k.dll  > nul || set rc=1
+        !echo! v4k          && !cc! engine\v4k.c !addons! /DADDON !addon_includes! !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll bind\v4k.dll  > nul || set rc=1
         echo. > !cache!
         if exist v4k.o   copy /y v4k.o   !cache!.o   2>nul >nul
         if exist v4k.obj copy /y v4k.obj !cache!.obj 2>nul >nul
@@ -880,7 +907,7 @@ rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND
 rem set edit=-DUI_LESSER_SPACING -DUI_ICONS_SMALL !edit!
-!echo! editor      && !cc! !o! editor.exe engine\editor.c engine\v4k.c !edit! -Iengine/joint !args! || set rc=1
+!echo! editor      && !cc! !o! editor.exe engine\editor.c engine\v4k.c !addon_includes! !edit! -Iengine/joint !args! || set rc=1
 
 rem if "!cc!"=="cl" (
 rem set plug_export=/LD
@@ -907,7 +934,7 @@ if "!demos!"=="yes" (
                 >nul find "V4K_IMPLEMENTATION" "demos\!fname!.c" && (
                     set limport=
                 )
-                !echo! !fname! && !cc! !o! !fname!.exe "demos\!fname!.c" !limport! !args! || set rc=1
+                !echo! !fname! && !cc! !o! !fname!.exe "demos\!fname!.c" !addon_includes! !limport! !args! || set rc=1
             )
         )
     )
@@ -921,13 +948,13 @@ if "!lab!"=="yes" (
         >nul find "V4K_IMPLEMENTATION" demos\%%~nf.c && (
           set limport=
         )
-        !echo! %%~nf         && !cc! !o! %%~nf.exe         demos\%%~nf.c            !limport! !args! || set rc=1
+        !echo! %%~nf         && !cc! !o! %%~nf.exe         demos\%%~nf.c           !addon_includes! !limport! !args! || set rc=1
     )
 )
 
 rem hello
 if "!hello!"=="yes" (
-!echo! hello         && !cc! !o! hello.exe         hello.c                           !args! || set rc=1
+!echo! hello         && !cc! !o! hello.exe         hello.c                          !addon_includes! !args! || set rc=1
 )
 
 rem user-defined apps
@@ -941,7 +968,7 @@ if not "!other!"=="" (
     rem )
     for /f "tokens=*" %%a in ("%other%") do set exename=%%~na.exe
     del !exename! >NUL
-    !echo! !other! && !cc! !other! !import! !args! || set rc=1
+    !echo! !other! && !cc! !other! !addon_includes! !import! !args! || set rc=1
 )
 
 if "!run!"=="yes" (
