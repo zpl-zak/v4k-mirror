@@ -108,6 +108,7 @@ static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
+static bool debug_visible = true;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
@@ -536,6 +537,9 @@ int window_frame_begin() {
         }
     }
 
+    if (!debug_visible)
+        may_render_debug_panel = 0;
+
     // generate Debug panel contents
     if( may_render_debug_panel ) {
         if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
@@ -743,6 +747,10 @@ double window_time() {
 }
 double window_delta() {
     return dt;
+}
+
+void window_debug(bool visible) {
+    debug_visible = visible;
 }
 
 double window_fps() {

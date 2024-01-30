@@ -2019,6 +2019,7 @@ enum WINDOW_FLAGS {
  vec2 window_canvas();
  void* window_handle();
  char* window_stats();
+ void window_debug(bool visible);
  uint64_t window_frame();
  int window_width();
  int window_height();

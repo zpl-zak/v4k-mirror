@@ -41,6 +41,7 @@ API void     window_color(unsigned color);
 API vec2     window_canvas();
 API void*    window_handle();
 API char*    window_stats();
+API void     window_debug(bool visible);
 
 API uint64_t window_frame();
 API int      window_width();

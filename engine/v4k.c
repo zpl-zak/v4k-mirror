@@ -2239,6 +2239,8 @@ void ui_hue_cycle( unsigned num_cycles ) {
     }
 }
 
+extern bool debug_visible;
+
 static
 void ui_render() {
 
@@ -2253,11 +2255,15 @@ void ui_render() {
      * rendering the UI. */
     //nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
-    GLfloat bkColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bkColor); // @transparent
-    glClearColor(0,0,0,1); // @transparent
-    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,!bkColor[3] ? GL_TRUE : GL_FALSE);  // @transparent
-    nk_glfw3_render(&nk_glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
-    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);  // @transparent
+    if (debug_visible) {
+        GLfloat bkColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bkColor); // @transparent
+        glClearColor(0,0,0,1); // @transparent
+        glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,!bkColor[3] ? GL_TRUE : GL_FALSE);  // @transparent
+        nk_glfw3_render(&nk_glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+        glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);  // @transparent
+    } else {
+        nk_clear(&nk_glfw.ctx);
+    }
 
 #if is(ems)
     glFinish();
@@ -26182,6 +26188,7 @@ static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
+static bool debug_visible = true;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
@@ -26610,6 +26617,9 @@ int window_frame_begin() {
         }
     }
 
+    if (!debug_visible)
+        may_render_debug_panel = 0;
+
     // generate Debug panel contents
     if( may_render_debug_panel ) {
         if( has_menu ? ui_window("Debug " ICON_MD_SETTINGS, 0) : ui_panel("Debug " ICON_MD_SETTINGS, 0) ) {
@@ -26817,6 +26827,10 @@ double window_time() {
 }
 double window_delta() {
     return dt;
+}
+
+void window_debug(bool visible) {
+    debug_visible = visible;
 }
 
 double window_fps() {
