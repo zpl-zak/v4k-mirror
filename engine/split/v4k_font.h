@@ -33,6 +33,7 @@
 // font align tags
 #define FONT_LEFT     "\\<"
 #define FONT_CENTER   "\\|"
+#define FONT_JUSTIFY  "\\$"
 #define FONT_RIGHT    "\\>"
 #define FONT_TOP      "\\^"
 #define FONT_MIDDLE   "\\-"

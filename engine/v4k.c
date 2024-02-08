@@ -10776,9 +10776,9 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
             if( X > W ) W = X;
             X = 0.0;
             Y -= f->linedist*f->factor*f->scale[S];
-            if (i+1==end) { //@hack: ensures we terminate the height at the correct position
-                Y -= (f->descent+f->linegap)*f->factor*f->scale[S];
-            }
+            // if (i+1==end) { //@hack: ensures we terminate the height at the correct position
+            //     Y -= (f->descent+f->linegap)*f->factor*f->scale[S];
+            // }
             continue;
         }
         if( ch >= 1 && ch <= 6 ) {
@@ -10817,18 +10817,6 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
 
         if (!LL)
             LL = L;
-
-        if (ch == FONT_LEFT[0] && (
-            (unicode[i+1]) == FONT_LEFT[1] ||
-            (unicode[i+1]) == FONT_CENTER[1] ||
-            (unicode[i+1]) == FONT_RIGHT[1] ||
-            (unicode[i+1]) == FONT_TOP[1] ||
-            (unicode[i+1]) == FONT_MIDDLE[1] ||
-            (unicode[i+1]) == FONT_BASELINE[1] ||
-            (unicode[i+1]) == FONT_BOTTOM[1]
-            )) {
-            continue;
-        }
 
         // convert to vbo data
         int cp = ch - f->begin; // f->cp2iter[ch - f->begin];
@@ -11085,31 +11073,62 @@ void font_goto(float x, float y) {
 
 // Print and linefeed. Text may include markup code
 vec2 font_print_rect(const char *text, vec4 rect) {
-    // @fixme: remove this hack
-    if( text[0] == FONT_LEFT[0] ) {
-        int l = text[1] == FONT_LEFT[1];
-        int c = text[1] == FONT_CENTER[1];
-        int r = text[1] == FONT_RIGHT[1];
-        if( l || c || r ) {
-            vec2 text_rect = font_rect(text + 2);
-            gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
-            return font_print_rect(text + 2, rect);
-        }
-        int t = text[1] == FONT_TOP[1];
-        int b = text[1] == FONT_BOTTOM[1];
-        int m = text[1] == FONT_MIDDLE[1];
-        int B = text[1] == FONT_BASELINE[1];
-        if( t || b || m || B ) {
-            vec2 text_rect = font_rect(text + 2);
-            gotoxy.y = t ? rect.y : b ? ((rect.y+rect.w) - text_rect.y) : m ? rect.y+rect.w/2.-text_rect.y/2. : rect.y+rect.w/2.-text_rect.y/1;
-            return font_print_rect(text + 2, rect);
-        }
+    int l=0,c=0,r=0,t=0,b=0,m=0,B=0;
+
+    while ( text[0] == FONT_LEFT[0] ) {
+        int has_set=0;
+        if (text[1] == FONT_LEFT[1]) l = 1, has_set=1;
+        if (text[1] == FONT_CENTER[1]) c = 1, has_set=1;
+        if (text[1] == FONT_RIGHT[1]) r = 1, has_set=1;
+        if (text[1] == FONT_TOP[1]) t = 1, has_set=1;
+        if (text[1] == FONT_BOTTOM[1]) b = 1, has_set=1;
+        if (text[1] == FONT_MIDDLE[1]) m = 1, has_set=1;
+        if (text[1] == FONT_BASELINE[1]) B = 1, has_set=1;
+        if (!has_set) break;
+        else text += 2;
+    }
+    
+    int num_newlines = 0;
+    for (int i = 0, end = strlen(text); i < end; ++i) {
+        if (text[i] == '\n') ++num_newlines; 
     }
 
-    vec2 dims = font_draw_ex(text, gotoxy, NULL, font_draw_cmd);
-    gotoxy.y += strchr(text, '\n') ? dims.y : 0;
-    gotoxy.x =  strchr(text, '\n') ? 0 : gotoxy.x + dims.x;
-    return dims;
+    if (num_newlines > 1) {
+        vec2 text_dims = font_rect(text);
+        array(char *) lines = strsplit(text, "\n");
+        if (b) {
+            gotoxy.y += (rect.w - text_dims.y);
+        }
+        if (m) {
+            gotoxy.y += (rect.w/2. - text_dims.y/2.);
+        }
+        if (B) {
+            gotoxy.y += (rect.w/2. - text_dims.y/1.);
+        }
+        for (int i = 0; i < array_count(lines); i++) {
+            if( l || c || r ) {
+                vec2 text_rect = font_rect(lines[i]);
+                gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
+            }
+            char *line = va("%s\n", lines[i]);
+            vec2 dims = font_draw_ex(line, gotoxy, NULL, font_draw_cmd);
+            gotoxy.y += dims.y;
+        }
+        return text_dims;
+    } else {
+        if( l || c || r ) {
+            vec2 text_rect = font_rect(text);
+            gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
+        }
+        if( t || b || m || B ) {
+            vec2 text_rect = font_rect(text);
+            gotoxy.y = t ? rect.y : b ? ((rect.y+rect.w) - text_rect.y) : m ? rect.y+rect.w/2.-text_rect.y/2. : rect.y+rect.w/2.-text_rect.y/1;
+        }
+        vec2 dims = font_draw_ex(text, gotoxy, NULL, font_draw_cmd);
+        gotoxy.y += strchr(text, '\n') ? dims.y : 0;
+        gotoxy.x =  strchr(text, '\n') ? rect.x : gotoxy.x + dims.x;
+        return dims;
+    }
 }
 
 vec2 font_print(const char *text) {
