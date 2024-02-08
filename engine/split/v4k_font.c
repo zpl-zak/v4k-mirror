@@ -2406,12 +2406,10 @@ vec2 font_print_rect(const char *text, vec4 rect) {
             if( (ch >= 1 && ch <= 6) ||
                 (ch >= 0x1a && ch <= 0x1f) ||
                 (ch >= 0x10 && ch <= 0x19)) {
-                tags[t++] = ch;
+                if (t < sizeof(tags)) tags[t++] = ch;
             }
             else break;
             ++text;
-
-            if (t == 3) break;
         }
         array(char *) lines = strsplit(text, "\n");
         if (b) {
