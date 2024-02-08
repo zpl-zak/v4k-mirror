@@ -127,7 +127,7 @@ int main() {
         {
             vec2 pos = vec2(1490,820);
             ddraw_push_2d();
-            char *txt = FONT_CENTER FONT_MIDDLE "This is the first line.\nAnd now the second line.\nYou can do a third great line, too!\n";
+            char *txt = FONT_JUSTIFY FONT_MIDDLE "This is the first line.\nAnd now the second line.\nYou can do a third great line, too!\n";
             font_goto(pos.x, pos.y);
             vec2 size=font_rect(txt);
             font_metrics_t m=font_metrics(txt);

@@ -2375,13 +2375,14 @@ void font_goto(float x, float y) {
 
 // Print and linefeed. Text may include markup code
 vec2 font_print_rect(const char *text, vec4 rect) {
-    int l=0,c=0,r=0,t=0,b=0,m=0,B=0;
+    int l=0,c=0,r=0,j=0,t=0,b=0,m=0,B=0;
 
     while ( text[0] == FONT_LEFT[0] ) {
         int has_set=0;
         if (text[1] == FONT_LEFT[1]) l = 1, has_set=1;
         if (text[1] == FONT_CENTER[1]) c = 1, has_set=1;
         if (text[1] == FONT_RIGHT[1]) r = 1, has_set=1;
+        if (text[1] == FONT_JUSTIFY[1]) j = 1, has_set=1;
         if (text[1] == FONT_TOP[1]) t = 1, has_set=1;
         if (text[1] == FONT_BOTTOM[1]) b = 1, has_set=1;
         if (text[1] == FONT_MIDDLE[1]) m = 1, has_set=1;
@@ -2398,6 +2399,19 @@ vec2 font_print_rect(const char *text, vec4 rect) {
     if (num_newlines > 1) {
         vec2 text_dims = font_rect(text);
         array(char *) lines = strsplit(text, "\n");
+        char tags[4] = {0};
+        for (int i = 0, t = 0, end = strlen(text); i < end; ++i) {
+            if (t == 4) break;
+
+            char ch = text[i];
+
+            if( (ch >= 1 && ch <= 6) ||
+                (ch >= 0x1a && ch <= 0x1f) ||
+                (ch >= 0x10 && ch <= 0x19)) {
+                tags[t++] = ch;
+                ++text;
+            }
+        }
         if (b) {
             gotoxy.y += (rect.w - text_dims.y);
         }
@@ -2408,13 +2422,40 @@ vec2 font_print_rect(const char *text, vec4 rect) {
             gotoxy.y += (rect.w/2. - text_dims.y/1.);
         }
         for (int i = 0; i < array_count(lines); i++) {
+            char *line = va("%s%s\n", tags, lines[i]);
+            vec2 text_rect = font_rect(line);
             if( l || c || r ) {
-                vec2 text_rect = font_rect(lines[i]);
                 gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
+            } else if (j) {
+                float words_space = 0.0f;
+                array(char *) words = strsplit(lines[i], " ");
+                for (int k = 0; k < array_count(words); ++k) {
+                    if (!strlen(words[k])) {
+                        array_erase_slow(words, k);
+                        --k;
+                    } else {
+                        words_space += font_rect(words[k]).x;
+                    }
+                }
+                if (array_count(words) == 0) {
+                    gotoxy.y += text_rect.y;    
+                    continue;
+                }
+                float extra_space = rect.z - words_space;
+                int gaps = array_count(words) - 1;
+                float space_offset = gaps > 0 ? extra_space / (float)gaps : 0;
+                for (int k = 0; k < array_count(words); ++k) {
+                    vec2 dims = font_draw_ex(va("%s%s", tags, words[k]), gotoxy, NULL, font_draw_cmd);
+                    gotoxy.x += dims.x + space_offset;
+                }
+                gotoxy.x = rect.x;
+            } 
+
+            if (!j) {
+                font_draw_ex(line, gotoxy, NULL, font_draw_cmd);
             }
-            char *line = va("%s\n", lines[i]);
-            vec2 dims = font_draw_ex(line, gotoxy, NULL, font_draw_cmd);
-            gotoxy.y += dims.y;
+
+            gotoxy.y += text_rect.y;    
         }
         return text_dims;
     } else {
