@@ -10,6 +10,7 @@ int main() {
     #define FONT_JAPANESE  FONT_FACE4
     #define FONT_MONOSPACE FONT_FACE5
 
+    #define FONT_WHITE     FONT_COLOR1
     #define FONT_GRAY      FONT_COLOR2
     #define FONT_ORANGE    FONT_COLOR3
     #define FONT_LIME      FONT_COLOR4
@@ -139,7 +140,7 @@ int main() {
         {
             vec2 pos = vec2(1990,820);
             ddraw_push_2d();
-            char *txt = FONT_RIGHT FONT_BOTTOM "This is the first line.\nAnd now the second line.\n \nYou can do a third great line, too!\n";
+            char *txt = FONT_RIGHT FONT_BOTTOM FONT_WHITE "This is the first line.\n" FONT_LIME "And now the second line.\n" FONT_WHITE "You can do a third great line, too!\n";
             font_goto(pos.x, pos.y);
             vec2 size=font_rect(txt);
             font_metrics_t m=font_metrics(txt);

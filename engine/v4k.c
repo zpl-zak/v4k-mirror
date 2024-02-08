@@ -11097,16 +11097,18 @@ vec2 font_print_rect(const char *text, vec4 rect) {
     if (num_newlines > 1) {
         vec2 text_dims = font_rect(text);
         char tags[4] = {0};
-        for (int i = 0, t = 0, end = strlen(text); i < end; ++i) {
-            char ch = text[i];
+        int t=0;
+        while (*text) {
+            char ch = *text;
 
             if( (ch >= 1 && ch <= 6) ||
                 (ch >= 0x1a && ch <= 0x1f) ||
                 (ch >= 0x10 && ch <= 0x19)) {
                 tags[t++] = ch;
-                ++text;
             }
-            
+            else break;
+            ++text;
+
             if (t == 3) break;
         }
         array(char *) lines = strsplit(text, "\n");
