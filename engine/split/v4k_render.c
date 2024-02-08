@@ -2797,37 +2797,12 @@ typedef struct iqm_t {
     vec4 *colormaps;
 } iqm_t;
 
-#define meshdata (q->meshdata)
-#define animdata (q->animdata)
-#define nummeshes (q->nummeshes)
-#define numtris (q->numtris)
-#define numverts (q->numverts)
-#define numjoints (q->numjoints)
-#define numframes (q->numframes)
-#define numanims (q->numanims)
-#define meshes (q->meshes)
-#define textures (q->textures)
-#define joints (q->joints)
-#define poses (q->poses)
-#define anims (q->anims)
-#define baseframe (q->baseframe)
-#define inversebaseframe (q->inversebaseframe)
-#define outframe (q->outframe)
-#define frames (q->frames)
-#define vao (q->vao)
-#define ibo (q->ibo)
-#define vbo (q->vbo)
-#define bonematsoffset (q->bonematsoffset)
-#define buf (q->buf)
-#define bounds (q->bounds)
-#define colormaps (q->colormaps)
-
 void model_set_texture(model_t m, texture_t t) {
     if(!m.iqm) return;
     iqm_t *q = m.iqm;
 
-    for( int i = 0; i < nummeshes; ++i) { // assume 1 texture per mesh
-        textures[i] = t.id;
+    for( int i = 0; i < q->nummeshes; ++i) { // assume 1 texture per mesh
+        q->textures[i] = t.id;
     }
 }
 
@@ -2920,9 +2895,9 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     if ((loc = glGetUniformLocation(shader, "proj")) >= 0) {
         glUniformMatrix4fv(loc, 1, GL_FALSE, proj);
     }
-    if( (loc = glGetUniformLocation(shader, "SKINNED")) >= 0 ) glUniform1i( loc, numanims ? GL_TRUE : GL_FALSE);
-    if( numanims )
-    if( (loc = glGetUniformLocation(shader, "vsBoneMatrix")) >= 0 ) glUniformMatrix3x4fv( loc, numjoints, GL_FALSE, outframe[0]);
+    if( (loc = glGetUniformLocation(shader, "SKINNED")) >= 0 ) glUniform1i( loc, q->numanims ? GL_TRUE : GL_FALSE);
+    if( q->numanims )
+    if( (loc = glGetUniformLocation(shader, "vsBoneMatrix")) >= 0 ) glUniformMatrix3x4fv( loc, q->numjoints, GL_FALSE, q->outframe[0]);
 
     if ((loc = glGetUniformLocation(shader, "u_matcaps")) >= 0) {
         glUniform1i(loc, m.flags & MODEL_MATCAPS ? GL_TRUE:GL_FALSE);
@@ -2933,10 +2908,10 @@ void model_set_state(model_t m) {
     if(!m.iqm) return;
     iqm_t *q = m.iqm;
 
-    glBindVertexArray( vao );
+    glBindVertexArray( q->vao );
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, q->ibo);
+    glBindBuffer(GL_ARRAY_BUFFER, q->vbo);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, position) );
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, texcoord) );
@@ -2957,7 +2932,7 @@ void model_set_state(model_t m) {
     glEnableVertexAttribArray(12);
 
     // animation
-    if(numframes > 0) {
+    if(q->numframes > 0) {
         glVertexAttribPointer( 8, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,blendindexes) );
         glVertexAttribPointer( 9, 4, GL_UNSIGNED_BYTE, GL_TRUE,  sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex,blendweights) );
         glVertexAttribPointer(10, 1, GL_FLOAT, GL_FALSE, sizeof(iqm_vertex), (GLvoid*)offsetof(iqm_vertex, blendvertexindex) );
@@ -2998,71 +2973,71 @@ void model_set_state(model_t m) {
 
 static
 bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
-    if(meshdata) return false;
+    if(q->meshdata) return false;
 
-    lil32p(&buf[hdr->ofs_vertexarrays], hdr->num_vertexarrays*sizeof(struct iqmvertexarray)/sizeof(uint32_t));
-    lil32p(&buf[hdr->ofs_triangles], hdr->num_triangles*sizeof(struct iqmtriangle)/sizeof(uint32_t));
-    lil32p(&buf[hdr->ofs_meshes], hdr->num_meshes*sizeof(struct iqmmesh)/sizeof(uint32_t));
-    lil32p(&buf[hdr->ofs_joints], hdr->num_joints*sizeof(struct iqmjoint)/sizeof(uint32_t));
+    lil32p(&q->buf[hdr->ofs_vertexarrays], hdr->num_vertexarrays*sizeof(struct iqmvertexarray)/sizeof(uint32_t));
+    lil32p(&q->buf[hdr->ofs_triangles], hdr->num_triangles*sizeof(struct iqmtriangle)/sizeof(uint32_t));
+    lil32p(&q->buf[hdr->ofs_meshes], hdr->num_meshes*sizeof(struct iqmmesh)/sizeof(uint32_t));
+    lil32p(&q->buf[hdr->ofs_joints], hdr->num_joints*sizeof(struct iqmjoint)/sizeof(uint32_t));
 
-    meshdata = buf;
-    nummeshes = hdr->num_meshes;
-    numtris = hdr->num_triangles;
-    numverts = hdr->num_vertexes;
-    numjoints = hdr->num_joints;
-    outframe = CALLOC(hdr->num_joints, sizeof(mat34));
+    q->meshdata = q->buf;
+    q->nummeshes = hdr->num_meshes;
+    q->numtris = hdr->num_triangles;
+    q->numverts = hdr->num_vertexes;
+    q->numjoints = hdr->num_joints;
+    q->outframe = CALLOC(hdr->num_joints, sizeof(mat34));
 
     float *inposition = NULL, *innormal = NULL, *intangent = NULL, *intexcoord = NULL, *invertexindex = NULL;
     uint8_t *inblendindex8 = NULL, *inblendweight8 = NULL;
     int *inblendindexi = NULL; float *inblendweightf = NULL;
     uint8_t *invertexcolor8 = NULL;
-    struct iqmvertexarray *vas = (struct iqmvertexarray *)&buf[hdr->ofs_vertexarrays];
+    struct iqmvertexarray *vas = (struct iqmvertexarray *)&q->buf[hdr->ofs_vertexarrays];
     for(int i = 0; i < (int)hdr->num_vertexarrays; i++) {
         struct iqmvertexarray *va = &vas[i];
         switch(va->type) {
         default: continue; // return PANIC("unknown iqm vertex type (%d)", va->type), false;
-        break; case IQM_POSITION: ASSERT(va->format == IQM_FLOAT && va->size == 3); inposition = (float *)&buf[va->offset]; lil32pf(inposition, 3*hdr->num_vertexes);
-        break; case IQM_NORMAL: ASSERT(va->format == IQM_FLOAT && va->size == 3); innormal = (float *)&buf[va->offset]; lil32pf(innormal, 3*hdr->num_vertexes);
-        break; case IQM_TANGENT: ASSERT(va->format == IQM_FLOAT && va->size == 4); intangent = (float *)&buf[va->offset]; lil32pf(intangent, 4*hdr->num_vertexes);
-        break; case IQM_TEXCOORD: ASSERT(va->format == IQM_FLOAT && va->size == 2); intexcoord = (float *)&buf[va->offset]; lil32pf(intexcoord, 2*hdr->num_vertexes);
-        break; case IQM_COLOR: ASSERT(va->size == 4); ASSERT(va->format == IQM_UBYTE); invertexcolor8 = (uint8_t *)&buf[va->offset];
+        break; case IQM_POSITION: ASSERT(va->format == IQM_FLOAT && va->size == 3); inposition = (float *)&q->buf[va->offset]; lil32pf(inposition, 3*hdr->num_vertexes);
+        break; case IQM_NORMAL: ASSERT(va->format == IQM_FLOAT && va->size == 3); innormal = (float *)&q->buf[va->offset]; lil32pf(innormal, 3*hdr->num_vertexes);
+        break; case IQM_TANGENT: ASSERT(va->format == IQM_FLOAT && va->size == 4); intangent = (float *)&q->buf[va->offset]; lil32pf(intangent, 4*hdr->num_vertexes);
+        break; case IQM_TEXCOORD: ASSERT(va->format == IQM_FLOAT && va->size == 2); intexcoord = (float *)&q->buf[va->offset]; lil32pf(intexcoord, 2*hdr->num_vertexes);
+        break; case IQM_COLOR: ASSERT(va->size == 4); ASSERT(va->format == IQM_UBYTE); invertexcolor8 = (uint8_t *)&q->buf[va->offset];
         break; case IQM_BLENDINDEXES: ASSERT(va->size == 4); ASSERT(va->format == IQM_UBYTE || va->format == IQM_INT);
-        if(va->format == IQM_UBYTE) inblendindex8 = (uint8_t *)&buf[va->offset];
-        else inblendindexi = (int *)&buf[va->offset];
+        if(va->format == IQM_UBYTE) inblendindex8 = (uint8_t *)&q->buf[va->offset];
+        else inblendindexi = (int *)&q->buf[va->offset];
         break; case IQM_BLENDWEIGHTS: ASSERT(va->size == 4); ASSERT(va->format == IQM_UBYTE || va->format == IQM_FLOAT);
-        if(va->format == IQM_UBYTE) inblendweight8 = (uint8_t *)&buf[va->offset];
-        else inblendweightf = (float *)&buf[va->offset];
+        if(va->format == IQM_UBYTE) inblendweight8 = (uint8_t *)&q->buf[va->offset];
+        else inblendweightf = (float *)&q->buf[va->offset];
         invertexindex = (inblendweight8 ? (float*)(inblendweight8 + 4) : inblendweightf + 4 );
         }
     }
 
-    if (hdr->ofs_bounds) lil32p(buf + hdr->ofs_bounds, hdr->num_frames * sizeof(struct iqmbounds));
-    if (hdr->ofs_bounds) bounds = (struct iqmbounds *) &buf[hdr->ofs_bounds];
+    if (hdr->ofs_bounds) lil32p(q->buf + hdr->ofs_bounds, hdr->num_frames * sizeof(struct iqmbounds));
+    if (hdr->ofs_bounds) q->bounds = (struct iqmbounds *) &q->buf[hdr->ofs_bounds];
 
-    meshes = (struct iqmmesh *)&buf[hdr->ofs_meshes];
-    joints = (struct iqmjoint *)&buf[hdr->ofs_joints];
+    q->meshes = (struct iqmmesh *)&q->buf[hdr->ofs_meshes];
+    q->joints = (struct iqmjoint *)&q->buf[hdr->ofs_joints];
 
-    baseframe = CALLOC(hdr->num_joints, sizeof(mat34));
-    inversebaseframe = CALLOC(hdr->num_joints, sizeof(mat34));
+    q->baseframe = CALLOC(hdr->num_joints, sizeof(mat34));
+    q->inversebaseframe = CALLOC(hdr->num_joints, sizeof(mat34));
     for(int i = 0; i < (int)hdr->num_joints; i++) {
-        struct iqmjoint *j = &joints[i];
-        compose34(baseframe[i], ptr3(j->translate), normq(ptrq(j->rotate)), ptr3(j->scale));
-        invert34(inversebaseframe[i], baseframe[i]);
+        struct iqmjoint *j = &q->joints[i];
+        compose34(q->baseframe[i], ptr3(j->translate), normq(ptrq(j->rotate)), ptr3(j->scale));
+        invert34(q->inversebaseframe[i], q->baseframe[i]);
         if(j->parent >= 0) {
-            multiply34x2(baseframe[i], baseframe[j->parent], baseframe[i]);
-            multiply34(inversebaseframe[i], inversebaseframe[j->parent]);
+            multiply34x2(q->baseframe[i], q->baseframe[j->parent], q->baseframe[i]);
+            multiply34(q->inversebaseframe[i], q->inversebaseframe[j->parent]);
         }
     }
 
-    struct iqmtriangle *tris = (struct iqmtriangle *)&buf[hdr->ofs_triangles];
+    struct iqmtriangle *tris = (struct iqmtriangle *)&q->buf[hdr->ofs_triangles];
     m->num_tris = hdr->num_triangles;
     m->tris = (void*)tris;
 
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    glGenVertexArrays(1, &q->vao);
+    glBindVertexArray(q->vao);
 
-    if(!ibo) glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    if(!q->ibo) glGenBuffers(1, &q->ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, q->ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, hdr->num_triangles*sizeof(struct iqmtriangle), tris, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
@@ -3093,8 +3068,8 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
         if(invertexcolor8) memcpy(v->color, &invertexcolor8[i*4], sizeof(v->color));
     }
 
-    if(!vbo) glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    if(!q->vbo) glGenBuffers(1, &q->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, q->vbo);
     glBufferData(GL_ARRAY_BUFFER, hdr->num_vertexes*sizeof(iqm_vertex), verts, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -3115,16 +3090,16 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
     m->verts = verts;
     /*m->verts = 0; FREE(verts);*/
 
-    textures = CALLOC(hdr->num_meshes * 8, sizeof(GLuint));
-    colormaps = CALLOC(hdr->num_meshes * 8, sizeof(vec4));
+    q->textures = CALLOC(hdr->num_meshes * 8, sizeof(GLuint));
+    q->colormaps = CALLOC(hdr->num_meshes * 8, sizeof(vec4));
     for(int i = 0; i < (int)hdr->num_meshes; i++) {
         int invalid = texture_checker().id;
-        textures[i] = invalid;
+        q->textures[i] = invalid;
     }
 
-    const char *str = hdr->ofs_text ? (char *)&buf[hdr->ofs_text] : "";
+    const char *str = hdr->ofs_text ? (char *)&q->buf[hdr->ofs_text] : "";
     for(int i = 0; i < (int)hdr->num_meshes; i++) {
-        struct iqmmesh *m = &meshes[i];
+        struct iqmmesh *m = &q->meshes[i];
         PRINTF("loaded mesh: %s\n", &str[m->name]);
     }
 
@@ -3133,34 +3108,34 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
 
 static
 bool model_load_anims(iqm_t *q, const struct iqmheader *hdr) {
-    if((int)hdr->num_poses != numjoints) return false;
+    if((int)hdr->num_poses != q->numjoints) return false;
 
-    if(animdata) {
-        if(animdata != meshdata) FREE(animdata);
-        FREE(frames);
-        animdata = NULL;
-        anims = NULL;
-        frames = 0;
-        numframes = 0;
-        numanims = 0;
+    if(q->animdata) {
+        if(q->animdata != q->meshdata) FREE(q->animdata);
+        FREE(q->frames);
+        q->animdata = NULL;
+        q->anims = NULL;
+        q->frames = 0;
+        q->numframes = 0;
+        q->numanims = 0;
     }
 
-    lil32p(&buf[hdr->ofs_poses], hdr->num_poses*sizeof(struct iqmpose)/sizeof(uint32_t));
-    lil32p(&buf[hdr->ofs_anims], hdr->num_anims*sizeof(struct iqmanim)/sizeof(uint32_t));
-    lil16p((uint16_t *)&buf[hdr->ofs_frames], hdr->num_frames*hdr->num_framechannels);
+    lil32p(&q->buf[hdr->ofs_poses], hdr->num_poses*sizeof(struct iqmpose)/sizeof(uint32_t));
+    lil32p(&q->buf[hdr->ofs_anims], hdr->num_anims*sizeof(struct iqmanim)/sizeof(uint32_t));
+    lil16p((uint16_t *)&q->buf[hdr->ofs_frames], hdr->num_frames*hdr->num_framechannels);
 
-    animdata = buf;
-    numanims = hdr->num_anims;
-    numframes = hdr->num_frames;
+    q->animdata = q->buf;
+    q->numanims = hdr->num_anims;
+    q->numframes = hdr->num_frames;
 
-    anims = (struct iqmanim *)&buf[hdr->ofs_anims];
-    poses = (struct iqmpose *)&buf[hdr->ofs_poses];
-    frames = CALLOC(hdr->num_frames * hdr->num_poses, sizeof(mat34));
-    uint16_t *framedata = (uint16_t *)&buf[hdr->ofs_frames];
+    q->anims = (struct iqmanim *)&q->buf[hdr->ofs_anims];
+    q->poses = (struct iqmpose *)&q->buf[hdr->ofs_poses];
+    q->frames = CALLOC(hdr->num_frames * hdr->num_poses, sizeof(mat34));
+    uint16_t *framedata = (uint16_t *)&q->buf[hdr->ofs_frames];
 
     for(int i = 0; i < (int)hdr->num_frames; i++) {
         for(int j = 0; j < (int)hdr->num_poses; j++) {
-            struct iqmpose *p = &poses[j];
+            struct iqmpose *p = &q->poses[j];
             quat rotate;
             vec3 translate, scale;
             translate.x = p->channeloffset[0]; if(p->mask&0x01) translate.x += *framedata++ * p->channelscale[0];
@@ -3184,16 +3159,16 @@ bool model_load_anims(iqm_t *q, const struct iqmheader *hdr) {
             //   parentPose * childPose * childInverseBasePose
 
             mat34 m; compose34(m, translate, normq(rotate), scale);
-            if(p->parent >= 0) multiply34x3(frames[i*hdr->num_poses + j], baseframe[p->parent], m, inversebaseframe[j]);
-            else multiply34x2(frames[i*hdr->num_poses + j], m, inversebaseframe[j]);
+            if(p->parent >= 0) multiply34x3(q->frames[i*hdr->num_poses + j], q->baseframe[p->parent], m, q->inversebaseframe[j]);
+            else multiply34x2(q->frames[i*hdr->num_poses + j], m, q->inversebaseframe[j]);
         }
     }
 
-    const char *str = hdr->ofs_text ? (char *)&buf[hdr->ofs_text] : "";
-    for(int i = 0; i < (int)hdr->num_anims; i++) {
-        struct iqmanim *a = &anims[i];
-        PRINTF("loaded anim[%d]: %s\n", i, &str[a->name]);
-    }
+    // const char *str = hdr->ofs_text ? (char *)&q->buf[hdr->ofs_text] : "";
+    // for(int i = 0; i < (int)hdr->num_anims; i++) {
+    //     struct iqmanim *a = &anims[i];
+    //     PRINTF("loaded anim[%d]: %s\n", i, &str[a->name]);
+    // }
 
     return true;
 }
@@ -3206,14 +3181,14 @@ static char* strcpy_safe(char *d, const char *s) {
 
 static
 bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) {
-    textures = textures ? textures : CALLOC(hdr->num_meshes * 8, sizeof(GLuint)); // up to 8 textures per mesh
-    colormaps = colormaps ? colormaps : CALLOC(hdr->num_meshes * 8, sizeof(vec4)); // up to 8 colormaps per mesh
+    q->textures = q->textures ? q->textures : CALLOC(hdr->num_meshes * 8, sizeof(GLuint)); // up to 8 textures per mesh
+    q->colormaps = q->colormaps ? q->colormaps : CALLOC(hdr->num_meshes * 8, sizeof(vec4)); // up to 8 colormaps per mesh
 
-    GLuint *out = textures;
+    GLuint *out = q->textures;
 
-    const char *str = hdr->ofs_text ? (char *)&buf[hdr->ofs_text] : "";
+    const char *str = hdr->ofs_text ? (char *)&q->buf[hdr->ofs_text] : "";
     for(int i = 0; i < (int)hdr->num_meshes; i++) {
-        struct iqmmesh *m = &meshes[i];
+        struct iqmmesh *m = &q->meshes[i];
 
         // reuse texture+material if already decoded
         bool reused = 0;
@@ -3382,13 +3357,23 @@ model_t model_from_mem(const void *mem, int len, int flags) {
         if( !memcmp(hdr.magic, IQM_MAGIC, sizeof(hdr.magic))) {
             lil32p(&hdr.version, (sizeof(hdr) - sizeof(hdr.magic))/sizeof(uint32_t));
             if(hdr.version == IQM_VERSION) {
-                buf = CALLOC(hdr.filesize, sizeof(uint8_t));
-                memcpy(buf + sizeof(hdr), ptr, hdr.filesize - sizeof(hdr));
+                q->buf = CALLOC(hdr.filesize, sizeof(uint8_t));
+                memcpy(q->buf + sizeof(hdr), ptr, hdr.filesize - sizeof(hdr));
                 error = 0;
                 if( hdr.num_meshes > 0 && !(flags & MODEL_NO_MESHES) )     error |= !model_load_meshes(q, &hdr, &m);
                 if( hdr.num_meshes > 0 && !(flags & MODEL_NO_TEXTURES) )   error |= !model_load_textures(q, &hdr, &m);
+                else {
+                    // setup fallback
+                    material_t mt = {0};
+                    mt.name = "placeholder";
+                    mt.count = 1;
+                    mt.layer[0].color = vec4(1,1,1,1);
+                    mt.layer[0].texture = texture_checker().id;
+
+                    array_push(m.materials, mt);
+                }
                 if( hdr.num_anims  > 0 && !(flags & MODEL_NO_ANIMATIONS) ) error |= !model_load_anims(q, &hdr);
-                if( buf != meshdata && buf != animdata ) FREE(buf);
+                if( q->buf != q->meshdata && q->buf != q->animdata ) FREE(q->buf);
             }
         }
     }
@@ -3397,31 +3382,23 @@ model_t model_from_mem(const void *mem, int len, int flags) {
         PRINTF("Error: cannot load %s", "model");
         FREE(q), q = 0;
     } else {
-        #undef vao
-        #undef ibo
-        #undef vbo
         m.vao = q->vao;
         m.ibo = q->ibo;
         m.vbo = q->vbo;
-        m.num_verts = numverts;
-        #define vao (q->vao)
-        #define ibo (q->ibo)
-        #define vbo (q->vbo)
+        m.num_verts = q->numverts;
 
         // m.boxes = bounds; // <@todo
-        m.num_meshes = nummeshes;
-        m.num_triangles = numtris;
-        m.num_joints = numjoints;
+        m.num_meshes = q->nummeshes;
+        m.num_triangles = q->numtris;
+        m.num_joints = q->numjoints;
         //m.num_poses = numposes;
-        m.num_anims = numanims;
-        m.num_frames = numframes;
+        m.num_anims = q->numanims;
+        m.num_frames = q->numframes;
         m.iqm = q;
         m.curframe = model_animate(m, 0);
 
-        //m.num_textures = nummeshes; // assume 1 texture only per mesh
-        #undef textures
+        //m.num_textures = q->nummeshes; // assume 1 texture only per mesh
         m.textures = (q->textures);
-        #define textures (q->textures)
 
         m.flags = flags;
 
@@ -3445,9 +3422,9 @@ bool model_get_bone_pose(model_t m, unsigned joint, mat34 *out) {
     if(!m.iqm) return false;
     iqm_t *q = m.iqm;
 
-    if(joint >= numjoints) return false;
+    if(joint >= q->numjoints) return false;
 
-    multiply34x2(*out, outframe[joint], baseframe[joint]);
+    multiply34x2(*out, q->outframe[joint], q->baseframe[joint]);
     return true;
 }
 
@@ -3456,6 +3433,26 @@ anim_t clip(float minframe, float maxframe, float blendtime, unsigned flags) {
 }
 anim_t loop(float minframe, float maxframe, float blendtime, unsigned flags) {
     return clip(minframe, maxframe, blendtime, flags | ANIM_LOOP);
+}
+
+array(anim_t) animlist(const char *pathfile) {
+    anim_t *animlist = 0;
+    char *anim_file = vfs_read(strendi(pathfile,".txt") ? pathfile : va("%s@animlist.txt", pathfile));
+    if( anim_file ) {
+        // deserialize anim
+        for each_substring(anim_file, "\r\n", anim) {
+            int from, to;
+            char anim_name[128] = {0};
+            if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
+            array_push(animlist, !!strstri(anim_name, "loop") || !strcmpi(anim_name, "idle") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
+            array_back(animlist)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
+        }
+    } else {
+        // placeholder
+        array_push(animlist, clip(0,1,0,0));
+        array_back(animlist)->name = STRDUP("Error"); // @leak
+    }
+    return animlist;
 }
 
 static
@@ -3495,18 +3492,18 @@ float model_animate_blends(model_t m, anim_t *primary, anim_t *secondary, float 
     unsigned frame4 = secondary->pose.y;
     float    alphaB = secondary->pose.z;
 
-    mat34 *mat1 = &frames[frame1 * numjoints];
-    mat34 *mat2 = &frames[frame2 * numjoints];
-    mat34 *mat3 = &frames[frame3 * numjoints];
-    mat34 *mat4 = &frames[frame4 * numjoints];
+    mat34 *mat1 = &q->frames[frame1 * q->numjoints];
+    mat34 *mat2 = &q->frames[frame2 * q->numjoints];
+    mat34 *mat3 = &q->frames[frame3 * q->numjoints];
+    mat34 *mat4 = &q->frames[frame4 * q->numjoints];
 
-    for(int i = 0; i < numjoints; i++) {
+    for(int i = 0; i < q->numjoints; i++) {
         mat34 matA, matB, matF;
         lerp34(matA, mat1[i], mat2[i], alphaA);
         lerp34(matB, mat3[i], mat4[i], alphaB);
         lerp34(matF, matA, matB, alpha );
-        if(joints[i].parent >= 0) multiply34x2(outframe[i], outframe[joints[i].parent], matF);
-        else copy34(outframe[i], matF);
+        if(q->joints[i].parent >= 0) multiply34x2(q->outframe[i], q->outframe[q->joints[i].parent], matF);
+        else copy34(q->outframe[i], matF);
     }
 
     return frame1 + alpha;
@@ -3541,20 +3538,20 @@ float model_animate_clip(model_t m, float curframe, int minframe, int maxframe, 
     iqm_t *q = m.iqm;
 
     float retframe = -1;
-    if( numframes > 0 ) {
+    if( q->numframes > 0 ) {
         vec3 p = pose(curframe >= m.curframe, curframe, minframe, maxframe, loop, &retframe);
         int frame1 = p.x;
         int frame2 = p.y;
         float offset = p.z;
 
-        mat34 *mat1 = &frames[frame1 * numjoints];
-        mat34 *mat2 = &frames[frame2 * numjoints];
+        mat34 *mat1 = &q->frames[frame1 * q->numjoints];
+        mat34 *mat2 = &q->frames[frame2 * q->numjoints];
 
         // @todo: add animation blending and inter-frame blending here
-        for(int i = 0; i < numjoints; i++) {
+        for(int i = 0; i < q->numjoints; i++) {
             mat34 mat; lerp34(mat, mat1[i], mat2[i], offset);
-            if(joints[i].parent >= 0) multiply34x2(outframe[i], outframe[joints[i].parent], mat);
-            else copy34(outframe[i], mat);
+            if(q->joints[i].parent >= 0) multiply34x2(q->outframe[i], q->outframe[q->joints[i].parent], mat);
+            else copy34(q->outframe[i], mat);
         }
     }
 
@@ -3565,20 +3562,20 @@ void model_render_skeleton(model_t m, mat44 M) {
     if(!m.iqm) return;
     iqm_t *q = m.iqm;
 
-    if(!numjoints) return;
+    if(!q->numjoints) return;
 
     ddraw_ontop_push(true);
     ddraw_color_push(RED);
 
-    for( int joint = 0; joint < numjoints; joint++ ) {
-        if( joints[joint].parent < 0) continue;
+    for( int joint = 0; joint < q->numjoints; joint++ ) {
+        if( q->joints[joint].parent < 0) continue;
 
         // bone space...
         mat34 f;
         model_get_bone_pose(m, joint, &f);
         vec3 pos = vec3(f[3],f[7],f[11]);
 
-        model_get_bone_pose(m, joints[joint].parent, &f);
+        model_get_bone_pose(m, q->joints[joint].parent, &f);
         vec3 src = vec3(f[3],f[7],f[11]);
 
         // ...to model space
@@ -3606,7 +3603,7 @@ void model_render_skeleton(model_t m, mat44 M) {
 float model_animate(model_t m, float curframe) {
     if(!m.iqm) return -1;
     iqm_t *q = m.iqm;
-    return model_animate_clip(m, curframe, 0, numframes-1, true);
+    return model_animate_clip(m, curframe, 0, q->numframes-1, true);
 }
 
 static
@@ -3614,19 +3611,19 @@ void model_draw_call(model_t m, int shader) {
     if(!m.iqm) return;
     iqm_t *q = m.iqm;
 
-    glBindVertexArray( vao );
+    glBindVertexArray( q->vao );
 
     struct iqmtriangle *tris = NULL;
-    for(int i = 0; i < nummeshes; i++) {
-        struct iqmmesh *im = &meshes[i];
+    for(int i = 0; i < q->nummeshes; i++) {
+        struct iqmmesh *im = &q->meshes[i];
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[i] );
+        glBindTexture(GL_TEXTURE_2D, q->textures[i] );
         glUniform1i(glGetUniformLocation(shader, "u_texture2d"), 0 );
 
         int loc;
         if ((loc = glGetUniformLocation(shader, "u_textured")) >= 0) {
-            bool textured = !!textures[i] && textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
+            bool textured = !!q->textures[i] && q->textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
             glUniform1i(loc, textured ? GL_TRUE : GL_FALSE);
             if ((loc = glGetUniformLocation(shader, "u_diffuse")) >= 0) {
                 glUniform4f(loc, m.materials[i].layer[0].color.r, m.materials[i].layer[0].color.g, m.materials[i].layer[0].color.b, m.materials[i].layer[0].color.a);
@@ -3686,10 +3683,10 @@ aabb aabb_transform( aabb A, mat44 M ) {
 
 aabb model_aabb(model_t m, mat44 transform) {
     iqm_t *q = m.iqm;
-    if( q && bounds ) {
-    int f = ( (int)m.curframe ) % (numframes + !numframes);
-    vec3 bbmin = ptr3(bounds[f].bbmin);
-    vec3 bbmax = ptr3(bounds[f].bbmax);
+    if( q && q->bounds ) {
+    int f = ( (int)m.curframe ) % (q->numframes + !q->numframes);
+    vec3 bbmin = ptr3(q->bounds[f].bbmin);
+    vec3 bbmax = ptr3(q->bounds[f].bbmax);
     return aabb_transform(aabb(bbmin,bbmax), transform);
     }
     return aabb(vec3(0,0,0),vec3(0,0,0));
@@ -3704,62 +3701,22 @@ void model_destroy(model_t m) {
 
     iqm_t *q = m.iqm;
 //    if(m.mesh) mesh_destroy(m.mesh);
-    FREE(outframe);
-    FREE(colormaps);
-    FREE(textures);
-    FREE(baseframe);
-    FREE(inversebaseframe);
-    if(animdata != meshdata) FREE(animdata);
-    //FREE(meshdata);
-    FREE(frames);
-    FREE(buf);
+    FREE(q->outframe);
+    FREE(q->colormaps);
+    FREE(q->textures);
+    FREE(q->baseframe);
+    FREE(q->inversebaseframe);
+    if(q->animdata != q->meshdata) FREE(q->animdata);
+    //FREE(q->meshdata);
+    FREE(q->frames);
+    FREE(q->buf);
     FREE(q);
 }
 
-#undef program
-#undef meshdata
-#undef animdata
-#undef nummeshes
-#undef numtris
-#undef numverts
-#undef numjoints
-#undef numframes
-#undef numanims
-#undef meshes
-#undef textures
-#undef joints
-#undef poses
-#undef anims
-#undef baseframe
-#undef inversebaseframe
-#undef outframe
-#undef frames
-#undef vao
-#undef ibo
-#undef vbo
-#undef bonematsoffset
-#undef buf
-#undef bounds
-#undef colormaps
-
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
-    char *anim_file = vfs_read(strendi(pathfile,".txt") ? pathfile : va("%s@animlist.txt", pathfile));
-    if( anim_file ) {
-        // deserialize anim
-        a.speed = 1.0;
-        for each_substring(anim_file, "\r\n", anim) {
-            int from, to;
-            char anim_name[128] = {0};
-            if( sscanf(anim, "%*s %d-%d %127[^\r\n]", &from, &to, anim_name) != 3) continue;
-            array_push(a.anims, !!strstri(anim_name, "loop") || !strcmpi(anim_name, "idle") ? loop(from, to, 0, 0) : clip(from, to, 0, 0)); // [from,to,flags]
-            array_back(a.anims)->name = strswap(strswap(strswap(STRDUP(anim_name), "Loop", ""), "loop", ""), "()", ""); // @leak
-        }
-    } else {
-        // placeholder
-        array_push(a.anims, clip(0,1,0,0));
-        array_back(a.anims)->name = STRDUP("Error"); // @leak
-    }
+    a.speed = 1.0;
+    a.anims = animlist(pathfile);
     return a;
 }
 

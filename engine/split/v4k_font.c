@@ -1501,7 +1501,7 @@ in vec4 instanceGlyph;\n\
 uniform sampler2D sampler_font;\n\
 uniform sampler2D sampler_meta;\n\
 \n\
-uniform float offset_firstline; // ascent - descent - linegap/2\n\
+uniform float offset_firstline; // ascent\n\
 uniform float scale_factor;     // scaling factor proportional to font size\n\
 uniform vec2 string_offset;     // offset of upper-left corner\n\
 \n\
@@ -1664,6 +1664,20 @@ void ui_font() {
             ui_collapse_end();
         }
     }
+}
+
+void font_scale(const char *tag, int s, float v) {
+    font_init();
+
+    if (s < 0 || s >= 10) return;
+
+    unsigned index = *tag - FONT_FACE1[0];
+    if( index > FONTS_MAX ) return;
+
+    font_t *f = &fonts[index];
+    if (!f->initialized) return;
+
+    f->scale[s] = v / f->font_size;
 }
 
 void font_scales(const char *tag, float h1, float h2, float h3, float h4, float h5, float h6) {
@@ -2048,7 +2062,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
     font_t *f = &fonts[0];
     int S = 3;
     uint32_t color = 0;
-    float X = 0, Y = 0, W = 0, L = f->ascent*f->factor*f->scale[S], LL = L; // LL=largest linedist
+    float X = 0, Y = 0, W = 0, L = f->ascent*f->factor*f->scale[S], LL = 0; // LL=largest linedist
     offset.y = -offset.y; // invert y polarity
 
     // utf8 to utf32
@@ -2080,6 +2094,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
 
             // change size
             S = ch;
+            //@hack: use descent when we use >H4
             L = f->ascent*f->factor*f->scale[S];
             if(L > LL) LL = L;
             continue;
@@ -2096,7 +2111,24 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
 
             // change face
             f = &fonts[ ch - 0x10 ];
+            L = f->ascent*f->factor*f->scale[S];
+            if(L > LL) LL = L;
             }
+            continue;
+        }
+
+        if (!LL)
+            LL = L;
+
+        if (ch == FONT_LEFT[0] && (
+            (unicode[i+1]) == FONT_LEFT[1] ||
+            (unicode[i+1]) == FONT_CENTER[1] ||
+            (unicode[i+1]) == FONT_RIGHT[1] ||
+            (unicode[i+1]) == FONT_TOP[1] ||
+            (unicode[i+1]) == FONT_MIDDLE[1] ||
+            (unicode[i+1]) == FONT_BASELINE[1] ||
+            (unicode[i+1]) == FONT_BOTTOM[1]
+            )) {
             continue;
         }
 
@@ -2354,25 +2386,25 @@ void font_goto(float x, float y) {
 }
 
 // Print and linefeed. Text may include markup code
-vec2 font_print(const char *text) {
+vec2 font_print_rect(const char *text, vec4 rect) {
     // @fixme: remove this hack
     if( text[0] == FONT_LEFT[0] ) {
         int l = text[1] == FONT_LEFT[1];
         int c = text[1] == FONT_CENTER[1];
         int r = text[1] == FONT_RIGHT[1];
         if( l || c || r ) {
-            vec2 rect = font_rect(text + 2);
-            gotoxy.x = l ? 0 : r ? (window_width() - rect.x) : window_width()/2 - rect.x/2;
-            return font_print(text + 2);
+            vec2 text_rect = font_rect(text + 2);
+            gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
+            return font_print_rect(text + 2, rect);
         }
         int t = text[1] == FONT_TOP[1];
         int b = text[1] == FONT_BOTTOM[1];
         int m = text[1] == FONT_MIDDLE[1];
         int B = text[1] == FONT_BASELINE[1];
         if( t || b || m || B ) {
-            vec2 rect = font_rect(text + 2);
-            gotoxy.y = t ? 0 : b ? (window_height() - rect.y) : m ? window_height()/2-rect.y/2 : window_height()/2-rect.y/1;
-            return font_print(text + 2);
+            vec2 text_rect = font_rect(text + 2);
+            gotoxy.y = t ? rect.y : b ? ((rect.y+rect.w) - text_rect.y) : m ? rect.y+rect.w/2.-text_rect.y/2. : rect.y+rect.w/2.-text_rect.y/1;
+            return font_print_rect(text + 2, rect);
         }
     }
 
@@ -2380,6 +2412,11 @@ vec2 font_print(const char *text) {
     gotoxy.y += strchr(text, '\n') ? dims.y : 0;
     gotoxy.x =  strchr(text, '\n') ? 0 : gotoxy.x + dims.x;
     return dims;
+}
+
+vec2 font_print(const char *text) {
+    vec4 dims = {0, 0, window_width(), window_height()};
+    return font_print_rect(text, dims);
 }
 
 // Print a code snippet with syntax highlighting

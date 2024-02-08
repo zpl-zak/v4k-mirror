@@ -202,6 +202,8 @@ void object_update(object_t *obj) {
     quat p = eulerq(vec3(obj->pivot.x,obj->pivot.y,obj->pivot.z));
     quat e = eulerq(vec3(obj->euler.x,obj->euler.y,obj->euler.z));
     compose44(obj->transform, obj->pos, mulq(e, p), obj->sca);
+
+
 }
 
 object_t object() {
@@ -249,6 +251,11 @@ vec3 object_position(object_t *obj) {
 
 void object_model(object_t *obj, model_t model) {
     obj->model = model;
+}
+
+void object_anim(object_t *obj, anim_t anim, float speed) {
+    obj->anim = anim;
+    obj->anim_speed = speed;
 }
 
 void object_push_diffuse(object_t *obj, texture_t tex) {
@@ -518,6 +525,7 @@ void scene_render(int flags) {
         for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
             object_t *obj = scene_index(j);
             model_t *model = &obj->model;
+            anim_t *anim = &obj->anim;
             mat44 *views = (mat44*)(&cam->view);
 
             // @todo: avoid heap allocs here?
@@ -540,6 +548,11 @@ void scene_render(int flags) {
             if ( flags&SCENE_UPDATE_SH_COEF ) {
                 shader_bind(model->program);
                 shader_vec3v("u_coefficients_sh", 9, last_scene->skybox.cubemap.sh);
+            }
+
+            if (anim) {
+                float delta = window_delta() * obj->anim_speed;
+                model->curframe = model_animate_clip(*model, model->curframe + delta, anim->from, anim->to, anim->flags & ANIM_LOOP );
             }
 
             model->billboard = obj->billboard;

@@ -43,6 +43,8 @@ typedef struct object_t {
     vec3 sca, pos, euler, pivot;
     array(handle) textures;
     model_t model;
+    anim_t anim;
+    float anim_speed;
     aabb bounds;
     unsigned billboard; // [0..7] x(4),y(2),z(1) masks
     bool light_cached; //< used by scene to update light data
@@ -57,6 +59,7 @@ API vec3 object_position(object_t *obj);
 API void object_scale(object_t *obj, vec3 sca);
 //
 API void object_model(object_t *obj, model_t model);
+API void object_anim(object_t *obj, anim_t anim, float speed);
 API void object_diffuse(object_t *obj, texture_t tex);
 API void object_diffuse_push(object_t *obj, texture_t tex);
 API void object_diffuse_pop(object_t *obj);

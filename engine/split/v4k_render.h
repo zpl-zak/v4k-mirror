@@ -492,7 +492,7 @@ typedef struct anim_t {
 
 API anim_t clip(float minframe, float maxframe, float blendtime, unsigned flags);
 API anim_t loop(float minframe, float maxframe, float blendtime, unsigned flags);
-//API array(anim_t) animlist(const char *filename); // @todo
+API array(anim_t) animlist(const char *filename);
 
 // -----------------------------------------------------------------------------
 // models

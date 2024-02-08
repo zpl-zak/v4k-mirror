@@ -102,14 +102,15 @@ int main() {
         //font_print(FONT_LEFT "Left" FONT_CENTER "Center" FONT_RIGHT "Right\n");
 
         // ... alignment must be the first tag in a string for now. this is a temporary hack.
+        font_goto(0, window_height()*3/4.);
         font_print(FONT_LEFT     "left");
         font_print(FONT_CENTER   "center");
         font_print(FONT_RIGHT    "right");
 
-        font_print(FONT_TOP      FONT_CENTER "top\n");
-        font_print(FONT_MIDDLE   FONT_RIGHT  "middle\n");
-        font_print(FONT_BASELINE FONT_RIGHT  "baseline\n");
-        font_print(FONT_BOTTOM   FONT_CENTER "bottom\n");
+        font_print(FONT_TOP      FONT_CENTER "top");
+        font_print(FONT_MIDDLE   FONT_RIGHT  "middle");
+        font_print(FONT_BASELINE FONT_RIGHT  "baseline");
+        font_print(FONT_BOTTOM   FONT_CENTER "bottom");
 
         {
             vec2 pos = vec2(1290,120);
@@ -126,7 +127,7 @@ int main() {
         {
             vec2 pos = vec2(830,80);
             ddraw_push_2d();
-            char *txt =  "Very iffy global text.";
+            char *txt = "Very iffy global text.";
             font_goto(pos.x, pos.y);
             vec2 size=font_rect(txt);
 
@@ -138,7 +139,19 @@ int main() {
         {
             vec2 pos = vec2(830,160);
             ddraw_push_2d();
-            char *txt =  FONT_H1 "Very iffy global text.";
+            char *txt = FONT_H1 "Very iffy global text.";
+            font_goto(pos.x, pos.y);
+            vec2 size=font_rect(txt);
+
+            ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y,0));
+            font_print(txt);
+            ddraw_pop_2d();
+        }
+
+        for (int i = 1; i <= 6; i++) {
+            vec2 pos = vec2(830,550 + 55*(i+1));
+            ddraw_push_2d();
+            char *txt = va("%cTest line %d", i, i);
             font_goto(pos.x, pos.y);
             vec2 size=font_rect(txt);
 

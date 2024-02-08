@@ -674,11 +674,13 @@ typedef struct font_metrics_t {
 } font_metrics_t;
  void font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
  void font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
+ void font_scale(const char *face_tag, int scale_index, float value);
  void font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
  void font_color(const char *color_tag, uint32_t color);
  vec2 font_xy();
  void font_goto(float x, float y);
  vec2 font_print(const char *text);
+ vec2 font_print_rect(const char *text, vec4 rect);
  vec2 font_rect(const char *text);
  font_metrics_t font_metrics(const char *text);
  void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords);
@@ -1295,6 +1297,7 @@ typedef struct anim_t {
 } anim_t;
  anim_t clip(float minframe, float maxframe, float blendtime, unsigned flags);
  anim_t loop(float minframe, float maxframe, float blendtime, unsigned flags);
+ anim_t* animlist(const char *filename);
 enum MODEL_FLAGS {
     MODEL_NO_ANIMATIONS = 1,
     MODEL_NO_MESHES = 2,
@@ -1481,6 +1484,8 @@ typedef struct object_t {
     vec3 sca, pos, euler, pivot;
     handle* textures;
     model_t model;
+    anim_t anim;
+    float anim_speed;
     aabb bounds;
     unsigned billboard;
     bool light_cached;
@@ -1493,6 +1498,7 @@ typedef struct object_t {
  vec3 object_position(object_t *obj);
  void object_scale(object_t *obj, vec3 sca);
  void object_model(object_t *obj, model_t model);
+ void object_anim(object_t *obj, anim_t anim, float speed);
  void object_diffuse(object_t *obj, texture_t tex);
  void object_diffuse_push(object_t *obj, texture_t tex);
  void object_diffuse_pop(object_t *obj);

@@ -2197,13 +2197,14 @@ enum FONT_FLAGS {
 typedef struct font_metrics_t {
     float ascent;   // max distance above baseline for all glyphs
     float descent;  // max distance below baseline for all glyphs
-    float linegap;  // distance betwen ascent of next line and descent of current line
+    float linegap;  // distance between ascent of next line and descent of current line
     float linedist; // distance between the baseline of two lines (ascent - descent + linegap)
 } font_metrics_t;
 
 // configures
 API void  font_face(const char *face_tag, const char *filename_ttf, float font_size, unsigned flags);
 API void  font_face_from_mem(const char *tag, const void *ttf_buffer, unsigned ttf_len, float font_size, unsigned flags);
+API void  font_scale(const char *face_tag, int scale_index, float value);
 API void  font_scales(const char *face_tag, float h1, float h2, float h3, float h4, float h5, float h6);
 API void  font_color(const char *color_tag, uint32_t color);
 
@@ -2211,6 +2212,7 @@ API void  font_color(const char *color_tag, uint32_t color);
 API vec2           font_xy();
 API void           font_goto(float x, float y);
 API vec2           font_print(const char *text);
+API vec2           font_print_rect(const char *text, vec4 rect);
 API vec2           font_rect(const char *text);
 API font_metrics_t font_metrics(const char *text);
 //  void  font_clip(vec2 topleft, vec2 bottomright);
@@ -3576,7 +3578,7 @@ typedef struct anim_t {
 
 API anim_t clip(float minframe, float maxframe, float blendtime, unsigned flags);
 API anim_t loop(float minframe, float maxframe, float blendtime, unsigned flags);
-//API array(anim_t) animlist(const char *filename); // @todo
+API array(anim_t) animlist(const char *filename);
 
 // -----------------------------------------------------------------------------
 // models
@@ -3856,6 +3858,8 @@ typedef struct object_t {
     vec3 sca, pos, euler, pivot;
     array(handle) textures;
     model_t model;
+    anim_t anim;
+    float anim_speed;
     aabb bounds;
     unsigned billboard; // [0..7] x(4),y(2),z(1) masks
     bool light_cached; //< used by scene to update light data
@@ -3870,6 +3874,7 @@ API vec3 object_position(object_t *obj);
 API void object_scale(object_t *obj, vec3 sca);
 //
 API void object_model(object_t *obj, model_t model);
+API void object_anim(object_t *obj, anim_t anim, float speed);
 API void object_diffuse(object_t *obj, texture_t tex);
 API void object_diffuse_push(object_t *obj, texture_t tex);
 API void object_diffuse_pop(object_t *obj);
