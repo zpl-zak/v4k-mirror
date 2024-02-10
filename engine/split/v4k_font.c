@@ -2248,7 +2248,7 @@ vec2 font_clip(const char *text, vec4 rect) {
         }
         vec2 dims = font_draw_ex(text, gotoxy, rect, NULL, font_draw_cmd);
         gotoxy.y += strchr(text, '\n') ? dims.y : 0;
-        gotoxy.x  = strchr(text, '\n') ? gotoxy.x + rect.x : gotoxy.x + dims.x;
+        gotoxy.x += !strchr(text, '\n') ? dims.x : 0;
         return dims;
     }
 }
@@ -2332,7 +2332,7 @@ vec2 font_highlight(const char *text, const void *colors) {
     vec4 screen_dim = {0, 0, window_width(), window_height()};
     vec2 dims = font_draw_ex(text, gotoxy, screen_dim, (const char *)colors, font_draw_cmd);
     gotoxy.y += strchr(text, '\n') ? dims.y : 0;
-    gotoxy.x += !strchr(text, '\n') ? gotoxy.x + dims.x : 0;
+    gotoxy.x += !strchr(text, '\n') ? dims.x : 0;
     return dims;
 }
 
