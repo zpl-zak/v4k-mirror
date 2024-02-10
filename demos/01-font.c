@@ -52,12 +52,21 @@ int main() {
     array(char*) lines = 0;
     for each_substring( vfs_read("pangrams.txt"), "\r\n", it ) array_push(lines, STRDUP(it));
 
+    // panning controls
+    vec2 cursor;
+
     // demo loop
     while( window_swap() && !input(KEY_ESC) ) {
         ddraw_grid(0);
 
+        // pan the viewport
+        if (input(MOUSE_L)) {
+            cursor.x += input_diff(MOUSE_X);
+            cursor.y += input_diff(MOUSE_Y);
+        }
+
         // initial spacing
-        font_goto(0, 50);
+        font_goto(cursor.x, cursor.y + 50);
 
         // print a code snippet with syntax highlighting
         font_highlight(source, colors);
@@ -114,7 +123,7 @@ int main() {
         font_print(FONT_BOTTOM   FONT_CENTER "bottom");
 
         {
-            vec2 pos = vec2(1290,120);
+            vec2 pos = vec2(cursor.x + 1290, cursor.y + 120);
             ddraw_push_2d();
             char *txt = "This is the first line.\nAnd now the second line.\nYou can do a third great line, too!\n";
             font_goto(pos.x, pos.y);
@@ -126,7 +135,7 @@ int main() {
         }
 
         {
-            vec2 pos = vec2(1490,820);
+            vec2 pos = vec2(cursor.x + 1490, cursor.y + 820);
             ddraw_push_2d();
             char *txt = FONT_JUSTIFY FONT_MIDDLE "This is the first line.\nAnd now the second line.\nYou can do a third great line, too!\nNow this is a very long line aaaaaaaaaa!\n";
             font_goto(pos.x, pos.y);
@@ -139,7 +148,7 @@ int main() {
 
         static float max_width = 300.0f;
         {
-            vec2 pos = vec2(2000,240);
+            vec2 pos = vec2(cursor.x + 2000, cursor.y + 240);
             ddraw_push_2d();
             char *txt = "This is the first line.\n \nAnd now the second line.\n \nYou can do a third great line, too!\n \nNow this is a very long line aaaaaaaaaa!\n";
             font_goto(pos.x, pos.y);
@@ -152,7 +161,7 @@ int main() {
         }
 
         {
-            vec2 pos = vec2(1490,240);
+            vec2 pos = vec2(cursor.x + 1490, cursor.y + 240);
             ddraw_push_2d();
             char *txt = "This is the first line.\nAnd now the second line.\nYou can do a third great line, too!\nNow this is a very long line aaaaaaaaaa!\n";
             font_goto(pos.x, pos.y);
@@ -165,7 +174,7 @@ int main() {
         }
 
         {
-            vec2 pos = vec2(1990,820);
+            vec2 pos = vec2(cursor.x + 1990, cursor.y + 820);
             ddraw_push_2d();
             char *txt = FONT_RIGHT FONT_BOTTOM 
                         FONT_WHITE "This is the first line.\n" 
@@ -182,7 +191,7 @@ int main() {
         }
 
         {
-            vec2 pos = vec2(830,80);
+            vec2 pos = vec2(cursor.x + 830, cursor.y + 80);
             ddraw_push_2d();
             char *txt = "Very iffy global text.";
             font_goto(pos.x, pos.y);
@@ -194,7 +203,7 @@ int main() {
         }
 
         {
-            vec2 pos = vec2(830,160);
+            vec2 pos = vec2(cursor.x + 830, cursor.y + 160);
             ddraw_push_2d();
             char *txt = FONT_H1 "Very iffy global text.";
             font_goto(pos.x, pos.y);
@@ -206,7 +215,7 @@ int main() {
         }
 
         for (int i = 1; i <= 6; i++) {
-            vec2 pos = vec2(830,550 + 55*(i+1));
+            vec2 pos = vec2(cursor.x + 830, cursor.y + 550 + 55*(i+1));
             ddraw_push_2d();
             char *txt = va("%cTest line %d", i, i);
             font_goto(pos.x, pos.y);
