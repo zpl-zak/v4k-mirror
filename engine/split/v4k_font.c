@@ -2145,6 +2145,234 @@ vec2 font_draw_ex(const char *text, vec2 offset, vec4 rect, const char *col, voi
     return abs2(vec2(W*W > X*X ? W : X, Y*Y > LL*LL ? Y : LL));
 }
 
+static vec2 gotoxy = {0};
+
+// Return cursor
+vec2 font_xy() {
+    return gotoxy;
+}
+
+// Relocate cursor
+void font_goto(float x, float y) {
+    gotoxy = vec2(x, y);
+}
+
+// Print and linefeed. Text may include markup code
+vec2 font_clip(const char *text, vec4 rect) {
+    int l=0,c=0,r=0,j=0,t=0,b=0,m=0,B=0;
+
+    while ( text[0] == FONT_LEFT[0] ) {
+        int has_set=0;
+        if (text[1] == FONT_LEFT[1]) l = 1, has_set=1;
+        if (text[1] == FONT_CENTER[1]) c = 1, has_set=1;
+        if (text[1] == FONT_RIGHT[1]) r = 1, has_set=1;
+        if (text[1] == FONT_JUSTIFY[1]) j = 1, has_set=1;
+        if (text[1] == FONT_TOP[1]) t = 1, has_set=1;
+        if (text[1] == FONT_BOTTOM[1]) b = 1, has_set=1;
+        if (text[1] == FONT_MIDDLE[1]) m = 1, has_set=1;
+        if (text[1] == FONT_BASELINE[1]) B = 1, has_set=1;
+        if (!has_set) break;
+        else text += 2;
+    }
+    
+    int num_newlines = 0;
+    for (int i = 0, end = strlen(text); i < end; ++i) {
+        if (text[i] == '\n') ++num_newlines; 
+    }
+
+    if (num_newlines > 1) {
+        vec2 text_dims = font_rect(text);
+        char tags[4] = {0};
+        int t=0;
+        while (*text) {
+            char ch = *text;
+
+            if( (ch >= 1 && ch <= 6) ||
+                (ch >= 0x1a && ch <= 0x1f) ||
+                (ch >= 0x10 && ch <= 0x19)) {
+                if (t < sizeof(tags)) tags[t++] = ch;
+            }
+            else break;
+            ++text;
+        }
+        array(char *) lines = strsplit(text, "\n");
+        if (b) {
+            gotoxy.y += (rect.w - text_dims.y);
+        }
+        if (m) {
+            gotoxy.y += (rect.w/2. - text_dims.y/2.);
+        }
+        if (B) {
+            gotoxy.y += (rect.w/2. - text_dims.y/1.);
+        }
+        for (int i = 0; i < array_count(lines); i++) {
+            char *line = va("%s%s\n", tags, lines[i]);
+            vec2 text_rect = font_rect(line);
+            if( l || c || r ) {
+                gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
+            } else if (j) {
+                float words_space = 0.0f;
+                array(char *) words = strsplit(lines[i], " ");
+                for (int k = 0; k < array_count(words); ++k) {
+                    words_space += font_rect(words[k]).x;
+                }
+                if (array_count(words) == 0) {
+                    gotoxy.y += text_rect.y;    
+                    continue;
+                }
+                float extra_space = rect.z - words_space;
+                int gaps = array_count(words) - 1;
+                float space_offset = gaps > 0 ? extra_space / (float)gaps : 0;
+                for (int k = 0; k < array_count(words); ++k) {
+                    vec2 dims = font_draw_ex(va("%s%s", tags, words[k]), gotoxy, rect, NULL, font_draw_cmd);
+                    gotoxy.x += dims.x + space_offset;
+                }
+                gotoxy.x = rect.x;
+            } 
+
+            if (!j) {
+                font_draw_ex(line, gotoxy, rect, NULL, font_draw_cmd);
+            }
+
+            gotoxy.y += text_rect.y;
+        }
+        return text_dims;
+    } else {
+        if( l || c || r ) {
+            vec2 text_rect = font_rect(text);
+            gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
+        }
+        if( t || b || m || B ) {
+            vec2 text_rect = font_rect(text);
+            gotoxy.y = t ? rect.y : b ? ((rect.y+rect.w) - text_rect.y) : m ? rect.y+rect.w/2.-text_rect.y/2. : rect.y+rect.w/2.-text_rect.y/1;
+        }
+        vec2 dims = font_draw_ex(text, gotoxy, rect, NULL, font_draw_cmd);
+        gotoxy.y += strchr(text, '\n') ? dims.y : 0;
+        gotoxy.x =  strchr(text, '\n') ? rect.x : gotoxy.x + dims.x;
+        return dims;
+    }
+}
+
+vec2 font_print(const char *text) {
+    vec4 dims = {0, 0, window_width(), window_height()};
+    return font_clip(text, dims);
+}
+
+const char *font_wrap(const char *text, float max_width) {
+    // return early if the text fits the max_width already
+    if (font_rect(text).x <= max_width) {
+        return text;
+    }
+
+    // skip alignment flags and collect tags
+    while ( text[0] == FONT_LEFT[0] ) {
+        int has_set=0;
+        if (text[1] == FONT_LEFT[1]) has_set=1;
+        if (text[1] == FONT_CENTER[1]) has_set=1;
+        if (text[1] == FONT_RIGHT[1]) has_set=1;
+        if (text[1] == FONT_JUSTIFY[1]) has_set=1;
+        if (text[1] == FONT_TOP[1]) has_set=1;
+        if (text[1] == FONT_BOTTOM[1]) has_set=1;
+        if (text[1] == FONT_MIDDLE[1]) has_set=1;
+        if (text[1] == FONT_BASELINE[1]) has_set=1;
+        if (!has_set) break;
+        else text += 2;
+    }
+
+    char tags[4] = {0};
+    int t=0;
+    while (*text) {
+        char ch = *text;
+
+        if( (ch >= 1 && ch <= 6) ||
+            (ch >= 0x1a && ch <= 0x1f) ||
+            (ch >= 0x10 && ch <= 0x19)) {
+            if (t < sizeof(tags)) tags[t++] = ch;
+        }
+        else break;
+        ++text;
+    }
+
+    array(char*) words = strsplit(text, " ");
+    static __thread int slot = 0;
+    static __thread char *buf[16] = {0};
+
+    int len = strlen(text) + array_count(words);
+    slot = (slot+1) % 16;
+    buf[slot] = REALLOC(buf[slot], len+1);
+    memset(buf[slot], 0, len+1);
+
+    char *out = buf[slot];
+
+    float width = 0.0f;
+    for (int i = 0; i < array_count(words); ++i) {
+        char *word = words[i];
+        float word_width = font_rect(va("%s%s ", tags, word)).x;
+        if (strstr(word, "\n")) {
+            width = word_width;
+            strcat(out, va("%s ", word));
+        } else {
+            if (width+word_width > max_width) {
+                width = 0.0f;
+                strcat(out, "\n");
+            }
+            width += word_width;
+            strcat(out, va("%s ", word));
+        }
+    }
+
+    // get rid of the space added at the end
+    out[strlen(out)] = 0;
+
+    return out;
+}
+
+// Print a code snippet with syntax highlighting
+vec2 font_highlight(const char *text, const void *colors) {
+    vec4 screen_dim = {0, 0, window_width(), window_height()};
+    vec2 dims = font_draw_ex(text, gotoxy, screen_dim, (const char *)colors, font_draw_cmd);
+    gotoxy.y += strchr(text, '\n') ? dims.y : 0;
+    gotoxy.x =  strchr(text, '\n') ? 0 : gotoxy.x + dims.x;
+    return dims;
+}
+
+// Calculate the size of a string, in the pixel size specified. Count stray newlines too.
+vec2 font_rect(const char *str) {
+    vec4 dims = {0, 0, window_width(), window_height()};
+    return font_draw_ex(str, gotoxy, dims, NULL, NULL);
+}
+
+font_metrics_t font_metrics(const char *text) {
+    font_metrics_t m={0};
+    int S = 3;
+    font_t *f = &fonts[0];
+
+    // utf8 to utf32
+    array(uint32_t) unicode = string32(text);
+
+    // parse string
+    for( int i = 0, end = array_count(unicode); i < end; ++i ) {
+        uint32_t ch = unicode[i];
+        if( ch >= 1 && ch <= 6 ) {
+            S = ch;
+            continue;
+        }
+        if( ch >= 0x1a && ch <= 0x1f ) {
+            if( fonts[ ch - 0x1a ].initialized) {
+                // change face
+                f = &fonts[ ch - 0x1a ];
+            }
+            continue;
+        }
+    }
+
+    m.ascent = f->ascent*f->factor*f->scale[S];
+    m.descent = f->descent*f->factor*f->scale[S];
+    m.linegap = f->linegap*f->factor*f->scale[S];
+    m.linedist = f->linedist*f->factor*f->scale[S];
+    return m;
+}
+
 void *font_colorize(const char *text, const char *comma_types, const char *comma_keywords) {
     // reallocate memory
     static __thread int slot = 0;
@@ -2367,161 +2595,3 @@ void *font_colorize(const char *text, const char *comma_types, const char *comma
     return col;
 }
 
-static vec2 gotoxy = {0};
-
-// Return cursor
-vec2 font_xy() {
-    return gotoxy;
-}
-
-// Relocate cursor
-void font_goto(float x, float y) {
-    gotoxy = vec2(x, y);
-}
-
-// Print and linefeed. Text may include markup code
-vec2 font_clip(const char *text, vec4 rect) {
-    int l=0,c=0,r=0,j=0,t=0,b=0,m=0,B=0;
-
-    while ( text[0] == FONT_LEFT[0] ) {
-        int has_set=0;
-        if (text[1] == FONT_LEFT[1]) l = 1, has_set=1;
-        if (text[1] == FONT_CENTER[1]) c = 1, has_set=1;
-        if (text[1] == FONT_RIGHT[1]) r = 1, has_set=1;
-        if (text[1] == FONT_JUSTIFY[1]) j = 1, has_set=1;
-        if (text[1] == FONT_TOP[1]) t = 1, has_set=1;
-        if (text[1] == FONT_BOTTOM[1]) b = 1, has_set=1;
-        if (text[1] == FONT_MIDDLE[1]) m = 1, has_set=1;
-        if (text[1] == FONT_BASELINE[1]) B = 1, has_set=1;
-        if (!has_set) break;
-        else text += 2;
-    }
-    
-    int num_newlines = 0;
-    for (int i = 0, end = strlen(text); i < end; ++i) {
-        if (text[i] == '\n') ++num_newlines; 
-    }
-
-    if (num_newlines > 1) {
-        vec2 text_dims = font_rect(text);
-        char tags[4] = {0};
-        int t=0;
-        while (*text) {
-            char ch = *text;
-
-            if( (ch >= 1 && ch <= 6) ||
-                (ch >= 0x1a && ch <= 0x1f) ||
-                (ch >= 0x10 && ch <= 0x19)) {
-                if (t < sizeof(tags)) tags[t++] = ch;
-            }
-            else break;
-            ++text;
-        }
-        array(char *) lines = strsplit(text, "\n");
-        if (b) {
-            gotoxy.y += (rect.w - text_dims.y);
-        }
-        if (m) {
-            gotoxy.y += (rect.w/2. - text_dims.y/2.);
-        }
-        if (B) {
-            gotoxy.y += (rect.w/2. - text_dims.y/1.);
-        }
-        for (int i = 0; i < array_count(lines); i++) {
-            char *line = va("%s%s\n", tags, lines[i]);
-            vec2 text_rect = font_rect(line);
-            if( l || c || r ) {
-                gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
-            } else if (j) {
-                float words_space = 0.0f;
-                array(char *) words = strsplit(lines[i], " ");
-                for (int k = 0; k < array_count(words); ++k) {
-                    words_space += font_rect(words[k]).x;
-                }
-                if (array_count(words) == 0) {
-                    gotoxy.y += text_rect.y;    
-                    continue;
-                }
-                float extra_space = rect.z - words_space;
-                int gaps = array_count(words) - 1;
-                float space_offset = gaps > 0 ? extra_space / (float)gaps : 0;
-                for (int k = 0; k < array_count(words); ++k) {
-                    vec2 dims = font_draw_ex(va("%s%s", tags, words[k]), gotoxy, rect, NULL, font_draw_cmd);
-                    gotoxy.x += dims.x + space_offset;
-                }
-                gotoxy.x = rect.x;
-            } 
-
-            if (!j) {
-                font_draw_ex(line, gotoxy, rect, NULL, font_draw_cmd);
-            }
-
-            gotoxy.y += text_rect.y;
-        }
-        return text_dims;
-    } else {
-        if( l || c || r ) {
-            vec2 text_rect = font_rect(text);
-            gotoxy.x = l ? rect.x : r ? ((rect.x+rect.z) - text_rect.x) : rect.x+rect.z/2. - text_rect.x/2.;
-        }
-        if( t || b || m || B ) {
-            vec2 text_rect = font_rect(text);
-            gotoxy.y = t ? rect.y : b ? ((rect.y+rect.w) - text_rect.y) : m ? rect.y+rect.w/2.-text_rect.y/2. : rect.y+rect.w/2.-text_rect.y/1;
-        }
-        vec2 dims = font_draw_ex(text, gotoxy, rect, NULL, font_draw_cmd);
-        gotoxy.y += strchr(text, '\n') ? dims.y : 0;
-        gotoxy.x =  strchr(text, '\n') ? rect.x : gotoxy.x + dims.x;
-        return dims;
-    }
-}
-
-vec2 font_print(const char *text) {
-    vec4 dims = {0, 0, window_width(), window_height()};
-    return font_clip(text, dims);
-}
-
-// Print a code snippet with syntax highlighting
-vec2 font_highlight(const char *text, const void *colors) {
-    vec4 screen_dim = {0, 0, window_width(), window_height()};
-    vec2 dims = font_draw_ex(text, gotoxy, screen_dim, (const char *)colors, font_draw_cmd);
-    gotoxy.y += strchr(text, '\n') ? dims.y : 0;
-    gotoxy.x =  strchr(text, '\n') ? 0 : gotoxy.x + dims.x;
-    return dims;
-}
-
-// Calculate the size of a string, in the pixel size specified. Count stray newlines too.
-vec2 font_rect(const char *str) {
-    vec4 dims = {0, 0, window_width(), window_height()};
-    return font_draw_ex(str, gotoxy, dims, NULL, NULL);
-}
-
-font_metrics_t font_metrics(const char *text) {
-    font_metrics_t m={0};
-    int S = 3;
-    font_t *f = &fonts[0];
-
-    // utf8 to utf32
-    array(uint32_t) unicode = string32(text);
-
-    // parse string
-    for( int i = 0, end = array_count(unicode); i < end; ++i ) {
-        uint32_t ch = unicode[i];
-        if( ch >= 1 && ch <= 6 ) {
-            S = ch;
-            continue;
-        }
-        if( ch >= 0x1a && ch <= 0x1f ) {
-            if( fonts[ ch - 0x1a ].initialized) {
-                // change face
-                f = &fonts[ ch - 0x1a ];
-            }
-            continue;
-        }
-    }
-
-    m.ascent = f->ascent*f->factor*f->scale[S];
-    m.descent = f->descent*f->factor*f->scale[S];
-    m.linegap = f->linegap*f->factor*f->scale[S];
-    m.linedist = f->linedist*f->factor*f->scale[S];
-    return m;
-}

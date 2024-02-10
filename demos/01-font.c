@@ -132,8 +132,22 @@ int main() {
             font_goto(pos.x, pos.y);
             vec2 size=font_rect(txt);
             font_metrics_t m=font_metrics(txt);
-            ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y-m.descent+m.linegap+100,0));
-            font_clip(txt, vec4(pos.x, pos.y, size.x, size.y+100));
+            ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y-m.descent+m.linegap,0));
+            font_clip(txt, vec4(pos.x, pos.y, size.x, size.y));
+            ddraw_pop_2d();
+        }
+
+        static float max_width = 300.0f;
+        {
+            vec2 pos = vec2(2000,240);
+            ddraw_push_2d();
+            char *txt = "This is the first line.\n \nAnd now the second line.\n \nYou can do a third great line, too!\n \nNow this is a very long line aaaaaaaaaa!\n";
+            font_goto(pos.x, pos.y);
+            const char *wrapped_text = font_wrap(txt, max_width);
+            vec2 size=font_rect(wrapped_text);
+            font_metrics_t m=font_metrics(wrapped_text);
+            ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y-m.descent+m.linegap,0));
+            font_clip(wrapped_text, vec4(pos.x, pos.y, size.x, size.y));
             ddraw_pop_2d();
         }
 
@@ -205,6 +219,11 @@ int main() {
 
         if (ui_panel("Fonts", 0)) {
             ui_font();
+            ui_panel_end();
+        }
+
+        if (ui_panel("Textbox", 0)) {
+            ui_float("Max width", &max_width);
             ui_panel_end();
         }
     }
