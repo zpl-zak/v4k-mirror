@@ -133,19 +133,37 @@ int main() {
             vec2 size=font_rect(txt);
             font_metrics_t m=font_metrics(txt);
             ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y-m.descent+m.linegap+100,0));
-            font_print_rect(txt, vec4(pos.x, pos.y, size.x, size.y+100));
+            font_clip(txt, vec4(pos.x, pos.y, size.x, size.y+100));
+            ddraw_pop_2d();
+        }
+
+        {
+            vec2 pos = vec2(1490,240);
+            ddraw_push_2d();
+            char *txt = "This is the first line.\nAnd now the second line.\nYou can do a third great line, too!\nNow this is a very long line aaaaaaaaaa!\n";
+            font_goto(pos.x, pos.y);
+            vec2 size=font_rect(txt);
+            size.y -= 20; // artifically shrink textbox to test clipping
+            font_metrics_t m=font_metrics(txt);
+            ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y-m.descent+m.linegap,0));
+            font_clip(txt, vec4(pos.x, pos.y, size.x, size.y));
             ddraw_pop_2d();
         }
 
         {
             vec2 pos = vec2(1990,820);
             ddraw_push_2d();
-            char *txt = FONT_RIGHT FONT_BOTTOM FONT_WHITE "This is the first line.\n" FONT_LIME "And now the second line.\n" FONT_WHITE "You can do a third" FONT_ORANGE " great" FONT_WHITE " line, too!\n";
+            char *txt = FONT_RIGHT FONT_BOTTOM 
+                        FONT_WHITE "This is the first line.\n" 
+                        FONT_LIME "And now the second line.\n" 
+                        FONT_WHITE "You can do a third" 
+                        FONT_ORANGE " great" 
+                        FONT_WHITE " line, too!\n";
             font_goto(pos.x, pos.y);
             vec2 size=font_rect(txt);
             font_metrics_t m=font_metrics(txt);
             ddraw_aabb(vec3(pos.x,pos.y,0), vec3(pos.x+size.x,pos.y+size.y-m.descent+m.linegap+100,0));
-            font_print_rect(txt, vec4(pos.x, pos.y, size.x, size.y+100));
+            font_clip(txt, vec4(pos.x, pos.y, size.x, size.y+100));
             ddraw_pop_2d();
         }
 

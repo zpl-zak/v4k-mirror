@@ -2213,10 +2213,9 @@ API void  font_color(const char *color_tag, uint32_t color);
 API vec2           font_xy();
 API void           font_goto(float x, float y);
 API vec2           font_print(const char *text);
-API vec2           font_print_rect(const char *text, vec4 rect);
+API vec2           font_clip(const char *text, vec4 rect);
 API vec2           font_rect(const char *text);
 API font_metrics_t font_metrics(const char *text);
-//  void  font_clip(vec2 topleft, vec2 bottomright);
 //  void  font_wrap(vec2 topleft, vec2 bottomright);
 
 // syntax highlighting

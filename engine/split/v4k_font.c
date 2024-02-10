@@ -1964,7 +1964,7 @@ void font_face(const char *tag, const char *filename_ttf, float font_size, unsig
 }
 
 static
-void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float factor, vec2 offset) {
+void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float factor, vec2 offset, vec4 rect) {
     // Backup GL state
     GLint last_program, last_vertex_array;
     GLint last_texture0, last_texture1, last_texture2;
@@ -1988,11 +1988,16 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
 
     GLboolean last_enable_blend      = glIsEnabled(GL_BLEND);
     GLboolean last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
+    GLboolean last_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
 
-    // Setup render state: alpha-blending enabled, no depth testing and bind textures
+    // Setup render state: alpha-blending enabled, no depth testing, enable clipping and bind textures
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // @fixme: store existing scissor test setup
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(rect.x, window_height() - (rect.y+rect.w), rect.z, rect.w);
 
     glDisable(GL_DEPTH_TEST);
 
@@ -2039,13 +2044,14 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
 
     (last_enable_depth_test ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST));
     (last_enable_blend ? glEnable(GL_BLEND) : glDisable(GL_BLEND));
+    (last_scissor_test ? glEnable(GL_SCISSOR_TEST) : glDisable(GL_SCISSOR_TEST));
 }
 
 // 1. call font_face() if it's the first time it's called.
 // 1. parse the string and update the instance vbo, then upload it
 // 1. draw the string
 static
-vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cmd)(font_t *,const float *,int,float,vec2)) {
+vec2 font_draw_ex(const char *text, vec2 offset, vec4 rect, const char *col, void (*draw_cmd)(font_t *,const float *,int,float,vec2,vec4)) {
     font_init();
 
     // sanity checks
@@ -2085,7 +2091,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         }
         if( ch >= 1 && ch <= 6 ) {
             // flush previous state
-            if(draw_cmd) draw_cmd(f, text_glyph_data, (t - text_glyph_data)/4, f->scale[S], offset);
+            if(draw_cmd) draw_cmd(f, text_glyph_data, (t - text_glyph_data)/4, f->scale[S], offset, rect);
             t = text_glyph_data;
 
             // reposition offset to align new baseline
@@ -2106,7 +2112,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         if( ch >= 0x10 && ch <= 0x19 ) {
             if( fonts[ ch - 0x10 ].initialized) {
             // flush previous state
-            if(draw_cmd) draw_cmd(f, text_glyph_data, (t - text_glyph_data)/4, f->scale[S], offset);
+            if(draw_cmd) draw_cmd(f, text_glyph_data, (t - text_glyph_data)/4, f->scale[S], offset, rect);
             t = text_glyph_data;
 
             // change face
@@ -2133,7 +2139,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, const char *col, void (*draw_cm
         X += f->cdata[cp].xadvance*f->scale[S];
     }
 
-    if(draw_cmd) draw_cmd(f, text_glyph_data, (t - text_glyph_data)/4, f->scale[S], offset);
+    if(draw_cmd) draw_cmd(f, text_glyph_data, (t - text_glyph_data)/4, f->scale[S], offset, rect);
 
     //if(strstr(text, "fps")) printf("(%f,%f) (%f) L:%f LINEDIST:%f\n", X, Y, W, L, f->linedist);
     return abs2(vec2(W*W > X*X ? W : X, Y*Y > LL*LL ? Y : LL));
@@ -2374,7 +2380,7 @@ void font_goto(float x, float y) {
 }
 
 // Print and linefeed. Text may include markup code
-vec2 font_print_rect(const char *text, vec4 rect) {
+vec2 font_clip(const char *text, vec4 rect) {
     int l=0,c=0,r=0,j=0,t=0,b=0,m=0,B=0;
 
     while ( text[0] == FONT_LEFT[0] ) {
@@ -2440,14 +2446,14 @@ vec2 font_print_rect(const char *text, vec4 rect) {
                 int gaps = array_count(words) - 1;
                 float space_offset = gaps > 0 ? extra_space / (float)gaps : 0;
                 for (int k = 0; k < array_count(words); ++k) {
-                    vec2 dims = font_draw_ex(va("%s%s", tags, words[k]), gotoxy, NULL, font_draw_cmd);
+                    vec2 dims = font_draw_ex(va("%s%s", tags, words[k]), gotoxy, rect, NULL, font_draw_cmd);
                     gotoxy.x += dims.x + space_offset;
                 }
                 gotoxy.x = rect.x;
             } 
 
             if (!j) {
-                font_draw_ex(line, gotoxy, NULL, font_draw_cmd);
+                font_draw_ex(line, gotoxy, rect, NULL, font_draw_cmd);
             }
 
             gotoxy.y += text_rect.y;
@@ -2462,7 +2468,7 @@ vec2 font_print_rect(const char *text, vec4 rect) {
             vec2 text_rect = font_rect(text);
             gotoxy.y = t ? rect.y : b ? ((rect.y+rect.w) - text_rect.y) : m ? rect.y+rect.w/2.-text_rect.y/2. : rect.y+rect.w/2.-text_rect.y/1;
         }
-        vec2 dims = font_draw_ex(text, gotoxy, NULL, font_draw_cmd);
+        vec2 dims = font_draw_ex(text, gotoxy, rect, NULL, font_draw_cmd);
         gotoxy.y += strchr(text, '\n') ? dims.y : 0;
         gotoxy.x =  strchr(text, '\n') ? rect.x : gotoxy.x + dims.x;
         return dims;
@@ -2471,12 +2477,13 @@ vec2 font_print_rect(const char *text, vec4 rect) {
 
 vec2 font_print(const char *text) {
     vec4 dims = {0, 0, window_width(), window_height()};
-    return font_print_rect(text, dims);
+    return font_clip(text, dims);
 }
 
 // Print a code snippet with syntax highlighting
 vec2 font_highlight(const char *text, const void *colors) {
-    vec2 dims = font_draw_ex(text, gotoxy, (const char *)colors, font_draw_cmd);
+    vec4 screen_dim = {0, 0, window_width(), window_height()};
+    vec2 dims = font_draw_ex(text, gotoxy, screen_dim, (const char *)colors, font_draw_cmd);
     gotoxy.y += strchr(text, '\n') ? dims.y : 0;
     gotoxy.x =  strchr(text, '\n') ? 0 : gotoxy.x + dims.x;
     return dims;
@@ -2484,7 +2491,8 @@ vec2 font_highlight(const char *text, const void *colors) {
 
 // Calculate the size of a string, in the pixel size specified. Count stray newlines too.
 vec2 font_rect(const char *str) {
-    return font_draw_ex(str, gotoxy, NULL, NULL);
+    vec4 dims = {0, 0, window_width(), window_height()};
+    return font_draw_ex(str, gotoxy, dims, NULL, NULL);
 }
 
 font_metrics_t font_metrics(const char *text) {
