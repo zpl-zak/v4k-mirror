@@ -40,7 +40,7 @@ if "%1"=="help" (
     echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
     echo %0 [prep]                  ; combine split files into a single-header file, ready for use
     echo %0 [sln]                   ; generate a xcode/gmake/ninja/visual studio solution
-    echo %0 [addons[ names ] ]     ; specify list of addons you want to compile with the engine
+    echo %0 [addons[ names ] ]      ; specify list of addons you want to compile with the engine
     echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel^|ret] [static^|dll] [nov4k^|nodemos^|editor] [vis] [-- args]
     echo    cl       \
     echo    tcc      ^|
