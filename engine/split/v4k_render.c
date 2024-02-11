@@ -3715,8 +3715,8 @@ void model_destroy(model_t m) {
 
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
-    a.speed = 1.0;
     a.anims = animlist(pathfile);
+    if(a.anims) a.speed = 1.0;
     return a;
 }
 
