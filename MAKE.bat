@@ -30,7 +30,7 @@ if "%1"=="help" (
     echo %0 [vps]                   ; upload the release to VPS
     echo %0 [tidy]                  ; clean up temp files
     echo %0 [bind]                  ; generate lua bindings
-    echo %0 [test]                  ; check untracked allocators in V4K
+    echo %0 [checkmem]              ; check untracked allocators in V4K
     echo %0 [todo]                  ; check for @fixme and @todo
     echo %0 [v4web]                 ; sync v4 website
     echo %0 [swap]                  ; toggle #line directives on/off
@@ -283,7 +283,7 @@ if "%1"=="fuse" (
 )
 
 rem check memory api calls
-if "%1"=="test" (
+if "%1"=="checkmem" (
     findstr /RNC:"[^_xv]realloc[(]"  engine\split\v4k*
     findstr /RNC:"[^_xv]REALLOC[(]"  engine\split\v4k*
     findstr /RNC:"[^_xv]MALLOC[(]"   engine\split\v4k*
@@ -292,6 +292,17 @@ if "%1"=="test" (
     findstr /RNC:"[^_xv]free[(]"     engine\split\v4k*
     findstr /RNC:"[^_xv]calloc[(]"   engine\split\v4k*
     findstr /RNC:"[^_xv]strdup[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]array_init[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]array_resize[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]array_reserve[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]array_push[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]array_push_front[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]array_free[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]array_free[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]set_init[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]set_insert[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]map_init[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]map_insert[(]"   engine\split\v4k*
     exit /b
 )
 
@@ -336,17 +347,6 @@ if "%1"=="vps" (
     exit /b
 )
 
-rem if "%1"=="fwk" (
-rem     pushd ..\fwk-mirror
-rem         git fetch
-rem         git reset --hard origin/main
-rem     popd
-rem     call make.bat split
-rem     call MAKE.bat fwk_prep
-rem     start "" fwk_diff.WinMerge
-rem     exit /b
-rem )
-
 if "%1"=="fwk" (
     pushd ..\fwk-mirror
         git fetch
@@ -361,7 +361,7 @@ if "%1"=="fwk" (
     copy/y ..\fwk-mirror\tools\*.c _fwk\tools\
     copy/y ..\fwk-mirror\demos\*.c _fwk\demos\
     rem copy/y ..\fwk-mirror\engine\split\3rd_*.c _fwk\engine\split\
-    call MAKE.bat back
+    call MAKE.bat fwk_back
 
     exit /b
 )
@@ -423,7 +423,7 @@ if "%1"=="fwk_prep" (
     exit /b
 )
 
-if "%1"=="back" (
+if "%1"=="fwk_back" (
     if not exist "_fwk" exit /b
     setlocal enabledelayedexpansion
 
@@ -533,9 +533,6 @@ if "%1"=="fwk_mir" (
     exit /b
 )
 
-rem copy demos to root folder. local changes are preserved
-rem echo n | copy /-y demos\*.c 1> nul 2> nul
-
 rem tidy environment
 if "%1"=="tidy" (
     move /y ??-*.png demos          > nul 2> nul
@@ -548,6 +545,7 @@ if "%1"=="tidy" (
     del *.exe.manifest              > nul 2> nul
     del tools\*.exp                 > nul 2> nul
     del *.lib                       > nul 2> nul
+    del *.tmp                       > nul 2> nul
     del *.exe                       > nul 2> nul
     del *.log                       > nul 2> nul
     del *.obj                       > nul 2> nul
