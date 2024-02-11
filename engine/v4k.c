@@ -10993,7 +10993,7 @@ const char *font_wrap(const char *text, float max_width) {
 
     array(char*) words = strsplit(text, " ");
     static __thread int slot = 0;
-    static __thread char *buf[16][FONT_MAX_STRING_LEN] = {0};
+    static __thread char buf[16][FONT_MAX_STRING_LEN] = {0};
 
     int len = strlen(text) + array_count(words);
     slot = (slot+1) % 16;

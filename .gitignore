@@ -20,3 +20,4 @@ libv4k.*
 *.dSYM
 .DS_store
 *.raddbg
+plugins
