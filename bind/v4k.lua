@@ -2008,9 +2008,9 @@ enum WINDOW_FLAGS {
     WINDOW_FIXED = 0x200,
     WINDOW_TRANSPARENT = 0x400,
     WINDOW_BORDERLESS = 0x800,
-    WINDOW_VSYNC = 0,
+    WINDOW_VSYNC_DISABLED = 0,
     WINDOW_VSYNC_ADAPTIVE = 0x1000,
-    WINDOW_VSYNC_DISABLED = 0x2000,
+    WINDOW_VSYNC = 0x2000,
 };
  bool window_create(float scale, unsigned flags);
  bool window_create_from_handle(void *handle, float scale, unsigned flags);
