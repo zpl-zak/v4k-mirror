@@ -26237,12 +26237,7 @@ int fps__timing_thread(void *arg) {
             timer_counter++;
             int64_t tt = (int64_t)(1e9/(float)framerate) - ns_excess;
             uint64_t took = -time_ns();
-        #if is(win32)
-            do_once timeBeginPeriod(1); 
             sleep_ns( (float)tt );
-        #else
-            sleep_ns( (float)tt );
-        #endif
             took += time_ns();
             ns_excess = took - tt;
             if( ns_excess < 0 ) ns_excess = 0;
