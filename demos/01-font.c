@@ -24,14 +24,14 @@ int main() {
     #define FONT_SMALL     FONT_H5
     #define FONT_TINY      FONT_H6
 
-    // style: atlas size, unicode ranges and font faces (up to 6 faces)
+    // style: atlas size, unicode ranges and font faces (up to 10 faces)
     font_face(FONT_REGULAR,   "B612""-Regular.ttf", 48.f, FONT_EU|FONT_AR|FONT_RU|FONT_2048);
     font_face(FONT_ITALIC,    "B612""-Italic.ttf", 48.f, FONT_EU|FONT_AR|FONT_RU|FONT_2048);
     font_face(FONT_BOLD,      "B612""-Bold.ttf", 48.f, FONT_EU|FONT_AR|FONT_RU|FONT_2048);
     font_face(FONT_JAPANESE,  "mplus-1p-medium.ttf", 48.f, FONT_JP|FONT_2048); // CJK|FONT_2048|FONT_OVERSAMPLE_Y);
     font_face(FONT_MONOSPACE, "B612Mono""-Regular.ttf", 24.f, FONT_EU|FONT_512);
 
-    // style: colors (up to 10 colors)
+    // style: colors (up to 6 colors)
     font_color(FONT_GRAY,   RGB4(100,100,100,255));
     font_color(FONT_ORANGE, RGB4(255,192,0,255));
     font_color(FONT_LIME,   RGB4(192,255,0,255));
@@ -53,7 +53,7 @@ int main() {
     for each_substring( vfs_read("pangrams.txt"), "\r\n", it ) array_push(lines, STRDUP(it));
 
     // panning controls
-    vec2 cursor;
+    vec2 cursor = {0};
 
     // demo loop
     while( window_swap() && !input(KEY_ESC) ) {
