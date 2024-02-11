@@ -109,7 +109,6 @@ static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
-static bool win_debug_visible = true;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
@@ -1087,8 +1086,10 @@ void window_setclipboard(const char *text) {
 
 static
 double window_scale() { // ok? @testme
-    float xscale, yscale;
+    float xscale=1.0f, yscale=1.0f;
+    #if !is(ems) && !is(osx) // @todo: remove silicon mac M1 hack
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     glfwGetMonitorContentScale(monitor, &xscale, &yscale);
+    #endif
     return maxi(xscale, yscale);
 }

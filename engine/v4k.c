@@ -2239,7 +2239,7 @@ void ui_hue_cycle( unsigned num_cycles ) {
     }
 }
 
-extern bool debug_visible;
+static bool win_debug_visible = true;
 
 static
 void ui_render() {
@@ -2255,7 +2255,7 @@ void ui_render() {
      * rendering the UI. */
     //nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
-    if (debug_visible) {
+    if (win_debug_visible) {
         GLfloat bkColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bkColor); // @transparent
         glClearColor(0,0,0,1); // @transparent
         glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,!bkColor[3] ? GL_TRUE : GL_FALSE);  // @transparent
@@ -26332,7 +26332,6 @@ static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
-static bool win_debug_visible = true;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
@@ -27310,9 +27309,11 @@ void window_setclipboard(const char *text) {
 
 static
 double window_scale() { // ok? @testme
-    float xscale, yscale;
+    float xscale=1.0f, yscale=1.0f;
+    #if !is(ems) && !is(osx) // @todo: remove silicon mac M1 hack
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     glfwGetMonitorContentScale(monitor, &xscale, &yscale);
+    #endif
     return maxi(xscale, yscale);
 }
 #line 0
