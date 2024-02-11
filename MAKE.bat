@@ -887,7 +887,7 @@ if "!v4k!"=="yes" (
     if exist !cache!.pdb copy /y !cache!.pdb v4k.pdb 2>nul >nul
 
     if not exist "!cache!" (
-        !echo! v4k          && !cc! engine\v4k.c !addons! /DADDON !addon_includes! !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll bind\v4k.dll  > nul || set rc=1
+        !echo! v4k          && !cc! engine\v4k.c !addons! -DADDON !addon_includes! !export! !args!   && if "!dll!"=="dll" copy /y v4k.dll bind\v4k.dll  > nul || set rc=1
         echo. > !cache!
         if exist v4k.o   copy /y v4k.o   !cache!.o   2>nul >nul
         if exist v4k.obj copy /y v4k.obj !cache!.obj 2>nul >nul
