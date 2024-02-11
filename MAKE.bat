@@ -166,6 +166,8 @@ rem move /y 3rd_*.? engine\split\
     git add engine/split
     git add engine/joint
     git add engine/v4k
+    git add engine/v4k.*
+    git add MAKE.bat
     git add bind/v4k.lua
 
     exit /b

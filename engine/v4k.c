@@ -24174,11 +24174,13 @@ bool steam_init(unsigned app_id) {
     app_id = app_id ? app_id : STEAM_APPID;
 
     // Steam installed?
+    #if is(win32)
     HKEY hSteamProcess;
     if( RegOpenKeyExA(HKEY_CURRENT_USER,"Software\\Valve\\Steam\\ActiveProcess", 0, KEY_READ, &hSteamProcess) ) {
         return !strcpy(steam.status, "Err: steam not installed");
     }
     RegCloseKey(hSteamProcess);
+    #endif
 
     // dll present?
     if( !file_exist(STEAM_DLL) ) {
@@ -24192,7 +24194,9 @@ bool steam_init(unsigned app_id) {
     // Initialize
     char *app_id_str = va("%d", app_id);
     //if( !file_exist("steam_appid.txt") ) file_write("steam_appid.txt", app_id_str, strlen(app_id_str));
+    #if is(win32)
     if( !getenv("SteamAppId") ) SetEnvironmentVariableA("SteamAppId", app_id_str);
+    #endif
 
     int started = SteamAPI_Init && SteamAPI_Init();
     if( !started ) {
@@ -26328,7 +26332,7 @@ static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
-static bool debug_visible = true;
+static bool win_debug_visible = true;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
@@ -26757,7 +26761,7 @@ int window_frame_begin() {
         }
     }
 
-    if (!debug_visible)
+    if (!win_debug_visible)
         may_render_debug_panel = 0;
 
     // generate Debug panel contents
@@ -26970,7 +26974,7 @@ double window_delta() {
 }
 
 void window_debug(bool visible) {
-    debug_visible = visible;
+    win_debug_visible = visible;
 }
 
 double window_fps() {
