@@ -8,6 +8,42 @@ if "%1"=="add" if not "%2" == "" (
     )
     exit /b
 )
+if "%1"=="update" if not "%2" == "" (
+    if exist "plugins\%2" (
+        pushd "plugins\%2"
+            git fetch
+            git rev-list --count HEAD..@{u} > repo.0
+            findstr /m "0" "repo.0" >nul
+            if !errorlevel!==0 (
+                echo already satisfied %2
+            ) else (
+                echo updating %2
+                git pull
+            )
+            del repo.0
+        popd
+    )
+    exit /b
+)
+if "%1"=="syncall" (
+    for /D %%d in ("plugins\*") do (
+        for /D %%f in (%%d\*) do (
+            pushd %%f
+                git fetch
+                git rev-list --count HEAD..@{u} > repo.0
+                findstr /m "0" "repo.0" >nul
+                if !errorlevel!==0 (
+                    echo already satisfied %%f
+                ) else (
+                    echo updating %%f
+                    git pull
+                )
+                del repo.0
+            popd
+        )
+    )
+    exit /b
+)
 if "%1"=="addlist" if not "%2" == "" (
     if not exist "%2" (
         echo provide valid recipe!
@@ -41,7 +77,7 @@ if "%1"=="del" if not "%2" == "" (
     )
     exit /b
 )
-if not "%1"=="dir" ( echo plug ^[dir^|add^|addlist^|del^] && exit /b )
+if not "%1"=="dir" ( echo plug ^[dir^|add^|addlist^|update^|syncall^|del^] && exit /b )
 set fwk_done=no
 goto dir_fwk
 
@@ -78,7 +114,7 @@ for /f %%i in ('find /c /v "" ^< plugs.x') do set "cnt=%%i"
 
 
 rem read the file into an array
-<plugs.x (
+<plugs.x ( 
     for /l %%i in (1 1 %cnt%) do (
         set "str.%%i="
         set /p "str.%%i="
