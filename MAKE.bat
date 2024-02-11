@@ -600,6 +600,8 @@ set addons_names=
 set addons_includes=
 
 if "%1"=="addons[" (
+    rem plugins are always included in form "<gh username>/<gh repo>/plugin.h"
+    set "addon_includes=-Iplugins %addon_includes%"
     shift && goto parse_addons
 :parse_addons
     if "%1"=="]" (
@@ -620,7 +622,7 @@ if "%1"=="addons[" (
             )
         )
         if exist "plugins\%1" (
-            set "addon_includes=-Iplugins\%1 %addon_includes%"
+            rem set "addon_includes=-Iplugins\%1 %addon_includes%"
             if exist "plugins\%1\%1.cpp" (
                 set "addons=plugins\%1\%1.cpp %addons%"
             ) else (
