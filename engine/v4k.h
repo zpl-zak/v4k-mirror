@@ -2214,9 +2214,11 @@ API vec2           font_xy();
 API void           font_goto(float x, float y);
 API vec2           font_print(const char *text);
 API vec2           font_clip(const char *text, vec4 rect);
-API const char*    font_wrap(const char *text, float max_width);
 API vec2           font_rect(const char *text);
 API font_metrics_t font_metrics(const char *text);
+
+// utilities
+API const char* font_wrap(const char *text, float max_width);
 
 // syntax highlighting
 API void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords); // comma separated tokens. expensive, please cache result.

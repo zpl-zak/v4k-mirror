@@ -606,14 +606,34 @@ if "%1"=="addons[" (
         shift
     ) else (
         set "addon_names=%1 %addon_names%"
-        set "addon_includes=-Idepot\deps\%1 %addon_includes%"
-        if exist "depot\deps\%1\%1.cpp" (
-            set "addons=depot\deps\%1\%1.cpp %addons%"
-        ) else (
-            set "addons=depot\deps\%1\%1.c %addons%"
+
+        rem depot folder
+        if exist "depot\deps\%1" (
+            set "addon_includes=-Idepot\deps\%1 %addon_includes%"
+            if exist "depot\deps\%1\%1.cpp" (
+                set "addons=depot\deps\%1\%1.cpp %addons%"
+            ) else (
+                set "addons=depot\deps\%1\%1.c %addons%"
+            )
+            if exist "depot\deps\%1\include" (
+                set "addon_includes=-Idepot\deps\%1\include %addon_includes%"
+            )
         )
-        if exist "depot\deps\%1\include" (
-            set "addon_includes=-Idepot\deps\%1\include %addon_includes%"
+        if exist "plugins\%1" (
+            set "addon_includes=-Iplugins\%1 %addon_includes%"
+            if exist "plugins\%1\%1.cpp" (
+                set "addons=plugins\%1\%1.cpp %addons%"
+            ) else (
+                set "addons=plugins\%1\%1.c %addons%"
+            )
+            if exist "plugins\%1\plugin.cpp" (
+                set "addons=plugins\%1\plugin.cpp %addons%"
+            ) else (
+                set "addons=plugins\%1\plugin.c %addons%"
+            )
+            if exist "plugins\%1\include" (
+                set "addon_includes=-Iplugins\%1\include %addon_includes%"
+            )
         )
         shift && goto parse_addons
     )

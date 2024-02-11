@@ -681,9 +681,9 @@ typedef struct font_metrics_t {
  void font_goto(float x, float y);
  vec2 font_print(const char *text);
  vec2 font_clip(const char *text, vec4 rect);
- const char* font_wrap(const char *text, float max_width);
  vec2 font_rect(const char *text);
  font_metrics_t font_metrics(const char *text);
+ const char* font_wrap(const char *text, float max_width);
  void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords);
  vec2 font_highlight(const char *text, const void *colors);
  void ui_font();
