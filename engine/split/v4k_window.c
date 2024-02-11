@@ -15,7 +15,8 @@ int fps__timing_thread(void *arg) {
             int64_t tt = (int64_t)(1e9/(float)framerate) - ns_excess;
             uint64_t took = -time_ns();
         #if is(win32)
-            timeBeginPeriod(1); Sleep( tt > 0 ? tt/1e6 : 0 );
+            do_once timeBeginPeriod(1); 
+            sleep_ns( (float)tt );
         #else
             sleep_ns( (float)tt );
         #endif
@@ -374,7 +375,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     //glEnable(GL_TEXTURE_2D);
 
     // 0:disable vsync, 1:enable vsync, <0:adaptive (allow vsync when framerate is higher than syncrate and disable vsync when framerate drops below syncrate)
-    flags |= optioni("--vsync", 1) || flag("--vsync") ? WINDOW_VSYNC : WINDOW_VSYNC_DISABLED;
+    flags |= optioni("--vsync", 0) || flag("--vsync") ? WINDOW_VSYNC : WINDOW_VSYNC_DISABLED;
     flags |= optioni("--vsync-adaptive", 0) || flag("--vsync-adaptive") ? WINDOW_VSYNC_ADAPTIVE : 0;
     int has_adaptive_vsync = glfwExtensionSupported("WGL_EXT_swap_control_tear") || glfwExtensionSupported("GLX_EXT_swap_control_tear") || glfwExtensionSupported("EXT_swap_control_tear");
     int wants_adaptive_vsync = (flags & WINDOW_VSYNC_ADAPTIVE);
@@ -409,54 +410,54 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     // static camera_t cam = {0}; id44(cam.view); id44(cam.proj); extern camera_t *last_camera; last_camera = &cam;
     v4k_pre_init();
 
-        // display a progress bar meanwhile cook is working in the background
-        // Sleep(500);
-        if( !COOK_ON_DEMAND )
-        if( have_tools() && cook_jobs() )
-        while( cook_progress() < 100 ) {
-            for( int frames = 0; frames < 2/*10*/ && window_swap(); frames += cook_progress() >= 100 ) {
-                window_title(va("%s %.2d%%", cook_cancelling ? "Aborting" : "Cooking assets", cook_progress()));
-                if( input(KEY_ESC) ) cook_cancel();
+    // display a progress bar meanwhile cook is working in the background
+    // Sleep(500);
+    if( !COOK_ON_DEMAND )
+    if( have_tools() && cook_jobs() )
+    while( cook_progress() < 100 ) {
+        for( int frames = 0; frames < 2/*10*/ && window_swap(); frames += cook_progress() >= 100 ) {
+            window_title(va("%s %.2d%%", cook_cancelling ? "Aborting" : "Cooking assets", cook_progress()));
+            if( input(KEY_ESC) ) cook_cancel();
 
-                glNewFrame();
-
-                static float previous[JOBS_MAX] = {0};
-
-                #define ddraw_progress_bar(JOB_ID, JOB_MAX, PERCENT) do { \
-                   /* NDC coordinates (2d): bottom-left(-1,-1), center(0,0), top-right(+1,+1) */ \
-                   float progress = (PERCENT+1) / 100.f; if(progress > 1) progress = 1; \
-                   float speed = progress < 1 ? 0.05f : 0.75f; \
-                   float smooth = previous[JOB_ID] = progress * speed + previous[JOB_ID] * (1-speed); \
-                   \
-                   float pixel = 2.f / window_height(), dist = smooth*2-1, y = pixel*3*JOB_ID; \
-                   if(JOB_ID==0)ddraw_line(vec3(-1,y-pixel*2,0), vec3(1,   y-pixel*2,0)); /* full line */ \
-                   ddraw_line(vec3(-1,y-pixel  ,0), vec3(dist,y-pixel  ,0)); /* progress line */ \
-                   ddraw_line(vec3(-1,y+0      ,0), vec3(dist,y+0      ,0)); /* progress line */ \
-                   ddraw_line(vec3(-1,y+pixel  ,0), vec3(dist,y+pixel  ,0)); /* progress line */ \
-                   if(JOB_ID==JOB_MAX-1)ddraw_line(vec3(-1,y+pixel*2,0), vec3(1,   y+pixel*2,0)); /* full line */ \
-                } while(0)
-
-                if( FLAGS_TRANSPARENT ) {} else // @transparent
-                for(int i = 0; i < cook_jobs(); ++i) ddraw_progress_bar(i, cook_jobs(), jobs[i].progress);
-                // ddraw_progress_bar(0, 1, cook_progress());
-
-                ddraw_flush();
-
-                do_once window_visible(1);
-
-                // render progress bar at 30Hz + give the cook threads more time to actually cook the assets.
-                // no big deal since progress bar is usually quiet when cooking assets most of the time.
-                // also, make the delay even larger when window is minimized or hidden.
-                // shaved cook times: 88s -> 57s (tcc), 50s -> 43s (vc)
-                sleep_ms( window_has_visible() && window_has_focus() ? 8 : 16 );
-            }
-            // set black screen
             glNewFrame();
-            window_swap();
-#if !ENABLE_RETAIL
-            window_title("");
-#endif
+
+            static float previous[JOBS_MAX] = {0};
+
+            #define ddraw_progress_bar(JOB_ID, JOB_MAX, PERCENT) do { \
+               /* NDC coordinates (2d): bottom-left(-1,-1), center(0,0), top-right(+1,+1) */ \
+               float progress = (PERCENT+1) / 100.f; if(progress > 1) progress = 1; \
+               float speed = progress < 1 ? 0.05f : 0.75f; \
+               float smooth = previous[JOB_ID] = progress * speed + previous[JOB_ID] * (1-speed); \
+               \
+               float pixel = 2.f / window_height(), dist = smooth*2-1, y = pixel*3*JOB_ID; \
+               if(JOB_ID==0)ddraw_line(vec3(-1,y-pixel*2,0), vec3(1,   y-pixel*2,0)); /* full line */ \
+               ddraw_line(vec3(-1,y-pixel  ,0), vec3(dist,y-pixel  ,0)); /* progress line */ \
+               ddraw_line(vec3(-1,y+0      ,0), vec3(dist,y+0      ,0)); /* progress line */ \
+               ddraw_line(vec3(-1,y+pixel  ,0), vec3(dist,y+pixel  ,0)); /* progress line */ \
+               if(JOB_ID==JOB_MAX-1)ddraw_line(vec3(-1,y+pixel*2,0), vec3(1,   y+pixel*2,0)); /* full line */ \
+            } while(0)
+
+            if( FLAGS_TRANSPARENT ) {} else // @transparent
+            for(int i = 0; i < cook_jobs(); ++i) ddraw_progress_bar(i, cook_jobs(), jobs[i].progress);
+            // ddraw_progress_bar(0, 1, cook_progress());
+
+            ddraw_flush();
+
+            do_once window_visible(1);
+
+            // render progress bar at 30Hz + give the cook threads more time to actually cook the assets.
+            // no big deal since progress bar is usually quiet when cooking assets most of the time.
+            // also, make the delay even larger when window is minimized or hidden.
+            // shaved cook times: 88s -> 57s (tcc), 50s -> 43s (vc)
+            sleep_ms( window_has_visible() && window_has_focus() ? 8 : 16 );
         }
+        // set black screen
+        glNewFrame();
+        window_swap();
+#if !ENABLE_RETAIL
+        window_title("");
+#endif
+    }
 
     if(cook_cancelling) cook_stop(), exit(-1);
 
