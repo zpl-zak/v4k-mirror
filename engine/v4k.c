@@ -10191,64 +10191,6 @@ static const unsigned short packed_table_japanese[] = { // starts with 0x4E00
 
 // -----------------------------------------------------------------------------
 
-static const char mv_vs_source[] = "//" FILELINE /*#version 330 core\n\*/"\
-\n\
-in vec2 vertexPosition;\n\
-in vec4 instanceGlyph;\n\
-\n\
-uniform sampler2D sampler_font;\n\
-uniform sampler2D sampler_meta;\n\
-\n\
-uniform float offset_firstline; // ascent\n\
-uniform float scale_factor;     // scaling factor proportional to font size\n\
-uniform vec2 string_offset;     // offset of upper-left corner\n\
-\n\
-uniform vec2 res_meta;   // 96x2 \n\
-uniform vec2 res_bitmap; // 512x256\n\
-uniform vec2 resolution; // screen resolution\n\
-\n\
-out vec2 uv;\n\
-out float color_index; // for syntax highlighting\n\
-\n\
-void main() { \
-    // (xoff, yoff, xoff2, yoff2), from second row of texture\n\
-    vec4 q2 = texture(sampler_meta, vec2((instanceGlyph.z + 0.5)/res_meta.x, 0.75))*vec4(res_bitmap, res_bitmap);\n\
-\n\
-    vec2 p = vertexPosition*(q2.zw - q2.xy) + q2.xy; // offset and scale it properly relative to baseline\n\
-    p *= vec2(1.0, -1.0);                            // flip y, since texture is upside-down\n\
-    p.y -= offset_firstline;                         // make sure the upper-left corner of the string is in the upper-left corner of the screen\n\
-    p *= scale_factor;                               // scale relative to font size\n\
-    p += instanceGlyph.xy + string_offset;           // move glyph into the right position\n\
-    p *= 2.0/resolution;                             // to NDC\n\
-    p += vec2(-1.0, 1.0);                            // move to upper-left corner instead of center\n\
-\n\
-    gl_Position = vec4(p, 0.0, 1.0);\n\
-\n\
-    // (x0, y0, x1-x0, y1-y0), from first row of texture\n\
-    vec4 q = texture(sampler_meta, vec2((instanceGlyph.z + 0.5)/res_meta.x, 0.25));\n\
-\n\
-    // send the correct uv's in the font atlas to the fragment shader\n\
-    uv = q.xy + vertexPosition*q.zw;\n\
-    color_index = instanceGlyph.w;\n\
-}\n";
-
-static const char mv_fs_source[] = "//" FILELINE /*#version 330 core\n\*/"\
-\n\
-in vec2 uv;\n\
-in float color_index;\n\
-\n\
-uniform sampler2D sampler_font;\n\
-uniform sampler1D sampler_colors;\n\
-uniform float num_colors;\n\
-\n\
-out vec4 outColor;\n\
-\n\
-void main() {\
-    vec4 col = texture(sampler_colors, (color_index+0.5)/num_colors);\n\
-    float s = texture(sampler_font, uv).r;\n\
-    outColor = vec4(col.rgb, s*col.a);\n\
-}\n";
-
 enum { FONT_MAX_COLORS = 256};
 enum { FONT_MAX_STRING_LEN = 40000 }; // more glyphs than any reasonable person would show on the screen at once. you can only fit 20736 10x10 rects in a 1920x1080 window
 
@@ -10427,9 +10369,8 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     f->scale[5] = 0.3750f; // H5
     f->scale[6] = 0.2500f; // H6
 
-    const char *vs_filename = 0, *fs_filename = 0;
-    const char *vs = vs_filename ? vfs_read(vs_filename) : mv_vs_source;
-    const char *fs = fs_filename ? vfs_read(fs_filename) : mv_fs_source;
+    const char *vs = vfs_read("vs_font.glsl");
+    const char *fs = vfs_read("fs_font.glsl");
     f->program = shader(vs, fs, "vertexPosition,instanceGlyph", "outColor", NULL);
 
     // figure out what ranges we're about to bake
@@ -26237,6 +26178,9 @@ int fps__timing_thread(void *arg) {
             timer_counter++;
             int64_t tt = (int64_t)(1e9/(float)framerate) - ns_excess;
             uint64_t took = -time_ns();
+            #if is(win32)
+            timeBeginPeriod(1);
+            #endif
             sleep_ns( (float)tt );
             took += time_ns();
             ns_excess = took - tt;
