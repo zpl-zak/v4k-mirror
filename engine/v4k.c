@@ -17886,6 +17886,15 @@ GLenum texture_type = t->flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTUR
     glTexParameteri(texture_type, GL_TEXTURE_WRAP_T, wrap);
     glTexParameteri(texture_type, GL_TEXTURE_MIN_FILTER, min_filter);
     glTexParameteri(texture_type, GL_TEXTURE_MAG_FILTER, mag_filter);
+
+    if (flags & TEXTURE_ANISOTROPY) {
+        GLfloat value, max_anisotropy = 16.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &value);
+
+        value = (value > max_anisotropy) ? max_anisotropy : value;
+        glTexParameterf(texture_type, GL_TEXTURE_MAX_ANISOTROPY, value);
+    }
+
 #if 0 // only for sampler2DShadow
     if( flags & TEXTURE_DEPTH )   glTexParameteri(texture_type, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
     if( flags & TEXTURE_DEPTH )   glTexParameteri(texture_type, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
@@ -20367,7 +20376,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) 
         if( reused ) continue;
 
         // decode texture+material
-        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_LINEAR; // LINEAR, NEAREST
+        int flags = TEXTURE_MIPMAPS|TEXTURE_ANISOTROPY|TEXTURE_REPEAT|TEXTURE_LINEAR; // LINEAR, NEAREST
         int invalid = texture_checker().id;
 
 #if 1
