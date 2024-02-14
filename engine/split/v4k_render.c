@@ -3211,7 +3211,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) 
         if( reused ) continue;
 
         // decode texture+material
-        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT; // LINEAR, NEAREST
+        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_LINEAR; // LINEAR, NEAREST
         int invalid = texture_checker().id;
 
 #if 1
