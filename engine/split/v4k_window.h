@@ -41,7 +41,6 @@ API void     window_color(unsigned color);
 API vec2     window_canvas();
 API void*    window_handle();
 API char*    window_stats();
-API void     window_debug(bool visible);
 
 API uint64_t window_frame();
 API int      window_width();
@@ -68,6 +67,8 @@ API void     window_transparent(int enabled);
 API int      window_has_transparent();
 API void     window_icon(const char *file_icon);
 API int      window_has_icon();
+API void     window_debug(int visible);
+API int      window_has_debug();
 
 API double   window_aspect();
 API void     window_aspect_lock(unsigned numer, unsigned denom);

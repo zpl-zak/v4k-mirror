@@ -33,8 +33,8 @@
 #define ENABLE_RETAIL           0 // ifdef(retail, 1, 0) ///+
 #endif
 
-#ifndef COOK_DISABLED
-#define COOK_DISABLED           0 // ifdef(nocook, 1, 0) ///+
+#ifndef ENABLE_COOK
+#define ENABLE_COOK             ifdef(retail, 0, 1) ///+
 #endif
 
 #ifndef ENABLE_RPMALLOC
@@ -127,10 +127,12 @@
 #define ifdef_retail                   ifdef_false
 #endif
 
-#if COOK_DISABLED
-#define ifdef_nocook                   ifdef_true
-#else
+#if ENABLE_COOK
+#define ifdef_cook                     ifdef_true
 #define ifdef_nocook                   ifdef_false
+#else
+#define ifdef_cook                     ifdef_false
+#define ifdef_nocook                   ifdef_true
 #endif
 
 #if   defined NDEBUG && NDEBUG >= 3 // we use NDEBUG=[0,1,2,3] to signal the compiler optimization flags O0,O1,O2,O3

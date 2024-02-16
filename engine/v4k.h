@@ -131,8 +131,8 @@ extern "C" {
 #define ENABLE_RETAIL           0 // ifdef(retail, 1, 0) ///+
 #endif
 
-#ifndef COOK_DISABLED
-#define COOK_DISABLED           0 // ifdef(nocook, 1, 0) ///+
+#ifndef ENABLE_COOK
+#define ENABLE_COOK             ifdef(retail, 0, 1) ///+
 #endif
 
 #ifndef ENABLE_RPMALLOC
@@ -225,10 +225,12 @@ extern "C" {
 #define ifdef_retail                   ifdef_false
 #endif
 
-#if COOK_DISABLED
-#define ifdef_nocook                   ifdef_true
-#else
+#if ENABLE_COOK
+#define ifdef_cook                     ifdef_true
 #define ifdef_nocook                   ifdef_false
+#else
+#define ifdef_cook                     ifdef_false
+#define ifdef_nocook                   ifdef_true
 #endif
 
 #if   defined NDEBUG && NDEBUG >= 3 // we use NDEBUG=[0,1,2,3] to signal the compiler optimization flags O0,O1,O2,O3
@@ -2214,11 +2216,9 @@ API vec2           font_xy();
 API void           font_goto(float x, float y);
 API vec2           font_print(const char *text);
 API vec2           font_clip(const char *text, vec4 rect);
+API const char*    font_wrap(const char *text, float max_width);
 API vec2           font_rect(const char *text);
 API font_metrics_t font_metrics(const char *text);
-
-// utilities
-API const char* font_wrap(const char *text, float max_width);
 
 // syntax highlighting
 API void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords); // comma separated tokens. expensive, please cache result.
@@ -4748,7 +4748,6 @@ API void     window_color(unsigned color);
 API vec2     window_canvas();
 API void*    window_handle();
 API char*    window_stats();
-API void     window_debug(bool visible);
 
 API uint64_t window_frame();
 API int      window_width();
@@ -4775,6 +4774,8 @@ API void     window_transparent(int enabled);
 API int      window_has_transparent();
 API void     window_icon(const char *file_icon);
 API int      window_has_icon();
+API void     window_debug(int visible);
+API int      window_has_debug();
 
 API double   window_aspect();
 API void     window_aspect_lock(unsigned numer, unsigned denom);

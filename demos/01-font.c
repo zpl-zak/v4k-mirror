@@ -60,7 +60,7 @@ int main() {
         ddraw_grid(0);
 
         // pan the viewport
-        if (input(MOUSE_L)) {
+        if (input(MOUSE_L) && !ui_active()) {
             cursor.x += input_diff(MOUSE_X);
             cursor.y += input_diff(MOUSE_Y);
         }

@@ -17,7 +17,7 @@ int fps__timing_thread(void *arg) {
             #if is(win32)
             timeBeginPeriod(1);
             #endif
-            sleep_ns( (float)tt );
+            sleep_ns( tt > 0 ? (float)tt : 0.f );
             took += time_ns();
             ns_excess = took - tt;
             if( ns_excess < 0 ) ns_excess = 0;
@@ -747,8 +747,11 @@ double window_delta() {
     return dt;
 }
 
-void window_debug(bool visible) {
+void window_debug(int visible) {
     win_debug_visible = visible;
+}
+int window_has_debug() {
+    return win_debug_visible;
 }
 
 double window_fps() {
@@ -1084,7 +1087,7 @@ void window_setclipboard(const char *text) {
 
 static
 double window_scale() { // ok? @testme
-    float xscale=1.0f, yscale=1.0f;
+    float xscale = 1, yscale = 1;
     #if !is(ems) && !is(osx) // @todo: remove silicon mac M1 hack
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     glfwGetMonitorContentScale(monitor, &xscale, &yscale);

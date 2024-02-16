@@ -6156,10 +6156,14 @@ void collide_demo() { // debug draw collisions // @fixme: fix leaks: poly_free()
 // @fixme: leaks (worth?)
 // -----------------------------------------------------------------------------
 
+#ifndef COOK_INI_PATHFILE
+#define COOK_INI_PATHFILE "tools/cook.ini"
+#endif
+
 const char *ART = "art/";
 const char *TOOLS = "tools/bin/";
 const char *EDITOR = "tools/";
-const char *COOK_INI = "tools/cook.ini";
+const char *COOK_INI = COOK_INI_PATHFILE;
 
 static unsigned ART_SKIP_ROOT; // number of chars to skip the base root in ART folder
 static unsigned ART_LEN;       // dupe
@@ -6602,7 +6606,7 @@ static cook_worker jobs[JOBS_MAX] = {0};
 static volatile bool cook_cancelable = false, cook_cancelling = false, cook_debug = false;
 
 #ifndef COOK_ON_DEMAND
-#define COOK_ON_DEMAND flag("--cook-on-demand")
+#define COOK_ON_DEMAND ifdef(cook, optioni("--cook-on-demand", 1), false)
 #endif
 
 static
@@ -26192,7 +26196,7 @@ int fps__timing_thread(void *arg) {
             #if is(win32)
             timeBeginPeriod(1);
             #endif
-            sleep_ns( (float)tt );
+            sleep_ns( tt > 0 ? (float)tt : 0.f );
             took += time_ns();
             ns_excess = took - tt;
             if( ns_excess < 0 ) ns_excess = 0;
@@ -26922,8 +26926,11 @@ double window_delta() {
     return dt;
 }
 
-void window_debug(bool visible) {
+void window_debug(int visible) {
     win_debug_visible = visible;
+}
+int window_has_debug() {
+    return win_debug_visible;
 }
 
 double window_fps() {
@@ -27259,7 +27266,7 @@ void window_setclipboard(const char *text) {
 
 static
 double window_scale() { // ok? @testme
-    float xscale=1.0f, yscale=1.0f;
+    float xscale = 1, yscale = 1;
     #if !is(ems) && !is(osx) // @todo: remove silicon mac M1 hack
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     glfwGetMonitorContentScale(monitor, &xscale, &yscale);

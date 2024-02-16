@@ -681,9 +681,9 @@ typedef struct font_metrics_t {
  void font_goto(float x, float y);
  vec2 font_print(const char *text);
  vec2 font_clip(const char *text, vec4 rect);
+ const char* font_wrap(const char *text, float max_width);
  vec2 font_rect(const char *text);
  font_metrics_t font_metrics(const char *text);
- const char* font_wrap(const char *text, float max_width);
  void* font_colorize(const char *text, const char *comma_types, const char *comma_keywords);
  vec2 font_highlight(const char *text, const void *colors);
  void ui_font();
@@ -2028,7 +2028,6 @@ enum WINDOW_FLAGS {
  vec2 window_canvas();
  void* window_handle();
  char* window_stats();
- void window_debug(bool visible);
  uint64_t window_frame();
  int window_width();
  int window_height();
@@ -2050,6 +2049,8 @@ enum WINDOW_FLAGS {
  int window_has_transparent();
  void window_icon(const char *file_icon);
  int window_has_icon();
+ void window_debug(int visible);
+ int window_has_debug();
  double window_aspect();
  void window_aspect_lock(unsigned numer, unsigned denom);
  void window_aspect_unlock();
