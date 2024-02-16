@@ -1304,8 +1304,9 @@ enum MODEL_FLAGS {
     MODEL_NO_ANIMATIONS = 1,
     MODEL_NO_MESHES = 2,
     MODEL_NO_TEXTURES = 4,
-    MODEL_MATCAPS = 8,
-    MODEL_RIMLIGHT = 16
+    MODEL_NO_FILTERING = 8,
+    MODEL_MATCAPS = 16,
+    MODEL_RIMLIGHT = 32,
 };
 typedef struct model_t {
     struct iqm_t *iqm;

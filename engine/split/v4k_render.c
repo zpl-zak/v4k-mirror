@@ -138,7 +138,7 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
             while( attribs[0] && attribs[0] == ',' ) { attribs++; break; }
             if(!attrib[0]) continue;
             glBindAttribLocation(program, i, attrib);
-            PRINTF("Shader.attribute[%d]=%s\n", i, attrib);
+            // PRINTF("Shader.attribute[%d]=%s\n", i, attrib);
         }
 
 #if !is(ems) // @fixme
@@ -3189,7 +3189,7 @@ static char* strcpy_safe(char *d, const char *s) {
 }
 
 static
-bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) {
+bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, int _flags) {
     q->textures = q->textures ? q->textures : CALLOC(hdr->num_meshes * 8, sizeof(GLuint)); // up to 8 textures per mesh
     q->colormaps = q->colormaps ? q->colormaps : CALLOC(hdr->num_meshes * 8, sizeof(vec4)); // up to 8 colormaps per mesh
 
@@ -3220,7 +3220,9 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model) 
         if( reused ) continue;
 
         // decode texture+material
-        int flags = TEXTURE_MIPMAPS|TEXTURE_ANISOTROPY|TEXTURE_REPEAT|TEXTURE_LINEAR; // LINEAR, NEAREST
+        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_ANISOTROPY; // LINEAR, NEAREST
+        if (!(_flags & MODEL_NO_FILTERING))
+            flags |= TEXTURE_LINEAR;
         int invalid = texture_checker().id;
 
 #if 1
@@ -3370,7 +3372,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
                 memcpy(q->buf + sizeof(hdr), ptr, hdr.filesize - sizeof(hdr));
                 error = 0;
                 if( hdr.num_meshes > 0 && !(flags & MODEL_NO_MESHES) )     error |= !model_load_meshes(q, &hdr, &m);
-                if( hdr.num_meshes > 0 && !(flags & MODEL_NO_TEXTURES) )   error |= !model_load_textures(q, &hdr, &m);
+                if( hdr.num_meshes > 0 && !(flags & MODEL_NO_TEXTURES) )   error |= !model_load_textures(q, &hdr, &m, flags);
                 else {
                     // setup fallback
                     material_t mt = {0};
