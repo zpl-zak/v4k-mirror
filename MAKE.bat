@@ -688,7 +688,7 @@ if "%1"=="addons[" (
     if not "%1"==""     shift && goto parse_args
 
 :parse_compiler_args
-    if not "%1"==""     set "args=!args! %1" && shift && goto parse_compiler_args
+    if not "%1"==""     set "compiler_flag=%1" && set "compiler_flag=!compiler_flag::==!" && set "args=!args! !compiler_flag!" && shift && goto parse_compiler_args
 
 :parse_runtime_args
     if not "%1"==""     set "run_args=!run_args! %1" && shift && goto parse_runtime_args
