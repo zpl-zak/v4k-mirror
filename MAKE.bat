@@ -1007,6 +1007,6 @@ if "!run!"=="yes" (
 )
 
 rem PAUSE only if double-clicked from Windows explorer
-(((echo.%cmdcmdline%)|%WINDIR%\system32\find.exe /I "%~0")>nul)&&pause
+rem (((echo.%cmdcmdline%)|%WINDIR%\system32\find.exe /I "%~0")>nul)&&pause
 
 cmd /c exit !rc!
