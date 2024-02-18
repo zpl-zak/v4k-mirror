@@ -21,3 +21,4 @@ libv4k.*
 .DS_store
 *.raddbg
 plugins
+tools/assimp-vc*-mt.lib

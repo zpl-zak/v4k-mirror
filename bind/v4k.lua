@@ -99,6 +99,7 @@ typedef float mat44[16];
  float signf (float a) ;
  float clampf (float v,float a,float b);
  float mixf (float a,float b,float t);
+ float slerpf (float a,float b,float t);
  float fractf (float a);
  vec2 ptr2 (const float *a );
  vec2 neg2 (vec2 a );
