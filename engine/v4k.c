@@ -12580,6 +12580,8 @@ float signf    (float  a)           { return (a < 0) ? -1.f : 1.f; }
 float clampf(float v,float a,float b){return maxf(minf(b,v),a); }
 float mixf(float a,float b,float t) { return a*(1-t)+b*t; }
 float slerpf(float a,float b,float t) {
+    a = fmod(a, 360); if (a < 0) a += 360;
+    b = fmod(b, 360); if (b < 0) b += 360;
     float diff = b - a;
     if (diff < 0.0)
         diff += 360.0;
@@ -13928,6 +13930,7 @@ typedef struct rpc_call {
 #define RPC_SIGNATURE_i_s      UINT64_C(0xf7b73162829ed667)
 #define RPC_SIGNATURE_s_s      UINT64_C(0x97deedd17d9afb12)
 #define RPC_SIGNATURE_s_v      UINT64_C(0x09c16a1242049b80)
+#define RPC_SIGNATURE_v_v      UINT64_C(0xc210c270b6f06552)
 #define RPC_SIGNATURE_v_s      UINT64_C(0xc1746990ab73ed24)
 
 static
@@ -13980,6 +13983,7 @@ char *rpc_full(unsigned id, const char* method, unsigned num_args, char *args[])
             case RPC_SIGNATURE_i_s:   return va("%d %d", id, (int)(intptr_t)found->function(args[0]) );
             case RPC_SIGNATURE_s_s:   return va("%d %s", id, (char*)found->function(args[0]) );
             case RPC_SIGNATURE_s_v:   return va("%d %s", id, (char*)found->function() );
+            case RPC_SIGNATURE_v_v:   return found->function(), va("%d", id);
             case RPC_SIGNATURE_v_s:   return found->function(args[0]), va("%d", id);
             default: break;
         }
