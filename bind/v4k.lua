@@ -1461,11 +1461,11 @@ typedef struct skybox_t {
 typedef struct camera_t {
     mat44 view, proj;
     vec3 position, updir, lookdir;
-    float yaw, pitch;
+    float yaw, pitch, roll;
     float speed, fov;
     float move_friction, move_damping;
     float look_friction, look_damping;
-    vec2 last_look; vec3 last_move;
+    vec3 last_look; vec3 last_move;
     bool damping;
     bool orthographic;
     float distance;
@@ -1475,6 +1475,7 @@ typedef struct camera_t {
  void camera_moveby(camera_t *cam, vec3 inc);
  void camera_fov(camera_t *cam, float fov);
  void camera_fps(camera_t *cam, float yaw, float pitch);
+ void camera_fps2(camera_t *cam, float yaw, float pitch, float roll);
  void camera_orbit(camera_t *cam, float yaw, float pitch, float inc_distance);
  void camera_lookat(camera_t *cam, vec3 target);
  void camera_enable(camera_t *cam);

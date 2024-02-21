@@ -3827,12 +3827,12 @@ API bool gizmo_hover();
 typedef struct camera_t {
     mat44 view, proj;
     vec3 position, updir, lookdir;
-    float yaw, pitch; // mirror of (x,y) lookdir in deg;
+    float yaw, pitch, roll; // mirror of (x,y) lookdir in deg;
     float speed, fov; // fov in deg(45)
 
     float move_friction, move_damping;
     float look_friction, look_damping;
-    vec2 last_look; vec3 last_move; // used for friction and damping
+    vec3 last_look; vec3 last_move; // used for friction and damping
     bool damping;
 
     bool orthographic; // 0 perspective, 1 orthographic; when ortho: dimetric[if pitch == -30º], isometric[if pitch == 35.264º]
@@ -3846,6 +3846,7 @@ API void camera_teleport(camera_t *cam, vec3 pos);
 API void camera_moveby(camera_t *cam, vec3 inc);
 API void camera_fov(camera_t *cam, float fov);
 API void camera_fps(camera_t *cam, float yaw, float pitch);
+API void camera_fps2(camera_t *cam, float yaw, float pitch, float roll);
 API void camera_orbit(camera_t *cam, float yaw, float pitch, float inc_distance);
 API void camera_lookat(camera_t *cam, vec3 target);
 API void camera_enable(camera_t *cam);

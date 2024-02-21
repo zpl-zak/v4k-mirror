@@ -21997,7 +21997,7 @@ camera_t camera() {
         cam.move_damping = 0.96f;
         cam.look_friction = 0.30f;
         cam.look_damping = 0.96f;
-        cam.last_look = vec2(0,0);
+        cam.last_look = vec3(0,0,0);
         cam.last_move = vec3(0,0,0);
 
         // update proj & view
@@ -22096,7 +22096,7 @@ void camera_fov(camera_t *cam, float fov) {
     }
 }
 
-void camera_fps(camera_t *cam, float yaw, float pitch) {
+void camera_fps2(camera_t *cam, float yaw, float pitch, float roll) {
     last_camera = cam;
 
     // camera damping
@@ -22104,21 +22104,41 @@ void camera_fps(camera_t *cam, float yaw, float pitch) {
         float fr = cam->look_friction; fr *= fr; fr *= fr; fr *= fr;
         float sm = clampf(cam->look_damping, 0, 0.999f); sm *= sm; sm *= sm;
 
-        cam->last_look = scale2(cam->last_look, 1 - fr);
+        cam->last_look = scale3(cam->last_look, 1 - fr);
         yaw = cam->last_look.y = yaw * (1 - sm) + cam->last_look.y * sm;
         pitch = cam->last_look.x = pitch * (1 - sm) + cam->last_look.x * sm;
+        roll = cam->last_look.z = roll * (1 - sm) + cam->last_look.z * sm;
     }
 
     cam->yaw += yaw;
     cam->yaw = fmod(cam->yaw, 360);
     cam->pitch += pitch;
     cam->pitch = cam->pitch > 89 ? 89 : cam->pitch < -89 ? -89 : cam->pitch;
+    cam->roll += roll;
+    cam->roll += fmod(cam->roll, 360);
 
-    const float deg2rad = 0.0174532f, y = cam->yaw * deg2rad, p = cam->pitch * deg2rad;
+    const float deg2rad = 0.0174532f, y = cam->yaw * deg2rad, p = cam->pitch * deg2rad, r = cam->roll * deg2rad;
     cam->lookdir = norm3(vec3(cos(y) * cos(p), sin(p), sin(y) * cos(p)));
+    vec3 up = vec3(0,1,0);
+    // calculate updir
+    {
+        float cosfa = cosf(r);
+        float sinfa = sinf(r);
+        vec3 right = cross3(cam->lookdir, up);
+        float th = dot3(cam->lookdir, up);
+
+        cam->updir.x = up.x * cosfa + right.x * sinfa + cam->lookdir.x * th * (1.0f - cosfa);
+        cam->updir.y = up.y * cosfa + right.y * sinfa + cam->lookdir.y * th * (1.0f - cosfa);
+        cam->updir.z = up.z * cosfa + right.z * sinfa + cam->lookdir.z * th * (1.0f - cosfa);
+    }
+
     lookat44(cam->view, cam->position, add3(cam->position, cam->lookdir), cam->updir); // eye,center,up
 
     camera_fov(cam, cam->fov);
+}
+
+void camera_fps(camera_t *cam, float yaw, float pitch) {
+    camera_fps2(cam, yaw, pitch, 0.0f);
 }
 
 void camera_orbit( camera_t *cam, float yaw, float pitch, float inc_distance ) {
