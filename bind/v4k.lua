@@ -1392,6 +1392,7 @@ typedef struct skybox_t {
  void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength);
  int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view);
  int skybox_pop_state();
+ void viewport_color(unsigned color);
  void viewport_clear(bool color, bool depth);
  void viewport_clip(vec2 from, vec2 to);
  int fx_load(const char *file);

@@ -2010,6 +2010,14 @@ void* screenshot_async( int n ) { // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 // -----------------------------------------------------------------------------
 // viewports
 
+void viewport_color(unsigned color) {
+    unsigned r = (color >>  0) & 255;
+    unsigned g = (color >>  8) & 255;
+    unsigned b = (color >> 16) & 255;
+    unsigned a = (color >> 24) & 255;
+    glClearColor(r, g, b, a);
+}
+
 void viewport_clear(bool color, bool depth) {
     glClearDepthf(1);
     glClearStencil(0);

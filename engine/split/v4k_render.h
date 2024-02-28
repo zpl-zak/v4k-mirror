@@ -631,6 +631,7 @@ API int      skybox_pop_state(); // @to deprecate
 // -----------------------------------------------------------------------------
 // post-fxs
 
+API void     viewport_color(unsigned color);
 API void     viewport_clear(bool color, bool depth);
 API void     viewport_clip(vec2 from, vec2 to);
 
