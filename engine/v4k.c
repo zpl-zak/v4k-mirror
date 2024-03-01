@@ -19117,7 +19117,9 @@ void mesh_render_prim(mesh_t *sm, unsigned prim) {
 
 void mesh_destroy(mesh_t *m) {
     // @todo
-    (void)m;
+    glDeleteBuffers(1, &m->vbo);
+    glDeleteBuffers(1, &m->ibo);
+    glDeleteVertexArrays(1, &m->vao);
 }
 
 // -----------------------------------------------------------------------------
