@@ -73,8 +73,8 @@
 
     #ifndef ENET_NO_PRAGMA_LINK
     #ifndef  __GNUC__
-    #pragma comment(lib, "ws2_32.lib")
-    #pragma comment(lib, "winmm.lib")
+    #pragma comment(lib, "ws2_32") //< @r-lyeh removed .lib (tcc support)
+    #pragma comment(lib, "winmm") //< @r-lyeh removed .lib (tcc support)
     #endif
     #endif
 
@@ -98,14 +98,16 @@
 
     #include <intrin.h>
 
-    #if defined(_WIN32) && defined(_MSC_VER)
-    #if _MSC_VER < 1900
+    #if defined(_WIN32) || defined(_MSC_VER)
+    #if defined(_MSC_VER) && _MSC_VER < 1900 //< @zak, tcc support
     typedef struct timespec {
         long tv_sec;
         long tv_nsec;
     };
     #endif
-    #define CLOCK_MONOTONIC 0
+    #ifndef __MINGW32__
+    #define CLOCK_MONOTONIC 0 //< @r-lyeh, tcc support
+    #endif
     #endif
 
     typedef SOCKET ENetSocket;
@@ -1231,7 +1233,14 @@ extern "C" {
     #endif /* AT_HAVE_ATOMICS */
 
     #undef AT_HAVE_ATOMICS
-
+#else //< @r-lyeh: add __TINYC__ stubs. not going to work.
+    #define ENET_ATOMIC_READ(variable) (*(int64_t *)(variable))
+    #define ENET_ATOMIC_WRITE(variable, new_val) (*(int64_t *)(variable) = (int64_t)(new_val))
+    #define ENET_ATOMIC_CAS(variable, old_value, new_val) (*(int64_t *)(variable) = (int64_t)(new_val))
+    #define ENET_ATOMIC_INC(variable) ENET_ATOMIC_INC_BY(variable, 1)
+    #define ENET_ATOMIC_DEC(variable) ENET_ATOMIC_DEC_BY(variable, 1)
+    #define ENET_ATOMIC_INC_BY(variable, delta) ( *(int64_t*)(variable) = (int64_t*)(variable) + (delta))
+    #define ENET_ATOMIC_DEC_BY(variable, delta) ( *(int64_t*)(variable) = (int64_t*)(variable) - (delta))
 #endif /* defined(_MSC_VER) */
 
 // =======================================================================//
