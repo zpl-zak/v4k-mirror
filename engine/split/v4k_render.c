@@ -92,6 +92,22 @@ unsigned shader(const char *vs, const char *fs, const char *attribs, const char 
     return shader_geom(NULL, vs, fs, attribs, fragcolor, defines);
 }
 
+static inline
+char *shader_preprocess(const char *src, const char *defines) {
+    const char *glsl_version = va("#version %s", ifdef(ems, "300 es", "150"));
+
+    if (!src) return NULL;
+
+    // detect GLSL version if set
+    if (src[0] == '#' && src[1] == 'v') {
+        const char *end = strstri(src, "\n");
+        glsl_version = va("%.*s", (int)(end-src), src);
+        src = end+1;
+    }
+
+    return va("%s\n%s\n%s", glsl_version, defines ? defines : "", src);
+}
+
 unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines) {
     PRINTF(/*"!"*/"Compiling shader\n");
 
@@ -102,12 +118,10 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
         }
     }
 
-    const char *glsl_version = ifdef(ems, "300 es", "400");
-
     if(gs)
-    gs = gs && gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, gs ? gs : "");
-    vs = vs && vs[0] == '#' && vs[1] == 'v' ? vs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, vs ? vs : "");
-    fs = fs && fs[0] == '#' && fs[1] == 'v' ? fs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, fs ? fs : "");
+    gs = shader_preprocess(gs, glsl_defines);
+    vs = shader_preprocess(vs, glsl_defines);
+    fs = shader_preprocess(fs, glsl_defines);
 
 #if is(ems)
     {
@@ -3025,6 +3039,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             shader_texture( "tex_skyenv", m.sky_env );
         }
         shader_texture( "tex_brdf_lut", brdf_lut() );
+        shader_uint( "frame_count", (unsigned)window_frame() );
     }
 }
 static

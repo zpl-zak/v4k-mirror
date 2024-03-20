@@ -1,3 +1,4 @@
+#version 400
 uniform mat4 model, view;
 uniform sampler2D u_texture2d;
 uniform vec3 u_coefficients_sh[9];
@@ -139,10 +140,10 @@ uniform ColorMap map_emissive;  uniform sampler2D map_emissive_tex;
 #define sample_colormap(ColorMap_, uv_) \
     (ColorMap_.has_tex ? texture( ColorMap_##_tex, uv_ ) : ColorMap_.color)
 
-uniform float skysphere_rotation;
+uniform float skysphere_rotation=-90;
 uniform float skysphere_mip_count;
 uniform float exposure=1;
-// uniform uint frame_count;
+uniform uint frame_count;
 uniform float specular_shininess;
 
 uniform sampler2D tex_skysphere;
@@ -687,7 +688,7 @@ void main(void)
     // float dither = random( uvec3( floatBitsToUint( gl_FragCoord.xy ), frame_count ) );
     // color += BOOST_NOISE * vec3( (-1.0/256.) + (2./256.) * dither );
 
-#if 0 // original
+#if 1 // original
     // basic tonemap and gamma correction
     color = color / ( vec3(1.) + color );
     color = pow( color, vec3(1. / 2.2) );

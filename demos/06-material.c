@@ -12,6 +12,10 @@ int main() {
 
     // create camera
     camera_t cam = camera();
+
+    // fx: load all post fx files in all subdirs.
+    fx_load("fx**.fs");
+
     // load video, RGB texture, no audio
     video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO | VIDEO_LOOP ); video_seek(v, 30);
     // load texture
@@ -60,6 +64,7 @@ int main() {
     // load skybox
     scene_get_active()->skybox = skybox_pbr("hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr");
 
+
     while(window_swap() && !input(KEY_ESC)) {
         // draw environment
         ddraw_grid(0);
@@ -71,7 +76,9 @@ int main() {
         light_teleport(l, cam.position);
 
         // draw scene
+        fx_begin();
         scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF);
+        fx_end();
 
         // fps camera
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
