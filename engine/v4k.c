@@ -18884,49 +18884,11 @@ skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_m
             sky.cubemap = cubemap6( images, 0 );
             for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
         }
-
-        sky.refl = load_env_tex(refl_map, TEXTURE_SRGB);
     }
     if( refl_map ) {
-        int is_panorama = vfs_size( refl_map );
-        if( is_panorama ) { // is file
-            stbi_hdr_to_ldr_gamma(1.2f);
-            image_t panorama = image( refl_map, IMAGE_RGBA );
-            sky.refl_cubemap = cubemap( panorama, 0 ); // RGBA required
-            image_destroy(&panorama);
-        } else { // is folder
-            image_t images[6] = {0};
-            images[0] = image( va("%s/posx", refl_map), IMAGE_RGB ); // cubepx
-            images[1] = image( va("%s/negx", refl_map), IMAGE_RGB ); // cubenx
-            images[2] = image( va("%s/posy", refl_map), IMAGE_RGB ); // cubepy
-            images[3] = image( va("%s/negy", refl_map), IMAGE_RGB ); // cubeny
-            images[4] = image( va("%s/posz", refl_map), IMAGE_RGB ); // cubepz
-            images[5] = image( va("%s/negz", refl_map), IMAGE_RGB ); // cubenz
-            sky.refl_cubemap = cubemap6( images, 0 );
-            for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
-        }
-
         sky.refl = load_env_tex(refl_map, TEXTURE_SRGB);
     }
     if( env_map ) {
-        int is_panorama = vfs_size( env_map );
-        if( is_panorama ) { // is file
-            stbi_hdr_to_ldr_gamma(1.2f);
-            image_t panorama = image( env_map, IMAGE_RGBA );
-            sky.env_cubemap = cubemap( panorama, 0 ); // RGBA required
-            image_destroy(&panorama);
-        } else { // is folder
-            image_t images[6] = {0};
-            images[0] = image( va("%s/posx", env_map), IMAGE_RGB ); // cubepx
-            images[1] = image( va("%s/negx", env_map), IMAGE_RGB ); // cubenx
-            images[2] = image( va("%s/posy", env_map), IMAGE_RGB ); // cubepy
-            images[3] = image( va("%s/negy", env_map), IMAGE_RGB ); // cubeny
-            images[4] = image( va("%s/posz", env_map), IMAGE_RGB ); // cubepz
-            images[5] = image( va("%s/negz", env_map), IMAGE_RGB ); // cubenz
-            sky.env_cubemap = cubemap6( images, 0 );
-            for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
-        }
-
         sky.env = load_env_tex(env_map, TEXTURE_SRGB);
     }
 

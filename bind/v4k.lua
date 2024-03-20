@@ -1259,8 +1259,6 @@ typedef struct skybox_t {
     handle program;
     mesh_t geometry;
     cubemap_t cubemap;
-    cubemap_t refl_cubemap;
-    cubemap_t env_cubemap;
     int flags;
     int framebuffers[6];
     int textures[6];

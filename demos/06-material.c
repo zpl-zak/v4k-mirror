@@ -7,6 +7,7 @@
 
 
 const char *skyboxes[][2] = { // reflection, env, metadata
+    {"hdr/mesto.hdr","hdr/mesto_Env.hdr"},
     {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Env.hdr"},
     {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
     {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
