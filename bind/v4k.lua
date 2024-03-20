@@ -1250,6 +1250,31 @@ typedef struct mesh_t {
  void mesh_render_prim(mesh_t *sm, unsigned prim);
  void mesh_destroy(mesh_t *m);
  aabb mesh_bounds(mesh_t *m);
+enum SKYBOX_FLAGS {
+	SKYBOX_RAYLEIGH,
+	SKYBOX_CUBEMAP,
+	SKYBOX_PBR,
+};
+typedef struct skybox_t {
+    handle program;
+    mesh_t geometry;
+    cubemap_t cubemap;
+    cubemap_t env_cubemap;
+    int flags;
+    int framebuffers[6];
+    int textures[6];
+    float *pixels;
+    texture_t refl, env;
+} skybox_t;
+ skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);
+ skybox_t skybox_pbr(const char *refl_map, const char *env_map);
+ int skybox_render(skybox_t *sky, mat44 proj, mat44 view);
+ void skybox_destroy(skybox_t *sky);
+ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity);
+ void skybox_sh_reset(skybox_t *sky);
+ void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength);
+ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view);
+ int skybox_pop_state();
 enum MATERIAL_ENUMS {
     MAX_CHANNELS_PER_MATERIAL = 8
 };
@@ -1309,12 +1334,20 @@ enum MODEL_FLAGS {
     MODEL_MATCAPS = 16,
     MODEL_RIMLIGHT = 32,
 };
+enum SHADING_MODE {
+    SHADING_NONE,
+    SHADING_PHONG,
+    SHADING_PBR,
+};
 typedef struct model_t {
     struct iqm_t *iqm;
+    int shading;
     unsigned num_textures;
     handle *textures;
     char **texture_names;
     material_t* materials;
+    pbr_material_t pbr_material;
+    texture_t sky_refl, sky_env;
     texture_t lightmap;
     float *lmdata;
     unsigned num_meshes;
@@ -1335,6 +1368,7 @@ typedef struct model_t {
     unsigned billboard;
     float *instanced_matrices;
     unsigned num_instances;
+    int stored_flags;
 } model_t;
 enum BILLBOARD_MODE {
     BILLBOARD_X = 0x1,
@@ -1349,6 +1383,8 @@ enum BILLBOARD_MODE {
  float model_animate_clip(model_t, float curframe, int minframe, int maxframe, bool loop);
  float model_animate_blends(model_t m, anim_t *primary, anim_t *secondary, float delta);
  aabb model_aabb(model_t, mat44 transform);
+ void model_shading(model_t*, int shading);
+ void model_skybox(model_t*, skybox_t sky, bool load_sh);
  void model_render(model_t, mat44 proj, mat44 view, mat44 model, int shader);
  void model_render_skeleton(model_t, mat44 model);
  void model_render_instanced(model_t, mat44 proj, mat44 view, mat44 *models, int shader, unsigned count);
@@ -1375,23 +1411,6 @@ typedef struct lightmap_t {
  void lightmap_setup(lightmap_t *lm, int w, int h);
  void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void (*progressupdate)(float progress), void *userdata);
  void lightmap_destroy(lightmap_t *lm);
-typedef struct skybox_t {
-    handle program;
-    mesh_t geometry;
-    cubemap_t cubemap;
-    int flags;
-    int framebuffers[6];
-    int textures[6];
-    float *pixels;
-} skybox_t;
- skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);
- int skybox_render(skybox_t *sky, mat44 proj, mat44 view);
- void skybox_destroy(skybox_t *sky);
- void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity);
- void skybox_sh_reset(skybox_t *sky);
- void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength);
- int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view);
- int skybox_pop_state();
  void viewport_color(unsigned color);
  void viewport_clear(bool color, bool depth);
  void viewport_clip(vec2 from, vec2 to);

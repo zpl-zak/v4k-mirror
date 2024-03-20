@@ -81,7 +81,7 @@ GLuint shader_compile( GLenum type, const char *source ) {
 
         // dump log with line numbers
         shader_print( source );
-        PRINTF("!ERROR: shader_compile(): %s\n%s\n", type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", buf);
+        PANIC("!ERROR: shader_compile(): %s\n%s\n", type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", buf);
         return 0;
     }
 
@@ -102,7 +102,7 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
         }
     }
 
-    const char *glsl_version = ifdef(ems, "300 es", "150");
+    const char *glsl_version = ifdef(ems, "300 es", "400");
 
     if(gs)
     gs = gs && gs[0] == '#' && gs[1] == 'v' ? gs : va("#version %s\n%s\n%s", glsl_version, glsl_defines, gs ? gs : "");
@@ -670,7 +670,6 @@ static
 int allocate_texture_unit() {
     static int textureUnit = 0, totalTextureUnits = 0;
     do_once glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &totalTextureUnits);
-
     ASSERT(textureUnit < totalTextureUnits, "%d texture units exceeded", totalTextureUnits);
     return textureUnit++;
 }
@@ -1611,7 +1610,7 @@ skybox_t skybox(const char *asset, int flags) {
     mesh_update(&sky.geometry, "p3", 0,countof(vertices),vertices, countof(indices),indices, MESH_TRIANGLE_STRIP);
 
     // sky program
-    sky.flags = flags ? flags : !!asset; // either cubemap or rayleigh
+    sky.flags = flags && flags != SKYBOX_PBR ? flags : !!asset ? SKYBOX_CUBEMAP : SKYBOX_RAYLEIGH; // either cubemap or rayleigh
     sky.program = shader(vfs_read("shaders/vs_3_3_skybox.glsl"),
         sky.flags ? vfs_read("fs_3_4_skybox.glsl") : vfs_read("shaders/fs_3_4_skybox_rayleigh.glsl"),
         "att_position", "fragcolor", NULL);
@@ -1649,6 +1648,77 @@ skybox_t skybox(const char *asset, int flags) {
         shader_float("uMieScaleHeight", 1200.0);
         shader_float("uMiePreferredDirection", 0.758);
         skybox_mie_calc_sh(&sky, 1.2);
+    }
+
+    return sky;
+}
+
+static inline
+texture_t load_env_tex( const char *pathfile, unsigned flags ) {
+    int flags_hdr = strendi(pathfile, ".hdr") ? TEXTURE_FLOAT | TEXTURE_RGBA : 0;
+    texture_t t = texture(pathfile, flags | TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | flags_hdr);
+    glBindTexture( GL_TEXTURE_2D, t.id );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    return t;
+}
+
+skybox_t skybox_pbr(const char *refl_map, const char *env_map) {
+    skybox_t sky = {0};
+
+    // sky mesh
+    vec3 vertices[] = {{+1,-1,+1},{+1,+1,+1},{+1,+1,-1},{-1,+1,-1},{+1,-1,-1},{-1,-1,-1},{-1,-1,+1},{-1,+1,+1}};
+    unsigned indices[] = { 0, 1, 2, 3, 4, 5, 6, 3, 7, 1, 6, 0, 4, 2 };
+    mesh_update(&sky.geometry, "p3", 0,countof(vertices),vertices, countof(indices),indices, MESH_TRIANGLE_STRIP);
+
+    // sky program
+    sky.flags = SKYBOX_PBR;
+    sky.program = shader(vfs_read("shaders/vs_3_3_skybox.glsl"),
+        sky.flags ? vfs_read("fs_3_4_skybox.glsl") : vfs_read("shaders/fs_3_4_skybox_rayleigh.glsl"),
+        "att_position", "fragcolor", NULL);
+
+    // sky cubemap & SH
+    if( refl_map ) {
+        int is_panorama = vfs_size( refl_map );
+        if( is_panorama ) { // is file
+            stbi_hdr_to_ldr_gamma(1.2f);
+            image_t panorama = image( refl_map, IMAGE_RGBA );
+            sky.cubemap = cubemap( panorama, 0 ); // RGBA required
+            image_destroy(&panorama);
+        } else { // is folder
+            image_t images[6] = {0};
+            images[0] = image( va("%s/posx", refl_map), IMAGE_RGB ); // cubepx
+            images[1] = image( va("%s/negx", refl_map), IMAGE_RGB ); // cubenx
+            images[2] = image( va("%s/posy", refl_map), IMAGE_RGB ); // cubepy
+            images[3] = image( va("%s/negy", refl_map), IMAGE_RGB ); // cubeny
+            images[4] = image( va("%s/posz", refl_map), IMAGE_RGB ); // cubepz
+            images[5] = image( va("%s/negz", refl_map), IMAGE_RGB ); // cubenz
+            sky.cubemap = cubemap6( images, 0 );
+            for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
+        }
+
+        sky.refl = load_env_tex(refl_map, TEXTURE_SRGB);
+    }
+    if( env_map ) {
+        int is_panorama = vfs_size( env_map );
+        if( is_panorama ) { // is file
+            stbi_hdr_to_ldr_gamma(1.2f);
+            image_t panorama = image( env_map, IMAGE_RGBA );
+            sky.env_cubemap = cubemap( panorama, 0 ); // RGBA required
+            image_destroy(&panorama);
+        } else { // is folder
+            image_t images[6] = {0};
+            images[0] = image( va("%s/posx", env_map), IMAGE_RGB ); // cubepx
+            images[1] = image( va("%s/negx", env_map), IMAGE_RGB ); // cubenx
+            images[2] = image( va("%s/posy", env_map), IMAGE_RGB ); // cubepy
+            images[3] = image( va("%s/negy", env_map), IMAGE_RGB ); // cubeny
+            images[4] = image( va("%s/posz", env_map), IMAGE_RGB ); // cubepz
+            images[5] = image( va("%s/negz", env_map), IMAGE_RGB ); // cubenz
+            sky.env_cubemap = cubemap6( images, 0 );
+            for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
+        }
+
+        sky.env = load_env_tex(env_map, TEXTURE_SRGB);
     }
 
     return sky;
@@ -2907,6 +2977,11 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     if ((loc = glGetUniformLocation(shader, "view")) >= 0) {
         glUniformMatrix4fv(loc, 1, GL_FALSE, view);
     }
+    if ((loc = glGetUniformLocation(shader, "inv_view")) >= 0) {
+        mat44 inv_view;
+        invert44( inv_view, view);
+        glUniformMatrix4fv(loc, 1, GL_FALSE, inv_view);
+    }
     if ((loc = glGetUniformLocation(shader, "P")) >= 0) {
         glUniformMatrix4fv(loc, 1, GL_FALSE, proj);
     }
@@ -2920,6 +2995,36 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
 
     if ((loc = glGetUniformLocation(shader, "u_matcaps")) >= 0) {
         glUniform1i(loc, m.flags & MODEL_MATCAPS ? GL_TRUE:GL_FALSE);
+    }
+
+    if (m.shading == SHADING_PBR) {
+        const pbr_material_t *material = &m.pbr_material;
+        shader_colormap( "map_diffuse", material->diffuse );
+        shader_colormap( "map_normals", material->normals );
+        shader_colormap( "map_specular", material->specular );
+        shader_colormap( "map_albedo", material->albedo );
+        shader_colormap( "map_roughness", material->roughness );
+        shader_colormap( "map_metallic", material->metallic );
+        shader_colormap( "map_ao", material->ao );
+        shader_colormap( "map_ambient", material->ambient );
+        shader_colormap( "map_emissive", material->emissive );
+        shader_float( "specular_shininess", material->specular_shininess ); // unused, basic_specgloss.fs only
+
+        shader_vec2( "resolution", vec2(window_width(),window_height()));
+        
+        bool has_tex_skysphere = m.sky_refl.id != texture_checker().id;
+        bool has_tex_skyenv = m.sky_env.id != texture_checker().id;
+        shader_bool( "has_tex_skysphere", has_tex_skysphere );
+        shader_bool( "has_tex_skyenv", has_tex_skyenv );
+        if( has_tex_skysphere ) {
+            float mipCount = floor( log2( m.sky_refl.h ) );
+            shader_texture("tex_skysphere", m.sky_refl);
+            shader_float( "skysphere_mip_count", mipCount );
+        }
+        if( has_tex_skyenv ) {
+            shader_texture( "tex_skyenv", m.sky_env );
+        }
+        shader_texture( "tex_brdf_lut", brdf_lut() );
     }
 }
 static
@@ -3358,6 +3463,9 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
 model_t model_from_mem(const void *mem, int len, int flags) {
     model_t m = {0};
 
+    m.stored_flags = flags;
+    m.shading = SHADING_PHONG;
+
     const char *ptr = (const char *)mem;
     // can't cache shader programs since we enable features via flags here
     // static int shaderprog = -1;
@@ -3638,22 +3746,24 @@ void model_draw_call(model_t m, int shader) {
     for(int i = 0; i < q->nummeshes; i++) {
         struct iqmmesh *im = &q->meshes[i];
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, q->textures[i] );
-        glUniform1i(glGetUniformLocation(shader, "u_texture2d"), 0 );
+        if (m.shading != SHADING_PBR) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, q->textures[i] );
+            glUniform1i(glGetUniformLocation(shader, "u_texture2d"), 0 );
 
-        int loc;
-        if ((loc = glGetUniformLocation(shader, "u_textured")) >= 0) {
-            bool textured = !!q->textures[i] && q->textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
-            glUniform1i(loc, textured ? GL_TRUE : GL_FALSE);
-            if ((loc = glGetUniformLocation(shader, "u_diffuse")) >= 0) {
-                glUniform4f(loc, m.materials[i].layer[0].color.r, m.materials[i].layer[0].color.g, m.materials[i].layer[0].color.b, m.materials[i].layer[0].color.a);
+            int loc;
+            if ((loc = glGetUniformLocation(shader, "u_textured")) >= 0) {
+                bool textured = !!q->textures[i] && q->textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
+                glUniform1i(loc, textured ? GL_TRUE : GL_FALSE);
+                if ((loc = glGetUniformLocation(shader, "u_diffuse")) >= 0) {
+                    glUniform4f(loc, m.materials[i].layer[0].color.r, m.materials[i].layer[0].color.g, m.materials[i].layer[0].color.b, m.materials[i].layer[0].color.a);
+                }
             }
-        }
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, m.lightmap.id);
-        glUniform1i(glGetUniformLocation(shader, "u_lightmap"), 1 );
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, m.lightmap.id);
+            glUniform1i(glGetUniformLocation(shader, "u_lightmap"), 1 );
+        }
 
         glDrawElementsInstanced(GL_TRIANGLES, 3*im->num_triangles, GL_UNSIGNED_INT, &tris[im->first_triangle], m.num_instances);
         profile_incstat("Render.num_drawcalls", +1);
@@ -3681,6 +3791,33 @@ void model_render_instanced(model_t m, mat44 proj, mat44 view, mat44* models, in
 
 void model_render(model_t m, mat44 proj, mat44 view, mat44 model, int shader) {
     model_render_instanced(m, proj, view, (mat44*)model, shader, 1);
+}
+
+void model_shading(model_t *m, int shading) {
+    m->shading = shading;
+    int flags = m->stored_flags;
+
+    // load pbr material if SHADING_PBR was selected
+    if (shading == SHADING_PBR && array_count(m->materials) > 0) {
+        pbr_material(&m->pbr_material, m->materials[0].name);
+    }
+
+    // rebind shader
+    // @fixme: destroy old shader program
+    const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
+    int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
+        "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
+        va("%s,%s", shading == SHADING_PBR ? "SHADING_PBR" : "SHADING_PHONG", (flags&MODEL_RIMLIGHT)?"RIM":""));
+    m->program = shaderprog;
+}
+
+void model_skybox(model_t *mdl, skybox_t sky, bool load_sh) {
+    if (load_sh) {
+        shader_vec3v("u_coefficients_sh", 9, sky.cubemap.sh);
+    }
+
+    mdl->sky_refl = sky.refl;
+    mdl->sky_env = sky.env;
 }
 
 // static

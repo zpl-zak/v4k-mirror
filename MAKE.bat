@@ -761,7 +761,7 @@ if "!cc!"=="cl" (
 
     if "!build!"=="ret" (
         set args=-DENABLE_RETAIL -Dmain=WinMain !args!
-        set args=/nologo /Zi /MT /openmp /DNDEBUG=3 !args!        /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
+        set args=/nologo /Zi /MT /DNDEBUG=3 !args!        /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
     )
     if "!build!"=="rel" (
         set args=/nologo /Zi /MT /openmp /DNDEBUG=2 !args!        /Os /Ox /O2 /Oy /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG
@@ -793,7 +793,7 @@ if "!cc!"=="cl" (
 
     if "!build!"=="ret" (
         set args=-DENABLE_RETAIL -Dmain=WinMain !args!
-        set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG=3 !args!        /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
+        set args=!warnings! /nologo /Zi /MT /DNDEBUG=3 !args!        /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2
     )
     if "!build!"=="rel" (
         set args=!warnings! /nologo /Zi /MT /openmp /DNDEBUG=2 !args!        /Os /Ox /O2 /Oy /GF /Gw /arch:AVX2

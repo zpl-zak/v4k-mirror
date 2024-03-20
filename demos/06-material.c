@@ -20,6 +20,8 @@ int main() {
     // load model
     model_t m1 = model("suzanne.obj", MODEL_NO_ANIMATIONS);
     model_t m2 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_MATCAPS);
+    model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS);
+    model_shading(&m3, SHADING_PBR);
 
     // spawn object1 (diffuse)
     object_t* obj1 = scene_spawn();
@@ -37,7 +39,7 @@ int main() {
     object_move(obj2, vec3(-10+5*2,0,-10));
     object_pivot(obj2, vec3(0,90,0));
 
-    // spawn object2 (video)
+    // spawn object3 (video)
     object_t* obj3 = scene_spawn();
     object_model(obj3, m1);
     object_diffuse(obj3, video_textures(v)[0]);
@@ -45,9 +47,19 @@ int main() {
     object_move(obj3, vec3(-10+5*1,0,-10));
     object_pivot(obj3, vec3(0,90,0));
 
+    // spawn object4 (pbr)
+    object_t* obj4 = scene_spawn();
+    object_model(obj4, m3);
+    object_scale(obj4, vec3(3,3,3));
+    object_move(obj4, vec3(-10+6*3,0,-10));
+    object_pivot(obj4, vec3(0,90,0));
+
     // create point light
     light_t* l = scene_spawn_light();
     light_type(l, LIGHT_POINT);
+
+    // load skybox
+    scene_get_active()->skybox = skybox_pbr("hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr");
 
     while(window_swap() && !input(KEY_ESC)) {
         // draw environment

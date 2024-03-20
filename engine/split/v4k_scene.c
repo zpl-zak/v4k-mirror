@@ -569,14 +569,17 @@ void scene_render(int flags) {
                 shader_bind(model->program);
                 shader_vec3v("u_coefficients_sh", 9, last_scene->skybox.cubemap.sh);
             }
+     
+            model_skybox(model, last_scene->skybox, 0);
 
             if (anim) {
                 float delta = window_delta() * obj->anim_speed;
                 model->curframe = model_animate_clip(*model, model->curframe + delta, anim->from, anim->to, anim->flags & ANIM_LOOP );
             }
 
+
             model->billboard = obj->billboard;
-            model_render(*model, cam->proj, cam->view, obj->transform, 0);
+            model_render(*model, cam->proj, cam->view, obj->transform, model->program);
 
             if( do_retexturing ) {
                 for(int i = 0; i < model->iqm->nummeshes; ++i) {
