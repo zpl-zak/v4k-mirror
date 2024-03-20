@@ -2624,7 +2624,7 @@ bool pbr_material(pbr_material_t *pbr, const char *material) {
     array(char*) tokens = strsplit(material, "+");
     for( int j = 0, end = array_count(tokens); j < end; ++j ) {
         char *t = tokens[j];
-        if( strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") )    colormap(&pbr->diffuse, t, 1);
+        if( strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )    colormap(&pbr->diffuse, t, 1);
         if( strstri(t, "_N.") || strstri(t, "Normal") )     colormap(&pbr->normals, t, 0);
         if( strstri(t, "_S.") || strstri(t, "Specular") )   colormap(&pbr->specular, t, 0);
         if( strstri(t, "_A.") || strstri(t, "Albedo") )     colormap(&pbr->albedo, t, 1); // 0?

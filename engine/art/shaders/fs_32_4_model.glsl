@@ -688,7 +688,7 @@ void main(void)
     // float dither = random( uvec3( floatBitsToUint( gl_FragCoord.xy ), frame_count ) );
     // color += BOOST_NOISE * vec3( (-1.0/256.) + (2./256.) * dither );
 
-#if 1 // original
+#if 0 // original
     // basic tonemap and gamma correction
     color = color / ( vec3(1.) + color );
     color = pow( color, vec3(1. / 2.2) );
