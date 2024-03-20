@@ -436,6 +436,7 @@ typedef struct skybox_t {
     handle program;
     mesh_t geometry;
     cubemap_t cubemap;
+    cubemap_t refl_cubemap;
     cubemap_t env_cubemap;
     int flags;
 
@@ -445,11 +446,11 @@ typedef struct skybox_t {
     float *pixels;
 
     // pbr
-    texture_t refl, env;
+    texture_t sky, refl, env;
 } skybox_t;
 
 API skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);
-API skybox_t skybox_pbr(const char *refl_map, const char *env_map);
+API skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_map);
 API int      skybox_render(skybox_t *sky, mat44 proj, mat44 view);
 API void     skybox_destroy(skybox_t *sky);
 API void     skybox_mie_calc_sh(skybox_t *sky, float sky_intensity);

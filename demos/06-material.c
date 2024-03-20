@@ -7,6 +7,9 @@
 
 
 const char *skyboxes[][2] = { // reflection, env, metadata
+    {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Env.hdr"},
+    {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
+    {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
     {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
     {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
     {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Env.hdr"},
@@ -73,7 +76,7 @@ int main() {
     light_type(l, LIGHT_POINT);
 
     // load skybox
-    scene_get_active()->skybox = skybox_pbr("hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr");
+    scene_get_active()->skybox = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);
 
 
     while(window_swap() && !input(KEY_ESC)) {
@@ -111,7 +114,7 @@ int main() {
                 // bool selected = !strcmp(g_skybox.reflection->filename, file_name(filename));
                 bool selected = false;
                 if( ui_bool( filename, &selected ) ) {
-                    scene_get_active()->skybox = skybox_pbr(skyboxes[i][0], skyboxes[i][1]);
+                    scene_get_active()->skybox = skybox_pbr(skyboxes[i][0], skyboxes[i][0], skyboxes[i][1]);
                 }
             }
             ui_panel_end();
