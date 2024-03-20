@@ -1688,7 +1688,7 @@ skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_m
     // sky program
     sky.flags = SKYBOX_PBR;
     sky.program = shader(vfs_read("shaders/vs_3_3_skybox.glsl"),
-        sky.flags ? vfs_read("fs_3_4_skybox.glsl") : vfs_read("shaders/fs_3_4_skybox_rayleigh.glsl"),
+        vfs_read("fs_3_4_skybox.glsl"),
         "att_position", "fragcolor", NULL);
 
     // sky cubemap & SH
