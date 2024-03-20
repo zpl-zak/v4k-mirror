@@ -20,8 +20,7 @@ int main() {
     // load model
     model_t m1 = model("suzanne.obj", MODEL_NO_ANIMATIONS);
     model_t m2 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_MATCAPS);
-    model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS);
-    model_shading(&m3, SHADING_PBR);
+    model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
 
     // spawn object1 (diffuse)
     object_t* obj1 = scene_spawn();

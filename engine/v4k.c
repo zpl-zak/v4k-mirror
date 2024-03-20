@@ -20712,6 +20712,9 @@ model_t model_from_mem(const void *mem, int len, int flags) {
 
         glGenBuffers(1, &m.vao_instanced);
         model_set_state(m);
+        if (flags & MODEL_PBR) {
+            model_shading(&m, SHADING_PBR);
+        }
     }
     return m;
 }
