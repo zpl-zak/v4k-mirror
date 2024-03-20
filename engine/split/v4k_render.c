@@ -94,9 +94,9 @@ unsigned shader(const char *vs, const char *fs, const char *attribs, const char 
 
 static inline
 char *shader_preprocess(const char *src, const char *defines) {
-    const char *glsl_version = va("#version %s", ifdef(ems, "300 es", "150"));
-
     if (!src) return NULL;
+
+    const char *glsl_version = va("#version %s", ifdef(ems, "300 es", "150"));
 
     // detect GLSL version if set
     if (src[0] == '#' && src[1] == 'v') {
