@@ -7,15 +7,15 @@
 
 
 const char *skyboxes[][2] = { // reflection, env, metadata
-    {"hdr/mesto.hdr","hdr/mesto_Env.hdr"},
+    {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
     {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Env.hdr"},
     {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
     {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
-    {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
     {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
     {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Env.hdr"},
     {"hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_Env.hdr"},
     {"hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_Env.hdr"},
+    {"hdr/mesto.hdr","hdr/mesto_Env.hdr"},
 };
 
 int main() {
@@ -73,8 +73,10 @@ int main() {
     object_pivot(obj4, vec3(0,0,90));
 
     // create point light
+    scene_spawn_light(); // sun
     light_t* l = scene_spawn_light();
     light_type(l, LIGHT_POINT);
+    l->diffuse = vec3(1,0,0);
 
     // load skybox
     scene_get_active()->skybox = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);

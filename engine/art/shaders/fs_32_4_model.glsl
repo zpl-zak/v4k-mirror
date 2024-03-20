@@ -535,6 +535,7 @@ void main(void)
     F0 = mix( F0, baseColor, metallic );
 
     bool use_ibl = has_tex_skysphere;
+    // use_ibl = false;
 
     // Add contributions from analytic lights.
 
@@ -569,21 +570,12 @@ void main(void)
                 continue;
             }
 
-            // vec3 n = normalize(v_normal_ws);
-
-            // float diffuse = max(dot(n, lightDir), 0.0);
-
-            // vec3 halfVec = normalize(lightDir + u_cam_dir);
-            // float specular = pow(max(dot(n, halfVec), 0.0), l.power);
-
-            // return (attenuation*l.ambient + diffuse*attenuation*l.diffuse + specular*attenuation*l.specular);
-
-            vec3 radiance = l.diffuse;
+            vec3 radiance = l.diffuse * BOOST_LIGHTING;
 
             vec3 L = normalize( lightDir );
-            vec3 H = normalize( u_cam_dir + L );
+            vec3 H = normalize( V + L );
 
-            vec3 F = fresnel_schlick( H, u_cam_dir, F0 );
+            vec3 F = fresnel_schlick( H, V, F0 );
             vec3 kS = F;
             vec3 kD = vec3(1.0) - kS;
             kD *= 1.0 - metallic;
@@ -592,10 +584,10 @@ void main(void)
             kD *= alpha;
 
             float D = distribution_ggx( N, H, roughness );
-            float G = geometry_smith( N, u_cam_dir, L, roughness );
+            float G = geometry_smith( N, V, L, roughness );
 
             vec3 num = D * F * G;
-            float denom = 4. * max( 0., dot( N, u_cam_dir ) ) * max( 0., dot( N, L ) );
+            float denom = 4. * max( 0., dot( N, V ) ) * max( 0., dot( N, L ) );
 
             vec3 specular = kS * (num / max( 0.001, denom ));
 
