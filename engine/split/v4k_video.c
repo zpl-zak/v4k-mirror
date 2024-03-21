@@ -35,9 +35,9 @@ static void mpeg_video_callback( plm_t* plm, plm_frame_t* frame, void* user ) {
     if(v->paused) return;
 
     if(v->has_ycbcr) {
-        mpeg_update_texture(GL_TEXTURE4, v->textureY.id, &frame->y);
-        mpeg_update_texture(GL_TEXTURE5, v->textureCb.id, &frame->cb);
-        mpeg_update_texture(GL_TEXTURE6, v->textureCr.id, &frame->cr);
+        mpeg_update_texture(GL_TEXTURE0, v->textureY.id, &frame->y);
+        mpeg_update_texture(GL_TEXTURE1, v->textureCb.id, &frame->cb);
+        mpeg_update_texture(GL_TEXTURE2, v->textureCr.id, &frame->cr);
     } else {
         plm_frame_to_rgb( frame, v->surface, v->texture.w * 3 );
         texture_update( &v->texture, v->texture.w, v->texture.h, v->texture.n, v->surface, v->texture.flags );
