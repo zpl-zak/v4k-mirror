@@ -1346,7 +1346,7 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     material_t* materials;
-    pbr_material_t pbr_material;
+    pbr_material_t* pbr_materials;
     texture_t sky_refl, sky_env;
     texture_t lightmap;
     float *lmdata;

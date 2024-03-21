@@ -20169,18 +20169,6 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     }
 
     if (m.shading == SHADING_PBR) {
-        const pbr_material_t *material = &m.pbr_material;
-        shader_colormap( "map_diffuse", material->diffuse );
-        shader_colormap( "map_normals", material->normals );
-        shader_colormap( "map_specular", material->specular );
-        shader_colormap( "map_albedo", material->albedo );
-        shader_colormap( "map_roughness", material->roughness );
-        shader_colormap( "map_metallic", material->metallic );
-        shader_colormap( "map_ao", material->ao );
-        shader_colormap( "map_ambient", material->ambient );
-        shader_colormap( "map_emissive", material->emissive );
-        shader_float( "specular_shininess", material->specular_shininess ); // unused, basic_specgloss.fs only
-
         shader_vec2( "resolution", vec2(window_width(),window_height()));
         
         bool has_tex_skysphere = m.sky_refl.id != texture_checker().id;
@@ -20938,6 +20926,18 @@ void model_draw_call(model_t m, int shader) {
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, m.lightmap.id);
             glUniform1i(glGetUniformLocation(shader, "u_lightmap"), 1 );
+        } else {
+            const pbr_material_t *material = &m.pbr_materials[i];
+            shader_colormap( "map_diffuse", material->diffuse );
+            shader_colormap( "map_normals", material->normals );
+            shader_colormap( "map_specular", material->specular );
+            shader_colormap( "map_albedo", material->albedo );
+            shader_colormap( "map_roughness", material->roughness );
+            shader_colormap( "map_metallic", material->metallic );
+            shader_colormap( "map_ao", material->ao );
+            shader_colormap( "map_ambient", material->ambient );
+            shader_colormap( "map_emissive", material->emissive );
+            shader_float( "specular_shininess", material->specular_shininess ); // unused, basic_specgloss.fs only
         }
 
         glDrawElementsInstanced(GL_TRIANGLES, 3*im->num_triangles, GL_UNSIGNED_INT, &tris[im->first_triangle], m.num_instances);
@@ -20973,8 +20973,12 @@ void model_shading(model_t *m, int shading) {
     int flags = m->stored_flags;
 
     // load pbr material if SHADING_PBR was selected
-    if (shading == SHADING_PBR && array_count(m->materials) > 0) {
-        pbr_material(&m->pbr_material, m->materials[0].name);
+    if (shading == SHADING_PBR) {
+        for (int i = 0; i < array_count(m->materials); ++i) {
+            pbr_material_t mat = {0};
+            pbr_material(&mat, m->materials[i].name);
+            array_push(m->pbr_materials, mat);
+        }
     }
 
     // rebind shader
