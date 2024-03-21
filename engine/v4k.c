@@ -17219,7 +17219,7 @@ void glDebugEnable() {
 
 static
 void glCopyBackbufferToTexture( texture_t *tex ) { // unused
-    glActiveTexture( GL_TEXTURE0 + allocate_texture_unit() );
+    glActiveTexture( GL_TEXTURE0 + texture_unit() );
     glBindTexture( GL_TEXTURE_2D, tex->id );
     glCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, 0, 0, window_width(), window_height(), 0 );
 }
@@ -17729,7 +17729,7 @@ void shader_mat44(const char *uniform, mat44 m) { glUniformMatrix4fv(shader_unif
 void shader_cubemap(const char *sampler, unsigned texture) { glUniform1i(shader_uniform(sampler), 0); glBindTexture(GL_TEXTURE_CUBE_MAP, texture); }
 void shader_bool(const char *uniform, bool x) { glUniform1i(shader_uniform(uniform), x); }
 void shader_uint(const char *uniform, unsigned x ) { glUniform1ui(shader_uniform(uniform), x); }
-void shader_texture(const char *sampler, texture_t t) { shader_texture_unit(sampler, t.id, allocate_texture_unit()); }
+void shader_texture(const char *sampler, texture_t t) { shader_texture_unit(sampler, t.id, texture_unit()); }
 void shader_texture_unit(const char *sampler, unsigned id, unsigned unit) {
     // @todo. if tex.h == 1 ? GL_TEXTURE_1D : GL_TEXTURE_2D
     glUniform1i(shader_uniform(sampler), unit);
@@ -17870,8 +17870,7 @@ vec3 bilinear(image_t in, vec2 uv) { // image_bilinear_pixel() ?
 // -----------------------------------------------------------------------------
 // textures
 
-static
-int allocate_texture_unit() {
+int texture_unit() {
     static int textureUnit = 0, totalTextureUnits = 0;
     do_once glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &totalTextureUnits);
     // ASSERT(textureUnit < totalTextureUnits, "%d texture units exceeded", totalTextureUnits);
@@ -20931,7 +20930,7 @@ void model_draw_call(model_t m, int shader) {
         struct iqmmesh *im = &q->meshes[i];
 
         if (m.shading != SHADING_PBR) {
-            shader_texture_unit("u_texture2d", q->textures[i], allocate_texture_unit());
+            shader_texture_unit("u_texture2d", q->textures[i], texture_unit());
             shader_texture("u_lightmap", m.lightmap);
 
             int loc;

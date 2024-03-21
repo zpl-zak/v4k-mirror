@@ -1101,6 +1101,7 @@ typedef struct texture_t {
  texture_t texture_create(unsigned w, unsigned h, unsigned n, const void *pixels, int flags);
  texture_t texture_checker();
  void texture_destroy(texture_t *t);
+ int texture_unit();
  unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const void *pixels, int flags);
  bool texture_rec_begin(texture_t *t, unsigned w, unsigned h);
  void texture_rec_end(texture_t *t);

@@ -136,6 +136,7 @@ API texture_t texture_from_mem(const void* ptr, int len, int flags);
 API texture_t texture_create(unsigned w, unsigned h, unsigned n, const void *pixels, int flags);
 API texture_t texture_checker();
 API void      texture_destroy(texture_t *t);
+API int       texture_unit(); // returns rolling counter
 // textureLod(filename, dir, lod);
 // void texture_add_loader( int(*loader)(const char *filename, int *w, int *h, int *bpp, int reqbpp, int flags) );
 API unsigned  texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const void *pixels, int flags);
