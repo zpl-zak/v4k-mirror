@@ -17219,7 +17219,7 @@ void glDebugEnable() {
 
 static
 void glCopyBackbufferToTexture( texture_t *tex ) { // unused
-    glActiveTexture( GL_TEXTURE0 + tex->unit );
+    glActiveTexture( GL_TEXTURE0 + allocate_texture_unit() );
     glBindTexture( GL_TEXTURE_2D, tex->id );
     glCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, 0, 0, window_width(), window_height(), 0 );
 }
@@ -20902,6 +20902,9 @@ void model_draw_call(model_t m, int shader) {
     if(!m.iqm) return;
     iqm_t *q = m.iqm;
 
+    handle old_shader = last_shader;
+    shader_bind(shader);
+
     glBindVertexArray( q->vao );
 
     struct iqmtriangle *tris = NULL;
@@ -20909,9 +20912,8 @@ void model_draw_call(model_t m, int shader) {
         struct iqmmesh *im = &q->meshes[i];
 
         if (m.shading != SHADING_PBR) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, q->textures[i] );
-            glUniform1i(glGetUniformLocation(shader, "u_texture2d"), allocate_texture_unit() );
+            shader_texture_unit("u_texture2d", q->textures[i], allocate_texture_unit());
+            shader_texture("u_lightmap", m.lightmap);
 
             int loc;
             if ((loc = glGetUniformLocation(shader, "u_textured")) >= 0) {
@@ -20922,9 +20924,6 @@ void model_draw_call(model_t m, int shader) {
                 }
             }
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, m.lightmap.id);
-            glUniform1i(glGetUniformLocation(shader, "u_lightmap"), allocate_texture_unit() );
         } else {
             const pbr_material_t *material = &m.pbr_materials[i];
             shader_colormap( "map_diffuse", material->diffuse );
@@ -20945,6 +20944,8 @@ void model_draw_call(model_t m, int shader) {
     }
 
     glBindVertexArray( 0 );
+
+    shader_bind(old_shader);
 }
 
 void model_render_instanced(model_t m, mat44 proj, mat44 view, mat44* models, int shader, unsigned count) {
