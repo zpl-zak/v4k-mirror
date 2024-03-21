@@ -520,12 +520,28 @@ void ssbo_unbind(){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
+typedef map(unsigned,int) uniform_binding;
 static __thread unsigned last_shader = -1;
+static __thread quarks_db uniform_names;
+static __thread map(handle, uniform_binding) uniforms;
 static
 int shader_uniform(const char *name) {
-    int ret = glGetUniformLocation(last_shader, name);
+    do_once map_init(uniforms, less_int, hash_int);
+    if (!map_find(uniforms, last_shader)) {
+        uniform_binding names_map = 0;
+        map_init(names_map, less_int, hash_int);
+        map_insert(uniforms, last_shader, names_map);
+    }
+    
+    uniform_binding names = *map_find(uniforms, last_shader);
+    unsigned name_hash = quark_intern(&uniform_names, name);
+    if (!map_find(names, name_hash)) {
+        map_insert(names, name_hash, glGetUniformLocation(last_shader, name));
+    }
+
+    // int ret = glGetUniformLocation(last_shader, name);
     // if( ret < 0 ) PRINTF("!cannot find uniform '%s' in shader program %d\n", name, (int)last_shader );
-    return ret;
+    return *map_find(names, name_hash);
 }
 unsigned shader_get_active() { return last_shader; }
 unsigned shader_bind(unsigned program) { unsigned ret = last_shader; return glUseProgram(last_shader = program), ret; }
