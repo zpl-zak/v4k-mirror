@@ -2994,6 +2994,8 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     }
 
     if (m.shading == SHADING_PBR) {
+        handle old_shader = last_shader;
+        shader_bind(shader);
         shader_vec2( "resolution", vec2(window_width(),window_height()));
         
         bool has_tex_skysphere = m.sky_refl.id != texture_checker().id;
@@ -3010,6 +3012,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         }
         shader_texture( "tex_brdf_lut", brdf_lut() );
         shader_uint( "frame_count", (unsigned)window_frame() );
+        shader_bind(old_shader);
     }
 }
 static
