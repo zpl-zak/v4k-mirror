@@ -539,7 +539,7 @@ void shader_mat44(const char *uniform, mat44 m) { glUniformMatrix4fv(shader_unif
 void shader_cubemap(const char *sampler, unsigned texture) { glUniform1i(shader_uniform(sampler), 0); glBindTexture(GL_TEXTURE_CUBE_MAP, texture); }
 void shader_bool(const char *uniform, bool x) { glUniform1i(shader_uniform(uniform), x); }
 void shader_uint(const char *uniform, unsigned x ) { glUniform1ui(shader_uniform(uniform), x); }
-void shader_texture(const char *sampler, texture_t t) { shader_texture_unit(sampler, t.id, t.unit); }
+void shader_texture(const char *sampler, texture_t t) { shader_texture_unit(sampler, t.id, allocate_texture_unit()); }
 void shader_texture_unit(const char *sampler, unsigned id, unsigned unit) {
     // @todo. if tex.h == 1 ? GL_TEXTURE_1D : GL_TEXTURE_2D
     glUniform1i(shader_uniform(sampler), unit);
@@ -684,8 +684,8 @@ static
 int allocate_texture_unit() {
     static int textureUnit = 0, totalTextureUnits = 0;
     do_once glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &totalTextureUnits);
-    ASSERT(textureUnit < totalTextureUnits, "%d texture units exceeded", totalTextureUnits);
-    return textureUnit++;
+    // ASSERT(textureUnit < totalTextureUnits, "%d texture units exceeded", totalTextureUnits);
+    return textureUnit++ % totalTextureUnits;
 }
 
 unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const void *pixels, int flags) {
@@ -781,7 +781,6 @@ texture_t texture_create(unsigned w, unsigned h, unsigned n, const void *pixels,
     texture_t texture = {0};
     glGenTextures( 1, &texture.id );
     texture_update( &texture, w, h, n, pixels, flags );
-    texture.unit = allocate_texture_unit();
     texture.transparent = texture.n > 3; // @fixme: should be true only if any pixel.a == 0
     return texture;
 }
@@ -2611,7 +2610,7 @@ bool pbr_material(pbr_material_t *pbr, const char *material) {
         if( strstri(t, "_N.") || strstri(t, "Normal") )     colormap(&pbr->normals, t, 0);
         if( strstri(t, "_S.") || strstri(t, "Specular") )   colormap(&pbr->specular, t, 0);
         if( strstri(t, "_A.") || strstri(t, "Albedo") )     colormap(&pbr->albedo, t, 1); // 0?
-        if( strstri(t, "_MR.")|| strstri(t, "Roughness") )  colormap(&pbr->roughness, t, 0);
+        if( strstri(t, "_MR.")|| strstri(t, "Roughness") || strstri(t, "MetallicRoughness") )  colormap(&pbr->roughness, t, 0);
         else
         if( strstri(t, "_M.") || strstri(t, "Metallic") )   colormap(&pbr->metallic, t, 0);
       //if( strstri(t, "_S.") || strstri(t, "Shininess") )  colormap(&pbr->roughness, t, 0);
@@ -3738,7 +3737,7 @@ void model_draw_call(model_t m, int shader) {
         if (m.shading != SHADING_PBR) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, q->textures[i] );
-            glUniform1i(glGetUniformLocation(shader, "u_texture2d"), 0 );
+            glUniform1i(glGetUniformLocation(shader, "u_texture2d"), allocate_texture_unit() );
 
             int loc;
             if ((loc = glGetUniformLocation(shader, "u_textured")) >= 0) {
@@ -3751,7 +3750,7 @@ void model_draw_call(model_t m, int shader) {
 
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, m.lightmap.id);
-            glUniform1i(glGetUniformLocation(shader, "u_lightmap"), 1 );
+            glUniform1i(glGetUniformLocation(shader, "u_lightmap"), allocate_texture_unit() );
         } else {
             const pbr_material_t *material = &m.pbr_materials[i];
             shader_colormap( "map_diffuse", material->diffuse );

@@ -3208,7 +3208,7 @@ typedef struct texture_t {
     union { unsigned y, h; };
     union { unsigned z, d; };
     union { unsigned n, bpp; };
-    handle id, unit;
+    handle id;
     unsigned texel_type;
     unsigned flags;
     char* filename;
