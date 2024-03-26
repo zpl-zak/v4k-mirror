@@ -538,6 +538,7 @@ if "%1"=="tidy" (
     move /y ??-*.png demos          > nul 2> nul
     move /y ??-*.c demos            > nul 2> nul
     del bind\v4k.dll                > nul 2> nul
+    del bind\*.zip                  > nul 2> nul
     del .temp*.*                    > nul 2> nul
     del *.zip                       > nul 2> nul
     del *.mem                       > nul 2> nul
