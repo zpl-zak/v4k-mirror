@@ -1668,6 +1668,9 @@ typedef struct spine_t spine_t;
  void spine_render(spine_t *p, vec3 offset, unsigned flags);
  void spine_animate(spine_t *p, float delta);
  void ui_spine(spine_t *p);
+enum ATLAS_FLAGS {
+	ATLAS_SRGB = 2,
+};
 typedef struct atlas_frame_t {
     unsigned delay;
     vec4 sheet;
@@ -1755,7 +1758,7 @@ typedef struct skinned_t {
     atlas_t atlas;
     float scale;
 } skinned_t;
- guiskin_t gui_skinned(const char *asefile, float scale);
+ guiskin_t gui_skinned(const char *asefile, float scale, bool load_as_srgb);
  bool steam_init(unsigned app_id);
  void steam_tick();
  void steam_trophy(const char *trophy_id, bool redeem);

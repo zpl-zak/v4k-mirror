@@ -62,4 +62,4 @@ typedef struct skinned_t {
 //      - "_hover" (ex. "slider_cursor_hover")
 //      - "_press"
 //
-API guiskin_t gui_skinned(const char *asefile, float scale);
+API guiskin_t gui_skinned(const char *asefile, float scale, bool load_as_srgb);

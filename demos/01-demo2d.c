@@ -9,7 +9,7 @@
 
 void demo_kids(vec3 offs) {
     // init
-    static texture_t kids; do_once kids = texture( "spriteSheetExample.png", TEXTURE_LINEAR );
+    static texture_t kids; do_once kids = texture( "spriteSheetExample.png", TEXTURE_LINEAR|TEXTURE_SRGB );
     static vec3 pos[2] = {{490,362},{442,362}}, vel[2] = {0};
     static int row[2] = {0,3}, frame[2] = {0};
     static int inputs[2][4] = {{KEY_W,KEY_A,KEY_S,KEY_D},{KEY_UP,KEY_LEFT,KEY_DOWN,KEY_RIGHT}};
@@ -39,7 +39,7 @@ void demo_kids(vec3 offs) {
 
 void demo_hud() {
     // draw pixel-art hud, 16x16 ui element, scaled and positioned in resolution-independant way
-    static texture_t inputs; do_once inputs = texture( "prompts_tilemap_34x24_16x16x1.png", TEXTURE_LINEAR );
+    static texture_t inputs; do_once inputs = texture( "prompts_tilemap_34x24_16x16x1.png", TEXTURE_LINEAR|TEXTURE_SRGB );
     float spritesheet[3] = {17,34,24}, offset[2] = {0, - 2*absf(sin(window_time()*5))}; // sprite cell and animation
     float scale[2] = {3, 3}, tile_w = 16 * scale[0], tile_h = 16 * scale[1]; // scaling
     float position[3] = {window_width() - tile_w, window_height() - tile_h, window_height() }; // position in screen-coordinates (x,y,z-index)

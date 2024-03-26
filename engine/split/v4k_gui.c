@@ -6,7 +6,7 @@ API void gui_drawrect( texture_t spritesheet, vec2 tex_start, vec2 tex_end, int 
 #define v42v2(rect) vec2(rect.x,rect.y), vec2(rect.z,rect.w)
 
 void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end ) {
-    static int program = -1, vbo = -1, vao = -1, u_inv_gamma = -1, u_tint = -1, u_has_tex = -1, u_window_width = -1, u_window_height = -1;
+    static int program = -1, vbo = -1, vao = -1, u_tint = -1, u_has_tex = -1, u_window_width = -1, u_window_height = -1;
     float gamma = window_get_gamma();
     vec2 dpi = ifdef(osx, window_dpi(), vec2(1,1));
     if( program < 0 ) {
@@ -15,7 +15,6 @@ void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, ve
 
         program = shader(vs, fs, "", "fragcolor" , NULL);
         ASSERT(program > 0);
-        u_inv_gamma = glGetUniformLocation(program, "u_inv_gamma");
         u_tint = glGetUniformLocation(program, "u_tint");
         u_has_tex = glGetUniformLocation(program, "u_has_tex");
         u_window_width = glGetUniformLocation(program, "u_window_width");
@@ -34,7 +33,6 @@ void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, ve
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     glUseProgram( program );
-    glUniform1f( u_inv_gamma, (gamma + !gamma) );
 
     glBindVertexArray( vao );
 
@@ -463,9 +461,9 @@ void skinned_getscissorrect(void* userdata, const char *skin, const char *fallba
     dims->w -= (skinsize.y - coresize.y);
 }
 
-guiskin_t gui_skinned(const char *asefile, float scale) {
+guiskin_t gui_skinned(const char *asefile, float scale, bool load_as_srgb) {
     skinned_t *a = REALLOC(0, sizeof(skinned_t));
-    a->atlas = atlas_create(asefile, 0);
+    a->atlas = atlas_create(asefile, load_as_srgb?ATLAS_SRGB:0);
     a->scale = scale?scale:1.0f;
     guiskin_t skin={0};
     skin.userdata = a;

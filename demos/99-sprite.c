@@ -150,10 +150,10 @@ int main(int argc, char **argv) {
     if(do_cats) NUM_SPRITES/=2; // cat-sprite+cat-shadow == 2 sprites
 
     // load sprites and sheets
-    kids = texture( "spriteSheetExample.png", TEXTURE_LINEAR );
-    catImage = texture( "cat.png", TEXTURE_LINEAR ); //
-    shadowImage = texture( "cat-shadow.png", TEXTURE_LINEAR );
-    inputs = texture( "prompts_tilemap_34x24_16x16x1.png", TEXTURE_LINEAR );
+    kids = texture( "spriteSheetExample.png", TEXTURE_LINEAR|TEXTURE_SRGB );
+    catImage = texture( "cat.png", TEXTURE_LINEAR|TEXTURE_SRGB ); //
+    shadowImage = texture( "cat-shadow.png", TEXTURE_LINEAR|TEXTURE_SRGB );
+    inputs = texture( "prompts_tilemap_34x24_16x16x1.png", TEXTURE_LINEAR|TEXTURE_SRGB );
 
     // load all fx files, including subdirs
     fx_load("fx**.fs");

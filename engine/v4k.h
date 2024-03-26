@@ -4171,6 +4171,11 @@ API void    ui_spine(spine_t *p);
 
 // ----------------------------------------------------------------------------
 // atlas api
+
+enum ATLAS_FLAGS {
+	ATLAS_SRGB = 2,
+};
+
 typedef struct atlas_frame_t {
     unsigned delay;
     vec4 sheet;
@@ -4312,7 +4317,7 @@ typedef struct skinned_t {
 //      - "_hover" (ex. "slider_cursor_hover")
 //      - "_press"
 //
-API guiskin_t gui_skinned(const char *asefile, float scale);
+API guiskin_t gui_skinned(const char *asefile, float scale, bool load_as_srgb);
 #line 0
 
 #line 1 "v4k_steam.h"
