@@ -202,6 +202,11 @@ if "%1"=="dpush" (
             git push
         ) else (
             git commit
+            git diff --quiet --exit-code --cached
+            if !ERRORLEVEL! neq 0 (
+                echo Commit was cancelled or failed
+                exit /b %ERRORLEVEL%
+            )
             if not "%2"=="local" (
                 git push
             )
