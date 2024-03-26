@@ -20624,16 +20624,11 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             material_t mt = {0};
             mt.name = STRDUP(&str[m->material]);
 
-            // initialise basic texture layer first
+            // initialise basic texture layer
             mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.color = material_color_hex ? material_color : vec4(1,1,1,1);
             mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
             mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id = *out++;
 
-            // initialise PBR material workflow
-            if (_flags & MODEL_PBR) {
-                model_load_pbr(&mt);
-            }
-            
             array_push(model->materials, mt);
         }
 
@@ -21045,7 +21040,9 @@ void model_shading(model_t *m, int shading) {
     }
 
     // rebind shader
-    // @fixme: destroy old shader program
+    // @fixme: app crashes rn
+    // glUseProgram(0);
+    // glDeleteProgram(m->program);
     const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
     int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
         "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
