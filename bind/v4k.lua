@@ -1276,17 +1276,25 @@ typedef struct skybox_t {
  int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view);
  int skybox_pop_state();
 enum MATERIAL_ENUMS {
-    MAX_CHANNELS_PER_MATERIAL = 8
+	MATERIAL_CHANNEL_DIFFUSE,
+	MATERIAL_CHANNEL_NORMALS,
+	MATERIAL_CHANNEL_SPECULAR,
+	MATERIAL_CHANNEL_ALBEDO,
+	MATERIAL_CHANNEL_ROUGHNESS,
+	MATERIAL_CHANNEL_METALLIC,
+	MATERIAL_CHANNEL_AO,
+	MATERIAL_CHANNEL_AMBIENT,
+	MATERIAL_CHANNEL_EMISSIVE,
+    MAX_CHANNELS_PER_MATERIAL = MATERIAL_CHANNEL_EMISSIVE
 };
+typedef struct material_layer_t {
+    char texname[32];
+    float value;
+    colormap_t map;
+} material_layer_t;
 typedef struct material_t {
     char *name;
-    int count;
-    struct material_layer_t {
-        char texname[32];
-        handle texture;
-        float value;
-        vec4 color;
-    } layer[MAX_CHANNELS_PER_MATERIAL];
+    material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
 } material_t;
 enum {
     SHADERTOY_FLIP_Y = 2,
@@ -1347,7 +1355,6 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     material_t* materials;
-    pbr_material_t* pbr_materials;
     texture_t sky_refl, sky_env;
     texture_t lightmap;
     float *lmdata;

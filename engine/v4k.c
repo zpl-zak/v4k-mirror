@@ -20481,6 +20481,44 @@ static char* strcpy_safe(char *d, const char *s) {
 }
 
 static
+void model_load_pbr_layer(material_layer_t *layer, const char *texname, bool load_as_srgb) {
+    strcpy_safe(layer->texname, texname);
+    colormap(&layer->map, texname, load_as_srgb);
+}
+
+static
+void model_load_pbr(material_t *mt) {
+    // initialise default colors
+    mt->layer[MATERIAL_CHANNEL_DIFFUSE].map.color = vec4(0.5,0.5,0.5,0.5);
+    mt->layer[MATERIAL_CHANNEL_NORMALS].map.color = vec4(0,0,0,0);
+    mt->layer[MATERIAL_CHANNEL_SPECULAR].map.color = vec4(0,0,0,0);
+    mt->layer[MATERIAL_CHANNEL_SPECULAR].value = 1.0f; // specular_shininess
+    mt->layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(0.5,0.5,0.5,1.0);
+    mt->layer[MATERIAL_CHANNEL_ROUGHNESS].map.color = vec4(1,1,1,1);
+    mt->layer[MATERIAL_CHANNEL_METALLIC].map.color = vec4(0,0,0,0);
+    mt->layer[MATERIAL_CHANNEL_AO].map.color = vec4(1,1,1,1);
+    mt->layer[MATERIAL_CHANNEL_AMBIENT].map.color = vec4(0,0,0,1);
+    mt->layer[MATERIAL_CHANNEL_EMISSIVE].map.color = vec4(0,0,0,0);
+
+    // load colormaps
+    array(char*) tokens = strsplit(mt->name, "+");
+    for( int j = 0, end = array_count(tokens); j < end; ++j ) {
+        char *t = tokens[j];
+        if( strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )    model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_DIFFUSE], t, 1);
+        if( strstri(t, "_N.") || strstri(t, "Normal") )     model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_NORMALS], t, 0);
+        if( strstri(t, "_S.") || strstri(t, "Specular") )   model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_SPECULAR], t, 0);
+        if( strstri(t, "_A.") || strstri(t, "Albedo") )     model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); // 0?
+        if( strstri(t, "_MR.")|| strstri(t, "Roughness") || strstri(t, "MetallicRoughness") )  model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0);
+        else
+        if( strstri(t, "_M.") || strstri(t, "Metallic") )   model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_METALLIC], t, 0);
+      //if( strstri(t, "_S.") || strstri(t, "Shininess") )  model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0);
+      //if( strstri(t, "_A.") || strstri(t, "Ambient") )    model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_AMBIENT], t, 0);
+        if( strstri(t, "_E.") || strstri(t, "Emissive") )   model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_EMISSIVE], t, 1);
+        if( strstri(t, "_AO.") || strstri(t, "AO") || strstri(t, "Occlusion") ) model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_AO], t, 0);
+    }
+}
+
+static
 bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, int _flags) {
     q->textures = q->textures ? q->textures : CALLOC(hdr->num_meshes * 8, sizeof(GLuint)); // up to 8 textures per mesh
     q->colormaps = q->colormaps ? q->colormaps : CALLOC(hdr->num_meshes * 8, sizeof(vec4)); // up to 8 colormaps per mesh
@@ -20496,7 +20534,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
         for( int j = 0; !reused && j < model->num_textures; ++j ) {
             if( !strcmpi(model->texture_names[j], &str[m->material])) {
 
-                *out++ = model->materials[j].layer[0].texture;
+                *out++ = model->materials[j].layer[0].map.texture->id;
 
                 {
                     model->num_textures++;
@@ -20585,8 +20623,17 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
 
             material_t mt = {0};
             mt.name = STRDUP(&str[m->material]);
-            mt.layer[mt.count].color = material_color_hex ? material_color : vec4(1,1,1,1);
-            mt.layer[mt.count++].texture = *out++;
+
+            // initialise basic texture layer first
+            mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.color = material_color_hex ? material_color : vec4(1,1,1,1);
+            mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
+            mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id = *out++;
+
+            // initialise PBR material workflow
+            if (_flags & MODEL_PBR) {
+                model_load_pbr(&mt);
+            }
+            
             array_push(model->materials, mt);
         }
 
@@ -20627,9 +20674,9 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
     if( array_count(model->materials) == 0 ) {
         material_t mt = {0};
         mt.name = "placeholder";
-        mt.count = 1;
-        mt.layer[0].color = vec4(1,1,1,1);
-        mt.layer[0].texture = texture_checker().id;
+        mt.layer[0].map.color = vec4(1,1,1,1);
+        mt.layer[0].map.texture = CALLOC(1, sizeof(texture_t));
+        mt.layer[0].map.texture->id = texture_checker().id;
 
         array_push(model->materials, mt);
     }
@@ -20672,9 +20719,9 @@ model_t model_from_mem(const void *mem, int len, int flags) {
                     // setup fallback
                     material_t mt = {0};
                     mt.name = "placeholder";
-                    mt.count = 1;
-                    mt.layer[0].color = vec4(1,1,1,1);
-                    mt.layer[0].texture = texture_checker().id;
+                    mt.layer[0].map.color = vec4(1,1,1,1);
+                    mt.layer[0].map.texture = CALLOC(1, sizeof(texture_t));
+                    mt.layer[0].map.texture->id = texture_checker().id;
 
                     array_push(m.materials, mt);
                 }
@@ -20938,22 +20985,22 @@ void model_draw_call(model_t m, int shader) {
                 bool textured = !!q->textures[i] && q->textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
                 glUniform1i(loc, textured ? GL_TRUE : GL_FALSE);
                 if ((loc = glGetUniformLocation(shader, "u_diffuse")) >= 0) {
-                    glUniform4f(loc, m.materials[i].layer[0].color.r, m.materials[i].layer[0].color.g, m.materials[i].layer[0].color.b, m.materials[i].layer[0].color.a);
+                    glUniform4f(loc, m.materials[i].layer[0].map.color.r, m.materials[i].layer[0].map.color.g, m.materials[i].layer[0].map.color.b, m.materials[i].layer[0].map.color.a);
                 }
             }
 
         } else {
-            const pbr_material_t *material = &m.pbr_materials[i];
-            shader_colormap( "map_diffuse", material->diffuse );
-            shader_colormap( "map_normals", material->normals );
-            shader_colormap( "map_specular", material->specular );
-            shader_colormap( "map_albedo", material->albedo );
-            shader_colormap( "map_roughness", material->roughness );
-            shader_colormap( "map_metallic", material->metallic );
-            shader_colormap( "map_ao", material->ao );
-            shader_colormap( "map_ambient", material->ambient );
-            shader_colormap( "map_emissive", material->emissive );
-            shader_float( "specular_shininess", material->specular_shininess ); // unused, basic_specgloss.fs only
+            const material_t *material = &m.materials[i];
+            shader_colormap( "map_diffuse", material->layer[MATERIAL_CHANNEL_DIFFUSE].map );
+            shader_colormap( "map_normals", material->layer[MATERIAL_CHANNEL_NORMALS].map );
+            shader_colormap( "map_specular", material->layer[MATERIAL_CHANNEL_SPECULAR].map );
+            shader_colormap( "map_albedo", material->layer[MATERIAL_CHANNEL_ALBEDO].map );
+            shader_colormap( "map_roughness", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map );
+            shader_colormap( "map_metallic", material->layer[MATERIAL_CHANNEL_METALLIC].map );
+            shader_colormap( "map_ao", material->layer[MATERIAL_CHANNEL_AO].map );
+            shader_colormap( "map_ambient", material->layer[MATERIAL_CHANNEL_AMBIENT].map );
+            shader_colormap( "map_emissive", material->layer[MATERIAL_CHANNEL_EMISSIVE].map );
+            // shader_float( "specular_shininess", material->specular_shininess ); // unused, basic_specgloss.fs only
         }
 
         glDrawElementsInstanced(GL_TRIANGLES, 3*im->num_triangles, GL_UNSIGNED_INT, &tris[im->first_triangle], m.num_instances);
@@ -20993,9 +21040,7 @@ void model_shading(model_t *m, int shading) {
     // load pbr material if SHADING_PBR was selected
     if (shading == SHADING_PBR) {
         for (int i = 0; i < array_count(m->materials); ++i) {
-            pbr_material_t mat = {0};
-            pbr_material(&mat, m->materials[i].name);
-            array_push(m->pbr_materials, mat);
+            model_load_pbr(&m->materials[i]);
         }
     }
 
