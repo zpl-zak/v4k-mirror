@@ -447,6 +447,8 @@ void main() {
         vec3 col = u_rimcolor*(pow(smoothstep(1.0-u_rimrange.x,u_rimrange.y,rim), u_rimrange.z));
         fragcolor += vec4(col, 1.0);}
     #endif
+
+    fragcolor.rgb = pow( fragcolor.rgb, vec3(1. / 2.2) );
 }
 #endif
 #ifdef SHADING_PBR
@@ -691,7 +693,7 @@ void main(void)
     color = (x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06);
     // gamma correction
     // color = pow( color, vec3(1. / 2.2) );
-#elif 1
+#elif 0
     // aces film (CC0, src: https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/)
     vec3 x = color;
     float a = 2.51f;
@@ -703,6 +705,7 @@ void main(void)
     // gamma correction
     color = pow( color, vec3(1. / 2.2) );
 #endif
+    color = pow( color, vec3(1. / 2.2) );
 
     // Technically this alpha may be too transparent, if there is a lot of reflected light we wouldn't
     // see the background, maybe we can approximate it well enough by adding a fresnel term

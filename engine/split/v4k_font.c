@@ -1816,7 +1816,7 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,0,(void*)0);
     glVertexAttribDivisor(1, 1);
-    //glEnable(GL_FRAMEBUFFER_SRGB);
+    // glEnable(GL_FRAMEBUFFER_SRGB);
 
     // setup and upload font bitmap texture
     glGenTextures(1, &f->texture_fontdata);

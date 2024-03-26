@@ -32,8 +32,8 @@ int main() {
     // load video, RGB texture, no audio
     video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO | VIDEO_LOOP ); video_seek(v, 30);
     // load texture
-    texture_t t1 = texture("kgirl/g01_texture.png", TEXTURE_RGB);
-    texture_t t2 = texture("matcaps/material3", 0);
+    texture_t t1 = texture("kgirl/g01_texture.png", TEXTURE_SRGB);
+    texture_t t2 = texture("matcaps/material3", TEXTURE_SRGB);
     // load model
     model_t m1 = model("suzanne.obj", MODEL_NO_ANIMATIONS);
     model_t m2 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_MATCAPS);

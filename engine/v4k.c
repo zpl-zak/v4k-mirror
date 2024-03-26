@@ -10518,7 +10518,7 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,0,(void*)0);
     glVertexAttribDivisor(1, 1);
-    //glEnable(GL_FRAMEBUFFER_SRGB);
+    // glEnable(GL_FRAMEBUFFER_SRGB);
 
     // setup and upload font bitmap texture
     glGenTextures(1, &f->texture_fontdata);
@@ -18729,7 +18729,7 @@ cubemap_t cubemap6( const image_t images[6], int flags ) {
     for (int i = 0; i < 6; i++) {
         image_t img = images[i]; //image(textures[i], IMAGE_RGB);
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, img.w, img.h, 0, img.n == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, img.pixels);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB, img.w, img.h, 0, img.n == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, img.pixels);
 
         // calculate SH coefficients (@ands)
         const vec3 skyDir[] = {{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1}};
@@ -18821,7 +18821,7 @@ skybox_t skybox(const char *asset, int flags) {
     if( asset ) {
         int is_panorama = vfs_size( asset );
         if( is_panorama ) { // is file
-            stbi_hdr_to_ldr_gamma(1.2f);
+            // stbi_hdr_to_ldr_gamma(1.2f);
             image_t panorama = image( asset, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
             image_destroy(&panorama);
@@ -20493,7 +20493,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
         if( reused ) continue;
 
         // decode texture+material
-        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_ANISOTROPY; // LINEAR, NEAREST
+        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_ANISOTROPY|TEXTURE_SRGB; // LINEAR, NEAREST
         if (!(_flags & MODEL_NO_FILTERING))
             flags |= TEXTURE_LINEAR;
         int invalid = texture_checker().id;
@@ -22572,7 +22572,7 @@ int scene_merge(const char *source) {
             //char *a = archive_read(animation_file);
             object_t *o = scene_spawn();
             object_model(o, m);
-            if( texture_file[0] ) object_diffuse(o, texture_from_mem(vfs_read(texture_file), vfs_size(texture_file), opt_flip_uv ? IMAGE_FLIP : 0) );
+            if( texture_file[0] ) object_diffuse(o, texture_from_mem(vfs_read(texture_file), vfs_size(texture_file), TEXTURE_SRGB|(opt_flip_uv ? IMAGE_FLIP : 0)) );
             object_scale(o, scale);
             object_teleport(o, position);
             object_pivot(o, rotation); // object_rotate(o, rotation);

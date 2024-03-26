@@ -440,7 +440,7 @@ int scene_merge(const char *source) {
             //char *a = archive_read(animation_file);
             object_t *o = scene_spawn();
             object_model(o, m);
-            if( texture_file[0] ) object_diffuse(o, texture_from_mem(vfs_read(texture_file), vfs_size(texture_file), opt_flip_uv ? IMAGE_FLIP : 0) );
+            if( texture_file[0] ) object_diffuse(o, texture_from_mem(vfs_read(texture_file), vfs_size(texture_file), TEXTURE_SRGB|(opt_flip_uv ? IMAGE_FLIP : 0)) );
             object_scale(o, scale);
             object_teleport(o, position);
             object_pivot(o, rotation); // object_rotate(o, rotation);
