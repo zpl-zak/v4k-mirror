@@ -107,6 +107,7 @@ static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
+static float gamma = 2.2f;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
@@ -577,6 +578,10 @@ int window_frame_begin() {
     void input_update();
     input_update();
 
+    if (gamma) {
+        postfx_begin(&gamma_fx, window_width(), window_height());
+    }
+
     return 1;
 }
 
@@ -593,6 +598,10 @@ void window_frame_end() {
         glClear(GL_DEPTH_BUFFER_BIT);
         dd_ontop = 1;
         ddraw_flush();
+        
+        if (gamma) {
+            postfx_end(&gamma_fx);
+        }
 
         ui_render();
     }
@@ -780,6 +789,14 @@ void window_color(unsigned color) {
     unsigned b = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+}
+void window_gamma(float _gamma) {
+    gamma = _gamma;
+    shader_bind(gamma_fx.pass[postfx_find(&gamma_fx, "fxGamma.fs")].program);
+    shader_float("gamma", gamma);
+}
+float window_get_gamma() {
+    return gamma;
 }
 static int has_icon;
 int window_has_icon() {

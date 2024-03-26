@@ -8,7 +8,7 @@ uniform float uMieScattering;
 uniform float uRayleighScaleHeight;
 uniform float uMieScaleHeight;
 uniform float uMiePreferredDirection;
-
+uniform float gamma; /// set:2.2
 
 in vec3 v_direction;
 out vec4 fragcolor;
@@ -36,6 +36,7 @@ void main() {
     color = 1.0 - exp(-1.0 * color);
     
     fragcolor = vec4(color, 1);
+    fragcolor.rgb = pow(fragcolor.rgb, vec3(gamma));
 }
 
 

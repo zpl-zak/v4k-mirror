@@ -447,8 +447,6 @@ void main() {
         vec3 col = u_rimcolor*(pow(smoothstep(1.0-u_rimrange.x,u_rimrange.y,rim), u_rimrange.z));
         fragcolor += vec4(col, 1.0);}
     #endif
-
-    fragcolor.rgb = pow( fragcolor.rgb, vec3(1. / 2.2) );
 }
 #endif
 #ifdef SHADING_PBR
@@ -705,7 +703,6 @@ void main(void)
     // gamma correction
     color = pow( color, vec3(1. / 2.2) );
 #endif
-    color = pow( color, vec3(1. / 2.2) );
 
     // Technically this alpha may be too transparent, if there is a lot of reflected light we wouldn't
     // see the background, maybe we can approximate it well enough by adding a fresnel term

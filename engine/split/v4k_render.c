@@ -1647,7 +1647,7 @@ skybox_t skybox(const char *asset, int flags) {
     if( asset ) {
         int is_panorama = vfs_size( asset );
         if( is_panorama ) { // is file
-            // stbi_hdr_to_ldr_gamma(1.2f);
+            stbi_hdr_to_ldr_gamma(1.2f);
             image_t panorama = image( asset, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
             image_destroy(&panorama);
@@ -2376,12 +2376,12 @@ bool postfx_begin(postfx *fx, int width, int height) {
         fbo_destroy(fx->fb[1]);
 
         // create texture, set texture parameters and content
-        fx->diffuse[0] = texture_create(width, height, 4, NULL, TEXTURE_RGBA);
+        fx->diffuse[0] = texture_create(width, height, 4, NULL, TEXTURE_RGBA|TEXTURE_FLOAT);
         fx->depth[0] = texture_create(width, height, 1,  NULL, TEXTURE_DEPTH|TEXTURE_FLOAT);
         fx->fb[0] = fbo(fx->diffuse[0].id, fx->depth[0].id, 0);
 
         // create texture, set texture parameters and content
-        fx->diffuse[1] = texture_create(width, height, 4, NULL, TEXTURE_RGBA);
+        fx->diffuse[1] = texture_create(width, height, 4, NULL, TEXTURE_RGBA|TEXTURE_FLOAT);
         fx->depth[1] = texture_create(width, height, 1, NULL, TEXTURE_DEPTH|TEXTURE_FLOAT);
         fx->fb[1] = fbo(fx->diffuse[1].id, fx->depth[1].id, 0);
     }
@@ -2484,7 +2484,7 @@ bool postfx_end(postfx *fx) {
     return true;
 }
 
-static postfx fx;
+static postfx fx, gamma_fx;
 int fx_load_from_mem(const char *nameid, const char *content) {
     do_once postfx_create(&fx, 0);
     return postfx_load_from_mem(&fx, nameid, content);

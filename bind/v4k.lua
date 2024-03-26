@@ -2040,6 +2040,8 @@ enum WINDOW_FLAGS {
  void window_loop_exit();
  void window_title(const char *title);
  void window_color(unsigned color);
+ void window_gamma(float gamma);
+ float window_get_gamma();
  vec2 window_canvas();
  void* window_handle();
  char* window_stats();

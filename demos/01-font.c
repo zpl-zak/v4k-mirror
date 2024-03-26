@@ -2,6 +2,7 @@
 
 int main() {
     window_create(75.0, WINDOW_MSAA8);
+    window_gamma(0); // @fixme: disable gamma correction for now
 
     // style: our aliases
     #define FONT_REGULAR   FONT_FACE1

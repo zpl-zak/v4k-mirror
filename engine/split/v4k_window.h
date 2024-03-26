@@ -38,6 +38,8 @@ API void     window_loop_exit(); // exit from main loop function (emscripten onl
 
 API void     window_title(const char *title);
 API void     window_color(unsigned color);
+API void     window_gamma(float gamma); // 2.2 - standard, 0.0 - disables postfx pass
+API float    window_get_gamma();
 API vec2     window_canvas();
 API void*    window_handle();
 API char*    window_stats();

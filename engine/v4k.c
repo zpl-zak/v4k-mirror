@@ -10659,6 +10659,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glUniform1f(glGetUniformLocation(f->program, "scale_factor"), factor);
     glUniform2fv(glGetUniformLocation(f->program, "string_offset"), 1, &offset.x);
     glUniform1f(glGetUniformLocation(f->program, "offset_firstline"), f->ascent*f->factor);
+    glUniform1f(glGetUniformLocation(f->program, "gamma"), (window_get_gamma() + !window_get_gamma()));
 
     GLint dims[4] = {0};
     glGetIntegerv(GL_VIEWPORT, dims);
@@ -11248,8 +11249,8 @@ API void gui_drawrect( texture_t spritesheet, vec2 tex_start, vec2 tex_end, int 
 #define v42v2(rect) vec2(rect.x,rect.y), vec2(rect.z,rect.w)
 
 void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end ) {
-    float gamma = 1;
     static int program = -1, vbo = -1, vao = -1, u_inv_gamma = -1, u_tint = -1, u_has_tex = -1, u_window_width = -1, u_window_height = -1;
+    float gamma = window_get_gamma();
     vec2 dpi = ifdef(osx, window_dpi(), vec2(1,1));
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/rect_2d.vs");
@@ -11276,7 +11277,7 @@ void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, ve
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     glUseProgram( program );
-    glUniform1f( u_inv_gamma, 1.0f / (gamma + !gamma) );
+    glUniform1f( u_inv_gamma, (gamma + !gamma) );
 
     glBindVertexArray( vao );
 
@@ -18821,7 +18822,7 @@ skybox_t skybox(const char *asset, int flags) {
     if( asset ) {
         int is_panorama = vfs_size( asset );
         if( is_panorama ) { // is file
-            // stbi_hdr_to_ldr_gamma(1.2f);
+            stbi_hdr_to_ldr_gamma(1.2f);
             image_t panorama = image( asset, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
             image_destroy(&panorama);
@@ -19550,12 +19551,12 @@ bool postfx_begin(postfx *fx, int width, int height) {
         fbo_destroy(fx->fb[1]);
 
         // create texture, set texture parameters and content
-        fx->diffuse[0] = texture_create(width, height, 4, NULL, TEXTURE_RGBA);
+        fx->diffuse[0] = texture_create(width, height, 4, NULL, TEXTURE_RGBA|TEXTURE_FLOAT);
         fx->depth[0] = texture_create(width, height, 1,  NULL, TEXTURE_DEPTH|TEXTURE_FLOAT);
         fx->fb[0] = fbo(fx->diffuse[0].id, fx->depth[0].id, 0);
 
         // create texture, set texture parameters and content
-        fx->diffuse[1] = texture_create(width, height, 4, NULL, TEXTURE_RGBA);
+        fx->diffuse[1] = texture_create(width, height, 4, NULL, TEXTURE_RGBA|TEXTURE_FLOAT);
         fx->depth[1] = texture_create(width, height, 1, NULL, TEXTURE_DEPTH|TEXTURE_FLOAT);
         fx->fb[1] = fbo(fx->diffuse[1].id, fx->depth[1].id, 0);
     }
@@ -19658,7 +19659,7 @@ bool postfx_end(postfx *fx) {
     return true;
 }
 
-static postfx fx;
+static postfx fx, gamma_fx;
 int fx_load_from_mem(const char *nameid, const char *content) {
     do_once postfx_create(&fx, 0);
     return postfx_load_from_mem(&fx, nameid, content);
@@ -21186,8 +21187,10 @@ static const char *dd_fs = "//" FILELINE "\n"
     // "precision mediump float;\n"
     "in vec3 out_color;\n"
     "out vec4 fragcolor;\n"
+    "uniform float gamma; /// set:2.2\n"
     "void main() {\n"
     "   fragcolor = vec4(out_color, 1.0);\n"
+    "   fragcolor.rgb = pow(fragcolor.rgb, vec3(gamma));\n"
     "}";
 
 #define X(x) RGBX(x,255)
@@ -21247,6 +21250,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     glUseProgram(dd_program);
     glUniformMatrix4fv(glGetUniformLocation(dd_program, "u_MVP"), 1, GL_FALSE, mvp);
+    glUniform1f(glGetUniformLocation(dd_program, "gamma"), (window_get_gamma() + !window_get_gamma()));
 
     static GLuint vao, vbo;
     if(!vao) glGenVertexArrays(1, &vao);    glBindVertexArray(vao);
@@ -26478,6 +26482,7 @@ static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
+static float gamma = 2.2f;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
@@ -26948,6 +26953,10 @@ int window_frame_begin() {
     void input_update();
     input_update();
 
+    if (gamma) {
+        postfx_begin(&gamma_fx, window_width(), window_height());
+    }
+
     return 1;
 }
 
@@ -26964,6 +26973,10 @@ void window_frame_end() {
         glClear(GL_DEPTH_BUFFER_BIT);
         dd_ontop = 1;
         ddraw_flush();
+        
+        if (gamma) {
+            postfx_end(&gamma_fx);
+        }
 
         ui_render();
     }
@@ -27151,6 +27164,14 @@ void window_color(unsigned color) {
     unsigned b = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+}
+void window_gamma(float _gamma) {
+    gamma = _gamma;
+    shader_bind(gamma_fx.pass[postfx_find(&gamma_fx, "fxGamma.fs")].program);
+    shader_float("gamma", gamma);
+}
+float window_get_gamma() {
+    return gamma;
 }
 static int has_icon;
 int window_has_icon() {
@@ -29761,6 +29782,11 @@ static void v4k_post_init(float refresh_rate) {
 
     hz = refresh_rate;
     // t = glfwGetTime();
+    do_once {
+        postfx_load_from_mem(&gamma_fx, "fxGamma.fs", vfs_read("fxGamma.fs"));
+        postfx_enable(&gamma_fx, 0, 1);
+        window_gamma(2.2f);
+    }
 }
 
 // ----------------------------------------------------------------------------

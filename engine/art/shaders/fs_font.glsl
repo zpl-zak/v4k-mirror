@@ -4,6 +4,7 @@ in float color_index;
 uniform sampler2D sampler_font;
 uniform sampler1D sampler_colors;
 uniform float num_colors;
+uniform float gamma; /// set:2.2
 
 out vec4 outColor;
 
@@ -11,4 +12,5 @@ void main() {
     vec4 col = texture(sampler_colors, (color_index+0.5)/num_colors);
     float s = texture(sampler_font, uv).r;
     outColor = vec4(col.rgb, s*col.a);
+    outColor.rgb = pow(outColor.rgb, vec3(gamma));
 }

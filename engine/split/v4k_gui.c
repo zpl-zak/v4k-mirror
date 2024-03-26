@@ -6,8 +6,8 @@ API void gui_drawrect( texture_t spritesheet, vec2 tex_start, vec2 tex_end, int 
 #define v42v2(rect) vec2(rect.x,rect.y), vec2(rect.z,rect.w)
 
 void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end ) {
-    float gamma = 1;
     static int program = -1, vbo = -1, vao = -1, u_inv_gamma = -1, u_tint = -1, u_has_tex = -1, u_window_width = -1, u_window_height = -1;
+    float gamma = window_get_gamma();
     vec2 dpi = ifdef(osx, window_dpi(), vec2(1,1));
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/rect_2d.vs");
@@ -34,7 +34,7 @@ void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, ve
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     glUseProgram( program );
-    glUniform1f( u_inv_gamma, 1.0f / (gamma + !gamma) );
+    glUniform1f( u_inv_gamma, (gamma + !gamma) );
 
     glBindVertexArray( vao );
 
