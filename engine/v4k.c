@@ -19529,10 +19529,11 @@ int ui_postfx(postfx *fx, int pass) {
 }
 
 static __thread array(handle) last_fb;
+static postfx gamma_fx;
 
 bool postfx_begin(postfx *fx, int width, int height) {
     // reset clear color: needed in case transparent window is being used (alpha != 0)
-    glClearColor(0,0,0,0); // @transparent
+    if (fx != &gamma_fx) glClearColor(0,0,0,0); // @transparent
 
     width += !width;
     height += !height;
@@ -19659,7 +19660,7 @@ bool postfx_end(postfx *fx) {
     return true;
 }
 
-static postfx fx, gamma_fx;
+static postfx fx;
 int fx_load_from_mem(const char *nameid, const char *content) {
     do_once postfx_create(&fx, 0);
     return postfx_load_from_mem(&fx, nameid, content);

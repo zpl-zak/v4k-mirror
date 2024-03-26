@@ -17,7 +17,7 @@ in vec3 v_position;
 in vec3 v_position_ws;
 #ifdef RIM
 uniform mat4 M; // RIM
-uniform vec3 u_rimcolor = vec3(0.2,0.2,0.2);
+uniform vec3 u_rimcolor = vec3(0.05,0.05,0.05);
 uniform vec3 u_rimrange = vec3(0.11,0.98,0.5);
 uniform vec3 u_rimpivot = vec3(0,0,0);
 uniform bool u_rimambient = true;
@@ -445,7 +445,8 @@ void main() {
         }
         float rim = 1.0 - max(dot(v,n), 0.0);
         vec3 col = u_rimcolor*(pow(smoothstep(1.0-u_rimrange.x,u_rimrange.y,rim), u_rimrange.z));
-        fragcolor += vec4(col, 1.0);}
+        fragcolor += vec4(col, 0.0);
+    }
     #endif
 }
 #endif
@@ -719,7 +720,8 @@ void main(void)
         }
         float rim = 1.0 - max(dot(v,n), 0.0);
         vec3 col = u_rimcolor*(pow(smoothstep(1.0-u_rimrange.x,u_rimrange.y,rim), u_rimrange.z));
-        fragcolor += vec4(col, 1.0);}
+        fragcolor += vec4(col, 0.0);
+    }
     #endif
 }
 
