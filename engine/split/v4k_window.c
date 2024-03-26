@@ -793,7 +793,7 @@ void window_color(unsigned color) {
 void window_gamma(float _gamma) {
     gamma = _gamma;
     shader_bind(gamma_fx.pass[postfx_find(&gamma_fx, "fxGamma.fs")].program);
-    shader_float("gamma", gamma);
+    shader_float("u_gamma", 1.0f / gamma);
 }
 float window_get_gamma() {
     return gamma;

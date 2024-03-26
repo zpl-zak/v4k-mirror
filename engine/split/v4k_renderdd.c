@@ -76,7 +76,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     glUseProgram(dd_program);
     glUniformMatrix4fv(glGetUniformLocation(dd_program, "u_MVP"), 1, GL_FALSE, mvp);
-    glUniform1f(glGetUniformLocation(dd_program, "gamma"), (window_get_gamma() + !window_get_gamma()));
+    glUniform1f(glGetUniformLocation(dd_program, "u_gamma"), (window_get_gamma() + !window_get_gamma()));
 
     static GLuint vao, vbo;
     if(!vao) glGenVertexArrays(1, &vao);    glBindVertexArray(vao);

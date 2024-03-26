@@ -1862,6 +1862,8 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     shader_mat44("u_mvp", mvp);
     if( sky->flags ) {
         shader_cubemap("u_cubemap", sky->cubemap.id);
+    } else {
+        shader_float("u_gamma", window_get_gamma() + !window_get_gamma());
     }
     return 0; // @fixme: return sortable hash here?
 }

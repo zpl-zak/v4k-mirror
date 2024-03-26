@@ -280,6 +280,7 @@ static void sprite_render_meshes_group(batch_group_t* sprites, int alpha_key, in
         }
         shader_bind(sprite_program);
         shader_mat44("u_mvp", mvp);
+        shader_float("u_gamma", window_get_gamma() + !window_get_gamma());
 
         // set (unit 0) in the uniform texture sampler, and render batch
         glActiveTexture(GL_TEXTURE0);

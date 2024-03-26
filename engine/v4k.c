@@ -10659,7 +10659,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glUniform1f(glGetUniformLocation(f->program, "scale_factor"), factor);
     glUniform2fv(glGetUniformLocation(f->program, "string_offset"), 1, &offset.x);
     glUniform1f(glGetUniformLocation(f->program, "offset_firstline"), f->ascent*f->factor);
-    glUniform1f(glGetUniformLocation(f->program, "gamma"), (window_get_gamma() + !window_get_gamma()));
+    glUniform1f(glGetUniformLocation(f->program, "u_gamma"), (window_get_gamma() + !window_get_gamma()));
 
     GLint dims[4] = {0};
     glGetIntegerv(GL_VIEWPORT, dims);
@@ -19037,6 +19037,8 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     shader_mat44("u_mvp", mvp);
     if( sky->flags ) {
         shader_cubemap("u_cubemap", sky->cubemap.id);
+    } else {
+        shader_float("u_gamma", window_get_gamma() + !window_get_gamma());
     }
     return 0; // @fixme: return sortable hash here?
 }
@@ -21251,7 +21253,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     glUseProgram(dd_program);
     glUniformMatrix4fv(glGetUniformLocation(dd_program, "u_MVP"), 1, GL_FALSE, mvp);
-    glUniform1f(glGetUniformLocation(dd_program, "gamma"), (window_get_gamma() + !window_get_gamma()));
+    glUniform1f(glGetUniformLocation(dd_program, "u_gamma"), (window_get_gamma() + !window_get_gamma()));
 
     static GLuint vao, vbo;
     if(!vao) glGenVertexArrays(1, &vao);    glBindVertexArray(vao);
@@ -23015,6 +23017,7 @@ static void sprite_render_meshes_group(batch_group_t* sprites, int alpha_key, in
         }
         shader_bind(sprite_program);
         shader_mat44("u_mvp", mvp);
+        shader_float("u_gamma", window_get_gamma() + !window_get_gamma());
 
         // set (unit 0) in the uniform texture sampler, and render batch
         glActiveTexture(GL_TEXTURE0);
@@ -27169,7 +27172,7 @@ void window_color(unsigned color) {
 void window_gamma(float _gamma) {
     gamma = _gamma;
     shader_bind(gamma_fx.pass[postfx_find(&gamma_fx, "fxGamma.fs")].program);
-    shader_float("gamma", gamma);
+    shader_float("u_gamma", 1.0f / gamma);
 }
 float window_get_gamma() {
     return gamma;
