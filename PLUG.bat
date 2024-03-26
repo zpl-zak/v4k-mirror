@@ -1,16 +1,42 @@
 @echo off
 setlocal enableDelayedExpansion
+cd /d "%~dp0"\plugins
 
+rem check first char of 2nd argument. process filename if it starts with '@'
+IF NOT "%~2"=="" (
+    SET firstChar=%2
+    SET firstChar=!firstChar:~0,1!
+    if "!firstChar!"=="@" (
+        SET filename=%2
+        SET filename=!filename:~1!
+        for /f "tokens=* delims=" %%a in (!filename!) do (
+            call PLUG.bat %1 %%a
+        )
+        exit /b
+    )
+)
+
+rem add plugin into disk
 if "%1"=="add" if not "%2" == "" (
-    if not exist "plugins\%2" (
+    if not exist "%2" (
         echo adding %2
-        git clone https://github.com/%2 "plugins\%2"
+        git clone https://github.com/%2 "%2"
     )
     exit /b
 )
-if "%1"=="update" if not "%2" == "" (
-    if exist "plugins\%2" (
-        pushd "plugins\%2"
+rem remove plugin from disk
+if "%1"=="del" if not "%2" == "" (
+    if exist "%2" (
+        echo deleting %2
+        rd /q /s "%2" && rem 1>nul 2>nul
+        rd "%2\.." && rem 1>nul 2>nul
+    )
+    exit /b
+)
+rem update plugin to latest
+if "%1"=="upd" if not "%2" == "" (
+    if exist "%2" (
+        pushd "%2"
             git fetch
             git rev-list --count HEAD..@{u} > repo.0
             findstr /m "0" "repo.0" >nul
@@ -25,59 +51,8 @@ if "%1"=="update" if not "%2" == "" (
     )
     exit /b
 )
-if "%1"=="syncall" (
-    for /D %%d in ("plugins\*") do (
-        for /D %%f in (%%d\*) do (
-            pushd %%f
-                git fetch
-                git rev-list --count HEAD..@{u} > repo.0
-                findstr /m "0" "repo.0" >nul
-                if !errorlevel!==0 (
-                    echo already satisfied %%f
-                ) else (
-                    echo updating %%f
-                    git pull
-                )
-                del repo.0
-            popd
-        )
-    )
-    exit /b
-)
-if "%1"=="addlist" if not "%2" == "" (
-    if not exist "%2" (
-        echo provide valid recipe!
-        exit /b
-    )
-    for /f "tokens=* delims=" %%a in (%2) do (
-        if not exist "plugins\%%a" (
-            echo adding %%a
-            git clone https://github.com/%%a "plugins\%%a"
-        ) else (
-            pushd "plugins\%%a"
-                git fetch
-                git rev-list --count HEAD..@{u} > repo.0
-                findstr /m "0" "repo.0" >nul
-                if !errorlevel!==0 (
-                    echo already satisfied %%a
-                ) else (
-                    echo updating %%a
-                    git pull
-                )
-                del repo.0
-            popd
-        )
-    )
-    exit /b
-)
-if "%1"=="del" if not "%2" == "" (
-    if exist "plugins\%2" (
-        echo deleting %2
-        rd /q /s "plugins\%2" && rem 1>nul 2>nul
-    )
-    exit /b
-)
-if not "%1"=="dir" ( echo plug ^[dir^|add^|addlist^|update^|syncall^|del^] && exit /b )
+
+if not "%1"=="dir" ( echo plug ^[dir^] && echo plug ^[add^|del^|upd^] user/repo && echo plug ^[add^|del^|upd^] @filelist && exit /b )
 set fwk_done=no
 goto dir_fwk
 
@@ -114,7 +89,7 @@ for /f %%i in ('find /c /v "" ^< plugs.x') do set "cnt=%%i"
 
 
 rem read the file into an array
-<plugs.x ( 
+<plugs.x (
     for /l %%i in (1 1 %cnt%) do (
         set "str.%%i="
         set /p "str.%%i="
@@ -129,7 +104,7 @@ for /l %%i in (1 2 %cnt%) do (
     for /l %%u in (!from! 2 !to!) do (
 
         rem display the array values
-        if exist "plugins/!str.%%u!" ( echo [x] !str.%%u!: !str.%%i! ) else ( echo [ ] !str.%%u!: !str.%%i! )
+        if exist "./!str.%%u!" ( echo [x] !str.%%u!: !str.%%i! ) else ( echo [ ] !str.%%u!: !str.%%i! )
     )
 )
 
