@@ -32,6 +32,7 @@ if "%1"=="help" (
     echo %0 [bind]                  ; generate lua bindings
     echo %0 [checkmem]              ; check untracked allocators in V4K
     echo %0 [todo]                  ; check for @fixme and @todo
+    echo %0 [leak]                  ; check for @leak
     echo %0 [v4web]                 ; sync v4 website
     echo %0 [swap]                  ; toggle #line directives on/off
     echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
@@ -309,6 +310,11 @@ if "%1"=="checkmem" (
 if "%1"=="todo" (
     findstr /RNC:"[^_xv]@todo"  engine\split\v4k*
     findstr /RNC:"[^_xv]@fixme"  engine\split\v4k*
+    exit /b
+)
+
+if "%1"=="leak" (
+    findstr /RNC:"[^_xv]@leak"  engine\split\v4k*
     exit /b
 )
 
