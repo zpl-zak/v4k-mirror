@@ -17893,8 +17893,8 @@ unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const 
 
     if( flags & TEXTURE_BGR )  if( pixel_type == GL_RGB )  pixel_type = GL_BGR;
     if( flags & TEXTURE_BGR )  if( pixel_type == GL_RGBA ) pixel_type = GL_BGRA;
-    if( flags & TEXTURE_SRGB ) if( texel_type == GL_RGB )  texel_type = GL_SRGB;
-    if( flags & TEXTURE_SRGB ) if( texel_type == GL_RGBA ) texel_type = GL_SRGB_ALPHA; // GL_SRGB8_ALPHA8 ?
+    if( !(flags & TEXTURE_NO_SRGB) ) if( texel_type == GL_RGB )  texel_type = GL_SRGB;
+    if( !(flags & TEXTURE_NO_SRGB) ) if( texel_type == GL_RGBA ) texel_type = GL_SRGB_ALPHA; // GL_SRGB8_ALPHA8 ?
 
     if( flags & TEXTURE_BC1 ) texel_type = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
     if( flags & TEXTURE_BC2 ) texel_type = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
@@ -18899,10 +18899,10 @@ skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_m
         }
     }
     if( refl_map ) {
-        sky.refl = load_env_tex(refl_map, TEXTURE_SRGB);
+        sky.refl = load_env_tex(refl_map, 0);
     }
     if( env_map ) {
-        sky.env = load_env_tex(env_map, TEXTURE_SRGB);
+        sky.env = load_env_tex(env_map, 0);
     }
 
     return sky;
@@ -19734,7 +19734,7 @@ static void brdf_load() {
     filename = "Skyboxes/brdf_lut2k_512x512_32F.ktx";
 
     brdf = texture_compressed( filename,
-        TEXTURE_CLAMP | TEXTURE_NEAREST | TEXTURE_RG | TEXTURE_FLOAT | TEXTURE_SRGB
+        TEXTURE_CLAMP | TEXTURE_NEAREST | TEXTURE_RG | TEXTURE_FLOAT
     );
     unsigned texchecker = texture_checker().id;
     ASSERT(brdf.id != texchecker, "!Couldn't load BRDF lookup table '%s'!", filename );
@@ -19756,7 +19756,7 @@ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
         FREE(cm->texture), cm->texture = NULL;
     }
 
-    int srgb = load_as_srgb ? TEXTURE_SRGB : 0;
+    int srgb = !load_as_srgb ? TEXTURE_NO_SRGB : 0;
     int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT | TEXTURE_RGBA : 0;
     texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
 
@@ -20495,7 +20495,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
         if( reused ) continue;
 
         // decode texture+material
-        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_ANISOTROPY|TEXTURE_SRGB; // LINEAR, NEAREST
+        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_ANISOTROPY; // LINEAR, NEAREST
         if (!(_flags & MODEL_NO_FILTERING))
             flags |= TEXTURE_LINEAR;
         int invalid = texture_checker().id;
@@ -22577,7 +22577,7 @@ int scene_merge(const char *source) {
             //char *a = archive_read(animation_file);
             object_t *o = scene_spawn();
             object_model(o, m);
-            if( texture_file[0] ) object_diffuse(o, texture_from_mem(vfs_read(texture_file), vfs_size(texture_file), TEXTURE_SRGB|(opt_flip_uv ? IMAGE_FLIP : 0)) );
+            if( texture_file[0] ) object_diffuse(o, texture_from_mem(vfs_read(texture_file), vfs_size(texture_file), (opt_flip_uv ? IMAGE_FLIP : 0)) );
             object_scale(o, scale);
             object_teleport(o, position);
             object_pivot(o, rotation); // object_rotate(o, rotation);
@@ -24098,7 +24098,7 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
         else if( strend(k, "bitmap") ) {
             const char *text = v;
             array(char) bin = base64_decode(text, strlen(text));
-            a.tex = texture_from_mem(bin, array_count(bin), flags&ATLAS_SRGB ? TEXTURE_SRGB : 0);
+            a.tex = texture_from_mem(bin, array_count(bin), flags&ATLAS_SRGB ? 0 : TEXTURE_NO_SRGB);
             array_free(bin);
         }
 #if 0
@@ -26218,7 +26218,7 @@ video_t* video( const char *filename, int flags ) {
     } else {
         int w16 = (w+15) & ~15;
         int h16 = (h+15) & ~15;
-        v->texture = texture_create( w16, h16, 3, NULL, TEXTURE_SRGB );
+        v->texture = texture_create( w16, h16, 3, NULL, 0 );
         v->surface = REALLOC( v->surface,  w16 * h16 * 3 );
     }
 

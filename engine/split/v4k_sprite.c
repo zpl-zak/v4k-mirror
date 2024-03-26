@@ -1363,7 +1363,7 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
         else if( strend(k, "bitmap") ) {
             const char *text = v;
             array(char) bin = base64_decode(text, strlen(text));
-            a.tex = texture_from_mem(bin, array_count(bin), flags&ATLAS_SRGB ? TEXTURE_SRGB : 0);
+            a.tex = texture_from_mem(bin, array_count(bin), flags&ATLAS_SRGB ? 0 : TEXTURE_NO_SRGB);
             array_free(bin);
         }
 #if 0

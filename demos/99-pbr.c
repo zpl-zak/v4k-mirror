@@ -335,7 +335,7 @@ bool SkyboxLoad( Skybox *s, const char **slots ) { // hdr,env,ibl
 
     // Reflection map
     if( reflectionPath ) {
-        if( (s->reflection = LoadTextureRGBA8( reflectionPath, TEXTURE_SRGB )) != NULL ) {
+        if( (s->reflection = LoadTextureRGBA8( reflectionPath, 0 )) != NULL ) {
             glBindTexture( GL_TEXTURE_2D, s->reflection->id );
 
             glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
@@ -345,7 +345,7 @@ bool SkyboxLoad( Skybox *s, const char **slots ) { // hdr,env,ibl
 
     // Irradiance map
     if( envPath ) {
-        if( (s->env = LoadTextureRGBA8( envPath, TEXTURE_SRGB )) != NULL ) {
+        if( (s->env = LoadTextureRGBA8( envPath, 0 )) != NULL ) {
             glBindTexture( GL_TEXTURE_2D, s->env->id );
 
             glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );

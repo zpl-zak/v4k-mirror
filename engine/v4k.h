@@ -3197,7 +3197,7 @@ enum TEXTURE_FLAGS {
     TEXTURE_FLIP = IMAGE_FLIP,
 
     // @fixme
-    TEXTURE_SRGB = 1 << 24,
+    TEXTURE_NO_SRGB = 1 << 24,
     TEXTURE_BGR = 1 << 25,
     TEXTURE_BGRA = TEXTURE_BGR,
     TEXTURE_ARRAY = 1 << 26,
