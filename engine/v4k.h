@@ -3239,32 +3239,14 @@ API void      texture_rec_end(texture_t *t); // texture_rec
 API texture_t brdf_lut();
 
 // -----------------------------------------------------------------------------
-// pbr materials
+// colormap
 
 typedef struct colormap_t {
     vec4 color;
     texture_t *texture;
 } colormap_t;
 
-API bool colormap( colormap_t *cm, const char *pbr_material_type, bool load_as_srgb );
-
-typedef struct pbr_material_t {
-    char* name;
-    colormap_t diffuse;
-    colormap_t normals;
-    colormap_t specular;
-    colormap_t albedo;
-    colormap_t roughness;
-    colormap_t metallic;
-    colormap_t ao;
-    colormap_t ambient;
-    colormap_t emissive;
-
-    float specular_shininess;
-} pbr_material_t;
-
-API bool pbr_material(pbr_material_t *pbr, const char *material);
-API void pbr_material_destroy(pbr_material_t *m);
+API bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb );
 
 // -----------------------------------------------------------------------------
 // fullscreen quads

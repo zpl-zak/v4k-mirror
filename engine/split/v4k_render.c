@@ -2572,8 +2572,8 @@ texture_t brdf_lut() {
 // -----------------------------------------------------------------------------
 // materials
 
-bool colormap( colormap_t *cm, const char *material_file, bool load_as_srgb ) {
-    if( !material_file ) return false;
+bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
+    if( !texture_name ) return false;
 
     if( cm->texture ) {
         texture_destroy(cm->texture);
@@ -2581,8 +2581,8 @@ bool colormap( colormap_t *cm, const char *material_file, bool load_as_srgb ) {
     }
 
     int srgb = load_as_srgb ? TEXTURE_SRGB : 0;
-    int hdr = strendi(material_file, ".hdr") ? TEXTURE_FLOAT | TEXTURE_RGBA : 0;
-    texture_t t = texture_compressed(material_file, TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
+    int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT | TEXTURE_RGBA : 0;
+    texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
 
     if( t.id == texture_checker().id ) {
         cm->texture = NULL;
@@ -2591,63 +2591,6 @@ bool colormap( colormap_t *cm, const char *material_file, bool load_as_srgb ) {
     cm->texture = CALLOC(1, sizeof(texture_t));
     *cm->texture = t;
     return true;
-}
-
-bool pbr_material(pbr_material_t *pbr, const char *material) {
-    if( !material || !pbr ) return false;
-
-    //pbr_material_destroy(pbr);
-    *pbr = (pbr_material_t){0};
-
-    pbr->name = STRDUP(material);
-
-    pbr->specular_shininess = 1.0f;
-    /*
-    if( const float *f = aiGetMaterialFloat(scn_material[i], aiMaterialTypeString(MATERIAL_SHININESS)) ) {
-        pbr->specular_shininess = *f;
-    }
-    */
-
-    pbr->diffuse.color = vec4(0.5,0.5,0.5,0.5);
-    pbr->normals.color = vec4(0,0,0,0);
-    pbr->specular.color = vec4(0,0,0,0);
-    pbr->albedo.color = vec4(0.5,0.5,0.5,1.0);
-    pbr->roughness.color = vec4(1,1,1,1);
-    pbr->metallic.color = vec4(0,0,0,0);
-    pbr->ao.color = vec4(1,1,1,1);
-    pbr->ambient.color = vec4(0,0,0,1);
-    pbr->emissive.color = vec4(0,0,0,0);
-
-    array(char*) tokens = strsplit(material, "+");
-    for( int j = 0, end = array_count(tokens); j < end; ++j ) {
-        char *t = tokens[j];
-        if( strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )    colormap(&pbr->diffuse, t, 1);
-        if( strstri(t, "_N.") || strstri(t, "Normal") )     colormap(&pbr->normals, t, 0);
-        if( strstri(t, "_S.") || strstri(t, "Specular") )   colormap(&pbr->specular, t, 0);
-        if( strstri(t, "_A.") || strstri(t, "Albedo") )     colormap(&pbr->albedo, t, 1); // 0?
-        if( strstri(t, "_MR.")|| strstri(t, "Roughness") || strstri(t, "MetallicRoughness") )  colormap(&pbr->roughness, t, 0);
-        else
-        if( strstri(t, "_M.") || strstri(t, "Metallic") )   colormap(&pbr->metallic, t, 0);
-      //if( strstri(t, "_S.") || strstri(t, "Shininess") )  colormap(&pbr->roughness, t, 0);
-      //if( strstri(t, "_A.") || strstri(t, "Ambient") )    colormap(&pbr->ambient, t, 0);
-        if( strstri(t, "_E.") || strstri(t, "Emissive") )   colormap(&pbr->emissive, t, 1);
-        if( strstri(t, "_AO.") || strstri(t, "AO") || strstri(t, "Occlusion") ) colormap(&pbr->ao, t, 0);
-    }
-
-    return true;
-}
-
-void pbr_material_destroy(pbr_material_t *m) {
-    if( m->name )              FREE(m->name), m->name = NULL;
-    if( m->diffuse.texture)    texture_destroy( m->diffuse.texture );
-    if( m->normals.texture)    texture_destroy( m->normals.texture );
-    if( m->specular.texture)   texture_destroy( m->specular.texture );
-    if( m->albedo.texture)     texture_destroy( m->albedo.texture );
-    if( m->roughness.texture)  texture_destroy( m->roughness.texture );
-    if( m->metallic.texture)   texture_destroy( m->metallic.texture );
-    if( m->ao.texture )        texture_destroy( m->ao.texture );
-    if( m->ambient.texture )   texture_destroy( m->ambient.texture );
-    *m = (pbr_material_t){0};
 }
 
 // ----------------------------------------------------------------------------

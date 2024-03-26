@@ -1110,22 +1110,7 @@ typedef struct colormap_t {
     vec4 color;
     texture_t *texture;
 } colormap_t;
- bool colormap( colormap_t *cm, const char *pbr_material_type, bool load_as_srgb );
-typedef struct pbr_material_t {
-    char* name;
-    colormap_t diffuse;
-    colormap_t normals;
-    colormap_t specular;
-    colormap_t albedo;
-    colormap_t roughness;
-    colormap_t metallic;
-    colormap_t ao;
-    colormap_t ambient;
-    colormap_t emissive;
-    float specular_shininess;
-} pbr_material_t;
- bool pbr_material(pbr_material_t *pbr, const char *material);
- void pbr_material_destroy(pbr_material_t *m);
+ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb );
  void fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
  void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
  void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
