@@ -224,10 +224,9 @@ float geometry_smith( vec3 N, vec3 V, vec3 L, float roughness )
     return geometry_schlick_ggx( N, V, k ) * geometry_schlick_ggx( N, L, k );
 }
 
-vec2 sphere_to_polar( vec3 normal )
-{
+vec2 sphere_to_polar( vec3 normal ) {
     normal = normalize( normal );
-    return vec2( ( atan( normal.z, normal.x ) - PI*0.5f ) / PI / 2.0 + 0.5, acos( normal.y ) / PI );
+    return vec2( 1-atan( normal.z, normal.x ) / PI + 0.5 , acos( normal.y ) / PI  );
 }
 
 // Our vertically GL_CLAMPed textures seem to blend towards black when sampling the half-pixel edge.
