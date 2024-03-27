@@ -37,8 +37,8 @@ int main() {
     // load model
     model_t m1 = model("suzanne.obj", MODEL_NO_ANIMATIONS);
     model_t m2 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_MATCAPS);
-    model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
-    // model_t m3 = model("Scutum_low.fbx", MODEL_NO_ANIMATIONS|MODEL_PBR);
+    // model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
+    model_t m3 = model("Scutum_low.fbx", MODEL_NO_ANIMATIONS|MODEL_PBR);
     // model_t m4 = model("avp/scene.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
     // model_t m3 = model("Cerberus_LP.FBX", MODEL_NO_ANIMATIONS|MODEL_PBR);
 

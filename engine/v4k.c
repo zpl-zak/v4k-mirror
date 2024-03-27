@@ -19762,8 +19762,8 @@ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
     }
 
     int srgb = load_as_srgb ? TEXTURE_SRGB : 0;
-    int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT : 0;
-    texture_t t = texture_compressed(texture_name, TEXTURE_RGBA | TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
+    int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT|TEXTURE_RGBA : 0;
+    texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
 
     if( t.id == texture_checker().id ) {
         cm->texture = NULL;
@@ -20433,7 +20433,7 @@ static char* strcpy_safe(char *d, const char *s) {
 static
 void model_load_pbr_layer(material_layer_t *layer, const char *texname, bool load_as_srgb) {
     strcpy_safe(layer->texname, texname);
-    colormap(&layer->map, texname, load_as_srgb);
+    colormap(&layer->map, texname, false);
 }
 
 static

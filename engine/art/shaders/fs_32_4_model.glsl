@@ -140,7 +140,7 @@ uniform ColorMap map_emissive;  uniform sampler2D map_emissive_tex;
 #define sample_colormap(ColorMap_, uv_) \
     (ColorMap_.has_tex ? texture( ColorMap_##_tex, uv_ ) : ColorMap_.color)
 
-uniform float skysphere_rotation=-90;
+uniform float skysphere_rotation=0;
 uniform float skysphere_mip_count;
 uniform float exposure=1;
 uniform uint frame_count;
@@ -703,7 +703,7 @@ void main(void)
     color = clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
     // gamma correction
 #endif
-    color = pow( color, vec3(1. / 2.2) );
+    // color = pow( color, vec3(1. / 2.2) );
 
     // Technically this alpha may be too transparent, if there is a lot of reflected light we wouldn't
     // see the background, maybe we can approximate it well enough by adding a fresnel term
