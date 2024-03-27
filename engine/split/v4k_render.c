@@ -1658,7 +1658,7 @@ skybox_t skybox(const char *asset, int flags) {
     if( asset ) {
         int is_panorama = vfs_size( asset );
         if( is_panorama ) { // is file
-            stbi_hdr_to_ldr_gamma(1.2f);
+            stbi_hdr_to_ldr_gamma(1.0f);
             image_t panorama = image( asset, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
             image_destroy(&panorama);
@@ -1720,7 +1720,7 @@ skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_m
     if( sky_map ) {
         int is_panorama = vfs_size( sky_map );
         if( is_panorama ) { // is file
-            stbi_hdr_to_ldr_gamma(1.2f);
+            stbi_hdr_to_ldr_gamma(1.0f);
             image_t panorama = image( sky_map, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
             image_destroy(&panorama);
