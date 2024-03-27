@@ -1180,6 +1180,9 @@ texture_t texture_compressed_from_mem(const void *data, int len, unsigned flags)
     if( dimensions > 0 ) glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
     if( dimensions > 1 ) glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
     if( dimensions > 2 ) glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_REPEAT);
+    if( flags&TEXTURE_CLAMP && dimensions > 0 ) glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    if( flags&TEXTURE_CLAMP && dimensions > 1 ) glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    if( flags&TEXTURE_CLAMP && dimensions > 2 ) glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     if( target == GL_TEXTURE_CUBE_MAP ) target = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
@@ -2601,15 +2604,55 @@ int ui_fxs() {
 static texture_t brdf = {0};
 
 static void brdf_load() {
-    const char *filename;
-    filename = "Skyboxes/brdf_lut1k_256x256_32F.ktx";
-    filename = "Skyboxes/brdf_lut2k_512x512_32F.ktx";
+    // generate texture
+    unsigned tex;
+    glGenTextures(1, &tex);
 
-    brdf = texture_compressed( filename,
-        TEXTURE_CLAMP | TEXTURE_NEAREST | TEXTURE_RG | TEXTURE_FLOAT
-    );
-    unsigned texchecker = texture_checker().id;
-    ASSERT(brdf.id != texchecker, "!Couldn't load BRDF lookup table '%s'!", filename );
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
+
+    brdf.id = tex;
+    brdf.w = 512;
+    brdf.h = 512;
+
+    // create program and generate BRDF LUT
+    unsigned lut_fbo = fbo(tex, 0, 0), rbo=0;
+    fbo_bind(lut_fbo);
+
+    static int program = -1, vao = -1;
+    if( program < 0 ) {
+        const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
+        const char* fs = vfs_read("shaders/brdf.glsl");
+
+        program = shader(vs, fs, "", "fragcolor", NULL);
+        glGenVertexArrays( 1, (GLuint*)&vao );
+    }
+
+    glDisable(GL_BLEND);
+
+    handle old_shader = last_shader;
+    glUseProgram( program );
+
+    glViewport(0, 0, 512, 512);
+
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+
+    glBindVertexArray( vao );
+
+    glDrawArrays( GL_TRIANGLES, 0, 6 );
+    profile_incstat("Render.num_drawcalls", +1);
+    profile_incstat("Render.num_triangles", +2);
+
+    glBindVertexArray( 0 );
+
+    glUseProgram( last_shader );
+
+    fbo_unbind();
+    fbo_destroy(lut_fbo);
 }
 
 texture_t brdf_lut() {
@@ -2630,7 +2673,7 @@ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
 
     int srgb = load_as_srgb ? TEXTURE_SRGB : 0;
     int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT|TEXTURE_RGBA : 0;
-    texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
+    texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_ANISOTROPY | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
 
     if( t.id == texture_checker().id ) {
         cm->texture = NULL;
@@ -3009,7 +3052,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         shader_bool( "has_tex_skysphere", has_tex_skysphere );
         shader_bool( "has_tex_skyenv", has_tex_skyenv );
         if( has_tex_skysphere ) {
-            float mipCount = floor( log2( m.sky_refl.h ) );
+            float mipCount = floor( log2( max(m.sky_refl.w, m.sky_refl.h) ) );
             shader_texture("tex_skysphere", m.sky_refl);
             shader_float( "skysphere_mip_count", mipCount );
         }

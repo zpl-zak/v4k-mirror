@@ -227,7 +227,7 @@ float geometry_smith( vec3 N, vec3 V, vec3 L, float roughness )
 vec2 sphere_to_polar( vec3 normal )
 {
     normal = normalize( normal );
-    return vec2( ( atan( normal.z, normal.x ) + skysphere_rotation ) / PI / 2.0 + 0.5, acos( normal.y ) / PI );
+    return vec2( ( atan( normal.z, normal.x ) - PI*0.5f ) / PI / 2.0 + 0.5, acos( normal.y ) / PI );
 }
 
 // Our vertically GL_CLAMPed textures seem to blend towards black when sampling the half-pixel edge.
@@ -285,7 +285,7 @@ vec3 sample_irradiance_fast( vec3 normal, vec3 vertex_tangent )
     // Sample the irradiance map if it exists, otherwise fall back to blurred reflection map.
     if ( has_tex_skyenv )
     {
-        vec2 polar = sphere_to_polar_clamp_y( normal, 180.0 );
+        vec2 polar = sphere_to_polar( normal );
         return textureLod( tex_skyenv, polar, 0.0 ).rgb * exposure;
     }
     else
@@ -473,7 +473,7 @@ void main(void)
     }
     else if( map_roughness.has_tex ) {
         //< @r-lyeh, metalness B, roughness G, (@todo: self-shadowing occlusion R; for now, any of R/B are metallic)
-        metallic = sample_colormap( map_roughness, v_texcoord ).b + sample_colormap( map_roughness, v_texcoord ).r;
+        metallic = sample_colormap( map_roughness, v_texcoord ).b;// + sample_colormap( map_roughness, v_texcoord ).r;
         roughness = sample_colormap( map_roughness, v_texcoord ).g;
     }
 
@@ -708,21 +708,6 @@ void main(void)
     // Technically this alpha may be too transparent, if there is a lot of reflected light we wouldn't
     // see the background, maybe we can approximate it well enough by adding a fresnel term
     fragcolor = vec4( color * shadowing().xyz, alpha );
-
-    // rimlight
-    #ifdef RIM
-    {
-        vec3 n = normalize(mat3(M) * v_normal_ws);  // convert normal to view space
-        vec3 p = (M * vec4(v_position,1.0)).xyz; // convert position to view space
-        vec3 v = vec3(0,-1,0);
-        if (!u_rimambient) {
-            v = normalize(u_rimpivot-p);
-        }
-        float rim = 1.0 - max(dot(v,n), 0.0);
-        vec3 col = u_rimcolor*(pow(smoothstep(1.0-u_rimrange.x,u_rimrange.y,rim), u_rimrange.z));
-        fragcolor += vec4(col, 0.0);
-    }
-    #endif
 }
 
 #endif
