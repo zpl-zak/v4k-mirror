@@ -1363,7 +1363,7 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
         else if( strend(k, "bitmap") ) {
             const char *text = v;
             array(char) bin = base64_decode(text, strlen(text));
-            a.tex = texture_from_mem(bin, array_count(bin), flags&ATLAS_SRGB ? 0 : TEXTURE_NO_SRGB);
+            a.tex = texture_from_mem(bin, array_count(bin), 0);
             array_free(bin);
         }
 #if 0
@@ -1487,7 +1487,7 @@ void sprite_edit(sprite_t *s) {
 
 sprite_t* sprite_new(const char *ase, int bindings[6]) {
     sprite_t *s = obj_new(sprite_t, {bindings[0],bindings[1],bindings[2],bindings[3]}, {bindings[4],bindings[5]});
-    atlas_t own = atlas_create(ase, ATLAS_SRGB);
+    atlas_t own = atlas_create(ase, 0);
     memcpy(s->a = MALLOC(sizeof(atlas_t)), &own, sizeof(atlas_t)); // s->a = &s->own;
     return s;
 }

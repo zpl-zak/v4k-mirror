@@ -129,7 +129,7 @@ void logic() {
 void blit() {
     static texture_t screen; do_once screen = texture_checker();
     texture_update(&screen, DOOM_WIDTH, DOOM_HEIGHT, 4, doom_get_framebuffer(4), TEXTURE_RGBA/*|TEXTURE_LINEAR*/);
-    fullscreen_quad_rgb(screen, 1.0f); // gamma(1)
+    fullscreen_quad_rgb(screen); // gamma(1)
 }
 
 void audio() {

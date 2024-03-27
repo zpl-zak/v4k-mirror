@@ -702,8 +702,8 @@ void main(void)
     float e = 0.14f;
     color = clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
     // gamma correction
-    color = pow( color, vec3(1. / 2.2) );
 #endif
+    color = pow( color, vec3(1. / 2.2) );
 
     // Technically this alpha may be too transparent, if there is a lot of reflected light we wouldn't
     // see the background, maybe we can approximate it well enough by adding a fresnel term

@@ -1076,7 +1076,7 @@ enum TEXTURE_FLAGS {
     TEXTURE_RGB = IMAGE_RGB,
     TEXTURE_RGBA = IMAGE_RGBA,
     TEXTURE_FLIP = IMAGE_FLIP,
-    TEXTURE_NO_SRGB = 1 << 24,
+    TEXTURE_SRGB = 1 << 24,
     TEXTURE_BGR = 1 << 25,
     TEXTURE_BGRA = TEXTURE_BGR,
     TEXTURE_ARRAY = 1 << 26,
@@ -1111,10 +1111,10 @@ typedef struct colormap_t {
     texture_t *texture;
 } colormap_t;
  bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb );
- void fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
- void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
- void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
- void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma );
+ void fullscreen_quad_rgb( texture_t texture_rgb );
+ void fullscreen_quad_rgb_flipped( texture_t texture );
+ void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3] );
+ void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3] );
 typedef struct cubemap_t {
     unsigned id;
     vec3 sh[9];
@@ -1668,9 +1668,6 @@ typedef struct spine_t spine_t;
  void spine_render(spine_t *p, vec3 offset, unsigned flags);
  void spine_animate(spine_t *p, float delta);
  void ui_spine(spine_t *p);
-enum ATLAS_FLAGS {
-	ATLAS_SRGB = 2,
-};
 typedef struct atlas_frame_t {
     unsigned delay;
     vec4 sheet;
@@ -1758,7 +1755,7 @@ typedef struct skinned_t {
     atlas_t atlas;
     float scale;
 } skinned_t;
- guiskin_t gui_skinned(const char *asefile, float scale, bool load_as_srgb);
+ guiskin_t gui_skinned(const char *asefile, float scale);
  bool steam_init(unsigned app_id);
  void steam_tick();
  void steam_trophy(const char *trophy_id, bool redeem);

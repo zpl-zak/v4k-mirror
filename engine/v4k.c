@@ -10659,7 +10659,6 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glUniform1f(glGetUniformLocation(f->program, "scale_factor"), factor);
     glUniform2fv(glGetUniformLocation(f->program, "string_offset"), 1, &offset.x);
     glUniform1f(glGetUniformLocation(f->program, "offset_firstline"), f->ascent*f->factor);
-    glUniform1f(glGetUniformLocation(f->program, "u_gamma"), (window_get_gamma() + !window_get_gamma()));
 
     GLint dims[4] = {0};
     glGetIntegerv(GL_VIEWPORT, dims);
@@ -11250,7 +11249,7 @@ API void gui_drawrect( texture_t spritesheet, vec2 tex_start, vec2 tex_end, int 
 
 void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end ) {
     static int program = -1, vbo = -1, vao = -1, u_tint = -1, u_has_tex = -1, u_window_width = -1, u_window_height = -1;
-    float gamma = window_get_gamma();
+    float gamma = 1;
     vec2 dpi = ifdef(osx, window_dpi(), vec2(1,1));
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/rect_2d.vs");
@@ -11704,9 +11703,9 @@ void skinned_getscissorrect(void* userdata, const char *skin, const char *fallba
     dims->w -= (skinsize.y - coresize.y);
 }
 
-guiskin_t gui_skinned(const char *asefile, float scale, bool load_as_srgb) {
+guiskin_t gui_skinned(const char *asefile, float scale) {
     skinned_t *a = REALLOC(0, sizeof(skinned_t));
-    a->atlas = atlas_create(asefile, load_as_srgb?ATLAS_SRGB:0);
+    a->atlas = atlas_create(asefile, 0);
     a->scale = scale?scale:1.0f;
     guiskin_t skin={0};
     skin.userdata = a;
@@ -17725,7 +17724,12 @@ void shader_vec3(const char *uniform, vec3 v)   { glUniform3fv(shader_uniform(un
 void shader_vec3v(const char *uniform, int count, vec3 *v) { glUniform3fv(shader_uniform(uniform), count, &v[0].x); }
 void shader_vec4(const char *uniform, vec4 v)   { glUniform4fv(shader_uniform(uniform), 1, &v.x); }
 void shader_mat44(const char *uniform, mat44 m) { glUniformMatrix4fv(shader_uniform(uniform), 1, GL_FALSE/*GL_TRUE*/, m); }
-void shader_cubemap(const char *sampler, unsigned texture) { glUniform1i(shader_uniform(sampler), 0); glBindTexture(GL_TEXTURE_CUBE_MAP, texture); }
+void shader_cubemap(const char *sampler, unsigned texture) { 
+    int id = texture_unit();
+    glUniform1i(shader_uniform(sampler), id); 
+    glActiveTexture(GL_TEXTURE0 + id); 
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+}
 void shader_bool(const char *uniform, bool x) { glUniform1i(shader_uniform(uniform), x); }
 void shader_uint(const char *uniform, unsigned x ) { glUniform1ui(shader_uniform(uniform), x); }
 void shader_texture(const char *sampler, texture_t t) { shader_texture_unit(sampler, t.id, texture_unit()); }
@@ -17893,8 +17897,8 @@ unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const 
 
     if( flags & TEXTURE_BGR )  if( pixel_type == GL_RGB )  pixel_type = GL_BGR;
     if( flags & TEXTURE_BGR )  if( pixel_type == GL_RGBA ) pixel_type = GL_BGRA;
-    if( !(flags & TEXTURE_NO_SRGB) ) if( texel_type == GL_RGB )  texel_type = GL_SRGB;
-    if( !(flags & TEXTURE_NO_SRGB) ) if( texel_type == GL_RGBA ) texel_type = GL_SRGB_ALPHA; // GL_SRGB8_ALPHA8 ?
+    if( flags & TEXTURE_SRGB ) if( texel_type == GL_RGB )  texel_type = GL_SRGB;
+    if( flags & TEXTURE_SRGB ) if( texel_type == GL_RGBA ) texel_type = GL_SRGB_ALPHA; // GL_SRGB8_ALPHA8 ?
 
     if( flags & TEXTURE_BC1 ) texel_type = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
     if( flags & TEXTURE_BC2 ) texel_type = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
@@ -18495,7 +18499,7 @@ void shadowmatrix_ortho(mat44 shm_proj, float left, float right, float bottom, f
 // usage: bind empty vao & commit call for 6 (quad) or 3 vertices (tri).
 // ie, glBindVertexArray(empty_vao); glDrawArrays(GL_TRIANGLES, 0, 3);
 
-void fullscreen_quad_rgb( texture_t texture, float gamma ) {
+void fullscreen_quad_rgb( texture_t texture ) {
     static int program = -1, vao = -1, u_inv_gamma = -1;
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
@@ -18509,7 +18513,8 @@ void fullscreen_quad_rgb( texture_t texture, float gamma ) {
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
 //    glEnable( GL_BLEND );
     glUseProgram( program );
-    glUniform1f( u_inv_gamma, 1.0f / (gamma + !gamma) );
+    float gamma = 1;
+    glUniform1f( u_inv_gamma, gamma );
 
     glBindVertexArray( vao );
 
@@ -18526,7 +18531,7 @@ void fullscreen_quad_rgb( texture_t texture, float gamma ) {
 //    glDisable( GL_BLEND );
 }
 
-void fullscreen_quad_rgb_flipped( texture_t texture, float gamma ) {
+void fullscreen_quad_rgb_flipped( texture_t texture ) {
     static int program = -1, vao = -1, u_inv_gamma = -1;
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
@@ -18540,7 +18545,8 @@ void fullscreen_quad_rgb_flipped( texture_t texture, float gamma ) {
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
 //    glEnable( GL_BLEND );
     glUseProgram( program );
-    glUniform1f( u_inv_gamma, 1.0f / (gamma + !gamma) );
+    float gamma = 1;
+    glUniform1f( u_inv_gamma, gamma );
 
     glBindVertexArray( vao );
 
@@ -18557,7 +18563,7 @@ void fullscreen_quad_rgb_flipped( texture_t texture, float gamma ) {
 //    glDisable( GL_BLEND );
 }
 
-void fullscreen_quad_ycbcr( texture_t textureYCbCr[3], float gamma ) {
+void fullscreen_quad_ycbcr( texture_t textureYCbCr[3] ) {
     static int program = -1, vao = -1, u_gamma = -1, uy = -1, ucb = -1, ucr = -1;
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
@@ -18575,7 +18581,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3], float gamma ) {
 
 //    glEnable( GL_BLEND );
     glUseProgram( program );
-    glUniform1f( u_gamma, gamma );
+    // glUniform1f( u_gamma, gamma );
 
     glBindVertexArray( vao );
 
@@ -18601,7 +18607,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3], float gamma ) {
 //    glDisable( GL_BLEND );
 }
 
-void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3], float gamma ) {
+void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3] ) {
     static int program = -1, vao = -1, u_gamma = -1, uy = -1, ucb = -1, ucr = -1;
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
@@ -18619,7 +18625,7 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3], float gamma ) {
 
 //    glEnable( GL_BLEND );
     glUseProgram( program );
-    glUniform1f( u_gamma, gamma );
+    // glUniform1f( u_gamma, gamma );
 
     glBindVertexArray( vao );
 
@@ -18724,12 +18730,11 @@ cubemap_t cubemap6( const image_t images[6], int flags ) {
     glGenTextures(1, &c.id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, c.id);
 
-    float gammabg = window_get_gamma() + !window_get_gamma();
     int samples = 0;
     for (int i = 0; i < 6; i++) {
         image_t img = images[i]; //image(textures[i], IMAGE_RGB);
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB, img.w, img.h, 0, img.n == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, img.pixels);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, img.w, img.h, 0, img.n == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, img.pixels);
 
         // calculate SH coefficients (@ands)
         const vec3 skyDir[] = {{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1}};
@@ -18746,9 +18751,6 @@ cubemap_t cubemap6( const image_t images[6], int flags ) {
                     skyDir[i]); // texelDirection;
                 float l = len3(n);
                 vec3 light = scale3(vec3(p[0], p[1], p[2]), 1 / (255.0f * l * l * l)); // texelSolidAngle * texel_radiance;
-                light.x = powf(light.x, gammabg);
-                light.y = powf(light.y, gammabg);
-                light.z = powf(light.z, gammabg);
                 n = norm3(n);
                 c.sh[0] = add3(c.sh[0], scale3(light,  0.282095f));
                 c.sh[1] = add3(c.sh[1], scale3(light, -0.488603f * n.y * 2.0 / 3.0));
@@ -19040,8 +19042,6 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     shader_mat44("u_mvp", mvp);
     if( sky->flags ) {
         shader_cubemap("u_cubemap", sky->cubemap.id);
-    } else {
-        shader_float("u_gamma", window_get_gamma() + !window_get_gamma());
     }
     return 0; // @fixme: return sortable hash here?
 }
@@ -19299,6 +19299,9 @@ void viewport_clip(vec2 from, vec2 to) {
 // fbos
 
 unsigned fbo(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
+    int last_fb;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
+
     GLuint fbo;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -19347,14 +19350,21 @@ unsigned fbo(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
     }
 #endif
 
-    glBindFramebuffer (GL_FRAMEBUFFER, 0);
+    glBindFramebuffer (GL_FRAMEBUFFER, last_fb);
     return fbo;
 }
+static __thread array(handle) fbos;
 void fbo_bind(unsigned id) {
     glBindFramebuffer(GL_FRAMEBUFFER, id);
+    array_push(fbos, id);
 }
 void fbo_unbind() {
-    fbo_bind(0);
+    handle id = 0;
+    if (array_count(fbos)) {
+        array_pop(fbos);
+        id = *array_back(fbos);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
 }
 void fbo_destroy(unsigned id) {
     // glDeleteRenderbuffers(1, &renderbuffer);
@@ -19498,7 +19508,7 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
 
     if( p->uniforms[u_channelres1x] == -1 ) p->uniforms[u_channelres1x] = glGetUniformLocation(p->program, "iChannelRes1x");
     if( p->uniforms[u_channelres1y] == -1 ) p->uniforms[u_channelres1y] = glGetUniformLocation(p->program, "iChannelRes1y");
-
+    
     // set quad
     glGenVertexArrays(1, &p->m.vao);
     return slot;
@@ -19533,19 +19543,12 @@ int ui_postfx(postfx *fx, int pass) {
     return rc;
 }
 
-static __thread array(handle) last_fb;
-static postfx gamma_fx;
-
 bool postfx_begin(postfx *fx, int width, int height) {
     // reset clear color: needed in case transparent window is being used (alpha != 0)
-    if (fx != &gamma_fx) glClearColor(0,0,0,0); // @transparent
+    glClearColor(0,0,0,0); // @transparent
 
     width += !width;
     height += !height;
-
-    int fb;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &fb);
-    array_push(last_fb, fb);
 
     // resize if needed
     if( fx->diffuse[0].w != width || fx->diffuse[0].h != height ) {
@@ -19570,20 +19573,18 @@ bool postfx_begin(postfx *fx, int width, int height) {
     uint64_t num_active_passes = popcnt64(fx->mask);
     bool active = fx->enabled && num_active_passes;
     if( !active ) {
-        array_pop(last_fb);
-        fbo_bind(fb);
         return false;
     }
 
     fbo_bind(fx->fb[1]);
-
     viewport_clear(true, true);
     viewport_clip(vec2(0,0), vec2(width, height));
+    fbo_unbind();
 
     fbo_bind(fx->fb[0]);
-
     viewport_clear(true, true);
     viewport_clip(vec2(0,0), vec2(width, height));
+    // we keep fbo_0 bound so that user can render into it.
 
     return true;
 }
@@ -19595,9 +19596,8 @@ bool postfx_end(postfx *fx) {
         return false;
     }
 
-    handle fb = *array_back(last_fb);
-    array_pop(last_fb);
-    fbo_bind(fb);
+    // unbind postfx fbo
+    fbo_unbind();
 
     // disable depth test in 2d rendering
     bool is_depth_test_enabled = glIsEnabled(GL_DEPTH_TEST);
@@ -19624,7 +19624,7 @@ bool postfx_end(postfx *fx) {
 
             glUniform1f(pass->uniforms[u_channelres0x], fx->diffuse[frame].w);
             glUniform1f(pass->uniforms[u_channelres0y], fx->diffuse[frame].h);
-
+            
             // bind depth to texture unit 1
             // shader_texture_unit(fx->depth[frame], 1);
  glActiveTexture(GL_TEXTURE0 + 1);            glBindTexture(GL_TEXTURE_2D, fx->depth[frame].id);
@@ -19642,7 +19642,7 @@ bool postfx_end(postfx *fx) {
 
             // bind the vao
             int bound = --num_active_passes;
-            if( bound ) fbo_bind(fx->fb[frame ^= 1]);
+            if (bound) fbo_bind(fx->fb[frame ^= 1]);
 
                 // fullscreen quad
                 glBindVertexArray(pass->m.vao);
@@ -19651,10 +19651,10 @@ bool postfx_end(postfx *fx) {
                 profile_incstat("Render.num_triangles", +2);
                 glBindVertexArray(0);
 
-            if( bound ) fbo_bind(fb);
-            else glUseProgram(0);
+            if (bound) fbo_unbind();
         }
     }
+    glUseProgram(0);
 
     if(is_depth_test_enabled);
     glEnable(GL_DEPTH_TEST);
@@ -19761,9 +19761,9 @@ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
         FREE(cm->texture), cm->texture = NULL;
     }
 
-    int srgb = !load_as_srgb ? TEXTURE_NO_SRGB : 0;
-    int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT | TEXTURE_RGBA : 0;
-    texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
+    int srgb = load_as_srgb ? TEXTURE_SRGB : 0;
+    int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT : 0;
+    texture_t t = texture_compressed(texture_name, TEXTURE_RGBA | TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
 
     if( t.id == texture_checker().id ) {
         cm->texture = NULL;
@@ -19802,7 +19802,6 @@ enum shadertoy_uniforms {
     iSampleRate,
     iChannelResolution,
     iChannelTime,
-    iGamma,
     // iCameraScreen
     // iCameraPosition
     // iCameraActive
@@ -19844,7 +19843,6 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
     s.uniforms[iSampleRate] = glGetUniformLocation(s.program, "iSampleRate");
     s.uniforms[iChannelResolution] = glGetUniformLocation(s.program, "iChannelResolution");
     s.uniforms[iChannelTime] = glGetUniformLocation(s.program, "iChannelTime");
-    s.uniforms[iGamma] = glGetUniformLocation(s.program, "iGamma");
 
     return s;
 }
@@ -19872,7 +19870,6 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
 
         glUniform1i(s->uniforms[iFrame], (int)window_frame());
         glUniform1f(s->uniforms[iTime], time_ss());
-        glUniform1f(s->uniforms[iGamma], window_get_gamma() + !window_get_gamma());
         glUniform4f(s->uniforms[iDate], tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_sec + tm->tm_min * 60 + tm->tm_hour * 3600);
 
         int unit = 0;
@@ -21196,10 +21193,8 @@ static const char *dd_fs = "//" FILELINE "\n"
     // "precision mediump float;\n"
     "in vec3 out_color;\n"
     "out vec4 fragcolor;\n"
-    "uniform float u_gamma; /// set:2.2\n"
     "void main() {\n"
     "   fragcolor = vec4(out_color, 1.0);\n"
-    "   fragcolor.rgb = pow(fragcolor.rgb, vec3(u_gamma));\n"
     "}";
 
 #define X(x) RGBX(x,255)
@@ -21259,7 +21254,6 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     glUseProgram(dd_program);
     glUniformMatrix4fv(glGetUniformLocation(dd_program, "u_MVP"), 1, GL_FALSE, mvp);
-    glUniform1f(glGetUniformLocation(dd_program, "u_gamma"), (window_get_gamma() + !window_get_gamma()));
 
     static GLuint vao, vbo;
     if(!vao) glGenVertexArrays(1, &vao);    glBindVertexArray(vao);
@@ -24106,7 +24100,7 @@ atlas_t atlas_create(const char *inifile, unsigned flags) {
         else if( strend(k, "bitmap") ) {
             const char *text = v;
             array(char) bin = base64_decode(text, strlen(text));
-            a.tex = texture_from_mem(bin, array_count(bin), flags&ATLAS_SRGB ? 0 : TEXTURE_NO_SRGB);
+            a.tex = texture_from_mem(bin, array_count(bin), 0);
             array_free(bin);
         }
 #if 0
@@ -24230,7 +24224,7 @@ void sprite_edit(sprite_t *s) {
 
 sprite_t* sprite_new(const char *ase, int bindings[6]) {
     sprite_t *s = obj_new(sprite_t, {bindings[0],bindings[1],bindings[2],bindings[3]}, {bindings[4],bindings[5]});
-    atlas_t own = atlas_create(ase, ATLAS_SRGB);
+    atlas_t own = atlas_create(ase, 0);
     memcpy(s->a = MALLOC(sizeof(atlas_t)), &own, sizeof(atlas_t)); // s->a = &s->own;
     return s;
 }
@@ -26491,7 +26485,6 @@ static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
-static float gamma = 2.2f;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
@@ -26648,13 +26641,7 @@ void glNewFrame() {
     glViewport(0, 0, window_width(), window_height());
 
     // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
-    vec4 bgcolor = winbgcolor;
-    float gammabg = gamma + !gamma; 
-    bgcolor.x = powf(bgcolor.x, gammabg);
-    bgcolor.y = powf(bgcolor.y, gammabg);
-    bgcolor.z = powf(bgcolor.z, gammabg);
-    bgcolor.w = powf(bgcolor.w, gammabg);
-    glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, window_has_transparent() ? 0 : bgcolor.a); // @transparent
+    glClearColor(winbgcolor.r, winbgcolor.g, winbgcolor.b, window_has_transparent() ? 0 : winbgcolor.a); // @transparent
     //glClearColor(0.15,0.15,0.15,1);
     //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -26968,10 +26955,6 @@ int window_frame_begin() {
     void input_update();
     input_update();
 
-    if (gamma) {
-        postfx_begin(&gamma_fx, window_width(), window_height());
-    }
-
     return 1;
 }
 
@@ -26988,10 +26971,6 @@ void window_frame_end() {
         glClear(GL_DEPTH_BUFFER_BIT);
         dd_ontop = 1;
         ddraw_flush();
-        
-        if (gamma) {
-            postfx_end(&gamma_fx);
-        }
 
         ui_render();
     }
@@ -27179,14 +27158,6 @@ void window_color(unsigned color) {
     unsigned b = (color >> 16) & 255;
     unsigned a = (color >> 24) & 255;
     winbgcolor = vec4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
-}
-void window_gamma(float _gamma) {
-    gamma = _gamma;
-    shader_bind(gamma_fx.pass[postfx_find(&gamma_fx, "fxGamma.fs")].program);
-    shader_float("u_gamma", 1.0f / gamma);
-}
-float window_get_gamma() {
-    return gamma;
 }
 static int has_icon;
 int window_has_icon() {
@@ -29797,11 +29768,6 @@ static void v4k_post_init(float refresh_rate) {
 
     hz = refresh_rate;
     // t = glfwGetTime();
-    do_once {
-        postfx_load_from_mem(&gamma_fx, "fxGamma.fs", vfs_read("fxGamma.fs"));
-        postfx_enable(&gamma_fx, 0, 1);
-        window_gamma(2.2f);
-    }
 }
 
 // ----------------------------------------------------------------------------

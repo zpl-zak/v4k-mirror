@@ -139,7 +139,7 @@ int main() {
 
     while( window_swap() && SFG_mainLoopBody() ) {
         texture_update(&t, SFG_SCREEN_RESOLUTION_X, SFG_SCREEN_RESOLUTION_Y, 4, screen, TEXTURE_RGB|TEXTURE_NEAREST);
-        fullscreen_quad_rgb(t, 1.0f);
+        fullscreen_quad_rgb(t);
 
         uint16_t samples[128]; // 8 KHz 16-bit mono = 8000/60 = 133 samples/frame -> 256 samples/frame 
         audioFillCallback(NULL, (uint8_t*)samples, sizeof(samples));

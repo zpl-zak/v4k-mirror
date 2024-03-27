@@ -48,11 +48,6 @@ static void v4k_post_init(float refresh_rate) {
 
     hz = refresh_rate;
     // t = glfwGetTime();
-    do_once {
-        postfx_load_from_mem(&gamma_fx, "fxGamma.fs", vfs_read("fxGamma.fs"));
-        postfx_enable(&gamma_fx, 0, 1);
-        window_gamma(2.2f);
-    }
 }
 
 // ----------------------------------------------------------------------------

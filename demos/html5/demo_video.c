@@ -11,7 +11,7 @@ void render(void *arg) {
 
     // present decoded textures as a fullscreen composed quad
     profile( "Video quad" ) {
-        fullscreen_quad_rgb( textures[0], 1.3f );
+        fullscreen_quad_rgb( textures[0] );
     }
 
     // ui video

@@ -84,10 +84,6 @@ API void    ui_spine(spine_t *p);
 // ----------------------------------------------------------------------------
 // atlas api
 
-enum ATLAS_FLAGS {
-	ATLAS_SRGB = 2,
-};
-
 typedef struct atlas_frame_t {
     unsigned delay;
     vec4 sheet;

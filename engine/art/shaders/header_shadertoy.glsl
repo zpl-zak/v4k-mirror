@@ -16,11 +16,10 @@ uniform sampler2D  iChannel0;             // input channel 0 /*sampler%s*/
 uniform sampler2D  iChannel1;             // input channel 1
 uniform sampler2D  iChannel2;             // input channel 2
 uniform sampler2D  iChannel3;             // input channel 3
-uniform float      iGamma; /// set:2.2
+
 in  vec2 texCoord;
 out vec4 fragColor;
 void mainImage( out vec4 fragColor, in vec2 fragCoord );
 void main() {
    mainImage(fragColor, texCoord.xy);
-   fragColor.rgb = pow(fragColor.rgb, vec3(iGamma));
 }

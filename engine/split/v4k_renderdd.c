@@ -13,10 +13,8 @@ static const char *dd_fs = "//" FILELINE "\n"
     // "precision mediump float;\n"
     "in vec3 out_color;\n"
     "out vec4 fragcolor;\n"
-    "uniform float u_gamma; /// set:2.2\n"
     "void main() {\n"
     "   fragcolor = vec4(out_color, 1.0);\n"
-    "   fragcolor.rgb = pow(fragcolor.rgb, vec3(u_gamma));\n"
     "}";
 
 #define X(x) RGBX(x,255)
@@ -76,7 +74,6 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     glUseProgram(dd_program);
     glUniformMatrix4fv(glGetUniformLocation(dd_program, "u_MVP"), 1, GL_FALSE, mvp);
-    glUniform1f(glGetUniformLocation(dd_program, "u_gamma"), (window_get_gamma() + !window_get_gamma()));
 
     static GLuint vao, vbo;
     if(!vao) glGenVertexArrays(1, &vao);    glBindVertexArray(vao);

@@ -108,7 +108,7 @@ enum TEXTURE_FLAGS {
     TEXTURE_FLIP = IMAGE_FLIP,
 
     // @fixme
-    TEXTURE_NO_SRGB = 1 << 24,
+    TEXTURE_SRGB = 1 << 24,
     TEXTURE_BGR = 1 << 25,
     TEXTURE_BGRA = TEXTURE_BGR,
     TEXTURE_ARRAY = 1 << 26,
@@ -162,10 +162,10 @@ API bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb )
 // -----------------------------------------------------------------------------
 // fullscreen quads
 
-API void fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
-API void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
-API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
-API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma );
+API void fullscreen_quad_rgb( texture_t texture_rgb );
+API void fullscreen_quad_rgb_flipped( texture_t texture );
+API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3] );
+API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3] );
 
 // -----------------------------------------------------------------------------
 // cubemaps

@@ -81,7 +81,7 @@ int main() {
             temp_calc(img);
             texture_update(&tex, TEX_WIDTH, TEX_WIDTH, 4, img, TEXTURE_LINEAR|TEXTURE_FLOAT);
         }
-        fullscreen_quad_rgb(tex, 2.2);
+        fullscreen_quad_rgb(tex);
         ddraw_text2d(vec2(0,0), va("mode: %s\nimage res: %d\ninputs: %.01f %.01f %.01f %.01f %s", TEMP_GPU?"GPU compute":"CPU", TEX_WIDTH, mouse.x, mouse.y, mouse.z, mouse.w, strong>1?"lshift":""));
         ddraw_text2d(vec2(0,window_height() - 20), va("delta: %.2f ms", window_delta()*1000));
     }

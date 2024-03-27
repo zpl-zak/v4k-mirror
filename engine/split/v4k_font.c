@@ -1957,7 +1957,6 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glUniform1f(glGetUniformLocation(f->program, "scale_factor"), factor);
     glUniform2fv(glGetUniformLocation(f->program, "string_offset"), 1, &offset.x);
     glUniform1f(glGetUniformLocation(f->program, "offset_firstline"), f->ascent*f->factor);
-    glUniform1f(glGetUniformLocation(f->program, "u_gamma"), (window_get_gamma() + !window_get_gamma()));
 
     GLint dims[4] = {0};
     glGetIntegerv(GL_VIEWPORT, dims);

@@ -3,7 +3,7 @@
 int main() {
     window_create(75.0, 0 );
 
-    gui_pushskin(gui_skinned("golden.ase", 3.0f, 1)); // x3 scale, sRGB enabled
+    gui_pushskin(gui_skinned("golden.ase", 3.0f)); // x3 scale
     skinned_t *skinned = (skinned_t*)gui_userdata();
 
     vec4 pos = vec4(400,400,100, 30);

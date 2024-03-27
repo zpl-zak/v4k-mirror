@@ -3197,7 +3197,7 @@ enum TEXTURE_FLAGS {
     TEXTURE_FLIP = IMAGE_FLIP,
 
     // @fixme
-    TEXTURE_NO_SRGB = 1 << 24,
+    TEXTURE_SRGB = 1 << 24,
     TEXTURE_BGR = 1 << 25,
     TEXTURE_BGRA = TEXTURE_BGR,
     TEXTURE_ARRAY = 1 << 26,
@@ -3251,10 +3251,10 @@ API bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb )
 // -----------------------------------------------------------------------------
 // fullscreen quads
 
-API void fullscreen_quad_rgb( texture_t texture_rgb, float gamma );
-API void fullscreen_quad_rgb_flipped( texture_t texture, float gamma );
-API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3], float gamma );
-API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3], float gamma );
+API void fullscreen_quad_rgb( texture_t texture_rgb );
+API void fullscreen_quad_rgb_flipped( texture_t texture );
+API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3] );
+API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3] );
 
 // -----------------------------------------------------------------------------
 // cubemaps
@@ -4172,10 +4172,6 @@ API void    ui_spine(spine_t *p);
 // ----------------------------------------------------------------------------
 // atlas api
 
-enum ATLAS_FLAGS {
-	ATLAS_SRGB = 2,
-};
-
 typedef struct atlas_frame_t {
     unsigned delay;
     vec4 sheet;
@@ -4317,7 +4313,7 @@ typedef struct skinned_t {
 //      - "_hover" (ex. "slider_cursor_hover")
 //      - "_press"
 //
-API guiskin_t gui_skinned(const char *asefile, float scale, bool load_as_srgb);
+API guiskin_t gui_skinned(const char *asefile, float scale);
 #line 0
 
 #line 1 "v4k_steam.h"
