@@ -2226,6 +2226,8 @@ struct passfx {
     char *name;
     unsigned program;
     int uniforms[16];
+    unsigned priority; // 0xFFFFFF
+    bool enabled;
 };
 
 struct postfx {
@@ -2233,8 +2235,7 @@ struct postfx {
     unsigned fb[2];
     texture_t diffuse[2], depth[2];
     // shader passes
-    passfx pass[64];
-    uint64_t mask;
+    array(passfx) pass;
     // global enable flag
     bool enabled;
     //
@@ -2260,9 +2261,10 @@ void postfx_create(postfx *fx, int flags) {
 }
 
 void postfx_destroy( postfx *fx ) {
-    for( int i = 0; i < 64; ++i ) {
+    for( int i = 0; i < array_count(fx->pass); ++i ) {
         FREE(fx->pass[i].name);
     }
+    array_free(fx->pass);
     texture_destroy(&fx->diffuse[0]);
     texture_destroy(&fx->diffuse[1]);
     texture_destroy(&fx->depth[0]);
@@ -2274,21 +2276,31 @@ void postfx_destroy( postfx *fx ) {
 }
 
 char* postfx_name(postfx *fx, int slot) {
-    return slot < 0 ? "" : fx->pass[ slot & 63 ].name;
+    return slot < 0 || slot >= array_count(fx->pass) ? "" : fx->pass[ slot ].name;
 }
 int postfx_find(postfx *fx, const char *name) {
     name = file_name(name);
-    for( int i = 0; i < 64; ++i) if(!strcmpi(fx->pass[i].name, name)) return i;
+    for( int i = 0; i < array_count(fx->pass); ++i) if(!strcmpi(fx->pass[i].name, name)) return i;
     return -1;
+}
+
+static
+int postfx_sort_fn(const void *a, const void *b) {
+    return ((passfx*)a)->priority - ((passfx*)b)->priority;
+}
+void postfx_order(postfx *fx, int pass, unsigned priority) {
+    if (pass < 0 || pass >= array_count(fx->pass)) return;
+    fx->pass[pass].priority = priority;
+    array_sort(fx->pass, postfx_sort_fn);
 }
 
 int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     PRINTF("%s\n", name);
     if(!fs || !fs[0]) return -1; // PANIC("!invalid fragment shader");
 
-    int slot = fx->num_loaded++;
-
-    passfx *p = &fx->pass[ slot & 63 ];
+    passfx pass={0};
+    array_push(fx->pass, pass);
+    passfx *p = array_back(fx->pass);
     p->name = STRDUP(name);
 
     // preload stuff
@@ -2339,36 +2351,49 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     
     // set quad
     glGenVertexArrays(1, &p->m.vao);
-    return slot;
+    return array_count(fx->pass)-1;
 }
 
 bool postfx_enable(postfx *fx, int pass, bool enabled) {
-    if( pass < 0 ) return false;
-    fx->mask = enabled ? fx->mask | (1ull << pass) : fx->mask & ~(1ull << pass);
-    fx->enabled = !!popcnt64(fx->mask);
+    if( pass < 0 || pass >= array_count(fx->pass) ) return false;
+    fx->pass[pass].enabled = enabled;
+    fx->enabled = !!array_count(fx->pass);
     return fx->enabled;
 }
 
 bool postfx_enabled(postfx *fx, int pass) {
-    if( pass < 0 ) return false;
-    return (!!(fx->mask & (1ull << pass)));
+    if( pass < 0 || pass >= array_count(fx->pass) ) return false;
+    return fx->pass[pass].enabled;
 }
 
 bool postfx_toggle(postfx *fx, int pass) {
-    if( pass < 0 ) return false;
+    if( pass < 0 || pass >= array_count(fx->pass) ) return false;
     return postfx_enable(fx, pass, 1 ^ postfx_enabled(fx, pass));
 }
 
 void postfx_clear(postfx *fx) {
-    fx->mask = fx->enabled = 0;
+    for (int i = 0; i < array_count(fx->pass); i++) {
+        fx->pass[i].enabled = 0;
+    }
+    fx->enabled = 0;
 }
 
 int ui_postfx(postfx *fx, int pass) {
+    if (pass < 0 || pass >= array_count(fx->pass)) return 0;
     int on = ui_enabled();
     ( postfx_enabled(fx,pass) ? ui_enable : ui_disable )();
     int rc = ui_shader(fx->pass[pass].program);
     ( on ? ui_enable : ui_disable )();
     return rc;
+}
+
+static
+int postfx_active_passes(postfx *fx) {
+    int num_passes = 0;
+    for (int i = 0; i < array_count(fx->pass); i++)
+        if (fx->pass[i].enabled)
+            ++num_passes;
+    return num_passes;
 }
 
 bool postfx_begin(postfx *fx, int width, int height) {
@@ -2398,7 +2423,7 @@ bool postfx_begin(postfx *fx, int width, int height) {
         fx->fb[1] = fbo(fx->diffuse[1].id, fx->depth[1].id, 0);
     }
 
-    uint64_t num_active_passes = popcnt64(fx->mask);
+    uint64_t num_active_passes = postfx_active_passes(fx);
     bool active = fx->enabled && num_active_passes;
     if( !active ) {
         return false;
@@ -2418,7 +2443,7 @@ bool postfx_begin(postfx *fx, int width, int height) {
 }
 
 bool postfx_end(postfx *fx) {
-    uint64_t num_active_passes = popcnt64(fx->mask);
+    uint64_t num_active_passes = postfx_active_passes(fx);
     bool active = fx->enabled && num_active_passes;
     if( !active ) {
         return false;
@@ -2438,10 +2463,9 @@ bool postfx_end(postfx *fx) {
     float mx = input(MOUSE_X);
     float my = input(MOUSE_Y);
 
-    for(int i = 0, e = countof(fx->pass); i < e; ++i) {
-        if( fx->mask & (1ull << i) ) {
-            passfx *pass = &fx->pass[i];
-
+    for(int i = 0, e = array_count(fx->pass); i < e; ++i) {
+        passfx *pass = &fx->pass[i];
+        if( pass->enabled ) {
             if( !pass->program ) { --num_active_passes; continue; }
             glUseProgram(pass->program);
 
@@ -2538,6 +2562,9 @@ char *fx_name(int pass) {
 }
 int fx_find(const char *name) {
     return postfx_find(&fx, name);
+}
+void fx_order(int pass, unsigned priority) {
+    postfx_order(&fx, pass, priority);
 }
 int ui_fx(int pass) {
     return ui_postfx(&fx, pass);

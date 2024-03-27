@@ -1417,6 +1417,7 @@ typedef struct lightmap_t {
  void fx_enable_all(int enabled);
  char * fx_name(int pass);
  int fx_find(const char *name);
+ void fx_order(int pass, unsigned priority);
  int ui_fx(int pass);
  int ui_fxs();
  void* screenshot(int components);

@@ -56,5 +56,4 @@ void main(void) {
     color += vec3( (-1.5/256.) + (3./256.) * dither );
 
     frag_color = vec4( color, 1.0f );
-    frag_color.rgb = pow( frag_color.rgb, vec3(2.2) );
 }

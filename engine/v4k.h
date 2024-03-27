@@ -3741,6 +3741,7 @@ API int      fx_enabled(int pass);
 API void     fx_enable_all(int enabled);
 API char *   fx_name(int pass);
 API int      fx_find(const char *name);
+API void     fx_order(int pass, unsigned priority);
 
 API int      ui_fx(int pass);
 API int      ui_fxs();

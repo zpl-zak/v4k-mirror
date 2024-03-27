@@ -81,10 +81,16 @@ int main() {
 
     // fx: load all post fx files in all subdirs. enable a few filters by default
     fx_load("fx**.fs");
-    fx_enable(fx_find("fxCRT2.fs"), 1);
     fx_enable(fx_find("fxGrain.fs"), 1);
     fx_enable(fx_find("fxContrast.fs"), 1);
     fx_enable(fx_find("fxVignette.fs"), 1);
+    fx_enable(fx_find("fxCRT2.fs"), 1);
+
+    // sort them
+    fx_order(fx_find("fxCRT2.fs"), 1);
+    fx_order(fx_find("fxGrain.fs"), 2);
+    fx_order(fx_find("fxContrast.fs"), 3);
+    fx_order(fx_find("fxVignette.fs"), 4);
 
     // demo loop
     while (window_swap() && !input_down(KEY_ESC)) {

@@ -20,7 +20,7 @@ const char *skyboxes[][2] = { // reflection, env, metadata
 
 int main() {
     // create the window
-    window_create( 0.75f, WINDOW_MSAA8 );
+    window_create( 0.75f, 0 );
     window_color( GRAY );
 
     // create camera
@@ -28,6 +28,7 @@ int main() {
 
     // fx: load all post fx files in all subdirs.
     fx_load("fx**.fs");
+    fx_enable(fx_find("fxAces.fs"), 1);
 
     // load video, RGB texture, no audio
     video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO | VIDEO_LOOP ); video_seek(v, 30);
@@ -37,8 +38,8 @@ int main() {
     // load model
     model_t m1 = model("suzanne.obj", MODEL_NO_ANIMATIONS);
     model_t m2 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_MATCAPS);
-    // model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
-    model_t m3 = model("Scutum_low.fbx", MODEL_NO_ANIMATIONS|MODEL_PBR);
+    model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
+    // model_t m3 = model("Scutum_low.fbx", MODEL_NO_ANIMATIONS|MODEL_PBR);
     // model_t m4 = model("avp/scene.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
     // model_t m3 = model("Cerberus_LP.FBX", MODEL_NO_ANIMATIONS|MODEL_PBR);
 
@@ -71,7 +72,7 @@ int main() {
     object_model(obj4, m3);
     object_scale(obj4, vec3(3,3,3));
     object_move(obj4, vec3(-10+6*3,0,-10));
-    object_pivot(obj4, vec3(0,0,90));
+    object_pivot(obj4, vec3(0,90,0));
 
     // spawn object5 (pbr)
     // object_t* obj5 = scene_spawn();
@@ -84,7 +85,7 @@ int main() {
     scene_spawn_light(); // sun
     light_t* l = scene_spawn_light();
     light_type(l, LIGHT_POINT);
-    l->diffuse = vec3(1,0,0);
+    // l->diffuse = vec3(0,0,0);
 
     // load skybox
     scene_get_active()->skybox = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);
@@ -92,7 +93,7 @@ int main() {
 
     while(window_swap() && !input(KEY_ESC)) {
         // draw environment
-        ddraw_grid(0);
+        // ddraw_grid(0);
 
         // update video
         video_decode( v );
