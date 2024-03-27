@@ -2302,6 +2302,7 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     array_push(fx->pass, pass);
     passfx *p = array_back(fx->pass);
     p->name = STRDUP(name);
+    p->priority = ~0u;
 
     // preload stuff
     static const char *vs = 0;
