@@ -2216,6 +2216,7 @@ bool postfx_enabled(postfx *fx, int pass_number);
 bool postfx_enable(postfx *fx, int pass_number, bool enabled);
 // bool postfx_toggle(postfx *fx, int pass_number);
 void postfx_clear(postfx *fx);
+void postfx_order(postfx *fx, int pass, unsigned priority);
 
 char* postfx_name(postfx *fx, int slot);
 
@@ -2226,7 +2227,7 @@ struct passfx {
     char *name;
     unsigned program;
     int uniforms[16];
-    unsigned priority; // 0xFFFFFF
+    unsigned priority;
     bool enabled;
 };
 
@@ -2238,8 +2239,6 @@ struct postfx {
     array(passfx) pass;
     // global enable flag
     bool enabled;
-    //
-    int num_loaded;
 };
 
 enum {
@@ -2286,10 +2285,14 @@ int postfx_find(postfx *fx, const char *name) {
 
 static
 int postfx_sort_fn(const void *a, const void *b) {
-    return ((passfx*)a)->priority - ((passfx*)b)->priority;
+    unsigned p1 = ((passfx*)a)->priority;
+    unsigned p2 = ((passfx*)b)->priority;
+    return (p1 > p2) - (p1 < p2);
 }
 void postfx_order(postfx *fx, int pass, unsigned priority) {
     if (pass < 0 || pass >= array_count(fx->pass)) return;
+    if (priority >= array_count(fx->pass)) return;
+    fx->pass[priority].priority = pass;
     fx->pass[pass].priority = priority;
     array_sort(fx->pass, postfx_sort_fn);
 }
@@ -2302,7 +2305,7 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     array_push(fx->pass, pass);
     passfx *p = array_back(fx->pass);
     p->name = STRDUP(name);
-    p->priority = ~0u;
+    p->priority = array_count(fx->pass)-1;
 
     // preload stuff
     static const char *vs = 0;
@@ -2384,6 +2387,14 @@ int ui_postfx(postfx *fx, int pass) {
     int on = ui_enabled();
     ( postfx_enabled(fx,pass) ? ui_enable : ui_disable )();
     int rc = ui_shader(fx->pass[pass].program);
+    ui_separator();
+    int btn = ui_buttons(2, "Move up", "Move down");
+    if (btn == 1) {
+        postfx_order(fx, pass, fx->pass[pass].priority-1);
+    } 
+    else if (btn == 2) {
+        postfx_order(fx, pass, fx->pass[pass].priority+1);
+    }
     ( on ? ui_enable : ui_disable )();
     return rc;
 }
@@ -2556,7 +2567,7 @@ void fx_enable(int pass, int enabled) {
     postfx_enable(&fx, pass, enabled);
 }
 void fx_enable_all(int enabled) {
-    for( int i = 0; i < fx.num_loaded; ++i ) fx_enable(i, enabled);
+    for( int i = 0; i < array_count(fx.pass); ++i ) fx_enable(i, enabled);
 }
 char *fx_name(int pass) {
     return postfx_name(&fx, pass);
@@ -2571,10 +2582,10 @@ int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
 }
 int ui_fxs() {
-    if(!fx.num_loaded) return ui_label(ICON_MD_WARNING " No Post FXs with annotations loaded."), 0;
+    if(!array_count(fx.pass)) return ui_label(ICON_MD_WARNING " No Post FXs with annotations loaded."), 0;
 
     int changed = 0;
-    for( int i = 0; i < 64; ++i ) {
+    for( int i = 0; i < array_count(fx.pass); ++i ) {
         char *name = fx_name(i); if( !name ) break;
         bool b = fx_enabled(i);
         if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
