@@ -28,7 +28,7 @@ int main() {
 
     // fx: load all post fx files in all subdirs.
     fx_load("fx**.fs");
-    fx_enable(fx_find("fxAces.fs"), 1);
+    fx_enable(fx_find("fxTonemapACES.fs"), 1);
 
     // load video, RGB texture, no audio
     video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO | VIDEO_LOOP ); video_seek(v, 30);
