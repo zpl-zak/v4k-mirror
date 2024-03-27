@@ -128,6 +128,7 @@ void DrawModel(mesh_t *m) {
     "out vec4 fragcolor;\n"
     "void main() {\n"
         "fragcolor = vec4(v_normal, 1.0);\n" // diffuse
+        "fragcolor.rgb = pow(fragcolor.rgb, vec3(2.2));\n" // diffuse
     "}";
 
     static unsigned program; do_once program = shader(vs, fs, "att_position,att_normal", "fragcolor", NULL);

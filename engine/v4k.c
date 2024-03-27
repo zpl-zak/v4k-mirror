@@ -18724,6 +18724,7 @@ cubemap_t cubemap6( const image_t images[6], int flags ) {
     glGenTextures(1, &c.id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, c.id);
 
+    float gammabg = window_get_gamma() + !window_get_gamma();
     int samples = 0;
     for (int i = 0; i < 6; i++) {
         image_t img = images[i]; //image(textures[i], IMAGE_RGB);
@@ -18745,6 +18746,9 @@ cubemap_t cubemap6( const image_t images[6], int flags ) {
                     skyDir[i]); // texelDirection;
                 float l = len3(n);
                 vec3 light = scale3(vec3(p[0], p[1], p[2]), 1 / (255.0f * l * l * l)); // texelSolidAngle * texel_radiance;
+                light.x = powf(light.x, gammabg);
+                light.y = powf(light.y, gammabg);
+                light.z = powf(light.z, gammabg);
                 n = norm3(n);
                 c.sh[0] = add3(c.sh[0], scale3(light,  0.282095f));
                 c.sh[1] = add3(c.sh[1], scale3(light, -0.488603f * n.y * 2.0 / 3.0));
@@ -18760,6 +18764,7 @@ cubemap_t cubemap6( const image_t images[6], int flags ) {
             }
         }
     }
+
 
     for (int s = 0; s < 9; s++) {
         c.sh[s] = scale3(c.sh[s], 32.f / samples);
@@ -19797,6 +19802,7 @@ enum shadertoy_uniforms {
     iSampleRate,
     iChannelResolution,
     iChannelTime,
+    iGamma,
     // iCameraScreen
     // iCameraPosition
     // iCameraActive
@@ -19838,6 +19844,7 @@ shadertoy_t shadertoy( const char *shaderfile, unsigned flags ) {
     s.uniforms[iSampleRate] = glGetUniformLocation(s.program, "iSampleRate");
     s.uniforms[iChannelResolution] = glGetUniformLocation(s.program, "iChannelResolution");
     s.uniforms[iChannelTime] = glGetUniformLocation(s.program, "iChannelTime");
+    s.uniforms[iGamma] = glGetUniformLocation(s.program, "iGamma");
 
     return s;
 }
@@ -19865,6 +19872,7 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
 
         glUniform1i(s->uniforms[iFrame], (int)window_frame());
         glUniform1f(s->uniforms[iTime], time_ss());
+        glUniform1f(s->uniforms[iGamma], window_get_gamma() + !window_get_gamma());
         glUniform4f(s->uniforms[iDate], tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_sec + tm->tm_min * 60 + tm->tm_hour * 3600);
 
         int unit = 0;
@@ -26640,7 +26648,13 @@ void glNewFrame() {
     glViewport(0, 0, window_width(), window_height());
 
     // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
-    glClearColor(winbgcolor.r, winbgcolor.g, winbgcolor.b, window_has_transparent() ? 0 : winbgcolor.a); // @transparent
+    vec4 bgcolor = winbgcolor;
+    float gammabg = gamma + !gamma; 
+    bgcolor.x = powf(bgcolor.x, gammabg);
+    bgcolor.y = powf(bgcolor.y, gammabg);
+    bgcolor.z = powf(bgcolor.z, gammabg);
+    bgcolor.w = powf(bgcolor.w, gammabg);
+    glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, window_has_transparent() ? 0 : bgcolor.a); // @transparent
     //glClearColor(0.15,0.15,0.15,1);
     //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );

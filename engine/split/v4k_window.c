@@ -264,7 +264,13 @@ void glNewFrame() {
     glViewport(0, 0, window_width(), window_height());
 
     // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
-    glClearColor(winbgcolor.r, winbgcolor.g, winbgcolor.b, window_has_transparent() ? 0 : winbgcolor.a); // @transparent
+    vec4 bgcolor = winbgcolor;
+    float gammabg = gamma + !gamma; 
+    bgcolor.x = powf(bgcolor.x, gammabg);
+    bgcolor.y = powf(bgcolor.y, gammabg);
+    bgcolor.z = powf(bgcolor.z, gammabg);
+    bgcolor.w = powf(bgcolor.w, gammabg);
+    glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, window_has_transparent() ? 0 : bgcolor.a); // @transparent
     //glClearColor(0.15,0.15,0.15,1);
     //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );

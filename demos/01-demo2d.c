@@ -50,6 +50,7 @@ int main() {
     // window (80% sized, MSAA x4 flag)
     window_create(80.0, WINDOW_MSAA4);
     window_title(__FILE__);
+    window_gamma(0);
 
     // tiled map
     tiled_t tmx = tiled(vfs_read("castle.tmx"));
