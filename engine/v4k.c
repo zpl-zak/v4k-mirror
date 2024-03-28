@@ -19785,7 +19785,7 @@ static void brdf_load() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     brdf.id = tex;
     brdf.w = 512;
@@ -19964,6 +19964,7 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
             }
         }
 
+        glViewport(0, 0, s->dims.x ? s->dims.x : window_width(), s->dims.y ? s->dims.y : window_height());
         glBindVertexArray(s->vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 

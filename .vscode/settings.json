@@ -1,0 +1,4 @@
+{
+    "dotnet.defaultSolution": "disable",
+    "C_Cpp.errorSquiggles": "disabled"
+}
