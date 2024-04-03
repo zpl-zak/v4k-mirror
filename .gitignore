@@ -23,4 +23,5 @@ libv4k.*
 *.raddbg
 plugins
 tools/assimp-vc*-mt.lib
+tools/assimp/
 v4k.code-workspace
