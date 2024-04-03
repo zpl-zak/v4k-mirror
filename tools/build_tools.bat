@@ -30,3 +30,5 @@ cl sfxr2wav.c /EHsc /O2 /Oy /DNDEBUG /MT
 
 REM Build xlsx2ini
 cl xlsx2ini.cc /MD /Ox /Oy /DNDEBUG /EHsc
+
+cd ..
