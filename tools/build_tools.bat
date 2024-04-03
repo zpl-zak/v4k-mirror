@@ -1,5 +1,5 @@
 @echo off
-cd /d "%~dp0"\..
+cd /d "%~dp0"
 
 REM Build ark
 cl ark.c /MT /O2 /DNDEBUG /link setargv.obj
