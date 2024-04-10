@@ -19777,6 +19777,8 @@ bool postfx_begin(postfx *fx, int width, int height) {
     return true;
 }
 
+static renderstate_t postfx_rs;
+
 bool postfx_end(postfx *fx) {
     uint64_t num_active_passes = postfx_active_passes(fx);
     bool active = fx->enabled && num_active_passes;
@@ -19784,12 +19786,16 @@ bool postfx_end(postfx *fx) {
         return false;
     }
 
+    do_once {
+        postfx_rs = renderstate();
+        // disable depth test in 2d rendering
+        postfx_rs.depth_test_enabled = 0;
+    }
+
     // unbind postfx fbo
     fbo_unbind();
 
-    // disable depth test in 2d rendering
-    bool is_depth_test_enabled = glIsEnabled(GL_DEPTH_TEST);
-    glDisable(GL_DEPTH_TEST);
+    renderstate_apply(&postfx_rs);
 
     int frame = 0;
     float t = time_ms() / 1000.f;
@@ -19842,9 +19848,6 @@ bool postfx_end(postfx *fx) {
         }
     }
     glUseProgram(0);
-
-    if(is_depth_test_enabled);
-    glEnable(GL_DEPTH_TEST);
 
     // restore clear color: needed in case transparent window is being used (alpha != 0)
     glClearColor(0,0,0,1); // @transparent
