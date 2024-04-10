@@ -6,14 +6,14 @@ int main() {
 
     // set up pipeline
     renderstate_t state = renderstate();
-    state.clearColor[0] = 0.2f;
-    state.clearColor[1] = 0.2f;
-    state.clearColor[2] = 0.2f;
-    state.clearColor[3] = 1.0f;
-    state.depthTestEnabled = GL_TRUE;
-    state.depthFunc = GL_LEQUAL;
-    state.blendEnabled = GL_FALSE;
-    state.cullFaceEnabled = GL_TRUE;
+    state.clear_color[0] = 0.2f;
+    state.clear_color[1] = 0.2f;
+    state.clear_color[2] = 0.2f;
+    state.clear_color[3] = 1.0f;
+    state.depth_test_enabled = GL_TRUE;
+    state.depth_func = GL_LEQUAL;
+    state.blend_enabled = GL_FALSE;
+    state.cull_face_enabled = GL_TRUE;
 
     // prepare triangle buffer
     float vertices[] = {
