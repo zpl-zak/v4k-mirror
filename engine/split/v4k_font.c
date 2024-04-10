@@ -1554,6 +1554,9 @@ typedef struct font_t {
     // vbos
     GLuint vbo_quad;      // vec2: simply just a regular [0,1]x[0,1] quad
     GLuint vbo_instances; // vec4: (char_pos_x, char_pos_y, char_index, color_index)
+
+    // render state
+    renderstate_t rs;
 } font_t;
 
 enum { FONTS_MAX = 10 };
@@ -1892,6 +1895,16 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     glUniform2f(glGetUniformLocation(f->program, "res_meta"), f->num_glyphs, 2);
     glUniform1f(glGetUniformLocation(f->program, "num_colors"), FONT_MAX_COLORS);
     (void)flags;
+
+    // set up pipeline
+    f->rs = renderstate();
+    f->rs.blendEnabled = 1;
+    f->rs.blendFunc = GL_FUNC_ADD;
+    f->rs.blendSrc = GL_SRC_ALPHA;
+    f->rs.blendDst = GL_ONE_MINUS_SRC_ALPHA;
+    f->rs.scissorTestEnabled = 1;
+    f->rs.depthTestEnabled = 0;
+    f->rs.cullFaceEnabled = 0;
 }
 
 void font_face(const char *tag, const char *filename_ttf, float font_size, unsigned flags) {
@@ -1922,25 +1935,10 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glActiveTexture(GL_TEXTURE2);
     glGetIntegerv(GL_TEXTURE_BINDING_1D, &last_texture2);
 
-    glGetIntegerv(GL_BLEND_SRC, &last_blend_src);
-    glGetIntegerv(GL_BLEND_DST, &last_blend_dst);
-    glGetIntegerv(GL_BLEND_EQUATION_RGB,   &last_blend_equation_rgb);
-    glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &last_blend_equation_alpha);
-
-    GLboolean last_enable_blend      = glIsEnabled(GL_BLEND);
-    GLboolean last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
-    GLboolean last_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
-
-    // Setup render state: alpha-blending enabled, no depth testing, enable clipping and bind textures
-    glEnable(GL_BLEND);
-    glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // @fixme: store existing scissor test setup
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(rect.x, window_height() - (rect.y+rect.w), rect.z, rect.w);
-
-    glDisable(GL_DEPTH_TEST);
+    f->rs.scissorBox[0] = rect.x;
+    f->rs.scissorBox[1] = window_height() - (rect.y+rect.w);
+    f->rs.scissorBox[2] = rect.z;
+    f->rs.scissorBox[3] = rect.w;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, f->texture_fontdata);
@@ -1966,6 +1964,9 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glBindBuffer(GL_ARRAY_BUFFER, f->vbo_instances);
     glBufferSubData(GL_ARRAY_BUFFER, 0, 4*4*glyph_idx, glyph_data);
 
+    // setup pipeline
+    renderstate_apply(&f->rs);
+
     // actual drawing
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, glyph_idx);
 
@@ -1979,13 +1980,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_1D, last_texture2);
 
-    glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
     glBindVertexArray(last_vertex_array);
-    glBlendFunc(last_blend_src, last_blend_dst);
-
-    (last_enable_depth_test ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST));
-    (last_enable_blend ? glEnable(GL_BLEND) : glDisable(GL_BLEND));
-    (last_scissor_test ? glEnable(GL_SCISSOR_TEST) : glDisable(GL_SCISSOR_TEST));
 }
 
 // 1. call font_face() if it's the first time it's called.

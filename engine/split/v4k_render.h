@@ -9,6 +9,65 @@
 typedef unsigned handle; // GLuint
 
 // -----------------------------------------------------------------------------
+// renderstate
+typedef struct renderstate_t {
+    // Viewport parameters
+    int viewportX;
+    int viewportY;
+    int viewportWidth;
+    int viewportHeight;
+
+    // Clear color
+    float clearColor[4];
+
+    // Clear depth
+    double clearDepth;
+
+    // Depth test
+    bool depthTestEnabled;
+    unsigned depthFunc;
+
+    // Blending
+    bool blendEnabled;
+    unsigned blendFunc;
+    unsigned blendSrc;
+    unsigned blendDst;
+
+    // Culling
+    bool cullFaceEnabled;
+    unsigned cullFaceMode;
+
+    // Stencil test
+    bool stencilTestEnabled;
+    unsigned stencilFunc;
+    int stencilRef;
+    unsigned stencilMask;
+
+    // Face culling direction
+    unsigned frontFace; // GL_CW or GL_CCW
+
+    // Line width
+    bool smoothLineEnabled;
+    float lineWidth;
+
+    // Point size
+    bool pointSizeEnabled;
+    float pointSize;
+
+    // Polygon mode
+    unsigned polygonModeFace;
+    unsigned polygonModeMode;
+
+    // Scissor test
+    bool scissorTestEnabled;
+    int scissorBox[4];
+} renderstate_t;
+
+API renderstate_t renderstate();
+API bool            renderstate_compare(const renderstate_t *stateA, const renderstate_t *stateB);
+API void            renderstate_apply(const renderstate_t *state);
+
+// -----------------------------------------------------------------------------
 // colors
 
 API unsigned rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a );
@@ -228,6 +287,7 @@ API void shadowmatrix_ortho(mat44 shm_proj, float left, float right, float botto
 API unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines);
 API unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines);
 API unsigned shader_bind(unsigned program);
+API      int shader_uniform(const char *name);
 API     void shader_bool(const char *uniform, bool i );
 API     void shader_int(const char *uniform, int i);
 API     void shader_uint(const char *uniform, unsigned i );
@@ -577,6 +637,7 @@ typedef struct model_t {
     unsigned num_instances;
 
     int stored_flags;
+    renderstate_t rs;
 } model_t;
 
 enum BILLBOARD_MODE {

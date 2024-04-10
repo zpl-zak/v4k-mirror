@@ -33,6 +33,7 @@ typedef struct text2d_cmd {
     float sca;
 } text2d_cmd;
 
+static renderstate_t             dd_rs;
 static uint32_t                  dd_color = ~0u;
 static GLuint                    dd_program = -1;
 static int                       dd_u_color = -1;
@@ -66,7 +67,9 @@ void ddraw_flush() {
 }
 
 void ddraw_flush_projview(mat44 proj, mat44 view) {
-    glEnable(GL_DEPTH_TEST);
+    do_once dd_rs = renderstate();
+    
+    dd_rs.depthTestEnabled = 1;
     glActiveTexture(GL_TEXTURE0);
 
     mat44 mvp;
@@ -81,16 +84,16 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     glEnableVertexAttribArray(0);
 
-    glDepthFunc(GL_LEQUAL);
-    glEnable(GL_PROGRAM_POINT_SIZE); // for GL_POINTS
-    glEnable(GL_LINE_SMOOTH); // for GL_LINES (thin)
+    dd_rs.pointSizeEnabled = 1;
+    dd_rs.smoothLineEnabled = 1;
 
     for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
         GLenum mode = i < 2 ? GL_LINES : GL_POINTS;
-        glLineWidth(i == 1 ? 1 : 0.3); // 0.625);
+        dd_rs.lineWidth = (i == 1 ? 1 : 0.3); // 0.625);
         for each_map(dd_lists[dd_ontop][i], unsigned, rgb, array(vec3), list) {
             int count = array_count(list);
             if(!count) continue;
+                renderstate_apply(&dd_rs);
                 // color
                 vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                 glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
@@ -119,10 +122,11 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
         glUniformMatrix4fv(glGetUniformLocation(dd_program, "u_MVP"), 1, GL_FALSE, mvp);
         for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
             GLenum mode = i < 2 ? GL_LINES : GL_POINTS;
-            glLineWidth(i == 1 ? 1 : 0.3); // 0.625);
+            dd_rs.lineWidth = (i == 1 ? 1 : 0.3); // 0.625);
             for each_map(dd_lists[dd_ontop][i], unsigned, rgb, array(vec3), list) {
                 int count = array_count(list);
                 if(!count) continue;
+                    renderstate_apply(&dd_rs);
                     // color
                     vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                     glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
@@ -140,9 +144,6 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
         // clear
         array_resize(dd_text2d, 0);
     }
-
-    glDisable(GL_LINE_SMOOTH);
-    glDisable(GL_PROGRAM_POINT_SIZE);
 
     glBindVertexArray(0);
 

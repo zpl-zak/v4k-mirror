@@ -10256,6 +10256,9 @@ typedef struct font_t {
     // vbos
     GLuint vbo_quad;      // vec2: simply just a regular [0,1]x[0,1] quad
     GLuint vbo_instances; // vec4: (char_pos_x, char_pos_y, char_index, color_index)
+
+    // render state
+    renderstate_t rs;
 } font_t;
 
 enum { FONTS_MAX = 10 };
@@ -10594,6 +10597,16 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     glUniform2f(glGetUniformLocation(f->program, "res_meta"), f->num_glyphs, 2);
     glUniform1f(glGetUniformLocation(f->program, "num_colors"), FONT_MAX_COLORS);
     (void)flags;
+
+    // set up pipeline
+    f->rs = renderstate();
+    f->rs.blendEnabled = 1;
+    f->rs.blendFunc = GL_FUNC_ADD;
+    f->rs.blendSrc = GL_SRC_ALPHA;
+    f->rs.blendDst = GL_ONE_MINUS_SRC_ALPHA;
+    f->rs.scissorTestEnabled = 1;
+    f->rs.depthTestEnabled = 0;
+    f->rs.cullFaceEnabled = 0;
 }
 
 void font_face(const char *tag, const char *filename_ttf, float font_size, unsigned flags) {
@@ -10624,25 +10637,10 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glActiveTexture(GL_TEXTURE2);
     glGetIntegerv(GL_TEXTURE_BINDING_1D, &last_texture2);
 
-    glGetIntegerv(GL_BLEND_SRC, &last_blend_src);
-    glGetIntegerv(GL_BLEND_DST, &last_blend_dst);
-    glGetIntegerv(GL_BLEND_EQUATION_RGB,   &last_blend_equation_rgb);
-    glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &last_blend_equation_alpha);
-
-    GLboolean last_enable_blend      = glIsEnabled(GL_BLEND);
-    GLboolean last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
-    GLboolean last_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
-
-    // Setup render state: alpha-blending enabled, no depth testing, enable clipping and bind textures
-    glEnable(GL_BLEND);
-    glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // @fixme: store existing scissor test setup
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(rect.x, window_height() - (rect.y+rect.w), rect.z, rect.w);
-
-    glDisable(GL_DEPTH_TEST);
+    f->rs.scissorBox[0] = rect.x;
+    f->rs.scissorBox[1] = window_height() - (rect.y+rect.w);
+    f->rs.scissorBox[2] = rect.z;
+    f->rs.scissorBox[3] = rect.w;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, f->texture_fontdata);
@@ -10668,6 +10666,9 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glBindBuffer(GL_ARRAY_BUFFER, f->vbo_instances);
     glBufferSubData(GL_ARRAY_BUFFER, 0, 4*4*glyph_idx, glyph_data);
 
+    // setup pipeline
+    renderstate_apply(&f->rs);
+
     // actual drawing
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, glyph_idx);
 
@@ -10681,13 +10682,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_1D, last_texture2);
 
-    glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
     glBindVertexArray(last_vertex_array);
-    glBlendFunc(last_blend_src, last_blend_dst);
-
-    (last_enable_depth_test ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST));
-    (last_enable_blend ? glEnable(GL_BLEND) : glDisable(GL_BLEND));
-    (last_scissor_test ? glEnable(GL_SCISSOR_TEST) : glDisable(GL_SCISSOR_TEST));
 }
 
 // 1. call font_face() if it's the first time it's called.
@@ -17223,6 +17218,154 @@ void glCopyBackbufferToTexture( texture_t *tex ) { // unused
 }
 
 // ----------------------------------------------------------------------------
+// renderstate
+
+renderstate_t renderstate() {
+    renderstate_t state = {0};
+
+    // Set default viewport parameters
+    state.viewportX = 0;
+    state.viewportY = 0;
+    state.viewportWidth = window_width();
+    state.viewportHeight = window_height();
+
+    // Set default clear color to black
+    state.clearColor[0] = 0.0f; // Red
+    state.clearColor[1] = 0.0f; // Green
+    state.clearColor[2] = 0.0f; // Blue
+    state.clearColor[3] = 1.0f; // Alpha
+
+    // Set default clear depth to maximum distance
+    state.clearDepth = 1.0;
+
+    // Enable depth test by default with less or equal function
+    state.depthTestEnabled = GL_TRUE;
+    state.depthFunc = GL_LEQUAL;
+
+    // Disable blending by default
+    state.blendEnabled = GL_FALSE;
+    state.blendFunc = GL_FUNC_ADD;
+    state.blendSrc = GL_ONE;
+    state.blendDst = GL_ZERO;
+
+    // Enable culling by default and cull back faces
+    state.cullFaceEnabled = GL_TRUE;
+    state.cullFaceMode = GL_BACK;
+
+    // Disable stencil test by default
+    state.stencilTestEnabled = GL_FALSE;
+    state.stencilFunc = GL_ALWAYS;
+    state.stencilRef = 0;
+    state.stencilMask = 0xFFFFFFFF;
+
+    // Set default front face to counter-clockwise
+    state.frontFace = GL_CCW;
+
+    // Set default line width
+    state.smoothLineEnabled = GL_FALSE;
+    state.lineWidth = 1.0f;
+
+    // Set default point size
+    state.pointSizeEnabled = GL_FALSE;
+    state.pointSize = 1.0f;
+
+    // Set default polygon mode to fill
+    state.polygonModeFace = GL_FRONT_AND_BACK;
+    state.polygonModeMode = GL_FILL;
+
+    // Disable scissor test by default
+    state.scissorTestEnabled = GL_FALSE;
+    state.scissorBox[0] = 0;
+    state.scissorBox[1] = 0;
+    state.scissorBox[2] = window_width();
+    state.scissorBox[3] = window_height();
+
+    return state;
+}
+
+bool renderstate_compare(const renderstate_t *stateA, const renderstate_t *stateB) {
+    return memcmp(stateA, stateB, sizeof(renderstate_t)) == 0;
+}
+
+void renderstate_apply(const renderstate_t *state) {
+    if (state != NULL) {
+        // Apply viewport parameters
+        glViewport(state->viewportX, state->viewportY, state->viewportWidth, state->viewportHeight);
+
+        // Apply clear color
+        glClearColor(state->clearColor[0], state->clearColor[1], state->clearColor[2], state->clearColor[3]);
+
+        // Apply clear depth
+        glClearDepth(state->clearDepth);
+
+        // Apply depth test
+        if (state->depthTestEnabled) {
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(state->depthFunc);
+        } else {
+            glDisable(GL_DEPTH_TEST);
+        }
+
+        // Apply blending
+        if (state->blendEnabled) {
+            glEnable(GL_BLEND);
+            glBlendEquation(state->blendFunc);
+            glBlendFunc(state->blendSrc, state->blendDst);
+        } else {
+            glDisable(GL_BLEND);
+        }
+
+        // Apply culling @fixme
+        // if (state->cullFaceEnabled) {
+        //     glEnable(GL_CULL_FACE);
+        //     glCullFace(state->cullFaceMode);
+        // } else {
+        //     glDisable(GL_CULL_FACE);
+        // }
+
+        // Apply stencil test
+        if (state->stencilTestEnabled) {
+            glEnable(GL_STENCIL_TEST);
+            glStencilFunc(state->stencilFunc, state->stencilRef, state->stencilMask);
+        } else {
+            glDisable(GL_STENCIL_TEST);
+        }
+
+        // Apply front face direction @fixme
+        // glFrontFace(state->frontFace);
+
+        // Apply line width
+        glLineWidth(state->lineWidth);
+
+        // apply smooth lines
+        if (state->smoothLineEnabled) {
+            glEnable(GL_LINE_SMOOTH);
+        } else {
+            glDisable(GL_LINE_SMOOTH);
+        }
+
+        // Apply point size
+        if (state->pointSizeEnabled) {
+            glEnable(GL_PROGRAM_POINT_SIZE);
+            glPointSize(state->pointSize);
+        } else {
+            glDisable(GL_PROGRAM_POINT_SIZE);
+        }
+
+        // Apply polygon mode
+        glPolygonMode(state->polygonModeFace, state->polygonModeMode);
+
+        // Apply scissor test
+        if (state->scissorTestEnabled) {
+            glEnable(GL_SCISSOR_TEST);
+            glScissor(state->scissorBox[0], state->scissorBox[1], state->scissorBox[2], state->scissorBox[3]);
+        } else {
+            glDisable(GL_SCISSOR_TEST);
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
 // shaders
 
 void shader_print(const char *source) {
@@ -17696,7 +17839,7 @@ typedef map(unsigned,int) uniform_binding;
 static __thread unsigned last_shader = -1;
 static __thread quarks_db uniform_names;
 static __thread map(handle, uniform_binding) uniforms;
-static
+
 int shader_uniform(const char *name) {
     do_once map_init(uniforms, less_int, hash_int);
     if (!map_find(uniforms, last_shader)) {
@@ -19026,17 +19169,21 @@ void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength) {
 
 API vec4 window_getcolor_(); // internal use, not public
 
+static renderstate_t skybox_rs;
+
 int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     last_cubemap = &sky->cubemap;
 
-    //glClear(GL_DEPTH_BUFFER_BIT);
-    //glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    //glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
+    do_once {
+        skybox_rs = renderstate();
+    }
 
     // we have to reset clear color here, because of wrong alpha compositing issues on native transparent windows otherwise
-    vec4 bgcolor = window_getcolor_(); glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, 1); // @transparent
+    vec4 bgcolor = window_getcolor_(); 
+    skybox_rs.clearColor[0] = bgcolor.r;
+    skybox_rs.clearColor[1] = bgcolor.g;
+    skybox_rs.clearColor[2] = bgcolor.b;
+    skybox_rs.clearColor[3] = 1; // @transparent
 
     mat44 mvp; multiply44x2(mvp, proj, view);
 
@@ -19046,6 +19193,8 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     if( sky->flags ) {
         shader_cubemap("u_cubemap", sky->cubemap.id);
     }
+
+    renderstate_apply(&skybox_rs);
     return 0; // @fixme: return sortable hash here?
 }
 int skybox_pop_state() {
@@ -19056,7 +19205,6 @@ int skybox_pop_state() {
 }
 int skybox_render(skybox_t *sky, mat44 proj, mat44 view) {
     skybox_push_state(sky, proj, view);
-    glEnable(GL_DEPTH_TEST);
     mesh_render(&sky->geometry);
     skybox_pop_state();
     return 0;
@@ -20715,6 +20863,11 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
 model_t model_from_mem(const void *mem, int len, int flags) {
     model_t m = {0};
 
+    {
+        m.rs = renderstate();
+        m.rs.blendEnabled = 1;
+    }
+
     m.stored_flags = flags;
     m.shading = SHADING_PHONG;
 
@@ -20997,6 +21150,8 @@ void model_draw_call(model_t m, int shader) {
 
     handle old_shader = last_shader;
     shader_bind(shader);
+
+    renderstate_apply(&m.rs);
 
     glBindVertexArray( q->vao );
 
@@ -21296,6 +21451,7 @@ typedef struct text2d_cmd {
     float sca;
 } text2d_cmd;
 
+static renderstate_t             dd_rs;
 static uint32_t                  dd_color = ~0u;
 static GLuint                    dd_program = -1;
 static int                       dd_u_color = -1;
@@ -21329,7 +21485,9 @@ void ddraw_flush() {
 }
 
 void ddraw_flush_projview(mat44 proj, mat44 view) {
-    glEnable(GL_DEPTH_TEST);
+    do_once dd_rs = renderstate();
+    
+    dd_rs.depthTestEnabled = 1;
     glActiveTexture(GL_TEXTURE0);
 
     mat44 mvp;
@@ -21344,16 +21502,16 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     glEnableVertexAttribArray(0);
 
-    glDepthFunc(GL_LEQUAL);
-    glEnable(GL_PROGRAM_POINT_SIZE); // for GL_POINTS
-    glEnable(GL_LINE_SMOOTH); // for GL_LINES (thin)
+    dd_rs.pointSizeEnabled = 1;
+    dd_rs.smoothLineEnabled = 1;
 
     for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
         GLenum mode = i < 2 ? GL_LINES : GL_POINTS;
-        glLineWidth(i == 1 ? 1 : 0.3); // 0.625);
+        dd_rs.lineWidth = (i == 1 ? 1 : 0.3); // 0.625);
         for each_map(dd_lists[dd_ontop][i], unsigned, rgb, array(vec3), list) {
             int count = array_count(list);
             if(!count) continue;
+                renderstate_apply(&dd_rs);
                 // color
                 vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                 glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
@@ -21382,10 +21540,11 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
         glUniformMatrix4fv(glGetUniformLocation(dd_program, "u_MVP"), 1, GL_FALSE, mvp);
         for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
             GLenum mode = i < 2 ? GL_LINES : GL_POINTS;
-            glLineWidth(i == 1 ? 1 : 0.3); // 0.625);
+            dd_rs.lineWidth = (i == 1 ? 1 : 0.3); // 0.625);
             for each_map(dd_lists[dd_ontop][i], unsigned, rgb, array(vec3), list) {
                 int count = array_count(list);
                 if(!count) continue;
+                    renderstate_apply(&dd_rs);
                     // color
                     vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                     glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
@@ -21403,9 +21562,6 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
         // clear
         array_resize(dd_text2d, 0);
     }
-
-    glDisable(GL_LINE_SMOOTH);
-    glDisable(GL_PROGRAM_POINT_SIZE);
 
     glBindVertexArray(0);
 
@@ -26682,7 +26838,20 @@ struct nk_glfw *window_handle_nkglfw() {
     return g->nk_glfw;
 }
 
+static renderstate_t window_rs;
+
 void glNewFrame() {
+    do_once {
+        window_rs = renderstate();
+        window_rs.blendEnabled = 1;
+        window_rs.depthTestEnabled = 1;
+    }
+
+    window_rs.clearColor[0] = winbgcolor.r;
+    window_rs.clearColor[1] = winbgcolor.g;
+    window_rs.clearColor[2] = winbgcolor.b;
+    window_rs.clearColor[3] = window_has_transparent() ? 0 : winbgcolor.a;
+
     // @transparent debug
     // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1);
     // if( input_down(KEY_F2) ) window_maximize(window_has_maximize()^1);
@@ -26703,30 +26872,8 @@ void glNewFrame() {
     g->width = w;
     g->height = h;
 
-    // blending defaults
-    glEnable(GL_BLEND);
+    renderstate_apply(&window_rs);
 
-    // culling defaults
-//  glEnable(GL_CULL_FACE);
-//  glCullFace(GL_BACK);
-//  glFrontFace(GL_CCW);
-
-    // depth-testing defaults
-    glEnable(GL_DEPTH_TEST);
-//  glDepthFunc(GL_LESS);
-
-    // depth-writing defaults
-//  glDepthMask(GL_TRUE);
-
-    // seamless cubemaps
-//  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-    glViewport(0, 0, window_width(), window_height());
-
-    // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
-    glClearColor(winbgcolor.r, winbgcolor.g, winbgcolor.b, window_has_transparent() ? 0 : winbgcolor.a); // @transparent
-    //glClearColor(0.15,0.15,0.15,1);
-    //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 

@@ -221,7 +221,20 @@ struct nk_glfw *window_handle_nkglfw() {
     return g->nk_glfw;
 }
 
+static renderstate_t window_rs;
+
 void glNewFrame() {
+    do_once {
+        window_rs = renderstate();
+        window_rs.blendEnabled = 1;
+        window_rs.depthTestEnabled = 1;
+    }
+
+    window_rs.clearColor[0] = winbgcolor.r;
+    window_rs.clearColor[1] = winbgcolor.g;
+    window_rs.clearColor[2] = winbgcolor.b;
+    window_rs.clearColor[3] = window_has_transparent() ? 0 : winbgcolor.a;
+
     // @transparent debug
     // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1);
     // if( input_down(KEY_F2) ) window_maximize(window_has_maximize()^1);
@@ -242,30 +255,8 @@ void glNewFrame() {
     g->width = w;
     g->height = h;
 
-    // blending defaults
-    glEnable(GL_BLEND);
+    renderstate_apply(&window_rs);
 
-    // culling defaults
-//  glEnable(GL_CULL_FACE);
-//  glCullFace(GL_BACK);
-//  glFrontFace(GL_CCW);
-
-    // depth-testing defaults
-    glEnable(GL_DEPTH_TEST);
-//  glDepthFunc(GL_LESS);
-
-    // depth-writing defaults
-//  glDepthMask(GL_TRUE);
-
-    // seamless cubemaps
-//  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-    glViewport(0, 0, window_width(), window_height());
-
-    // GLfloat bgColor[4]; glGetFloatv(GL_COLOR_CLEAR_VALUE, bgColor);
-    glClearColor(winbgcolor.r, winbgcolor.g, winbgcolor.b, window_has_transparent() ? 0 : winbgcolor.a); // @transparent
-    //glClearColor(0.15,0.15,0.15,1);
-    //glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 

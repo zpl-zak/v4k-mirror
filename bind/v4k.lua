@@ -1032,6 +1032,38 @@ typedef struct reflect_t {
  const char* symbol_naked(const char *s);
  int ui_reflect(const char *mask);
 typedef unsigned handle;
+typedef struct renderstate_t {
+    int viewportX;
+    int viewportY;
+    int viewportWidth;
+    int viewportHeight;
+    float clearColor[4];
+    double clearDepth;
+    bool depthTestEnabled;
+    unsigned depthFunc;
+    bool blendEnabled;
+    unsigned blendFunc;
+    unsigned blendSrc;
+    unsigned blendDst;
+    bool cullFaceEnabled;
+    unsigned cullFaceMode;
+    bool stencilTestEnabled;
+    unsigned stencilFunc;
+    int stencilRef;
+    unsigned stencilMask;
+    unsigned frontFace;
+    bool smoothLineEnabled;
+    float lineWidth;
+    bool pointSizeEnabled;
+    float pointSize;
+    unsigned polygonModeFace;
+    unsigned polygonModeMode;
+    bool scissorTestEnabled;
+    int scissorBox[4];
+} renderstate_t;
+ renderstate_t renderstate();
+ bool renderstate_compare(const renderstate_t *stateA, const renderstate_t *stateB);
+ void renderstate_apply(const renderstate_t *state);
  unsigned rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a );
  unsigned bgra( uint8_t b, uint8_t g, uint8_t r, uint8_t a );
  unsigned rgbaf( float r, float g, float b, float a );
@@ -1148,6 +1180,7 @@ typedef struct shadowmap_t {
  unsigned shader(const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines);
  unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines);
  unsigned shader_bind(unsigned program);
+ int shader_uniform(const char *name);
  void shader_bool(const char *uniform, bool i );
  void shader_int(const char *uniform, int i);
  void shader_uint(const char *uniform, unsigned i );
@@ -1362,6 +1395,7 @@ typedef struct model_t {
     float *instanced_matrices;
     unsigned num_instances;
     int stored_flags;
+    renderstate_t rs;
 } model_t;
 enum BILLBOARD_MODE {
     BILLBOARD_X = 0x1,
