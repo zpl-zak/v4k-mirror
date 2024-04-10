@@ -69,7 +69,7 @@ void ddraw_flush() {
 void ddraw_flush_projview(mat44 proj, mat44 view) {
     do_once dd_rs = renderstate();
     
-    dd_rs.depthTestEnabled = 1;
+    dd_rs.depth_test_enabled = 1;
     glActiveTexture(GL_TEXTURE0);
 
     mat44 mvp;
@@ -84,12 +84,12 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     glEnableVertexAttribArray(0);
 
-    dd_rs.pointSizeEnabled = 1;
-    dd_rs.smoothLineEnabled = 1;
+    dd_rs.point_size_enabled = 1;
+    dd_rs.smooth_line_enabled = 1;
 
     for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
         GLenum mode = i < 2 ? GL_LINES : GL_POINTS;
-        dd_rs.lineWidth = (i == 1 ? 1 : 0.3); // 0.625);
+        dd_rs.line_width = (i == 1 ? 1 : 0.3); // 0.625);
         for each_map(dd_lists[dd_ontop][i], unsigned, rgb, array(vec3), list) {
             int count = array_count(list);
             if(!count) continue;
@@ -122,7 +122,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
         glUniformMatrix4fv(glGetUniformLocation(dd_program, "u_MVP"), 1, GL_FALSE, mvp);
         for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
             GLenum mode = i < 2 ? GL_LINES : GL_POINTS;
-            dd_rs.lineWidth = (i == 1 ? 1 : 0.3); // 0.625);
+            dd_rs.line_width = (i == 1 ? 1 : 0.3); // 0.625);
             for each_map(dd_lists[dd_ontop][i], unsigned, rgb, array(vec3), list) {
                 int count = array_count(list);
                 if(!count) continue;

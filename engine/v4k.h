@@ -3101,55 +3101,55 @@ typedef unsigned handle; // GLuint
 // renderstate
 typedef struct renderstate_t {
     // Viewport parameters
-    int viewportX;
-    int viewportY;
-    int viewportWidth;
-    int viewportHeight;
+    int viewport_x;
+    int viewport_y;
+    int viewport_width;
+    int viewport_height;
 
     // Clear color
-    float clearColor[4];
+    float clear_color[4];
 
     // Clear depth
-    double clearDepth;
+    double clear_depth;
 
     // Depth test
-    bool depthTestEnabled;
-    unsigned depthFunc;
+    bool depth_test_enabled;
+    unsigned depth_func;
 
     // Blending
-    bool blendEnabled;
-    unsigned blendFunc;
-    unsigned blendSrc;
-    unsigned blendDst;
+    bool blend_enabled;
+    unsigned blend_func;
+    unsigned blend_src;
+    unsigned blend_dst;
 
     // Culling
-    bool cullFaceEnabled;
-    unsigned cullFaceMode;
+    bool cull_face_enabled;
+    unsigned cull_face_mode;
 
     // Stencil test
-    bool stencilTestEnabled;
-    unsigned stencilFunc;
-    int stencilRef;
-    unsigned stencilMask;
+    bool stencil_test_enabled;
+    unsigned stencil_func;
+    int stencil_ref;
+    unsigned stencil_mask;
 
     // Face culling direction
-    unsigned frontFace; // GL_CW or GL_CCW
+    unsigned front_face; // GL_CW or GL_CCW
 
     // Line width
-    bool smoothLineEnabled;
-    float lineWidth;
+    bool smooth_line_enabled;
+    float line_width;
 
     // Point size
-    bool pointSizeEnabled;
-    float pointSize;
+    bool point_size_enabled;
+    float point_size;
 
     // Polygon mode
-    unsigned polygonModeFace;
-    unsigned polygonModeMode;
+    unsigned polygon_mode_face;
+    unsigned polygon_mode_mode;
 
     // Scissor test
-    bool scissorTestEnabled;
-    int scissorBox[4];
+    bool scissor_test_enabled;
+    int scissor_box[4];
 } renderstate_t;
 
 API renderstate_t renderstate();

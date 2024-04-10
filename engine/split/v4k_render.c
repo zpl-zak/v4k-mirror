@@ -57,61 +57,61 @@ renderstate_t renderstate() {
     renderstate_t state = {0};
 
     // Set default viewport parameters
-    state.viewportX = 0;
-    state.viewportY = 0;
-    state.viewportWidth = window_width();
-    state.viewportHeight = window_height();
+    state.viewport_x = 0;
+    state.viewport_y = 0;
+    state.viewport_width = window_width();
+    state.viewport_height = window_height();
 
     // Set default clear color to black
-    state.clearColor[0] = 0.0f; // Red
-    state.clearColor[1] = 0.0f; // Green
-    state.clearColor[2] = 0.0f; // Blue
-    state.clearColor[3] = 1.0f; // Alpha
+    state.clear_color[0] = 0.0f; // Red
+    state.clear_color[1] = 0.0f; // Green
+    state.clear_color[2] = 0.0f; // Blue
+    state.clear_color[3] = 1.0f; // Alpha
 
     // Set default clear depth to maximum distance
-    state.clearDepth = 1.0;
+    state.clear_depth = 1.0;
 
     // Enable depth test by default with less or equal function
-    state.depthTestEnabled = GL_TRUE;
-    state.depthFunc = GL_LEQUAL;
+    state.depth_test_enabled = GL_TRUE;
+    state.depth_func = GL_LEQUAL;
 
     // Disable blending by default
-    state.blendEnabled = GL_FALSE;
-    state.blendFunc = GL_FUNC_ADD;
-    state.blendSrc = GL_ONE;
-    state.blendDst = GL_ZERO;
+    state.blend_enabled = GL_FALSE;
+    state.blend_func = GL_FUNC_ADD;
+    state.blend_src = GL_ONE;
+    state.blend_dst = GL_ZERO;
 
     // Enable culling by default and cull back faces
-    state.cullFaceEnabled = GL_TRUE;
-    state.cullFaceMode = GL_BACK;
+    state.cull_face_enabled = GL_TRUE;
+    state.cull_face_mode = GL_BACK;
 
     // Disable stencil test by default
-    state.stencilTestEnabled = GL_FALSE;
-    state.stencilFunc = GL_ALWAYS;
-    state.stencilRef = 0;
-    state.stencilMask = 0xFFFFFFFF;
+    state.stencil_test_enabled = GL_FALSE;
+    state.stencil_func = GL_ALWAYS;
+    state.stencil_ref = 0;
+    state.stencil_mask = 0xFFFFFFFF;
 
     // Set default front face to counter-clockwise
-    state.frontFace = GL_CCW;
+    state.front_face = GL_CCW;
 
     // Set default line width
-    state.smoothLineEnabled = GL_FALSE;
-    state.lineWidth = 1.0f;
+    state.smooth_line_enabled = GL_FALSE;
+    state.line_width = 1.0f;
 
     // Set default point size
-    state.pointSizeEnabled = GL_FALSE;
-    state.pointSize = 1.0f;
+    state.point_size_enabled = GL_FALSE;
+    state.point_size = 1.0f;
 
     // Set default polygon mode to fill
-    state.polygonModeFace = GL_FRONT_AND_BACK;
-    state.polygonModeMode = GL_FILL;
+    state.polygon_mode_face = GL_FRONT_AND_BACK;
+    state.polygon_mode_mode = GL_FILL;
 
     // Disable scissor test by default
-    state.scissorTestEnabled = GL_FALSE;
-    state.scissorBox[0] = 0;
-    state.scissorBox[1] = 0;
-    state.scissorBox[2] = window_width();
-    state.scissorBox[3] = window_height();
+    state.scissor_test_enabled = GL_FALSE;
+    state.scissor_box[0] = 0;
+    state.scissor_box[1] = 0;
+    state.scissor_box[2] = window_width();
+    state.scissor_box[3] = window_height();
 
     return state;
 }
@@ -123,75 +123,75 @@ bool renderstate_compare(const renderstate_t *stateA, const renderstate_t *state
 void renderstate_apply(const renderstate_t *state) {
     if (state != NULL) {
         // Apply viewport parameters
-        glViewport(state->viewportX, state->viewportY, state->viewportWidth, state->viewportHeight);
+        glViewport(state->viewport_x, state->viewport_y, state->viewport_width, state->viewport_height);
 
         // Apply clear color
-        glClearColor(state->clearColor[0], state->clearColor[1], state->clearColor[2], state->clearColor[3]);
+        glClearColor(state->clear_color[0], state->clear_color[1], state->clear_color[2], state->clear_color[3]);
 
         // Apply clear depth
-        glClearDepth(state->clearDepth);
+        glClearDepth(state->clear_depth);
 
         // Apply depth test
-        if (state->depthTestEnabled) {
+        if (state->depth_test_enabled) {
             glEnable(GL_DEPTH_TEST);
-            glDepthFunc(state->depthFunc);
+            glDepthFunc(state->depth_func);
         } else {
             glDisable(GL_DEPTH_TEST);
         }
 
         // Apply blending
-        if (state->blendEnabled) {
+        if (state->blend_enabled) {
             glEnable(GL_BLEND);
-            glBlendEquation(state->blendFunc);
-            glBlendFunc(state->blendSrc, state->blendDst);
+            glBlendEquation(state->blend_func);
+            glBlendFunc(state->blend_src, state->blend_dst);
         } else {
             glDisable(GL_BLEND);
         }
 
         // Apply culling @fixme
-        // if (state->cullFaceEnabled) {
+        // if (state->cull_face_enabled) {
         //     glEnable(GL_CULL_FACE);
-        //     glCullFace(state->cullFaceMode);
+        //     glCullFace(state->cull_face_mode);
         // } else {
         //     glDisable(GL_CULL_FACE);
         // }
 
         // Apply stencil test
-        if (state->stencilTestEnabled) {
+        if (state->stencil_test_enabled) {
             glEnable(GL_STENCIL_TEST);
-            glStencilFunc(state->stencilFunc, state->stencilRef, state->stencilMask);
+            glStencilFunc(state->stencil_func, state->stencil_ref, state->stencil_mask);
         } else {
             glDisable(GL_STENCIL_TEST);
         }
 
         // Apply front face direction @fixme
-        // glFrontFace(state->frontFace);
+        // glFrontFace(state->front_face);
 
         // Apply line width
-        glLineWidth(state->lineWidth);
+        glLineWidth(state->line_width);
 
-        // apply smooth lines
-        if (state->smoothLineEnabled) {
+        // Apply smooth lines
+        if (state->smooth_line_enabled) {
             glEnable(GL_LINE_SMOOTH);
         } else {
             glDisable(GL_LINE_SMOOTH);
         }
 
         // Apply point size
-        if (state->pointSizeEnabled) {
+        if (state->point_size_enabled) {
             glEnable(GL_PROGRAM_POINT_SIZE);
-            glPointSize(state->pointSize);
+            glPointSize(state->point_size);
         } else {
             glDisable(GL_PROGRAM_POINT_SIZE);
         }
 
         // Apply polygon mode
-        glPolygonMode(state->polygonModeFace, state->polygonModeMode);
+        glPolygonMode(state->polygon_mode_face, state->polygon_mode_mode);
 
         // Apply scissor test
-        if (state->scissorTestEnabled) {
+        if (state->scissor_test_enabled) {
             glEnable(GL_SCISSOR_TEST);
-            glScissor(state->scissorBox[0], state->scissorBox[1], state->scissorBox[2], state->scissorBox[3]);
+            glScissor(state->scissor_box[0], state->scissor_box[1], state->scissor_box[2], state->scissor_box[3]);
         } else {
             glDisable(GL_SCISSOR_TEST);
         }
@@ -2013,10 +2013,10 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
 
     // we have to reset clear color here, because of wrong alpha compositing issues on native transparent windows otherwise
     vec4 bgcolor = window_getcolor_(); 
-    skybox_rs.clearColor[0] = bgcolor.r;
-    skybox_rs.clearColor[1] = bgcolor.g;
-    skybox_rs.clearColor[2] = bgcolor.b;
-    skybox_rs.clearColor[3] = 1; // @transparent
+    skybox_rs.clear_color[0] = bgcolor.r;
+    skybox_rs.clear_color[1] = bgcolor.g;
+    skybox_rs.clear_color[2] = bgcolor.b;
+    skybox_rs.clear_color[3] = 1; // @transparent
 
     mat44 mvp; multiply44x2(mvp, proj, view);
 
@@ -3698,7 +3698,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
 
     {
         m.rs = renderstate();
-        m.rs.blendEnabled = 1;
+        m.rs.blend_enabled = 1;
     }
 
     m.stored_flags = flags;

@@ -226,14 +226,14 @@ static renderstate_t window_rs;
 void glNewFrame() {
     do_once {
         window_rs = renderstate();
-        window_rs.blendEnabled = 1;
-        window_rs.depthTestEnabled = 1;
+        window_rs.blend_enabled = 1;
+        window_rs.depth_test_enabled = 1;
     }
 
-    window_rs.clearColor[0] = winbgcolor.r;
-    window_rs.clearColor[1] = winbgcolor.g;
-    window_rs.clearColor[2] = winbgcolor.b;
-    window_rs.clearColor[3] = window_has_transparent() ? 0 : winbgcolor.a;
+    window_rs.clear_color[0] = winbgcolor.r;
+    window_rs.clear_color[1] = winbgcolor.g;
+    window_rs.clear_color[2] = winbgcolor.b;
+    window_rs.clear_color[3] = window_has_transparent() ? 0 : winbgcolor.a;
 
     // @transparent debug
     // if( input_down(KEY_F1) ) window_transparent(window_has_transparent()^1);

@@ -1898,13 +1898,13 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
 
     // set up pipeline
     f->rs = renderstate();
-    f->rs.blendEnabled = 1;
-    f->rs.blendFunc = GL_FUNC_ADD;
-    f->rs.blendSrc = GL_SRC_ALPHA;
-    f->rs.blendDst = GL_ONE_MINUS_SRC_ALPHA;
-    f->rs.scissorTestEnabled = 1;
-    f->rs.depthTestEnabled = 0;
-    f->rs.cullFaceEnabled = 0;
+    f->rs.blend_enabled = 1;
+    f->rs.blend_func = GL_FUNC_ADD;
+    f->rs.blend_src = GL_SRC_ALPHA;
+    f->rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+    f->rs.scissor_test_enabled = 1;
+    f->rs.depth_test_enabled = 0;
+    f->rs.cull_face_enabled = 0;
 }
 
 void font_face(const char *tag, const char *filename_ttf, float font_size, unsigned flags) {
@@ -1935,10 +1935,10 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glActiveTexture(GL_TEXTURE2);
     glGetIntegerv(GL_TEXTURE_BINDING_1D, &last_texture2);
 
-    f->rs.scissorBox[0] = rect.x;
-    f->rs.scissorBox[1] = window_height() - (rect.y+rect.w);
-    f->rs.scissorBox[2] = rect.z;
-    f->rs.scissorBox[3] = rect.w;
+    f->rs.scissor_box[0] = rect.x;
+    f->rs.scissor_box[1] = window_height() - (rect.y+rect.w);
+    f->rs.scissor_box[2] = rect.z;
+    f->rs.scissor_box[3] = rect.w;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, f->texture_fontdata);
