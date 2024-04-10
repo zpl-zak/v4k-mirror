@@ -11,12 +11,6 @@ typedef unsigned handle; // GLuint
 // -----------------------------------------------------------------------------
 // renderstate
 typedef struct renderstate_t {
-    // Viewport parameters
-    int viewport_x;
-    int viewport_y;
-    int viewport_width;
-    int viewport_height;
-
     // Clear color
     float clear_color[4];
 
@@ -47,7 +41,7 @@ typedef struct renderstate_t {
     unsigned front_face; // GL_CW or GL_CCW
 
     // Line width
-    bool smooth_line_enabled;
+    bool line_smooth_enabled;
     float line_width;
 
     // Point size

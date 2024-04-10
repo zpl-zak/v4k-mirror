@@ -17253,7 +17253,7 @@ renderstate_t renderstate() {
     state.front_face = GL_CCW;
 
     // Set default line width
-    state.smooth_line_enabled = GL_FALSE;
+    state.line_smooth_enabled = GL_FALSE;
     state.line_width = 1.0f;
 
     // Set default point size
@@ -17322,7 +17322,7 @@ void renderstate_apply(const renderstate_t *state) {
         glLineWidth(state->line_width);
 
         // Apply smooth lines
-        if (state->smooth_line_enabled) {
+        if (state->line_smooth_enabled) {
             glEnable(GL_LINE_SMOOTH);
         } else {
             glDisable(GL_LINE_SMOOTH);
@@ -21482,7 +21482,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
     glEnableVertexAttribArray(0);
 
     dd_rs.point_size_enabled = 1;
-    dd_rs.smooth_line_enabled = 1;
+    dd_rs.line_smooth_enabled = 1;
 
     for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
         GLenum mode = i < 2 ? GL_LINES : GL_POINTS;

@@ -1033,10 +1033,6 @@ typedef struct reflect_t {
  int ui_reflect(const char *mask);
 typedef unsigned handle;
 typedef struct renderstate_t {
-    int viewport_x;
-    int viewport_y;
-    int viewport_width;
-    int viewport_height;
     float clear_color[4];
     double clear_depth;
     bool depth_test_enabled;
@@ -1052,7 +1048,7 @@ typedef struct renderstate_t {
     int stencil_ref;
     unsigned stencil_mask;
     unsigned front_face;
-    bool smooth_line_enabled;
+    bool line_smooth_enabled;
     float line_width;
     bool point_size_enabled;
     float point_size;

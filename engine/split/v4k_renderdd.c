@@ -85,7 +85,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
     glEnableVertexAttribArray(0);
 
     dd_rs.point_size_enabled = 1;
-    dd_rs.smooth_line_enabled = 1;
+    dd_rs.line_smooth_enabled = 1;
 
     for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
         GLenum mode = i < 2 ? GL_LINES : GL_POINTS;

@@ -89,7 +89,7 @@ renderstate_t renderstate() {
     state.front_face = GL_CCW;
 
     // Set default line width
-    state.smooth_line_enabled = GL_FALSE;
+    state.line_smooth_enabled = GL_FALSE;
     state.line_width = 1.0f;
 
     // Set default point size
@@ -158,7 +158,7 @@ void renderstate_apply(const renderstate_t *state) {
         glLineWidth(state->line_width);
 
         // Apply smooth lines
-        if (state->smooth_line_enabled) {
+        if (state->line_smooth_enabled) {
             glEnable(GL_LINE_SMOOTH);
         } else {
             glDisable(GL_LINE_SMOOTH);
