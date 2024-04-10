@@ -3149,7 +3149,6 @@ typedef struct renderstate_t {
 
     // Scissor test
     bool scissor_test_enabled;
-    int scissor_box[4];
 } renderstate_t;
 
 API renderstate_t renderstate();

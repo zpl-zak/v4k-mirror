@@ -56,12 +56,6 @@ void glCopyBackbufferToTexture( texture_t *tex ) { // unused
 renderstate_t renderstate() {
     renderstate_t state = {0};
 
-    // Set default viewport parameters
-    state.viewport_x = 0;
-    state.viewport_y = 0;
-    state.viewport_width = window_width();
-    state.viewport_height = window_height();
-
     // Set default clear color to black
     state.clear_color[0] = 0.0f; // Red
     state.clear_color[1] = 0.0f; // Green
@@ -108,10 +102,6 @@ renderstate_t renderstate() {
 
     // Disable scissor test by default
     state.scissor_test_enabled = GL_FALSE;
-    state.scissor_box[0] = 0;
-    state.scissor_box[1] = 0;
-    state.scissor_box[2] = window_width();
-    state.scissor_box[3] = window_height();
 
     return state;
 }
@@ -122,9 +112,6 @@ bool renderstate_compare(const renderstate_t *stateA, const renderstate_t *state
 
 void renderstate_apply(const renderstate_t *state) {
     if (state != NULL) {
-        // Apply viewport parameters @fixme
-        // glViewport(state->viewport_x, state->viewport_y, state->viewport_width, state->viewport_height);
-
         // Apply clear color
         glClearColor(state->clear_color[0], state->clear_color[1], state->clear_color[2], state->clear_color[3]);
 
@@ -191,7 +178,6 @@ void renderstate_apply(const renderstate_t *state) {
         // Apply scissor test
         if (state->scissor_test_enabled) {
             glEnable(GL_SCISSOR_TEST);
-            glScissor(state->scissor_box[0], state->scissor_box[1], state->scissor_box[2], state->scissor_box[3]);
         } else {
             glDisable(GL_SCISSOR_TEST);
         }

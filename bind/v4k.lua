@@ -1059,7 +1059,6 @@ typedef struct renderstate_t {
     unsigned polygon_mode_face;
     unsigned polygon_mode_mode;
     bool scissor_test_enabled;
-    int scissor_box[4];
 } renderstate_t;
  renderstate_t renderstate();
  bool renderstate_compare(const renderstate_t *stateA, const renderstate_t *stateB);

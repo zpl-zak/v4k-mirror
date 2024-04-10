@@ -1935,10 +1935,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glActiveTexture(GL_TEXTURE2);
     glGetIntegerv(GL_TEXTURE_BINDING_1D, &last_texture2);
 
-    f->rs.scissor_box[0] = rect.x;
-    f->rs.scissor_box[1] = window_height() - (rect.y+rect.w);
-    f->rs.scissor_box[2] = rect.z;
-    f->rs.scissor_box[3] = rect.w;
+    glScissor(rect.x, window_height() - (rect.y+rect.w), rect.z, rect.w);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, f->texture_fontdata);
