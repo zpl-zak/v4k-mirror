@@ -3976,8 +3976,6 @@ float model_animate(model_t m, float curframe) {
     return model_animate_clip(m, curframe, 0, q->numframes-1, true);
 }
 
-static bool model_lightmap_hook = 0; //@fixme: delete this
-
 static
 void model_draw_call(model_t m, int shader) {
     if(!m.iqm) return;
@@ -3987,12 +3985,6 @@ void model_draw_call(model_t m, int shader) {
     shader_bind(shader);
 
     renderstate_apply(&m.rs);
-
-    //@fixme lightmap_bake state hook
-    if (model_lightmap_hook) {
-        glDisable(GL_CULL_FACE);
-        glDisable(GL_BLEND);
-    } 
 
     glBindVertexArray( q->vao );
 
@@ -4183,8 +4175,6 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
     ASSERT(lm->ready);
     // @fixme: use xatlas to UV pack all models, update their UV1 and upload them to GPU.
 
-    model_lightmap_hook=1;
-
     int w = lm->w, h = lm->h;
     for (int i = 0; i < array_count(lm->models); i++) {
         model_t *m = lm->models[i];
@@ -4247,7 +4237,5 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
             FREE(m->lmdata); m->lmdata = NULL;
         }
     }
-
-    model_lightmap_hook = 0;
 }
 
