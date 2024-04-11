@@ -3108,6 +3108,7 @@ typedef struct renderstate_t {
 
     // Depth test
     bool depth_test_enabled;
+    bool depth_write_enabled;
     unsigned depth_func;
 
     // Blending
@@ -3682,6 +3683,14 @@ enum SHADING_MODE {
     SHADING_PBR,
 };
 
+enum RENDER_PASS {
+    RENDER_PASS_NORMAL,
+    RENDER_PASS_SHADOW,
+    RENDER_PASS_LIGHTMAP,
+    
+    NUM_RENDER_PASSES
+};
+
 typedef struct model_t {
     struct iqm_t *iqm; // private
 
@@ -3719,7 +3728,7 @@ typedef struct model_t {
     unsigned num_instances;
 
     int stored_flags;
-    renderstate_t rs;
+    renderstate_t rs[NUM_RENDER_PASSES];
 } model_t;
 
 enum BILLBOARD_MODE {
@@ -3745,6 +3754,9 @@ API void     model_render_instanced(model_t, mat44 proj, mat44 view, mat44 *mode
 API void     model_set_texture(model_t, texture_t t);
 API bool     model_get_bone_pose(model_t m, unsigned joint, mat34 *out);
 API void     model_destroy(model_t);
+
+API unsigned model_getpass();
+API unsigned model_setpass(unsigned pass);
 
 API vec3     pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
 

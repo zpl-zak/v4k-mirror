@@ -67,6 +67,7 @@ renderstate_t renderstate() {
 
     // Enable depth test by default with less or equal function
     state.depth_test_enabled = GL_TRUE;
+    state.depth_write_enabled = GL_TRUE;
     state.depth_func = GL_LEQUAL;
 
     // Disable blending by default
@@ -135,6 +136,9 @@ void renderstate_apply(const renderstate_t *state) {
         } else {
             glDisable(GL_DEPTH_TEST);
         }
+
+        // Apply depth write
+        glDepthMask(state->depth_write_enabled);
 
         // Apply blending
         if (state->blend_enabled) {
@@ -3713,20 +3717,47 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
     return true;
 }
 
+static
+void model_set_renderstates(model_t *m) {
+    for (int i = 0; i<NUM_RENDER_PASSES; ++i) {
+        m->rs[i] = renderstate();
+    }
+
+    // Normal pass
+    renderstate_t *normal_rs = &m->rs[RENDER_PASS_NORMAL];
+    {
+        normal_rs->blend_enabled = 1;
+        normal_rs->blend_src = GL_SRC_ALPHA;
+        normal_rs->blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+        normal_rs->cull_face_mode = GL_BACK;
+        normal_rs->front_face = GL_CW;
+    }
+
+    // Shadow pass @todo
+    renderstate_t *shadow_rs = &m->rs[RENDER_PASS_SHADOW];
+    {
+        shadow_rs->blend_enabled = 1;
+        shadow_rs->blend_src = GL_SRC_ALPHA;
+        shadow_rs->blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+        shadow_rs->cull_face_mode = GL_BACK;
+        shadow_rs->front_face = GL_CW;
+    }
+
+    // Lightmap pass
+    renderstate_t *lightmap_rs = &m->rs[RENDER_PASS_LIGHTMAP];
+    {
+        lightmap_rs->blend_enabled = 0;
+        lightmap_rs->cull_face_enabled = 0;
+        lightmap_rs->front_face = GL_CW;
+    }
+}
+
 model_t model_from_mem(const void *mem, int len, int flags) {
     model_t m = {0};
 
-    {
-        m.rs = renderstate();
-        m.rs.blend_enabled = 1;
-        m.rs.blend_src = GL_SRC_ALPHA;
-        m.rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
-        m.rs.cull_face_mode = GL_BACK;
-        m.rs.front_face = GL_CW;
-    }
-
     m.stored_flags = flags;
     m.shading = SHADING_PHONG;
+    model_set_renderstates(&m);
 
     const char *ptr = (const char *)mem;
     // can't cache shader programs since we enable features via flags here
@@ -4008,7 +4039,7 @@ void model_draw_call(model_t m, int shader) {
     handle old_shader = last_shader;
     shader_bind(shader);
 
-    renderstate_apply(&m.rs);
+    renderstate_apply(&m.rs[model_getpass()]);
 
     glBindVertexArray( q->vao );
 
@@ -4155,6 +4186,19 @@ void model_destroy(model_t m) {
     FREE(q);
 }
 
+static unsigned model_renderpass = RENDER_PASS_NORMAL;
+
+unsigned model_getpass() {
+    return model_renderpass;
+}
+
+unsigned model_setpass(unsigned pass) {
+    ASSERT(pass < NUM_RENDER_PASSES);
+    unsigned old_pass = model_renderpass;
+    model_renderpass = pass;
+    return old_pass;
+}
+
 anims_t animations(const char *pathfile, int flags) {
     anims_t a = {0};
     a.anims = animlist(pathfile);
@@ -4212,6 +4256,8 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    unsigned old_pass = model_setpass(RENDER_PASS_LIGHTMAP);
+
     for (int b = 0; b < bounces; b++) {
         for (int i = 0; i < array_count(lm->models); i++) {
             model_t *m = lm->models[i];
@@ -4237,6 +4283,8 @@ void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm
                 lmEnd(lm->ctx);
             }
         }
+
+        model_setpass(old_pass);
 
         // postprocess texture
         for (int i = 0; i < array_count(lm->models); i++) {

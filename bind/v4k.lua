@@ -1036,6 +1036,7 @@ typedef struct renderstate_t {
     float clear_color[4];
     double clear_depth;
     bool depth_test_enabled;
+    bool depth_write_enabled;
     unsigned depth_func;
     bool blend_enabled;
     unsigned blend_func;
@@ -1361,6 +1362,12 @@ enum SHADING_MODE {
     SHADING_PHONG,
     SHADING_PBR,
 };
+enum RENDER_PASS {
+    RENDER_PASS_NORMAL,
+    RENDER_PASS_SHADOW,
+    RENDER_PASS_LIGHTMAP,
+    NUM_RENDER_PASSES
+};
 typedef struct model_t {
     struct iqm_t *iqm;
     int shading;
@@ -1390,7 +1397,7 @@ typedef struct model_t {
     float *instanced_matrices;
     unsigned num_instances;
     int stored_flags;
-    renderstate_t rs;
+    renderstate_t rs[NUM_RENDER_PASSES];
 } model_t;
 enum BILLBOARD_MODE {
     BILLBOARD_X = 0x1,
@@ -1413,6 +1420,8 @@ enum BILLBOARD_MODE {
  void model_set_texture(model_t, texture_t t);
  bool model_get_bone_pose(model_t m, unsigned joint, mat34 *out);
  void model_destroy(model_t);
+ unsigned model_getpass();
+ unsigned model_setpass(unsigned pass);
  vec3 pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
 typedef struct anims_t {
     int inuse;
