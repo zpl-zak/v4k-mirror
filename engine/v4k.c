@@ -17239,8 +17239,8 @@ renderstate_t renderstate() {
     state.blend_src = GL_ONE;
     state.blend_dst = GL_ZERO;
 
-    // Enable culling by default and cull back faces
-    state.cull_face_enabled = GL_TRUE;
+    // Disable culling by default but cull back faces
+    state.cull_face_enabled = GL_FALSE;
     state.cull_face_mode = GL_BACK;
 
     // Disable stencil test by default
@@ -17274,8 +17274,18 @@ bool renderstate_compare(const renderstate_t *stateA, const renderstate_t *state
     return memcmp(stateA, stateB, sizeof(renderstate_t)) == 0;
 }
 
+static renderstate_t last_rs;
+
 void renderstate_apply(const renderstate_t *state) {
     if (state != NULL) {
+        // Compare renderstates and bail if they are the same
+        if (renderstate_compare(state, &last_rs)) {
+            return;
+        }
+
+        // Store renderstate
+        last_rs = *state;
+
         // Apply clear color
         glClearColor(state->clear_color[0], state->clear_color[1], state->clear_color[2], state->clear_color[3]);
 
@@ -17300,12 +17310,12 @@ void renderstate_apply(const renderstate_t *state) {
         }
 
         // Apply culling @fixme
-        // if (state->cull_face_enabled) {
-        //     glEnable(GL_CULL_FACE);
-        //     glCullFace(state->cull_face_mode);
-        // } else {
-        //     glDisable(GL_CULL_FACE);
-        // }
+        if (state->cull_face_enabled) {
+            glEnable(GL_CULL_FACE);
+            glCullFace(state->cull_face_mode);
+        } else {
+            glDisable(GL_CULL_FACE);
+        }
 
         // Apply stencil test
         if (state->stencil_test_enabled) {
@@ -17316,7 +17326,7 @@ void renderstate_apply(const renderstate_t *state) {
         }
 
         // Apply front face direction @fixme
-        // glFrontFace(state->front_face);
+        glFrontFace(state->front_face);
 
         // Apply line width
         glLineWidth(state->line_width);
@@ -19159,6 +19169,9 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
 
     do_once {
         skybox_rs = renderstate();
+        skybox_rs.depth_test_enabled = 0;
+        skybox_rs.cull_face_enabled = 0;
+        skybox_rs.front_face = GL_CW;
     }
 
     // we have to reset clear color here, because of wrong alpha compositing issues on native transparent windows otherwise
@@ -20852,6 +20865,10 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     {
         m.rs = renderstate();
         m.rs.blend_enabled = 1;
+        m.rs.blend_src = GL_SRC_ALPHA;
+        m.rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+        m.rs.cull_face_mode = GL_BACK;
+        m.rs.front_face = GL_CW;
     }
 
     m.stored_flags = flags;
