@@ -7446,6 +7446,9 @@ void script_init() {
         luaopen_string(L);
         luaopen_math(L);
 
+        // enable ffi (via luaffi)
+        luaopen_ffi(L);
+
         // @fixme: workaround that prevents script binding on lua 5.4.3 on top of luajit 2.1.0-beta3 on linux. lua_setglobal() crashing when accessing null L->l_G
         if(L->l_G) {
         XMACRO(BIND_ALL);
@@ -19961,7 +19964,7 @@ static void brdf_load() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
 
     brdf.id = tex;
     brdf.w = 512;

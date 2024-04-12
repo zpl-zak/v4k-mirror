@@ -204,6 +204,9 @@ void script_init() {
         luaopen_string(L);
         luaopen_math(L);
 
+        // enable ffi (via luaffi)
+        luaopen_ffi(L);
+
         // @fixme: workaround that prevents script binding on lua 5.4.3 on top of luajit 2.1.0-beta3 on linux. lua_setglobal() crashing when accessing null L->l_G
         if(L->l_G) {
         XMACRO(BIND_ALL);

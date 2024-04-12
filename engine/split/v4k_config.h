@@ -366,7 +366,7 @@
 
 // @fixme workarounds on `tcc0.9.27 -m64` (win) for all functions with ending bool argument. test: 00-anims crashes otherwise
 #undef  bool
-typedef char bool;
+typedef char bool; ///-
 
 // missing libm symbols on tinycc HEAD repo (tcc-x64 pre-0.9.28)
 //#define fabsf fabs

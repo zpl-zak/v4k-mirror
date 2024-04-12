@@ -464,7 +464,7 @@ extern "C" {
 
 // @fixme workarounds on `tcc0.9.27 -m64` (win) for all functions with ending bool argument. test: 00-anims crashes otherwise
 #undef  bool
-typedef char bool;
+typedef char bool; ///-
 
 // missing libm symbols on tinycc HEAD repo (tcc-x64 pre-0.9.28)
 //#define fabsf fabs
@@ -2389,7 +2389,7 @@ API void*  forget( void *ptr );
 #define REALLOC(p,n)   REALLOC_((p),(n))
 #define CALLOC(m,n)    CALLOC_((m),(n))
 #define STRDUP(s)      STRDUP_(s)
-#define ALLOCA(n)      ifdef(gcc, __builtin_alloca(n), _alloca(n))
+#define ALLOCA(n)      ifdef(gcc, __builtin_alloca(n), ifdef(win32, _alloca(n), __builtin_alloca(n)))
 
 static FORCE_INLINE void *(REALLOC_)(void *p, size_t n) { return n ? WATCH(xrealloc(p,n),n) : xrealloc(FORGET(p),0); } ///-
 static FORCE_INLINE void *(CALLOC_)(size_t m, size_t n) { return n *= m, memset(REALLOC(0,n),0,n); } ///-
@@ -4823,8 +4823,6 @@ API void     window_loop_exit(); // exit from main loop function (emscripten onl
 
 API void     window_title(const char *title);
 API void     window_color(unsigned color);
-API void     window_gamma(float gamma); // 2.2 - standard, 0.0 - disables postfx pass
-API float    window_get_gamma();
 API vec2     window_canvas();
 API void*    window_handle();
 API char*    window_stats();
