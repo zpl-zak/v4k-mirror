@@ -22946,39 +22946,18 @@ light_t* scene_index_light(unsigned light_index) {
     return &last_scene->lights[light_index];
 }
 
-
 void scene_render(int flags) {
     camera_t *cam = camera_get_active();
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    glActiveTexture(GL_TEXTURE0);
-
     if(flags & SCENE_BACKGROUND) {
         if(last_scene->skybox.program) {
-        skybox_push_state(&last_scene->skybox, cam->proj, cam->view);
-
-        glDisable(GL_DEPTH_TEST);
-    //  glDepthFunc(GL_LESS);
-    //    glActiveTexture(GL_TEXTURE0);
-    //    (flags & SCENE_CULLFACE ? glEnable : glDisable)(GL_CULL_FACE); glCullFace(GL_BACK); glFrontFace(GL_CCW);
-    //    glPolygonMode( GL_FRONT_AND_BACK, flags & SCENE_WIREFRAME ? GL_LINE : GL_FILL );
-
-        mesh_render(&last_scene->skybox.geometry);
-        skybox_pop_state();
+            skybox_push_state(&last_scene->skybox, cam->proj, cam->view);
+            mesh_render(&last_scene->skybox.geometry);
+            skybox_pop_state();
         }
 
         ddraw_flush();
     }
-
-    glDepthFunc(GL_LESS);
-    glActiveTexture(GL_TEXTURE0);
-
-    // @fixme: CW ok for one-sided rendering. CCW ok for FXs. we need both
-    (flags & SCENE_CULLFACE ? glEnable : glDisable)(GL_CULL_FACE); glCullFace(GL_BACK); glFrontFace(GL_CCW);
-    glPolygonMode( GL_FRONT_AND_BACK, flags & SCENE_WIREFRAME ? GL_LINE : GL_FILL );
-    // @todo alpha mode
-    // @todo texture mode
 
     if( flags & SCENE_FOREGROUND ) {
         bool do_relighting = 0;
@@ -23037,8 +23016,6 @@ void scene_render(int flags) {
         }
         glBindVertexArray(0);
     }
-
-    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 #line 0
 
