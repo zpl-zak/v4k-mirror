@@ -690,6 +690,7 @@ static __thread quarks_db uniform_names;
 static __thread map(handle, uniform_binding) uniforms;
 
 int shader_uniform(const char *name) {
+#if 0
     do_once map_init(uniforms, less_int, hash_int);
     if (!map_find(uniforms, last_shader)) {
         uniform_binding names_map = 0;
@@ -706,6 +707,9 @@ int shader_uniform(const char *name) {
     // int ret = glGetUniformLocation(last_shader, name);
     // if( ret < 0 ) PRINTF("!cannot find uniform '%s' in shader program %d\n", name, (int)last_shader );
     return *map_find(names, name_hash);
+#else
+    return glGetUniformLocation(last_shader, name);
+#endif
 }
 unsigned shader_get_active() { return last_shader; }
 unsigned shader_bind(unsigned program) { if (program == last_shader) return last_shader; unsigned ret = last_shader; return glUseProgram(last_shader = program), ret; }
@@ -3303,7 +3307,7 @@ void model_set_state(model_t m) {
 
         // vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, m.vao_instanced);
-        glBufferData(GL_ARRAY_BUFFER, m.num_instances * mat4_size, m.instanced_matrices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, m.num_instances * mat4_size, m.instanced_matrices, GL_STREAM_DRAW);
 
         glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(0 * vec4_size)));
         glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(1 * vec4_size)));
@@ -4047,6 +4051,15 @@ float model_animate(model_t m, float curframe) {
     return model_animate_clip(m, curframe, 0, q->numframes-1, true);
 }
 
+// @fixme: store uniform handles into model_t/colormap_t and rely on those directly
+static inline
+void shader_colormap_model_internal(const char *col_name, const char *bool_name, const char *tex_name, colormap_t c ) {
+    // assumes shader uses `struct { vec4 color; bool has_tex } name + sampler2D name_tex;`
+    shader_vec4( col_name, c.color );
+    shader_bool( bool_name, c.texture != NULL );
+    if( c.texture ) shader_texture( tex_name, *c.texture );
+}
+
 static
 void model_draw_call(model_t m, int shader) {
     if(!m.iqm) return;
@@ -4077,15 +4090,15 @@ void model_draw_call(model_t m, int shader) {
             }
         } else {
             const material_t *material = &m.materials[i];
-            shader_colormap( "map_diffuse", material->layer[MATERIAL_CHANNEL_DIFFUSE].map );
-            shader_colormap( "map_normals", material->layer[MATERIAL_CHANNEL_NORMALS].map );
-            shader_colormap( "map_specular", material->layer[MATERIAL_CHANNEL_SPECULAR].map );
-            shader_colormap( "map_albedo", material->layer[MATERIAL_CHANNEL_ALBEDO].map );
-            shader_colormap( "map_roughness", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map );
-            shader_colormap( "map_metallic", material->layer[MATERIAL_CHANNEL_METALLIC].map );
-            shader_colormap( "map_ao", material->layer[MATERIAL_CHANNEL_AO].map );
-            shader_colormap( "map_ambient", material->layer[MATERIAL_CHANNEL_AMBIENT].map );
-            shader_colormap( "map_emissive", material->layer[MATERIAL_CHANNEL_EMISSIVE].map );
+            shader_colormap_model_internal( "map_diffuse.color", "map_diffuse.has_tex", "map_diffuse_tex", material->layer[MATERIAL_CHANNEL_DIFFUSE].map );
+            shader_colormap_model_internal( "map_normals.color", "map_normals.has_tex", "map_normals_tex", material->layer[MATERIAL_CHANNEL_NORMALS].map );
+            shader_colormap_model_internal( "map_specular.color", "map_specular.has_tex", "map_specular_tex", material->layer[MATERIAL_CHANNEL_SPECULAR].map );
+            shader_colormap_model_internal( "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map );
+            shader_colormap_model_internal( "map_roughness.color", "map_roughness.has_tex", "map_roughness_tex", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map );
+            shader_colormap_model_internal( "map_metallic.color", "map_metallic.has_tex", "map_metallic_tex", material->layer[MATERIAL_CHANNEL_METALLIC].map );
+            shader_colormap_model_internal( "map_ao.color", "map_ao.has_tex", "map_ao_tex", material->layer[MATERIAL_CHANNEL_AO].map );
+            shader_colormap_model_internal( "map_ambient.color", "map_ambient.has_tex", "map_ambient_tex", material->layer[MATERIAL_CHANNEL_AMBIENT].map );
+            shader_colormap_model_internal( "map_emissive.color", "map_emissive.has_tex", "map_emissive_tex", material->layer[MATERIAL_CHANNEL_EMISSIVE].map );
             // shader_float( "specular_shininess", material->specular_shininess ); // unused, basic_specgloss.fs only
         }
 
