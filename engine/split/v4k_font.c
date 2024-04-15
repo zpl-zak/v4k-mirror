@@ -1886,7 +1886,7 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 
     // upload constant uniforms
-    shader_bind(f->program);
+    glUseProgram(f->program);
     glUniform1i(glGetUniformLocation(f->program, "sampler_font"), 0);
     glUniform1i(glGetUniformLocation(f->program, "sampler_meta"), 1);
     glUniform1i(glGetUniformLocation(f->program, "sampler_colors"), 2);
@@ -1948,7 +1948,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glBindVertexArray(f->vao);
 
     // update uniforms
-    shader_bind(f->program);
+    glUseProgram(f->program);
     glUniform1f(glGetUniformLocation(f->program, "scale_factor"), factor);
     glUniform2fv(glGetUniformLocation(f->program, "string_offset"), 1, &offset.x);
     glUniform1f(glGetUniformLocation(f->program, "offset_firstline"), f->ascent*f->factor);
@@ -1968,7 +1968,7 @@ void font_draw_cmd(font_t *f, const float *glyph_data, int glyph_idx, float fact
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, glyph_idx);
 
     // Restore modified GL state
-    shader_bind(last_program);
+    glUseProgram(last_program);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, last_texture0);

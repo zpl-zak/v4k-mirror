@@ -53,6 +53,9 @@ typedef struct renderstate_t {
     unsigned polygon_mode_face;
     unsigned polygon_mode_mode;
 
+    // Wireframe mode
+    bool wireframe_enabled;
+
     // Scissor test
     bool scissor_test_enabled;
 } renderstate_t;
@@ -638,7 +641,7 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     array(material_t) materials;
-    unsigned uniforms[NUM_MODEL_UNIFORMS];
+    int uniforms[NUM_MODEL_UNIFORMS];
     
     texture_t sky_refl, sky_env;
 

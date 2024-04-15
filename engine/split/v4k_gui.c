@@ -39,7 +39,7 @@ void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, ve
     renderstate_apply(&rect_rs);
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
-    shader_bind( program );
+    glUseProgram( program );
 
     glBindVertexArray( vao );
 
@@ -88,7 +88,7 @@ void gui_drawrect( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, ve
     glDisableVertexAttribArray(1);
     glBindVertexArray( 0 );
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    shader_bind( 0 );
+    glUseProgram( 0 );
 }
 
 // ----------------------------------------------------------------------------

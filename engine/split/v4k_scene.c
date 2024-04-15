@@ -558,6 +558,8 @@ void scene_render(int flags) {
 
 
             model->billboard = obj->billboard;
+            model->rs[RENDER_PASS_NORMAL].cull_face_enabled = flags&SCENE_CULLFACE ? 1 : 0;
+            model->rs[RENDER_PASS_NORMAL].polygon_mode_mode = flags&SCENE_WIREFRAME ? GL_LINE : GL_FILL;
             model_render(*model, cam->proj, cam->view, obj->transform, model->program);
 
             if( do_retexturing ) {

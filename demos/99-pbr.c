@@ -201,20 +201,31 @@ bool ModelLoad( Model *G, const char *_path ) {
     return true;
 }
 
+static renderstate_t g_renderstate = {0};
+
 void ModelRender( Model *G, const mat44 _worldRootMatrix ) {
     unsigned _shader = G->shader;
     shader_bind( _shader );
 
     shader_vec4("global_ambient", vec4(1,1,1,1)); // unused
 
+    do_once {
+        g_renderstate = renderstate();
+        g_renderstate.cull_face_enabled = 1;
+        g_renderstate.blend_enabled = 1;
+        g_renderstate.blend_src = GL_SRC_ALPHA;
+        g_renderstate.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+    }
+
     // loop thrice: first opaque, then transparent backface, then transparent frontface
     for(int j = 0; j < 3; ++j) {
         bool bTransparentPass = j > 0;
         if(bTransparentPass) {
-            glEnable( GL_BLEND );
-            glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-            glCullFace( j == 1 ? GL_FRONT : GL_BACK ); // glDepthMask( GL_FALSE);
+            g_renderstate.cull_face_mode = j == 1 ? GL_FRONT : GL_BACK;
+            // glCullFace( j == 1 ? GL_FRONT : GL_BACK ); // glDepthMask( GL_FALSE);
         }
+
+        renderstate_apply(&g_renderstate);
 
         mat44 mat_world; copy44(mat_world, _worldRootMatrix); // @fixme mMatrices[ node.mID ] * _worldRootMatrix
         shader_mat44( "mat_world", mat_world );

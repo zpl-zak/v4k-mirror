@@ -427,14 +427,14 @@ void shader_apply_param(unsigned shader, unsigned param_no) {
 
         if( strchr("ibfv", type[0]) ) {
             GLint shader_bak; glGetIntegerv(GL_CURRENT_PROGRAM, &shader_bak);
-            shader_bind(shader);
+            glUseProgram(shader);
             /**/ if(type[0] == 'i') glUniform1i(glGetUniformLocation(shader, name), setv.x);
             else if(type[0] == 'b') glUniform1i(glGetUniformLocation(shader, name), !!setv.x);
             else if(type[0] == 'f') glUniform1f(glGetUniformLocation(shader, name), setv.x);
             else if(type[3] == '2') glUniform2fv(glGetUniformLocation(shader, name), 1, &setv.x);
             else if(type[3] == '3') glUniform3fv(glGetUniformLocation(shader, name), 1, &setv.x);
             else if(type[3] == '4') glUniform4fv(glGetUniformLocation(shader, name), 1, &setv.x);
-            shader_bind(shader_bak);
+            glUseProgram(shader_bak);
         }
     }
 }
@@ -668,57 +668,35 @@ void ssbo_unbind(){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-typedef map(unsigned,int) uniform_binding;
 static __thread unsigned last_shader = -1;
-static __thread quarks_db uniform_names;
-static __thread map(handle, uniform_binding) uniforms;
 
 int shader_uniform(const char *name) {
-#if 0
-    do_once map_init(uniforms, less_int, hash_int);
-    if (!map_find(uniforms, last_shader)) {
-        uniform_binding names_map = 0;
-        map_init(names_map, less_int, hash_int);
-        map_insert(uniforms, last_shader, names_map);
-    }
-    
-    uniform_binding names = *map_find(uniforms, last_shader);
-    unsigned name_hash = quark_intern(&uniform_names, name);
-    if (!map_find(names, name_hash)) {
-        map_insert(names, name_hash, glGetUniformLocation(last_shader, name));
-    }
-
-    // int ret = glGetUniformLocation(last_shader, name);
-    // if( ret < 0 ) PRINTF("!cannot find uniform '%s' in shader program %d\n", name, (int)last_shader );
-    return *map_find(names, name_hash);
-#else
     return glGetUniformLocation(last_shader, name);
-#endif
 }
 unsigned shader_get_active() { return last_shader; }
-unsigned shader_bind(unsigned program) { if (program == last_shader) return last_shader; unsigned ret = last_shader; return glUseProgram(last_shader = program), ret; }
-static inline void shader_int_(unsigned uniform, int i)     { glUniform1i(uniform, i); }
-static inline void shader_float_(unsigned uniform, float f) { glUniform1f(uniform, f); }
-static inline void shader_vec2_(unsigned uniform, vec2 v)   { glUniform2fv(uniform, 1, &v.x); }
-static inline void shader_vec3_(unsigned uniform, vec3 v)   { glUniform3fv(uniform, 1, &v.x); }
-static inline void shader_vec3v_(unsigned uniform, int count, vec3 *v) { glUniform3fv(uniform, count, &v[0].x); }
-static inline void shader_vec4_(unsigned uniform, vec4 v)   { glUniform4fv(uniform, 1, &v.x); }
-static inline void shader_mat44_(unsigned uniform, mat44 m) { glUniformMatrix4fv(uniform, 1, GL_FALSE/*GL_TRUE*/, m); }
-static inline void shader_cubemap_(unsigned sampler, unsigned texture) { 
+unsigned shader_bind(unsigned program) { unsigned ret = last_shader; return glUseProgram(last_shader = program), ret; }
+static inline void shader_int_(int uniform, int i)     { glUniform1i(uniform, i); }
+static inline void shader_float_(int uniform, float f) { glUniform1f(uniform, f); }
+static inline void shader_vec2_(int uniform, vec2 v)   { glUniform2fv(uniform, 1, &v.x); }
+static inline void shader_vec3_(int uniform, vec3 v)   { glUniform3fv(uniform, 1, &v.x); }
+static inline void shader_vec3v_(int uniform, int count, vec3 *v) { glUniform3fv(uniform, count, &v[0].x); }
+static inline void shader_vec4_(int uniform, vec4 v)   { glUniform4fv(uniform, 1, &v.x); }
+static inline void shader_mat44_(int uniform, mat44 m) { glUniformMatrix4fv(uniform, 1, GL_FALSE/*GL_TRUE*/, m); }
+static inline void shader_cubemap_(int sampler, unsigned texture) { 
     int id = texture_unit();
     glUniform1i(sampler, id); 
     glActiveTexture(GL_TEXTURE0 + id); 
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
 }
-static inline void shader_bool_(unsigned uniform, bool x) { glUniform1i(uniform, x); }
-static inline void shader_uint_(unsigned uniform, unsigned x ) { glUniform1ui(uniform, x); }
-static inline void shader_texture_unit_(unsigned sampler, unsigned id, unsigned unit) {
+static inline void shader_bool_(int uniform, bool x) { glUniform1i(uniform, x); }
+static inline void shader_uint_(int uniform, unsigned x ) { glUniform1ui(uniform, x); }
+static inline void shader_texture_unit_(int sampler, unsigned id, unsigned unit) {
     // @todo. if tex.h == 1 ? GL_TEXTURE_1D : GL_TEXTURE_2D
     glUniform1i(sampler, unit);
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_2D, id);
 }
-static inline void shader_texture_(unsigned sampler, texture_t t) { shader_texture_unit_(sampler, t.id, texture_unit()); }
+static inline void shader_texture_(int sampler, texture_t t) { shader_texture_unit_(sampler, t.id, texture_unit()); }
 
 // public api
 void shader_int(const char *uniform, int i)     { glUniform1i(shader_uniform(uniform), i); }
@@ -1534,7 +1512,7 @@ void fullscreen_quad_rgb( texture_t texture ) {
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     renderstate_apply(&fullscreen_quad_rs);
-    shader_bind( program );
+    glUseProgram( program );
     float gamma = 1;
     glUniform1f( u_inv_gamma, gamma );
 
@@ -1549,7 +1527,7 @@ void fullscreen_quad_rgb( texture_t texture ) {
 
     glBindTexture( texture_type, 0 );
     glBindVertexArray( 0 );
-    shader_bind( 0 );
+    glUseProgram( 0 );
 //    glDisable( GL_BLEND );
 }
 
@@ -1567,7 +1545,7 @@ void fullscreen_quad_rgb_flipped( texture_t texture ) {
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     renderstate_apply(&fullscreen_quad_rs);
-    shader_bind( program );
+    glUseProgram( program );
     float gamma = 1;
     glUniform1f( u_inv_gamma, gamma );
 
@@ -1582,7 +1560,7 @@ void fullscreen_quad_rgb_flipped( texture_t texture ) {
 
     glBindTexture( texture_type, 0 );
     glBindVertexArray( 0 );
-    shader_bind( 0 );
+    glUseProgram( 0 );
 //    glDisable( GL_BLEND );
 }
 
@@ -1604,7 +1582,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3] ) {
     }
 
     renderstate_apply(&fullscreen_quad_rs);
-    shader_bind( program );
+    glUseProgram( program );
     // glUniform1f( u_gamma, gamma );
 
     glBindVertexArray( vao );
@@ -1627,7 +1605,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3] ) {
 
     glBindTexture( GL_TEXTURE_2D, 0 );
     glBindVertexArray( 0 );
-    shader_bind( 0 );
+    glUseProgram( 0 );
 //    glDisable( GL_BLEND );
 }
 
@@ -1649,7 +1627,7 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3] ) {
     }
 
     renderstate_apply(&fullscreen_quad_rs);
-    shader_bind( program );
+    glUseProgram( program );
     // glUniform1f( u_gamma, gamma );
 
     glBindVertexArray( vao );
@@ -1672,7 +1650,7 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3] ) {
 
     glBindTexture( GL_TEXTURE_2D, 0 );
     glBindVertexArray( 0 );
-    shader_bind( 0 );
+    glUseProgram( 0 );
 //    glDisable( GL_BLEND );
 }
 
@@ -1977,7 +1955,7 @@ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
     for(int i = 0; i < 6; ++i) {
         glBindFramebuffer(GL_FRAMEBUFFER, sky->framebuffers[i]);
         glViewport(0, 0, WIDTH, HEIGHT);
-        shader_bind(sky->program);
+        glUseProgram(sky->program);
 
         mat44 proj; perspective44(proj, 90.0f, WIDTH / (float)HEIGHT, 0.1f, 500.f);
         mat44 view; lookat44(view, vec3(0,0,0), directions[i], vec3(0,-1,0));
@@ -2528,7 +2506,7 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
 
     p->program = shader(vs, fs2, "vtexcoord", "fragColor" , NULL);
 
-    shader_bind(p->program); // needed?
+    glUseProgram(p->program); // needed?
 
     for( int i = 0; i < countof(p->uniforms); ++i ) p->uniforms[i] = -1;
 
@@ -2692,7 +2670,7 @@ bool postfx_end(postfx *fx) {
         passfx *pass = &fx->pass[i];
         if( pass->enabled ) {
             if( !pass->program ) { --num_active_passes; continue; }
-            shader_bind(pass->program);
+            glUseProgram(pass->program);
 
             // bind texture to texture unit 0
             // shader_texture_unit(fx->diffuse[frame], 0);
@@ -2731,7 +2709,7 @@ bool postfx_end(postfx *fx) {
             if (bound) fbo_unbind();
         }
     }
-    shader_bind(0);
+    glUseProgram(0);
 
     // restore clear color: needed in case transparent window is being used (alpha != 0)
     glClearColor(0,0,0,1); // @transparent
@@ -2842,7 +2820,7 @@ static void brdf_load() {
     glDisable(GL_BLEND);
 
     handle old_shader = last_shader;
-    shader_bind( program );
+    glUseProgram( program );
 
     glViewport(0, 0, 512, 512);
 
@@ -2856,7 +2834,7 @@ static void brdf_load() {
 
     glBindVertexArray( 0 );
 
-    shader_bind( last_shader );
+    glUseProgram( last_shader );
 
     fbo_unbind();
     fbo_destroy(lut_fbo);
@@ -2978,7 +2956,7 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
         struct tm *tm = localtime(&tmsec);
         s->t += delta * 1000;
 
-        shader_bind(s->program);
+        glUseProgram(s->program);
         glUniform1f(s->uniforms[iGlobalTime], s->t / 1000.f );
         glUniform1f(s->uniforms[iGlobalFrame], s->frame++);
         glUniform1f(s->uniforms[iGlobalDelta], delta / 1000.f );
@@ -3148,6 +3126,8 @@ void model_set_texture(model_t m, texture_t t) {
     }
 }
 
+//@fixme: some locations are invalid, find out why
+#if 0
 static
 void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view, mat44 model) {  // @todo: cache uniform locs
     if(!m.iqm) return;
@@ -3179,7 +3159,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         shader_int_(loc, m.billboard);
     }
     if( (loc = m.uniforms[MODEL_UNIFORM_TEXLIT]) >= 0 ) {
-        shader_int_(loc, (m.lightmap.w != 0));
+        shader_bool_(loc, (m.lightmap.w != 0));
     }
     if ((loc = m.uniforms[MODEL_UNIFORM_MODEL]) >= 0) {
         shader_mat44_(loc, model);
@@ -3199,7 +3179,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     if( q->numanims )
         if( (loc = m.uniforms[MODEL_UNIFORM_VS_BONE_MATRIX]) >= 0 ) glUniformMatrix3x4fv( loc, q->numjoints, GL_FALSE, q->outframe[0]);
     if ((loc = m.uniforms[MODEL_UNIFORM_U_MATCAPS]) >= 0) {
-        shader_int_(loc, m.flags & MODEL_MATCAPS ? GL_TRUE:GL_FALSE);
+        shader_bool_(loc, m.flags & MODEL_MATCAPS ? GL_TRUE:GL_FALSE);
     }
 
     if (m.shading == SHADING_PBR) {
@@ -3224,6 +3204,132 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         shader_bind(old_shader);
     }
 }
+#else
+static
+void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view, mat44 model) {  // @todo: cache uniform locs
+    if(!m.iqm) return;
+    iqm_t *q = m.iqm;
+
+    shader_bind(shader);
+    int loc;
+    //if( (loc = glGetUniformLocation(shader, "M")) >= 0 ) glUniformMatrix4fv( loc, 1, GL_FALSE/*GL_TRUE*/, m); // RIM
+    if( (loc = glGetUniformLocation(shader, "MV")) >= 0 ) {
+        glUniformMatrix4fv( loc, 1, GL_FALSE, mv);
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "u_mv")) >= 0 ) {
+        glUniformMatrix4fv( loc, 1, GL_FALSE, mv);
+    }
+    if( (loc = glGetUniformLocation(shader, "MVP")) >= 0 ) {
+        mat44 mvp; multiply44x2(mvp, proj, mv); // multiply44x3(mvp, proj, view, model);
+        glUniformMatrix4fv( loc, 1, GL_FALSE, mvp);
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "u_mvp")) >= 0 ) {
+        mat44 mvp; multiply44x2(mvp, proj, mv); // multiply44x3(mvp, proj, view, model);
+        glUniformMatrix4fv( loc, 1, GL_FALSE, mvp);
+    }
+    if( (loc = glGetUniformLocation(shader, "VP")) >= 0 ) {
+        mat44 vp; multiply44x2(vp, proj, view);
+        glUniformMatrix4fv( loc, 1, GL_FALSE, vp);
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "u_vp")) >= 0 ) {
+        mat44 vp; multiply44x2(vp, proj, view);
+        glUniformMatrix4fv( loc, 1, GL_FALSE, vp);
+    }
+    if( (loc = glGetUniformLocation(shader, "u_cam_pos")) >= 0 ) {
+        vec3 pos = vec3(view[12], view[13], view[14]);
+        glUniform3fv( loc, 1, &pos.x );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "cam_pos")) >= 0 ) {
+        vec3 pos = vec3(view[12], view[13], view[14]);
+        glUniform3fv( loc, 1, &pos.x );
+    }
+    if( (loc = glGetUniformLocation(shader, "u_cam_dir")) >= 0 ) {
+        vec3 dir = norm3(vec3(view[2], view[6], view[10]));
+        glUniform3fv( loc, 1, &dir.x );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "cam_dir")) >= 0 ) {
+        vec3 dir = norm3(vec3(view[2], view[6], view[10]));
+        glUniform3fv( loc, 1, &dir.x );
+    }
+    if( (loc = glGetUniformLocation(shader, "billboard")) >= 0 ) {
+        glUniform1i( loc, m.billboard );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "u_billboard")) >= 0 ) {
+        glUniform1i( loc, m.billboard );
+    }
+    if( (loc = glGetUniformLocation(shader, "texlit")) >= 0 ) {
+        glUniform1i( loc, (m.lightmap.w != 0) );
+    }
+    else
+    if( (loc = glGetUniformLocation(shader, "u_texlit")) >= 0 ) {
+        glUniform1i( loc, (m.lightmap.w != 0) );
+    }
+#if 0
+    // @todo: mat44 projview (useful?)
+#endif
+    if ((loc = glGetUniformLocation(shader, "M")) >= 0) {
+        glUniformMatrix4fv(loc, 1, GL_FALSE, model);
+    }
+    else
+    if ((loc = glGetUniformLocation(shader, "model")) >= 0) {
+        glUniformMatrix4fv(loc, 1, GL_FALSE, model);
+    }
+    if ((loc = glGetUniformLocation(shader, "V")) >= 0) {
+        glUniformMatrix4fv(loc, 1, GL_FALSE, view);
+    }
+    else
+    if ((loc = glGetUniformLocation(shader, "view")) >= 0) {
+        glUniformMatrix4fv(loc, 1, GL_FALSE, view);
+    }
+    if ((loc = glGetUniformLocation(shader, "inv_view")) >= 0) {
+        mat44 inv_view;
+        invert44( inv_view, view);
+        glUniformMatrix4fv(loc, 1, GL_FALSE, inv_view);
+    }
+    if ((loc = glGetUniformLocation(shader, "P")) >= 0) {
+        glUniformMatrix4fv(loc, 1, GL_FALSE, proj);
+    }
+    else
+    if ((loc = glGetUniformLocation(shader, "proj")) >= 0) {
+        glUniformMatrix4fv(loc, 1, GL_FALSE, proj);
+    }
+    if( (loc = glGetUniformLocation(shader, "SKINNED")) >= 0 ) glUniform1i( loc, q->numanims ? GL_TRUE : GL_FALSE);
+    if( q->numanims )
+    if( (loc = glGetUniformLocation(shader, "vsBoneMatrix")) >= 0 ) glUniformMatrix3x4fv( loc, q->numjoints, GL_FALSE, q->outframe[0]);
+
+    if ((loc = glGetUniformLocation(shader, "u_matcaps")) >= 0) {
+        glUniform1i(loc, m.flags & MODEL_MATCAPS ? GL_TRUE:GL_FALSE);
+    }
+
+    if (m.shading == SHADING_PBR) {
+        handle old_shader = last_shader;
+        shader_bind(shader);
+        shader_vec2( "resolution", vec2(window_width(),window_height()));
+        
+        bool has_tex_skysphere = m.sky_refl.id != texture_checker().id;
+        bool has_tex_skyenv = m.sky_env.id != texture_checker().id;
+        shader_bool( "has_tex_skysphere", has_tex_skysphere );
+        shader_bool( "has_tex_skyenv", has_tex_skyenv );
+        if( has_tex_skysphere ) {
+            float mipCount = floor( log2( max(m.sky_refl.w, m.sky_refl.h) ) );
+            shader_texture("tex_skysphere", m.sky_refl);
+            shader_float( "skysphere_mip_count", mipCount );
+        }
+        if( has_tex_skyenv ) {
+            shader_texture( "tex_skyenv", m.sky_env );
+        }
+        shader_texture( "tex_brdf_lut", brdf_lut() );
+        shader_uint( "frame_count", (unsigned)window_frame() );
+        shader_bind(old_shader);
+    }
+}
+#endif
 static
 void model_set_state(model_t m) {
     if(!m.iqm) return;
@@ -4037,6 +4143,7 @@ void model_draw_call(model_t m, int shader) {
                     glUniform4f(loc, m.materials[i].layer[0].map.color.r, m.materials[i].layer[0].map.color.g, m.materials[i].layer[0].map.color.b, m.materials[i].layer[0].map.color.a);
                 }
             }
+
         } else {
             const material_t *material = &m.materials[i];
             shader_colormap_model_internal( "map_diffuse.color", "map_diffuse.has_tex", "map_diffuse_tex", material->layer[MATERIAL_CHANNEL_DIFFUSE].map );
@@ -4083,59 +4190,104 @@ void model_render(model_t m, mat44 proj, mat44 view, mat44 model, int shader) {
 
 static inline
 void model_init_uniforms(model_t *m) {
+    for (int i=0; i<NUM_MODEL_UNIFORMS; ++i) m->uniforms[i] = -1;
     unsigned shader = m->program;
-    if (glGetUniformLocation(shader, "u_mv") >= 0)
-        m->uniforms[MODEL_UNIFORM_MV] = glGetUniformLocation(shader, "u_mv");
+    int loc;
+    if ((loc = glGetUniformLocation(shader, "u_mv")) >= 0)
+        m->uniforms[MODEL_UNIFORM_MV] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_MV] = glGetUniformLocation(shader, "MV");
-    if (glGetUniformLocation(shader, "u_mvp") >= 0)
-        m->uniforms[MODEL_UNIFORM_MVP] = glGetUniformLocation(shader, "u_mvp");
+    if ((loc = glGetUniformLocation(shader, "MV")) >= 0)
+        m->uniforms[MODEL_UNIFORM_MV] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "u_mvp")) >= 0)
+        m->uniforms[MODEL_UNIFORM_MVP] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_MVP] = glGetUniformLocation(shader, "MVP");
-    if (glGetUniformLocation(shader, "u_vp") >= 0)
-        m->uniforms[MODEL_UNIFORM_VP] = glGetUniformLocation(shader, "u_vp");
+    if ((loc = glGetUniformLocation(shader, "MVP")) >= 0)
+        m->uniforms[MODEL_UNIFORM_MVP] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "u_vp")) >= 0)
+        m->uniforms[MODEL_UNIFORM_VP] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_VP] = glGetUniformLocation(shader, "VP");
-    if (glGetUniformLocation(shader, "u_cam_pos") >= 0)
-        m->uniforms[MODEL_UNIFORM_CAM_POS] = glGetUniformLocation(shader, "u_cam_pos");
+    if ((loc = glGetUniformLocation(shader, "VP")) >= 0)
+        m->uniforms[MODEL_UNIFORM_VP] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "u_cam_pos")) >= 0)
+        m->uniforms[MODEL_UNIFORM_CAM_POS] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_CAM_POS] = glGetUniformLocation(shader, "cam_pos");
-    if (glGetUniformLocation(shader, "u_cam_dir") >= 0)
-        m->uniforms[MODEL_UNIFORM_CAM_DIR] = glGetUniformLocation(shader, "u_cam_dir");
+    if ((loc = glGetUniformLocation(shader, "cam_pos")) >= 0)
+        m->uniforms[MODEL_UNIFORM_CAM_POS] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "u_cam_dir")) >= 0)
+        m->uniforms[MODEL_UNIFORM_CAM_DIR] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_CAM_DIR] = glGetUniformLocation(shader, "cam_dir");
-    if (glGetUniformLocation(shader, "u_billboard") >= 0)
-        m->uniforms[MODEL_UNIFORM_BILLBOARD] = glGetUniformLocation(shader, "u_billboard");
+    if ((loc = glGetUniformLocation(shader, "cam_dir")) >= 0)
+        m->uniforms[MODEL_UNIFORM_CAM_DIR] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "u_billboard")) >= 0)
+        m->uniforms[MODEL_UNIFORM_BILLBOARD] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_BILLBOARD] = glGetUniformLocation(shader, "billboard");
-    if (glGetUniformLocation(shader, "u_texlit") >= 0)
-        m->uniforms[MODEL_UNIFORM_TEXLIT] = glGetUniformLocation(shader, "u_texlit");
+    if ((loc = glGetUniformLocation(shader, "billboard")) >= 0)
+        m->uniforms[MODEL_UNIFORM_BILLBOARD] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "u_texlit")) >= 0)
+        m->uniforms[MODEL_UNIFORM_TEXLIT] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_TEXLIT] = glGetUniformLocation(shader, "texlit");
-    if (glGetUniformLocation(shader, "M") >= 0)
-        m->uniforms[MODEL_UNIFORM_MODEL] = glGetUniformLocation(shader, "M");
+    if ((loc = glGetUniformLocation(shader, "texlit")) >= 0)
+        m->uniforms[MODEL_UNIFORM_TEXLIT] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "M")) >= 0)
+        m->uniforms[MODEL_UNIFORM_MODEL] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_MODEL] = glGetUniformLocation(shader, "model");
-    if (glGetUniformLocation(shader, "V") >= 0)
-        m->uniforms[MODEL_UNIFORM_VIEW] = glGetUniformLocation(shader, "V");
+    if ((loc = glGetUniformLocation(shader, "model")) >= 0)
+        m->uniforms[MODEL_UNIFORM_MODEL] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "V")) >= 0)
+        m->uniforms[MODEL_UNIFORM_VIEW] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_VIEW] = glGetUniformLocation(shader, "view");
-    m->uniforms[MODEL_UNIFORM_INV_VIEW] = glGetUniformLocation(shader, "inv_view");
-    if (glGetUniformLocation(shader, "P") >= 0)
-        m->uniforms[MODEL_UNIFORM_PROJ] = glGetUniformLocation(shader, "P");
+    if ((loc = glGetUniformLocation(shader, "view")) >= 0)
+        m->uniforms[MODEL_UNIFORM_VIEW] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "inv_view")) >= 0)
+        m->uniforms[MODEL_UNIFORM_INV_VIEW] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "P")) >= 0)
+        m->uniforms[MODEL_UNIFORM_PROJ] = loc;
     else
-        m->uniforms[MODEL_UNIFORM_PROJ] = glGetUniformLocation(shader, "proj");
-    m->uniforms[MODEL_UNIFORM_SKINNED] = glGetUniformLocation(shader, "SKINNED");
-    m->uniforms[MODEL_UNIFORM_VS_BONE_MATRIX] = glGetUniformLocation(shader, "vsBoneMatrix");
-    m->uniforms[MODEL_UNIFORM_U_MATCAPS] = glGetUniformLocation(shader, "u_matcaps");
-    m->uniforms[MODEL_UNIFORM_HAS_TEX_SKYSPHERE] = glGetUniformLocation(shader, "has_tex_skysphere");
-    m->uniforms[MODEL_UNIFORM_HAS_TEX_SKYENV] = glGetUniformLocation(shader, "has_tex_skyenv");
-    m->uniforms[MODEL_UNIFORM_TEX_SKYSPHERE] = glGetUniformLocation(shader, "tex_skysphere");
-    m->uniforms[MODEL_UNIFORM_SKYSPHERE_MIP_COUNT] = glGetUniformLocation(shader, "skysphere_mip_count");
-    m->uniforms[MODEL_UNIFORM_TEX_SKYENV] = glGetUniformLocation(shader, "tex_skyenv");
-    m->uniforms[MODEL_UNIFORM_TEX_BRDF_LUT] = glGetUniformLocation(shader, "tex_brdf_lut");
-    m->uniforms[MODEL_UNIFORM_FRAME_COUNT] = glGetUniformLocation(shader, "frame_count");
-    m->uniforms[MODEL_UNIFORM_RESOLUTION] = glGetUniformLocation(shader, "resolution");
+    if ((loc = glGetUniformLocation(shader, "proj")) >= 0)
+        m->uniforms[MODEL_UNIFORM_PROJ] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "SKINNED")) >= 0)
+        m->uniforms[MODEL_UNIFORM_SKINNED] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "vsBoneMatrix")) >= 0)
+        m->uniforms[MODEL_UNIFORM_VS_BONE_MATRIX] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "u_matcaps")) >= 0)
+        m->uniforms[MODEL_UNIFORM_U_MATCAPS] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "has_tex_skysphere")) >= 0)
+        m->uniforms[MODEL_UNIFORM_HAS_TEX_SKYSPHERE] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "has_tex_skyenv")) >= 0)
+        m->uniforms[MODEL_UNIFORM_HAS_TEX_SKYENV] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "tex_skysphere")) >= 0)
+        m->uniforms[MODEL_UNIFORM_TEX_SKYSPHERE] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "skysphere_mip_count")) >= 0)
+        m->uniforms[MODEL_UNIFORM_SKYSPHERE_MIP_COUNT] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "tex_skyenv")) >= 0)
+        m->uniforms[MODEL_UNIFORM_TEX_SKYENV] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "tex_brdf_lut")) >= 0)
+        m->uniforms[MODEL_UNIFORM_TEX_BRDF_LUT] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "frame_count")) >= 0)
+        m->uniforms[MODEL_UNIFORM_FRAME_COUNT] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "resolution")) >= 0)
+        m->uniforms[MODEL_UNIFORM_RESOLUTION] = loc;
 }
 
 void model_shading(model_t *m, int shading) {
@@ -4151,7 +4303,7 @@ void model_shading(model_t *m, int shading) {
 
     // rebind shader
     // @fixme: app crashes rn
-    // shader_bind(0);
+    // glUseProgram(0);
     // glDeleteProgram(m->program);
     const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
     int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,

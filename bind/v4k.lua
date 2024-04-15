@@ -1055,6 +1055,7 @@ typedef struct renderstate_t {
     float point_size;
     unsigned polygon_mode_face;
     unsigned polygon_mode_mode;
+    bool wireframe_enabled;
     bool scissor_test_enabled;
 } renderstate_t;
  renderstate_t renderstate();
@@ -1400,7 +1401,7 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     material_t* materials;
-    unsigned uniforms[NUM_MODEL_UNIFORMS];
+    int uniforms[NUM_MODEL_UNIFORMS];
     texture_t sky_refl, sky_env;
     texture_t lightmap;
     float *lmdata;
