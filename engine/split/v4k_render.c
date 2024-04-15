@@ -99,7 +99,7 @@ renderstate_t renderstate() {
 
     // Set default polygon mode to fill
     state.polygon_mode_face = GL_FRONT_AND_BACK;
-    state.polygon_mode_mode = GL_FILL;
+    state.polygon_mode_draw = GL_FILL;
 
     // Disable scissor test by default
     state.scissor_test_enabled = GL_FALSE;
@@ -187,7 +187,7 @@ void renderstate_apply(const renderstate_t *state) {
         }
 
         // Apply polygon mode
-        glPolygonMode(state->polygon_mode_face, state->polygon_mode_mode);
+        glPolygonMode(state->polygon_mode_face, state->polygon_mode_draw);
 
         // Apply scissor test
         if (state->scissor_test_enabled) {

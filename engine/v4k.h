@@ -3140,7 +3140,7 @@ typedef struct renderstate_t {
 
     // Polygon mode
     unsigned polygon_mode_face;
-    unsigned polygon_mode_mode;
+    unsigned polygon_mode_draw;
 
     // Scissor test
     bool scissor_test_enabled;
