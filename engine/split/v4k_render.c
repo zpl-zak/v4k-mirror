@@ -77,7 +77,7 @@ renderstate_t renderstate() {
     state.blend_dst = GL_ZERO;
 
     // Disable culling by default but cull back faces
-    state.cull_face_enabled = GL_TRUE;
+    state.cull_face_enabled = GL_FALSE;
     state.cull_face_mode = GL_BACK;
 
     // Disable stencil test by default
@@ -1516,7 +1516,7 @@ void fullscreen_quad_rs_init() {
         fullscreen_quad_rs.blend_enabled = true;
         fullscreen_quad_rs.blend_src = GL_SRC_ALPHA;
         fullscreen_quad_rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
-        fullscreen_quad_rs.front_face = GL_CCW;
+        fullscreen_quad_rs.front_face = GL_CW;
     }
 }
 
@@ -2055,9 +2055,9 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
 
     do_once {
         skybox_rs = renderstate();
-        skybox_rs.depth_test_enabled = 0;
+        skybox_rs.depth_test_enabled = 1;
         skybox_rs.cull_face_enabled = 0;
-        skybox_rs.front_face = GL_CW;
+        skybox_rs.front_face = GL_CCW;
     }
 
     // we have to reset clear color here, because of wrong alpha compositing issues on native transparent windows otherwise
@@ -2671,7 +2671,9 @@ bool postfx_end(postfx *fx) {
     do_once {
         postfx_rs = renderstate();
         // disable depth test in 2d rendering
-        postfx_rs.depth_test_enabled = 0;
+        postfx_rs.depth_test_enabled = 1;
+        postfx_rs.cull_face_enabled = 0;
+        postfx_rs.front_face = GL_CCW;
     }
 
     // unbind postfx fbo

@@ -17251,7 +17251,7 @@ renderstate_t renderstate() {
     state.blend_dst = GL_ZERO;
 
     // Disable culling by default but cull back faces
-    state.cull_face_enabled = GL_TRUE;
+    state.cull_face_enabled = GL_FALSE;
     state.cull_face_mode = GL_BACK;
 
     // Disable stencil test by default
@@ -18690,7 +18690,7 @@ void fullscreen_quad_rs_init() {
         fullscreen_quad_rs.blend_enabled = true;
         fullscreen_quad_rs.blend_src = GL_SRC_ALPHA;
         fullscreen_quad_rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
-        fullscreen_quad_rs.front_face = GL_CCW;
+        fullscreen_quad_rs.front_face = GL_CW;
     }
 }
 
@@ -19229,9 +19229,9 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
 
     do_once {
         skybox_rs = renderstate();
-        skybox_rs.depth_test_enabled = 0;
+        skybox_rs.depth_test_enabled = 1;
         skybox_rs.cull_face_enabled = 0;
-        skybox_rs.front_face = GL_CW;
+        skybox_rs.front_face = GL_CCW;
     }
 
     // we have to reset clear color here, because of wrong alpha compositing issues on native transparent windows otherwise
@@ -19845,7 +19845,9 @@ bool postfx_end(postfx *fx) {
     do_once {
         postfx_rs = renderstate();
         // disable depth test in 2d rendering
-        postfx_rs.depth_test_enabled = 0;
+        postfx_rs.depth_test_enabled = 1;
+        postfx_rs.cull_face_enabled = 0;
+        postfx_rs.front_face = GL_CCW;
     }
 
     // unbind postfx fbo
@@ -23359,15 +23361,23 @@ static void sprite_init() {
     }
 }
 
+static renderstate_t sprite_rs;
+
 void sprite_flush() {
+    do_once {
+        sprite_rs = renderstate();
+        sprite_rs.depth_test_enabled = 1;
+        sprite_rs.blend_enabled = 1;
+        sprite_rs.cull_face_enabled = 0;
+        sprite_rs.front_face = GL_CCW;
+    }
+    
     profile("Sprite.rebuild_time") {
         sprite_rebuild_meshes();
     }
     profile("Sprite.render_time") {
         // setup rendering state
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glDepthFunc(GL_LEQUAL); // try to help with zfighting
+        renderstate_apply(&sprite_rs);
 
         // 3d
         mat44 mvp3d; multiply44x2(mvp3d, camera_get_active()->proj, camera_get_active()->view);
@@ -23394,10 +23404,7 @@ void sprite_flush() {
         sprite_render_meshes_group(&sprite_group[SPRITE_ADDITIVE], GL_SRC_ALPHA, GL_ONE, mvp2d );
 
         // restore rendering state
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_BLEND);
-        glDepthFunc(GL_LESS);
-        shader_bind(0);
+        glUseProgram(0);
     }
 }
 
