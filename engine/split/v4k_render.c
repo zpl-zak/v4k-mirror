@@ -2649,9 +2649,11 @@ bool postfx_end(postfx *fx) {
     do_once {
         postfx_rs = renderstate();
         // disable depth test in 2d rendering
-        postfx_rs.depth_test_enabled = 1;
+        postfx_rs.depth_test_enabled = 0;
         postfx_rs.cull_face_enabled = 0;
-        postfx_rs.front_face = GL_CCW;
+        postfx_rs.blend_enabled = 1;
+        postfx_rs.blend_src = GL_SRC_ALPHA;
+        postfx_rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
     }
 
     // unbind postfx fbo
