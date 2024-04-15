@@ -17414,8 +17414,6 @@ unsigned shader(const char *vs, const char *fs, const char *attribs, const char 
     return shader_geom(NULL, vs, fs, attribs, fragcolor, defines);
 }
 
-static __thread map(unsigned, unsigned) shader_instances;
-
 static inline
 char *shader_preprocess(const char *src, const char *defines) {
     if (!src) return NULL;
@@ -17433,18 +17431,6 @@ char *shader_preprocess(const char *src, const char *defines) {
 }
 
 unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines) {
-    do_once {
-        map_init(shader_instances, less_int, hash_int);
-    }
-
-    // Hash shader input and check if we already have an instance made
-    unsigned shader_hash = hash_str(va("%s%s%s%s%s%s", gs, vs, fs, attribs, fragcolor, defines));
-    unsigned *existing = map_find(shader_instances, shader_hash);
-    if (existing) {
-        PRINTF("Shader instance reused\n");
-        return *existing;
-    }
-
     PRINTF(/*"!"*/"Compiling shader\n");
 
     char *glsl_defines = "";
@@ -17563,8 +17549,6 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
         map_insert(shader_reflect, program, props);
         for( int i = 0; i < array_count(props); ++i ) shader_apply_param(program, i);
     }
-
-    map_insert(shader_instances, shader_hash, program);
 
     return program;
 }
