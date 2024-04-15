@@ -3691,6 +3691,34 @@ enum RENDER_PASS {
     NUM_RENDER_PASSES
 };
 
+enum MODEL_UNIFORMS {
+    MODEL_UNIFORM_MV,
+    MODEL_UNIFORM_MVP,
+    MODEL_UNIFORM_VP,
+    MODEL_UNIFORM_CAM_POS,
+    MODEL_UNIFORM_CAM_DIR,
+    MODEL_UNIFORM_BILLBOARD,
+    MODEL_UNIFORM_TEXLIT,
+    MODEL_UNIFORM_MODEL,
+    MODEL_UNIFORM_VIEW,
+    MODEL_UNIFORM_INV_VIEW,
+    MODEL_UNIFORM_PROJ,
+    MODEL_UNIFORM_SKINNED,
+    MODEL_UNIFORM_VS_BONE_MATRIX,
+    MODEL_UNIFORM_U_MATCAPS,
+    MODEL_UNIFORM_RESOLUTION,
+    MODEL_UNIFORM_HAS_TEX_SKYSPHERE,
+    MODEL_UNIFORM_HAS_TEX_SKYENV,
+    MODEL_UNIFORM_TEX_SKYSPHERE,
+    MODEL_UNIFORM_SKYSPHERE_MIP_COUNT,
+    MODEL_UNIFORM_TEX_SKYENV,
+    MODEL_UNIFORM_TEX_BRDF_LUT,
+    MODEL_UNIFORM_FRAME_COUNT,
+
+    NUM_MODEL_UNIFORMS
+};
+
+
 typedef struct model_t {
     struct iqm_t *iqm; // private
 
@@ -3699,6 +3727,7 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     array(material_t) materials;
+    unsigned uniforms[NUM_MODEL_UNIFORMS];
     
     texture_t sky_refl, sky_env;
 
