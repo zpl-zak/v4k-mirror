@@ -260,6 +260,8 @@ void glNewFrame() {
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 
+static bool cook_done = false;
+
 bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     // abort run if any test suite failed in unit-test mode
     ifdef(debug, if( flag("--test") ) exit( test_errors ? -test_errors : 0 ));
@@ -448,6 +450,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     }
 
     if(cook_cancelling) cook_stop(), exit(-1);
+    cook_done = true;
 
     v4k_post_init(mode->refreshRate);
     return true;
@@ -655,6 +658,17 @@ int window_swap() {
         window_shutdown();
         return 0;
     }
+
+    static uint64_t capture_frame = 0;
+    if (cook_done && optioni("--capture", 0) && capture_frame++ == optioni("--capture", 0)) {
+        void *rgb = screenshot(3);
+        stbi_flip_vertically_on_write(true);
+        if(!stbi_write_png(va("tests/out/%s.png", argv(0)), w, h, 3, rgb, 3 * w) ) {
+            PANIC("!could not write screenshot file `%s`\n", screenshot_file);
+        }
+        exit(0);
+    }
+
     return 1;
 }
 

@@ -587,6 +587,8 @@ rem del ??-*.*                      > nul 2> nul
     rd /q /s _fwk                   > nul 2> nul
     rd /q /s _cache                 > nul 2> nul
     rd /q /s _deploy                > nul 2> nul
+    rd /q /s tests\out              > nul 2> nul
+    rd /q /s tests\diff             > nul 2> nul
 rem rd /q /s _project               > nul 2> nul
     del tcc.bat                     > nul 2> nul
     del sh.bat                      > nul 2> nul
