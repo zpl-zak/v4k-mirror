@@ -339,7 +339,7 @@ void sprite_flush() {
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
         glDepthFunc(GL_LESS);
-        glUseProgram(0);
+        shader_bind(0);
     }
 }
 

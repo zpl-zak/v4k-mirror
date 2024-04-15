@@ -240,6 +240,8 @@ unsigned shader(const char *vs, const char *fs, const char *attribs, const char 
     return shader_geom(NULL, vs, fs, attribs, fragcolor, defines);
 }
 
+static __thread map(unsigned, unsigned) shader_instances;
+
 static inline
 char *shader_preprocess(const char *src, const char *defines) {
     if (!src) return NULL;
@@ -257,6 +259,18 @@ char *shader_preprocess(const char *src, const char *defines) {
 }
 
 unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines) {
+    do_once {
+        map_init(shader_instances, less_int, hash_int);
+    }
+
+    // Hash shader input and check if we already have an instance made
+    unsigned shader_hash = hash_str(va("%s%s%s%s%s%s", gs, vs, fs, attribs, fragcolor, defines));
+    unsigned *existing = map_find(shader_instances, shader_hash);
+    if (existing) {
+        PRINTF("Shader instance reused\n");
+        return *existing;
+    }
+
     PRINTF(/*"!"*/"Compiling shader\n");
 
     char *glsl_defines = "";
@@ -376,6 +390,8 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
         for( int i = 0; i < array_count(props); ++i ) shader_apply_param(program, i);
     }
 
+    map_insert(shader_instances, shader_hash, program);
+
     return program;
 }
 
@@ -427,14 +443,14 @@ void shader_apply_param(unsigned shader, unsigned param_no) {
 
         if( strchr("ibfv", type[0]) ) {
             GLint shader_bak; glGetIntegerv(GL_CURRENT_PROGRAM, &shader_bak);
-            glUseProgram(shader);
+            shader_bind(shader);
             /**/ if(type[0] == 'i') glUniform1i(glGetUniformLocation(shader, name), setv.x);
             else if(type[0] == 'b') glUniform1i(glGetUniformLocation(shader, name), !!setv.x);
             else if(type[0] == 'f') glUniform1f(glGetUniformLocation(shader, name), setv.x);
             else if(type[3] == '2') glUniform2fv(glGetUniformLocation(shader, name), 1, &setv.x);
             else if(type[3] == '3') glUniform3fv(glGetUniformLocation(shader, name), 1, &setv.x);
             else if(type[3] == '4') glUniform4fv(glGetUniformLocation(shader, name), 1, &setv.x);
-            glUseProgram(shader_bak);
+            shader_bind(shader_bak);
         }
     }
 }
@@ -692,7 +708,7 @@ int shader_uniform(const char *name) {
     return *map_find(names, name_hash);
 }
 unsigned shader_get_active() { return last_shader; }
-unsigned shader_bind(unsigned program) { unsigned ret = last_shader; return glUseProgram(last_shader = program), ret; }
+unsigned shader_bind(unsigned program) { if (program == last_shader) return last_shader; unsigned ret = last_shader; return glUseProgram(last_shader = program), ret; }
 void shader_int(const char *uniform, int i)     { glUniform1i(shader_uniform(uniform), i); }
 void shader_float(const char *uniform, float f) { glUniform1f(shader_uniform(uniform), f); }
 void shader_vec2(const char *uniform, vec2 v)   { glUniform2fv(shader_uniform(uniform), 1, &v.x); }
@@ -1506,7 +1522,7 @@ void fullscreen_quad_rgb( texture_t texture ) {
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     renderstate_apply(&fullscreen_quad_rs);
-    glUseProgram( program );
+    shader_bind( program );
     float gamma = 1;
     glUniform1f( u_inv_gamma, gamma );
 
@@ -1521,7 +1537,7 @@ void fullscreen_quad_rgb( texture_t texture ) {
 
     glBindTexture( texture_type, 0 );
     glBindVertexArray( 0 );
-    glUseProgram( 0 );
+    shader_bind( 0 );
 //    glDisable( GL_BLEND );
 }
 
@@ -1539,7 +1555,7 @@ void fullscreen_quad_rgb_flipped( texture_t texture ) {
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     renderstate_apply(&fullscreen_quad_rs);
-    glUseProgram( program );
+    shader_bind( program );
     float gamma = 1;
     glUniform1f( u_inv_gamma, gamma );
 
@@ -1554,7 +1570,7 @@ void fullscreen_quad_rgb_flipped( texture_t texture ) {
 
     glBindTexture( texture_type, 0 );
     glBindVertexArray( 0 );
-    glUseProgram( 0 );
+    shader_bind( 0 );
 //    glDisable( GL_BLEND );
 }
 
@@ -1576,7 +1592,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3] ) {
     }
 
     renderstate_apply(&fullscreen_quad_rs);
-    glUseProgram( program );
+    shader_bind( program );
     // glUniform1f( u_gamma, gamma );
 
     glBindVertexArray( vao );
@@ -1599,7 +1615,7 @@ void fullscreen_quad_ycbcr( texture_t textureYCbCr[3] ) {
 
     glBindTexture( GL_TEXTURE_2D, 0 );
     glBindVertexArray( 0 );
-    glUseProgram( 0 );
+    shader_bind( 0 );
 //    glDisable( GL_BLEND );
 }
 
@@ -1621,7 +1637,7 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3] ) {
     }
 
     renderstate_apply(&fullscreen_quad_rs);
-    glUseProgram( program );
+    shader_bind( program );
     // glUniform1f( u_gamma, gamma );
 
     glBindVertexArray( vao );
@@ -1644,7 +1660,7 @@ void fullscreen_quad_ycbcr_flipped( texture_t textureYCbCr[3] ) {
 
     glBindTexture( GL_TEXTURE_2D, 0 );
     glBindVertexArray( 0 );
-    glUseProgram( 0 );
+    shader_bind( 0 );
 //    glDisable( GL_BLEND );
 }
 
@@ -1949,7 +1965,7 @@ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
     for(int i = 0; i < 6; ++i) {
         glBindFramebuffer(GL_FRAMEBUFFER, sky->framebuffers[i]);
         glViewport(0, 0, WIDTH, HEIGHT);
-        glUseProgram(sky->program);
+        shader_bind(sky->program);
 
         mat44 proj; perspective44(proj, 90.0f, WIDTH / (float)HEIGHT, 0.1f, 500.f);
         mat44 view; lookat44(view, vec3(0,0,0), directions[i], vec3(0,-1,0));
@@ -2500,7 +2516,7 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
 
     p->program = shader(vs, fs2, "vtexcoord", "fragColor" , NULL);
 
-    glUseProgram(p->program); // needed?
+    shader_bind(p->program); // needed?
 
     for( int i = 0; i < countof(p->uniforms); ++i ) p->uniforms[i] = -1;
 
@@ -2662,7 +2678,7 @@ bool postfx_end(postfx *fx) {
         passfx *pass = &fx->pass[i];
         if( pass->enabled ) {
             if( !pass->program ) { --num_active_passes; continue; }
-            glUseProgram(pass->program);
+            shader_bind(pass->program);
 
             // bind texture to texture unit 0
             // shader_texture_unit(fx->diffuse[frame], 0);
@@ -2701,7 +2717,7 @@ bool postfx_end(postfx *fx) {
             if (bound) fbo_unbind();
         }
     }
-    glUseProgram(0);
+    shader_bind(0);
 
     // restore clear color: needed in case transparent window is being used (alpha != 0)
     glClearColor(0,0,0,1); // @transparent
@@ -2812,7 +2828,7 @@ static void brdf_load() {
     glDisable(GL_BLEND);
 
     handle old_shader = last_shader;
-    glUseProgram( program );
+    shader_bind( program );
 
     glViewport(0, 0, 512, 512);
 
@@ -2826,7 +2842,7 @@ static void brdf_load() {
 
     glBindVertexArray( 0 );
 
-    glUseProgram( last_shader );
+    shader_bind( last_shader );
 
     fbo_unbind();
     fbo_destroy(lut_fbo);
@@ -2948,7 +2964,7 @@ shadertoy_t* shadertoy_render(shadertoy_t *s, float delta) {
         struct tm *tm = localtime(&tmsec);
         s->t += delta * 1000;
 
-        glUseProgram(s->program);
+        shader_bind(s->program);
         glUniform1f(s->uniforms[iGlobalTime], s->t / 1000.f );
         glUniform1f(s->uniforms[iGlobalFrame], s->frame++);
         glUniform1f(s->uniforms[iGlobalDelta], delta / 1000.f );
@@ -3123,7 +3139,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     if(!m.iqm) return;
     iqm_t *q = m.iqm;
 
-    glUseProgram(shader);
+    shader_bind(shader);
     int loc;
     //if( (loc = glGetUniformLocation(shader, "M")) >= 0 ) glUniformMatrix4fv( loc, 1, GL_FALSE/*GL_TRUE*/, m); // RIM
     if( (loc = glGetUniformLocation(shader, "MV")) >= 0 ) {
@@ -4059,7 +4075,6 @@ void model_draw_call(model_t m, int shader) {
                     glUniform4f(loc, m.materials[i].layer[0].map.color.r, m.materials[i].layer[0].map.color.g, m.materials[i].layer[0].map.color.b, m.materials[i].layer[0].map.color.a);
                 }
             }
-
         } else {
             const material_t *material = &m.materials[i];
             shader_colormap( "map_diffuse", material->layer[MATERIAL_CHANNEL_DIFFUSE].map );
@@ -4117,7 +4132,7 @@ void model_shading(model_t *m, int shading) {
 
     // rebind shader
     // @fixme: app crashes rn
-    // glUseProgram(0);
+    // shader_bind(0);
     // glDeleteProgram(m->program);
     const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
     int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
