@@ -3142,9 +3142,6 @@ typedef struct renderstate_t {
     unsigned polygon_mode_face;
     unsigned polygon_mode_mode;
 
-    // Wireframe mode
-    bool wireframe_enabled;
-
     // Scissor test
     bool scissor_test_enabled;
 } renderstate_t;

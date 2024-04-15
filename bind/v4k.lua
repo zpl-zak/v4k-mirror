@@ -1055,7 +1055,6 @@ typedef struct renderstate_t {
     float point_size;
     unsigned polygon_mode_face;
     unsigned polygon_mode_mode;
-    bool wireframe_enabled;
     bool scissor_test_enabled;
 } renderstate_t;
  renderstate_t renderstate();
