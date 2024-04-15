@@ -69,7 +69,7 @@ void ddraw_flush() {
 void ddraw_flush_projview(mat44 proj, mat44 view) {
     do_once dd_rs = renderstate();
     dd_rs.cull_face_enabled = 0;
-    
+
     glActiveTexture(GL_TEXTURE0);
 
     mat44 mvp;
@@ -90,10 +90,10 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
     for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
         GLenum mode = i < 2 ? GL_LINES : GL_POINTS;
         dd_rs.line_width = (i == 1 ? 1 : 0.3); // 0.625);
+        renderstate_apply(&dd_rs);
         for each_map(dd_lists[dd_ontop][i], unsigned, rgb, array(vec3), list) {
             int count = array_count(list);
             if(!count) continue;
-                renderstate_apply(&dd_rs);
                 // color
                 vec3 rgbf = {((rgb>>0)&255)/255.f,((rgb>>8)&255)/255.f,((rgb>>16)&255)/255.f};
                 glUniform3fv(dd_u_color, GL_TRUE, &rgbf.x);
