@@ -20954,18 +20954,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     model_set_renderstates(&m);
 
     const char *ptr = (const char *)mem;
-    // can't cache shader programs since we enable features via flags here
-    // static int shaderprog = -1;
-    // if( shaderprog < 0 ) {
-        const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
-        int shaderprog = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
-            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
-            va("SHADING_PHONG,%s", (flags&MODEL_RIMLIGHT)?"RIM":""));
-    // }
-    // ASSERT(shaderprog > 0);
-
     iqm_t *q = CALLOC(1, sizeof(iqm_t));
-    m.program = shaderprog;
 
     int error = 1;
     if( ptr && len ) {
@@ -21025,9 +21014,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
 
         glGenBuffers(1, &m.vao_instanced);
         model_set_state(m);
-        if (flags & MODEL_PBR) {
-            model_shading(&m, SHADING_PBR);
-        }
+        model_shading(&m, (flags & MODEL_PBR) ? SHADING_PBR : SHADING_PHONG);
     }
     return m;
 }
