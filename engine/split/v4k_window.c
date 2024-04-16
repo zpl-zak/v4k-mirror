@@ -666,7 +666,7 @@ int window_swap() {
         if(!stbi_write_png(va("tests/out/%s.png", argv(0)), w, h, 3, rgb, 3 * w) ) {
             PANIC("!could not write screenshot file `%s`\n", screenshot_file);
         }
-        exit(0);
+        return 0;
     }
 
     return 1;
