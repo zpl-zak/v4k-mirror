@@ -4125,7 +4125,10 @@ void model_draw_call(model_t m, int shader) {
     handle old_shader = last_shader;
     shader_bind(shader);
 
-    renderstate_apply(&m.rs[model_getpass()]);
+    renderstate_t *rs = &m.rs[RENDER_PASS_NORMAL];
+    rs->cull_face_enabled = m.flags&MODEL_CULLFACE;
+
+    renderstate_apply(rs);
 
     glBindVertexArray( q->vao );
 
