@@ -40,7 +40,7 @@ static void v4k_post_init(float refresh_rate) {
     glfwShowWindow(window);
     glfwGetFramebufferSize(window, &w, &h); //glfwGetWindowSize(window, &w, &h);
 
-    randset(time_ns());
+    randset(time_ns() * !optioni("--capture",0));
     boot_time = -time_ss(); // measure boot time, this is continued in window_stats()
 
     // clean any errno setup by cooking stage
@@ -51,11 +51,6 @@ static void v4k_post_init(float refresh_rate) {
 
     // preload brdf LUT early
     (void)brdf_lut();
-
-    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
-    if (capture_target) {
-        randset(capture_target);
-    }
 }
 
 // ----------------------------------------------------------------------------

@@ -65,6 +65,8 @@ int fps_wait() {
 }
 static
 void window_vsync(float hz) {
+    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
+    if( capture_target ) return;
     if( hz <= 0 ) return;
     do_once fps_locker(1);
     framerate = hz;

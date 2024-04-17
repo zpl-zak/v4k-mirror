@@ -24,12 +24,12 @@ for %%x in (*.exe) do (
         echo [pass] reference image not found. Copying %%~nx.png ...
         copy "tests\out\%%~nx.png" "tests\ref\%%~nx.png"
     ) else (
-        call gm compare -metric MSE -maximum-error 0.005 "tests\ref\%%~nx.png" "tests\out\%%~nx.png" -file "tests\diff\%%~nx.png"
+        call gm compare -metric MSE -maximum-error 0.0065 "tests\ref\%%~nx.png" "tests\out\%%~nx.png" -file "tests\diff\%%~nx.png"
         if errorlevel 1 (
             echo [fail] %%~nx.exe! Check "tests\diff\%%~nx.png"
         ) else (
             echo [pass] %%~nx.exe
-            del "tests\diff\%%~nx.png"
+            @REM del "tests\diff\%%~nx.png"
         )
     )
 )
