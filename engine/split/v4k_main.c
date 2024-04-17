@@ -52,7 +52,7 @@ static void v4k_post_init(float refresh_rate) {
     // preload brdf LUT early
     (void)brdf_lut();
 
-    uint64_t fps = optioni("--delta", 0);
+    uint64_t fps = optioni("--fps", 0);
     if( fps ) {
         window_fps_lock(fps);
     }
