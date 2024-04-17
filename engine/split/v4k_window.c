@@ -1,4 +1,12 @@
 //-----------------------------------------------------------------------------
+// capture tests
+static
+uint64_t tests_captureframes() {
+    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
+    return capture_target;
+}
+
+//-----------------------------------------------------------------------------
 // fps locking
 
 static volatile float framerate = 0;
@@ -65,8 +73,7 @@ int fps_wait() {
 }
 static
 void window_vsync(float hz) {
-    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
-    if( capture_target ) return;
+    if( tests_captureframes() ) return;
     if( hz <= 0 ) return;
     do_once fps_locker(1);
     framerate = hz;
@@ -288,7 +295,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     int winWidth = window_canvas().w * scale;
     int winHeight = window_canvas().h * scale;
 
-    if (optioni("--capture", 0)) {
+    if (tests_captureframes()) {
         winWidth = 1280;
         winHeight = 720;
     }
@@ -667,8 +674,7 @@ int window_swap() {
     }
 
     static uint64_t capture_frame = 0;
-    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
-    if( cook_done && ++capture_frame == capture_target ) {
+    if( cook_done && ++capture_frame == tests_captureframes() ) {
         mkdir( "tests/out", 0777 );
         const char *screenshot_file = va("tests/out/%s.png", app_name());
 

@@ -40,7 +40,7 @@ static void v4k_post_init(float refresh_rate) {
     glfwShowWindow(window);
     glfwGetFramebufferSize(window, &w, &h); //glfwGetWindowSize(window, &w, &h);
 
-    randset(time_ns() * !optioni("--capture",0));
+    randset(time_ns() * !tests_captureframes());
     boot_time = -time_ss(); // measure boot time, this is continued in window_stats()
 
     // clean any errno setup by cooking stage
