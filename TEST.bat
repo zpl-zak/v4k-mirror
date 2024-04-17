@@ -17,7 +17,7 @@ if errorlevel 1 (
 )
 
 for %%x in (*.exe) do (
-    @REM echo Running %%x...
+    echo Running %%x...
     start /wait "" "%%x" --nocook --capture=50
 
     if not exist "tests\ref\%%~nx.png" (
