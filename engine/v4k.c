@@ -2243,6 +2243,13 @@ static bool win_debug_visible = true;
 
 static
 void ui_render() {
+    // skip UI rendering if capture test is enabled
+    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
+    if( capture_target ) {
+        glViewport(0,0,window_width(),window_height()); //@fixme: viewport is incorrect when we bail here
+        nk_clear(&nk_glfw.ctx);
+        return;
+    }
 
     // draw queued menus
     ui_notify_render();
@@ -30268,6 +30275,11 @@ static void v4k_post_init(float refresh_rate) {
 
     // preload brdf LUT early
     (void)brdf_lut();
+
+    uint64_t fps = optioni("--delta", 0);
+    if( fps ) {
+        window_fps_lock(fps);
+    }
 }
 
 // ----------------------------------------------------------------------------
