@@ -3308,6 +3308,14 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     if ((loc = glGetUniformLocation(shader, "u_matcaps")) >= 0) {
         glUniform1i(loc, m.flags & MODEL_MATCAPS ? GL_TRUE:GL_FALSE);
     }
+    
+    if ((loc = glGetUniformLocation(shader, "frame_count")) >= 0) {
+        glUniform1i(loc, (unsigned)window_frame());
+    }
+
+    if ((loc = glGetUniformLocation(shader, "frame_time")) >= 0) {
+        glUniform1f(loc, (float)window_time());
+    }
 
     if (m.shading == SHADING_PBR) {
         handle old_shader = last_shader;
@@ -3327,7 +3335,6 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             shader_texture( "tex_skyenv", m.sky_env );
         }
         shader_texture( "tex_brdf_lut", brdf_lut() );
-        shader_uint( "frame_count", (unsigned)window_frame() );
         shader_bind(old_shader);
     }
 }
