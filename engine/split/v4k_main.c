@@ -51,6 +51,11 @@ static void v4k_post_init(float refresh_rate) {
 
     // preload brdf LUT early
     (void)brdf_lut();
+
+    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
+    if (capture_target) {
+        randset(capture_target);
+    }
 }
 
 // ----------------------------------------------------------------------------

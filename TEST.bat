@@ -1,12 +1,13 @@
 @echo off
 
-set WORKDIR=%~dp0
+cd /d "%~dp0\."
+
 call make cook
 
-mkdir %WORKDIR%\tests > nul 2> nul
-mkdir %WORKDIR%\tests\out > nul 2> nul
-mkdir %WORKDIR%\tests\ref > nul 2> nul
-mkdir %WORKDIR%\tests\diff > nul 2> nul
+mkdir tests > nul 2> nul
+mkdir tests\out > nul 2> nul
+mkdir tests\ref > nul 2> nul
+mkdir tests\diff > nul 2> nul
 
 where gm > nul 2> nul
 if errorlevel 1 (
@@ -16,16 +17,19 @@ if errorlevel 1 (
 )
 
 for %%x in (*.exe) do (
-    echo Running %%x...
+    @REM echo Running %%x...
     start /wait "" "%%x" --nocook --capture=50
 
-    if not exist %WORKDIR%\tests\ref\%%~nx.exe.png (
-        echo Reference image not found. Copying %%~nx.exe.png ...
-        copy %WORKDIR%\tests\out\%%~nx.exe.png %WORKDIR%\tests\ref\%%~nx.exe.png
+    if not exist "tests\ref\%%~nx.png" (
+        echo [pass] reference image not found. Copying %%~nx.png ...
+        copy "tests\out\%%~nx.png" "tests\ref\%%~nx.png"
     ) else (
-        call gm compare -metric MSE -maximum-error 0.02 %WORKDIR%\tests\ref\%%~nx.exe.png %WORKDIR%\tests\out\%%~nx.exe.png -file %WORKDIR%\tests\diff\%%~nx.exe.png > nul 2> nul
+        call gm compare -metric MSE -maximum-error 0.005 "tests\ref\%%~nx.png" "tests\out\%%~nx.png" -file "tests\diff\%%~nx.png"
         if errorlevel 1 (
-            echo Images differ too much. Check %WORKDIR%\tests\diff\%%~nx.exe.png
+            echo [fail] %%~nx.exe! Check "tests\diff\%%~nx.png"
+        ) else (
+            echo [pass] %%~nx.exe
+            del "tests\diff\%%~nx.png"
         )
     )
 )

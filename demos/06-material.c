@@ -38,8 +38,8 @@ int main() {
     // load model
     model_t m1 = model("suzanne.obj", MODEL_NO_ANIMATIONS);
     model_t m2 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_MATCAPS);
-    // model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
-    model_t m3 = model("Scutum_low.fbx", MODEL_NO_ANIMATIONS|MODEL_PBR);
+    model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
+    // model_t m3 = model("Scutum_low.fbx", MODEL_NO_ANIMATIONS|MODEL_PBR);
     model_t m4 = model("cube.obj", MODEL_NO_ANIMATIONS);
     // model_t m4 = model("avp/scene.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
     // model_t m3 = model("Cerberus_LP.FBX", MODEL_NO_ANIMATIONS|MODEL_PBR); 
@@ -83,9 +83,10 @@ int main() {
     object_model(obj4, m3);
     object_scale(obj4, vec3(3,3,3));
     object_move(obj4, vec3(-10+6*3,0,-10));
-    object_pivot(obj4, vec3(0,0,90));
+    // object_pivot(obj4, vec3(0,0,90));
+    object_pivot(obj4, vec3(0,90,0));
 
-    // spawn object5 (pbr)
+    // spawn object5 (shadertoy)
     object_t* obj5 = scene_spawn();
     object_model(obj5, m4);
     object_diffuse(obj5, sh.tx);

@@ -27523,10 +27523,15 @@ int window_swap() {
     }
 
     static uint64_t capture_frame = 0;
-    if (cook_done && optioni("--capture", 0) && capture_frame++ == optioni("--capture", 0)) {
-        void *rgb = screenshot(3);
+    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
+    if( cook_done && ++capture_frame == capture_target ) {
+        mkdir( "tests/out", 0777 );
+        const char *screenshot_file = va("tests/out/%s.png", app_name());
+
+        int n = 3;
+        void *rgb = screenshot(n);
         stbi_flip_vertically_on_write(true);
-        if(!stbi_write_png(va("tests/out/%s.png", argv(0)), w, h, 3, rgb, 3 * w) ) {
+        if(!stbi_write_png(screenshot_file, w, h, n, rgb, n * w) ) {
             PANIC("!could not write screenshot file `%s`\n", screenshot_file);
         }
         return 0;
@@ -30261,6 +30266,11 @@ static void v4k_post_init(float refresh_rate) {
 
     // preload brdf LUT early
     (void)brdf_lut();
+
+    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
+    if (capture_target) {
+        randset(capture_target);
+    }
 }
 
 // ----------------------------------------------------------------------------
