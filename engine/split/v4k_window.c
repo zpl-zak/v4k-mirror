@@ -288,6 +288,11 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     int winWidth = window_canvas().w * scale;
     int winHeight = window_canvas().h * scale;
 
+    if (optioni("--capture", 0)) {
+        winWidth = 1280;
+        winHeight = 720;
+    }
+
     window_hints(flags);
 
     GLFWmonitor* monitor = NULL;

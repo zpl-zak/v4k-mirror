@@ -2243,14 +2243,6 @@ static bool win_debug_visible = true;
 
 static
 void ui_render() {
-    // skip UI rendering if capture test is enabled
-    static uint64_t capture_target; do_once capture_target = optioni("--capture", 0);
-    if( capture_target ) {
-        glViewport(0,0,window_width(),window_height()); //@fixme: viewport is incorrect when we bail here
-        nk_clear(&nk_glfw.ctx);
-        return;
-    }
-
     // draw queued menus
     ui_notify_render();
     ui_menu_render();
@@ -27157,6 +27149,11 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     scale = (scale > 100 ? 100 : scale) / 100.f;
     int winWidth = window_canvas().w * scale;
     int winHeight = window_canvas().h * scale;
+
+    if (optioni("--capture", 0)) {
+        winWidth = 1280;
+        winHeight = 720;
+    }
 
     window_hints(flags);
 
