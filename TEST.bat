@@ -18,7 +18,7 @@ if errorlevel 1 (
 
 for %%x in (*.exe) do (
     echo Running %%x...
-    start /wait "" "%%x" --nocook --capture=50
+    start /wait "" "%%x" --nocook --capture=50 --mute
 
     if not exist "tests\ref\%%~nx.png" (
         echo [pass] reference image not found. Copying %%~nx.png ...
