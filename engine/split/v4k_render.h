@@ -21,6 +21,11 @@ typedef struct renderstate_t {
     bool depth_test_enabled;
     bool depth_write_enabled;
     unsigned depth_func;
+    
+    // Polygon offset
+    bool polygon_offset_enabled;
+    float polygon_offset;
+    float polygon_offset_factor;
 
     // Blending
     bool blend_enabled;
@@ -35,8 +40,10 @@ typedef struct renderstate_t {
     // Stencil test
     bool stencil_test_enabled;
     unsigned stencil_func;
+    unsigned stencil_op_fail, stencil_op_zfail, stencil_op_zpass;
     int stencil_ref;
-    unsigned stencil_mask;
+    unsigned stencil_read_mask;
+    unsigned stencil_write_mask;
 
     // Face culling direction
     unsigned front_face; // GL_CW or GL_CCW
@@ -586,7 +593,6 @@ enum MODEL_FLAGS {
     MODEL_MATCAPS = 16,
     MODEL_RIMLIGHT = 32,
     MODEL_PBR = 64,
-    MODEL_CULLFACE = 128,
 };
 
 enum SHADING_MODE {

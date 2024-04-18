@@ -17242,6 +17242,11 @@ renderstate_t renderstate() {
     state.depth_test_enabled = GL_TRUE;
     state.depth_write_enabled = GL_TRUE;
     state.depth_func = GL_LEQUAL;
+    
+    // Disable polygon offset by default
+    state.polygon_offset_enabled = GL_FALSE;
+    state.polygon_offset_factor = 0.0f;
+    state.polygon_offset = 0.0f;
 
     // Disable blending by default
     state.blend_enabled = GL_FALSE;
@@ -17256,8 +17261,12 @@ renderstate_t renderstate() {
     // Disable stencil test by default
     state.stencil_test_enabled = GL_FALSE;
     state.stencil_func = GL_ALWAYS;
+    state.stencil_op_fail = GL_KEEP;
+    state.stencil_op_zfail = GL_KEEP;
+    state.stencil_op_zpass = GL_KEEP;
     state.stencil_ref = 0;
-    state.stencil_mask = 0xFFFFFFFF;
+    state.stencil_read_mask = 0xFFFFFFFF;
+    state.stencil_write_mask = 0xFFFFFFFF;
 
     // Set default front face to counter-clockwise
     state.front_face = GL_CCW;
@@ -17310,6 +17319,14 @@ void renderstate_apply(const renderstate_t *state) {
             glDisable(GL_DEPTH_TEST);
         }
 
+        // Apply polygon offset
+        if (state->polygon_offset_enabled) {
+            glEnable(GL_POLYGON_OFFSET_FILL);
+            glPolygonOffset(state->polygon_offset_factor, state->polygon_offset);
+        } else {
+            glDisable(GL_POLYGON_OFFSET_FILL);
+        }        
+
         // Apply depth write
         glDepthMask(state->depth_write_enabled);
 
@@ -17333,7 +17350,9 @@ void renderstate_apply(const renderstate_t *state) {
         // Apply stencil test
         if (state->stencil_test_enabled) {
             glEnable(GL_STENCIL_TEST);
-            glStencilFunc(state->stencil_func, state->stencil_ref, state->stencil_mask);
+            glStencilMask(state->stencil_write_mask);
+            glStencilFunc(state->stencil_func, state->stencil_ref, state->stencil_read_mask);
+            glStencilOp(state->stencil_op_fail, state->stencil_op_zfail, state->stencil_op_zpass);
         } else {
             glDisable(GL_STENCIL_TEST);
         }
@@ -21306,7 +21325,6 @@ void model_draw_call(model_t m, int shader) {
     shader_bind(shader);
 
     renderstate_t *rs = &m.rs[RENDER_PASS_NORMAL];
-    rs->cull_face_enabled = m.flags&MODEL_CULLFACE;
 
     renderstate_apply(rs);
 
