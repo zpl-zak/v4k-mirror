@@ -3843,6 +3843,7 @@ API int      fx_enabled(int pass);
 API void     fx_enable_all(int enabled);
 API char *   fx_name(int pass);
 API int      fx_find(const char *name);
+API void     fx_setparam(int pass, const char *name, float value);
 API void     fx_order(int pass, unsigned priority);
 API unsigned fx_program(int pass);
 

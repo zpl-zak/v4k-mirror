@@ -2794,6 +2794,13 @@ void fx_order(int pass, unsigned priority) {
 unsigned fx_program(int pass) {
     return postfx_program(&fx, pass);
 }
+void fx_setparam(int pass, const char *name, float value) {
+    unsigned program = fx_program(pass);
+    if( !program ) return;
+    unsigned oldprogram = shader_bind(program);
+    shader_float(name, value);
+    shader_bind(oldprogram);
+}
 int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
 }
