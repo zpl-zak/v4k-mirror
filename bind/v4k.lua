@@ -1034,6 +1034,7 @@ typedef struct reflect_t {
 typedef unsigned handle;
 typedef struct renderstate_t {
     float clear_color[4];
+    bool color_mask[4];
     double clear_depth;
     bool depth_test_enabled;
     bool depth_write_enabled;

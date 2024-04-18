@@ -14,6 +14,9 @@ typedef struct renderstate_t {
     // Clear color
     float clear_color[4];
 
+    // Color mask
+    bool color_mask[4];
+
     // Clear depth
     double clear_depth;
 

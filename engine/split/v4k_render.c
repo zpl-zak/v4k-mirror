@@ -62,6 +62,12 @@ renderstate_t renderstate() {
     state.clear_color[2] = 0.0f; // Blue
     state.clear_color[3] = 1.0f; // Alpha
 
+    // Set default color mask to GL_TRUE
+    state.color_mask[0] = GL_TRUE;
+    state.color_mask[1] = GL_TRUE;
+    state.color_mask[2] = GL_TRUE;
+    state.color_mask[3] = GL_TRUE;
+
     // Set default clear depth to maximum distance
     state.clear_depth = 1.0;
 
@@ -134,6 +140,9 @@ void renderstate_apply(const renderstate_t *state) {
 
         // Apply clear color
         glClearColor(state->clear_color[0], state->clear_color[1], state->clear_color[2], state->clear_color[3]);
+
+        // Apply color mask
+        glColorMask(state->color_mask[0], state->color_mask[1], state->color_mask[2], state->color_mask[3]);
 
         // Apply clear depth
         glClearDepth(state->clear_depth);
