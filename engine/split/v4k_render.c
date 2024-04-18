@@ -2583,6 +2583,10 @@ void postfx_clear(postfx *fx) {
     }
     fx->enabled = 0;
 }
+unsigned postfx_program(postfx *fx, int pass) {
+    if( pass < 0 || pass >= array_count(fx->pass) ) return 0;
+    return fx->pass[pass].program;
+}
 
 int ui_postfx(postfx *fx, int pass) {
     if (pass < 0 || pass >= array_count(fx->pass)) return 0;
@@ -2786,6 +2790,9 @@ int fx_find(const char *name) {
 }
 void fx_order(int pass, unsigned priority) {
     postfx_order(&fx, pass, priority);
+}
+unsigned fx_program(int pass) {
+    return postfx_program(&fx, pass);
 }
 int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
