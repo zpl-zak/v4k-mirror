@@ -19825,7 +19825,7 @@ bool postfx_end(postfx *fx) {
         postfx_rs.depth_test_enabled = 0;
         postfx_rs.cull_face_enabled = 0;
         postfx_rs.blend_enabled = 1;
-        postfx_rs.blend_src = GL_SRC_ALPHA;
+        postfx_rs.blend_src = GL_ONE;
         postfx_rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
     }
 
