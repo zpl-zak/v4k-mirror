@@ -117,8 +117,8 @@ uniform vec2 resolution = vec2(640.0,480.0);    // debug options below use this 
 #define USE_NORMAL_VARIATION_TO_ROUGHNESS true  // Increases roughness if normal map has variation and was minified.
 #define USE_MAP_DEBUGGING false                 // Shows all ColorMaps as horizontal bars
 #define USE_AMBIENT_DEBUGGING false             // Splits the screen in two and shows image-based specular (left), full shading (middle), diffuse shading (right).
-#define BOOST_LIGHTING  2.00f                   // Multiplies analytic light's color with this constant because otherwise they look really pathetic.
-#define BOOST_SPECULAR  1.50f
+#define BOOST_LIGHTING  1.00f                   // Multiplies analytic light's color with this constant because otherwise they look really pathetic.
+#define BOOST_SPECULAR  1.00f
 #define BOOST_NOISE     2.50f
 
 struct ColorMap
@@ -285,12 +285,12 @@ vec3 sample_irradiance_fast( vec3 normal, vec3 vertex_tangent )
     if ( has_tex_skyenv )
     {
         vec2 polar = sphere_to_polar( normal );
-        return textureLod( tex_skyenv, polar, 0.0 ).rgb * exposure;
+        return pow(textureLod( tex_skyenv, polar, 0.0 ), vec4(1.0/2.2)).rgb * exposure;
     }
     else
     {
         vec2 polar = sphere_to_polar( normal );
-        return textureLod( tex_skysphere, polar, 0.80 * skysphere_mip_count ).rgb * exposure;
+        return pow(textureLod( tex_skysphere, polar, 0.80 * skysphere_mip_count ), vec4(1.0/2.2)).rgb * exposure;
     }
 }
 
@@ -319,7 +319,7 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel )
 
     float mip = 0.9 * skysphere_mip_count * pow(roughness, 0.25 * BOOST_SPECULAR);
 
-    vec3 prefiltered = textureLod( tex_skysphere, polar, mip ).rgb * exposure;
+    vec3 prefiltered = pow(textureLod( tex_skysphere, polar, mip ), vec4(1.0/2.2)).rgb * exposure;
 
     float NdotV = dot( N, V );
 
@@ -471,9 +471,10 @@ void main(void)
         roughness = sample_colormap( map_roughness, v_texcoord ).x;
     }
     else if( map_roughness.has_tex ) {
-        //< @r-lyeh, metalness B, roughness G, (@todo: self-shadowing occlusion R; for now, any of R/B are metallic)
-        metallic = sample_colormap( map_roughness, v_texcoord ).b;// + sample_colormap( map_roughness, v_texcoord ).r;
+        if (!map_ao.has_tex)
+            ao = sample_colormap( map_roughness, v_texcoord ).r;
         roughness = sample_colormap( map_roughness, v_texcoord ).g;
+        metallic = sample_colormap( map_roughness, v_texcoord ).b;
     }
 
     if ( map_ao.has_tex )
@@ -505,13 +506,13 @@ void main(void)
         vec3 c = vec3(1., 0., 0.);
         float x = gl_FragCoord.x / resolution.x;
         float y = gl_FragCoord.y / resolution.y;
-        if ( y < (7.0/7.0) ) c = vec3(.5) + .5*v_normal_ws;
-        if ( y < (6.0/7.0) ) c = vec3(.5) + .5*normalmap;
-        if ( y < (5.0/7.0) ) c = vec3(ao);
-        if ( y < (4.0/7.0) ) c = vec3(emissive);
-        if ( y < (3.0/7.0) ) c = vec3(metallic);
-        if ( y < (2.0/7.0) ) c = vec3(roughness);
-        if ( y < (1.0/7.0) ) c = baseColor;
+        if ( x < (7.0/7.0) ) c = vec3(.5) + .5*v_normal_ws;
+        if ( x < (6.0/7.0) ) c = vec3(.5) + .5*normalmap;
+        if ( x < (5.0/7.0) ) c = vec3(ao);
+        if ( x < (4.0/7.0) ) c = vec3(emissive);
+        if ( x < (3.0/7.0) ) c = vec3(metallic);
+        if ( x < (2.0/7.0) ) c = vec3(roughness);
+        if ( x < (1.0/7.0) ) c = baseColor;
         fragcolor = vec4(c, 1.);
         return;
     }
