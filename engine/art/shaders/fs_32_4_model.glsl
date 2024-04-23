@@ -282,15 +282,15 @@ vec3 sample_irradiance_slow( vec3 normal, vec3 vertex_tangent )
 vec3 sample_irradiance_fast( vec3 normal, vec3 vertex_tangent )
 {
     // Sample the irradiance map if it exists, otherwise fall back to blurred reflection map.
-    if ( has_tex_skyenv )
+    if ( has_tex_skysphere )
     {
         vec2 polar = sphere_to_polar( normal );
-        return pow(textureLod( tex_skyenv, polar, 0.0 ), vec4(1.0/2.2)).rgb * exposure;
+        return pow(textureLod( tex_skysphere, polar, 0.80 * skysphere_mip_count ), vec4(1.0/2.2)).rgb * exposure;
     }
     else
     {
         vec2 polar = sphere_to_polar( normal );
-        return pow(textureLod( tex_skysphere, polar, 0.80 * skysphere_mip_count ), vec4(1.0/2.2)).rgb * exposure;
+        return pow(textureLod( tex_skyenv, polar, 0.0 ), vec4(1.0/2.2)).rgb * exposure;
     }
 }
 
