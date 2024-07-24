@@ -1,4 +1,10 @@
 {
     "dotnet.defaultSolution": "disable",
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "*.rc": "c",
+        "*.tmsl": "hlsl",
+        "*.gspec": "go",
+        "fsm.h": "c"
+    }
 }

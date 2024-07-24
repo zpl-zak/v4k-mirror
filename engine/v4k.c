@@ -27200,9 +27200,11 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     if( flag("--fullscreen") ) scale = 100;
     scale = (scale < 1 ? scale * 100 : scale);
 
-    bool FLAGS_FULLSCREEN = scale > 100;
+    bool FLAGS_FULLSCREEN = scale > 101;
+    bool FLAGS_FULLSCREEN_BORDERLESS = scale == 101;
     bool FLAGS_FULLSCREEN_DESKTOP = scale == 100;
-    bool FLAGS_WINDOWED = scale < 100;
+    bool FLAGS_WINDOWED = scale < 100 || FLAGS_FULLSCREEN_BORDERLESS;
+    flags |= FLAGS_FULLSCREEN_BORDERLESS == 1 ? WINDOW_BORDERLESS : 0;
     bool FLAGS_TRANSPARENT = flag("--transparent") || (flags & WINDOW_TRANSPARENT);
     if( FLAGS_TRANSPARENT ) FLAGS_FULLSCREEN = 0, FLAGS_FULLSCREEN_DESKTOP = 0, FLAGS_WINDOWED = 1;
     scale = (scale > 100 ? 100 : scale) / 100.f;
