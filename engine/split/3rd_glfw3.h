@@ -17193,6 +17193,10 @@ void _glfwInputWindowFocus(_GLFWwindow* window, GLFWbool focused)
     if (window->callbacks.focus)
         window->callbacks.focus((GLFWwindow*) window, focused);
 
+    // zak: disable top-most if we lose focus
+    if (window->monitor)
+        _glfwPlatformSetWindowFloating(window, focused);
+
     if (!focused)
     {
         int key, button;
