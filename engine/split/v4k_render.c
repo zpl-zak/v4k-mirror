@@ -2789,7 +2789,9 @@ void fx_enable(int pass, int enabled) {
     postfx_enable(&fx, pass, enabled);
 }
 void fx_enable_all(int enabled) {
-    for( int i = 0; i < array_count(fx.pass); ++i ) fx_enable(i, enabled);
+    for( int i = 0; i < array_count(fx.pass); ++i ) {
+        fx_enable(i, enabled);
+    }
 }
 char *fx_name(int pass) {
     return postfx_name(&fx, pass);
