@@ -21798,6 +21798,7 @@ void ddraw_flush() {
     ddraw_flush_projview(camera_get_active()->proj, camera_get_active()->view);
 }
 
+static float dd_line_width = 1.0f;
 void ddraw_flush_projview(mat44 proj, mat44 view) {
     do_once dd_rs = renderstate();
     dd_rs.depth_test_enabled = dd_ontop;
@@ -21822,7 +21823,7 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
 
     for( int i = 0; i < 3; ++i ) { // [0] thin, [1] thick, [2] points
         GLenum mode = i < 2 ? GL_LINES : GL_POINTS;
-        dd_rs.line_width = (i == 1 ? 2 : 0.3); // 0.625);
+        dd_rs.line_width = (i == 1 ? dd_line_width : 0.3); // 0.625);
         renderstate_apply(&dd_rs);
         for each_map(dd_lists[dd_ontop][i], unsigned, rgb, array(vec3), list) {
             int count = array_count(list);
@@ -21894,6 +21895,10 @@ void ddraw_ontop_push(int enabled) {
 void ddraw_ontop_pop() {
     bool *pop = array_pop(dd_ontops);
     if(pop) dd_ontop = *pop;
+}
+
+void ddraw_line_width(float width) {
+    dd_line_width = width;
 }
 
 static array(uint32_t) dd_colors;

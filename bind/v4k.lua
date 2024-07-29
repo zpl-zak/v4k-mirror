@@ -1494,6 +1494,7 @@ typedef struct lightmap_t {
  int ui_fxs();
  void* screenshot(int components);
  void* screenshot_async(int components);
+ void ddraw_line_width(float width);
  void ddraw_color(unsigned rgb);
  void ddraw_color_push(unsigned rgb);
  void ddraw_color_pop();

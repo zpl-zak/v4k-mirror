@@ -3873,6 +3873,7 @@ API void*    screenshot_async(int components); // 3 RGB, 4 RGBA, -3 BGR, -4 BGRA
 // [*] (proper) gizmo,
 // [ ] camera, light bulb, light probe,
 
+API void ddraw_line_width(float width);
 API void ddraw_color(unsigned rgb);
 API void ddraw_color_push(unsigned rgb);
 API void ddraw_color_pop();
