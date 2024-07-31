@@ -161,6 +161,7 @@ static char *ui_filter = 0;
 {{FILE:3rd_plmpeg.h}}
 {{FILE:3rd_jo_mpeg.h}}
 //#define _RTL_RUN_ONCE _RTL_RUN_ONCE2 // __MINGW64__
+#undef I
 {{FILE:3rd_https.h}}
 #undef F2
 #undef F3
