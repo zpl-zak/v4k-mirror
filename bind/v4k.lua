@@ -2147,6 +2147,7 @@ enum WINDOW_FLAGS {
  double window_fps_target();
  void window_fps_lock(float fps);
  void window_fps_unlock();
+ void window_fps_vsync(int vsync);
  void window_screenshot(const char* outfile_png);
  int window_record(const char *outfile_mp4);
  vec2 window_dpi();

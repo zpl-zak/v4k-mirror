@@ -4905,6 +4905,7 @@ API double   window_fps();
 API double   window_fps_target();
 API void     window_fps_lock(float fps);
 API void     window_fps_unlock();
+API void     window_fps_vsync(int vsync);
 
 API void     window_screenshot(const char* outfile_png); // , bool record_cursor
 API int      window_record(const char *outfile_mp4); // , bool record_cursor

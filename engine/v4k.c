@@ -27713,6 +27713,10 @@ double window_fps_target() {
     return hz;
 }
 
+void window_fps_vsync(int vsync) {
+    glfwSwapInterval(vsync);
+}
+
 uint64_t window_frame() {
     return frame_count;
 }
