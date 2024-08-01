@@ -75,15 +75,19 @@ while [ $# -ge 1 ]; do
     fi
     if [ "$1" = "dbg" ]; then 
         export build=dbg
-        export flags="-O0 -g"
+        export flags="-O0 -g -DDEBUG"
     fi
     if [ "$1" = "dev" ]; then 
         export build=dev
-        export flags="-O1 -g"
+        export flags="-O0 -g -DNDEBUG=1"
+    fi
+    if [ "$1" = "ret" ]; then 
+        export build=ret
+        export flags="-O3 -DNDEBUG=3 -DENABLE_RETAIL"
     fi
     if [ "$1" = "rel" ]; then 
         export build=rel
-        export flags="-O3 -DNDEBUG"
+        export flags="-O3 -DNDEBUG=2"
     fi
     if [ "$1" = "gcc" ]; then 
         export cc=gcc
