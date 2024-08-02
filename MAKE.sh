@@ -222,15 +222,17 @@ if [ "$(uname)" = "Darwin" ]; then
     export args="-w -Iengine/ -framework cocoa -framework iokit -framework CoreFoundation -framework CoreAudio -framework AudioToolbox $args $flags"
     echo build=$build, type=$dll, cc=$cc, args=$args
 
-    # framework (as dynamic library)
-    if [ "$dll" = "dll" ]; then
-        echo libv4k    && cc -ObjC -dynamiclib -o libv4k.dylib engine/v4k.c $flags $args
-        cp libv4k.dylib demos/lua
-        export import=libv4k.dylib
-    else
-    # framework
-        echo v4k       && cc -c -ObjC engine/v4k.c $flags $args
-        export import=v4k.o
+    if [ ! -f libv4k.dylib ]; then
+        # framework (as dynamic library)
+        if [ "$dll" = "dll" ]; then
+            echo libv4k    && cc -ObjC -dynamiclib -o libv4k.dylib engine/v4k.c $flags $args
+            cp libv4k.dylib demos/lua
+            export import=libv4k.dylib
+        else
+        # framework
+            echo v4k       && cc -c -ObjC engine/v4k.c $flags $args
+            export import=v4k.o
+        fi
     fi
 
     # User-defined apps
