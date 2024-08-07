@@ -8,7 +8,7 @@
 ## a b o u t
 
 - Envision, Prototype, Perfect.
-- visit the code repo at [dev.v4.games](https://dev.v4.games/v4games/v4k) now!
+- visit the code repo at [dev.v4.games](https://github.com/zpl-zak/v4k-mirror) now!
 - you can try out the [live demo](https://demo.v4k.dev), too!
 - and for anything else, reach us at [v4.games](https://v4.games/).
 
