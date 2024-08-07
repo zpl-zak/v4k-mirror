@@ -27,3 +27,4 @@ tools/assimp/
 v4k.code-workspace
 tests/out
 tests/diff
+mtb.ini
