@@ -2414,6 +2414,7 @@ typedef struct {
 
 intptr_t SteamClient();
 
+#ifndef STEAM_API
 #define STEAM_API(X) \
 X(bool,SteamAPI_Init,()) \
 X(void,SteamAPI_Shutdown,()) \
@@ -3113,3 +3114,4 @@ X(void*,SteamInternal_CreateInterface,(const char *ver)) \
 X(bool,SteamAPI_IsSteamRunning,()) \
 X(bool,SteamAPI_InitSafe,()) \
 X(void,SteamAPI_RunCallbacks,())
+#endif

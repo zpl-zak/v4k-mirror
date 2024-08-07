@@ -1830,12 +1830,6 @@ typedef struct skinned_t {
     float scale;
 } skinned_t;
  guiskin_t gui_skinned(const char *asefile, float scale);
- bool steam_init(unsigned app_id);
- void steam_tick();
- void steam_trophy(const char *trophy_id, bool redeem);
- void steam_screenshot();
- void steam_destroy();
- int ui_steam();
  void* thread( int (*thread_func)(void* user_data), void* user_data );
  void thread_destroy( void *thd );
  int argc();

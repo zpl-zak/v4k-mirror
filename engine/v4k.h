@@ -4425,19 +4425,6 @@ typedef struct skinned_t {
 API guiskin_t gui_skinned(const char *asefile, float scale);
 #line 0
 
-#line 1 "v4k_steam.h"
-// ----------------------------------------------------------------------------
-// steam framework
-
-API bool steam_init(unsigned app_id);
-API void steam_tick();
-API void steam_trophy(const char *trophy_id, bool redeem);
-API void steam_screenshot();
-API void steam_destroy();
-
-API int  ui_steam();
-#line 0
-
 #line 1 "v4k_system.h"
 // -----------------------------------------------------------------------------
 // system framework utils

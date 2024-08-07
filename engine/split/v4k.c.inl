@@ -152,8 +152,6 @@
 
 {{FILE:v4k_sprite.c}}
 
-{{FILE:v4k_steam.c}}
-
 {{FILE:v4k_system.c}}
 
 {{FILE:v4k_time.c}}
