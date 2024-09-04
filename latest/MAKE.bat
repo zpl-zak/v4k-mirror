@@ -126,7 +126,7 @@ if "%1"=="docs" (
     type CHANGELOG.md > changelog.txt
 
     rem ...and generate docs
-    rem cl   tools\docs\docs.c engine\v4k.c -Iengine /Od /DNDEBUG %2
+    @REM cl   tools\docs\docs.c engine\v4k.c -Iengine /Od /DNDEBUG %2
     tools\docs engine\v4k.h --excluded=3rd_glad.h,v4k.h,v4k_compat.h, > v4k.html
     move /y v4k.html engine\
     del changelog.txt
@@ -167,12 +167,6 @@ if "%1"=="git" (
 
 if "%1"=="push" (
     call make.bat git
-
-    if exist "tools\ark.exe" (
-        echo Commit changes in Ark...
-        pause>NUL
-    )
-
     call make.bat vps
     call make.bat tidy
 

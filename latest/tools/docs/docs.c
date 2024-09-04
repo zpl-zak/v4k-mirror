@@ -897,15 +897,16 @@ int main(int argc, char **argv) {
     if ( DO_CHANGELOG ) {
         printf("\n## c h a n g e l o g\n\n");
         char *chg = file_read("changelog.txt");
-        strrepl(&chg, "\r\n", "\n");
-        for each_substring(chg, "\n", it) {
-            if (strstr(it, "sync depot")) continue;
-            if (strstr(it, "sync website")) continue;
-            if (strstr(it, "sync fwk")) continue;
-            if (strstr(it, "sync FWK")) continue;
-            // printf("<details><summary>%s</summary></details>\n", it);
-            printf("* %s\n", it);
-        }
+        printf("%s\n", chg);
+        // strrepl(&chg, "\r\n", "\n");
+        // for each_substring(chg, "\n", it) {
+        //     if (strstr(it, "sync depot")) continue;
+        //     if (strstr(it, "sync website")) continue;
+        //     if (strstr(it, "sync fwk")) continue;
+        //     if (strstr(it, "sync FWK")) continue;
+        //     // printf("<details><summary>%s</summary></details>\n", it);
+        //     printf("* %s\n", it);
+        // }
     }
 
     puts("\n<script>");
