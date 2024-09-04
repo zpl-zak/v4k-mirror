@@ -1,0 +1,6543 @@
+commit 23e34cff771e1b985b3de84e99d99e1d6a4120fb
+Author: Ark builder <builder@v4.games>
+Date:   Wed Sep 4 11:58:47 2024 +0000
+
+    mirror sync
+
+commit 349c00aa21cb80929412b6286ca122b248d950b3
+Author: Ark builder <builder@v4.games>
+Date:   Wed Sep 4 11:54:16 2024 +0000
+
+    mirror sync
+
+commit 764a2daf9d0c23ad19dad8e751862fcebc24be29
+Merge: 3f13d30 6301751
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 13:54:05 2024 +0200
+
+    Merge branch 'main' of dev.v4.games:v4games/v4k
+
+commit 3f13d309a372fac1d70f5bfa8db2559bbcebe78e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 13:53:49 2024 +0200
+
+    sync up changes:w
+
+commit 6301751e06b924d1ac390652d137256ae08c9032
+Author: Ark builder <builder@v4.games>
+Date:   Wed Sep 4 11:52:24 2024 +0000
+
+    mirror sync
+
+commit 427046274250c2254b076bae18c98daa5bd91082
+Author: Ark builder <builder@v4.games>
+Date:   Wed Sep 4 11:41:44 2024 +0000
+
+    mirror sync
+
+commit d94347dcc25502e4ceaa5303e465bf4c90b74a24
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 12:15:20 2024 +0200
+
+    update ark
+
+commit 966cb4d6348b9491a1f5edcc96bb55a418683b04
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 10:55:43 2024 +0200
+
+    update ark_ignore
+
+commit 295bd05641e9536307bf7c40399131af3786af90
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 10:08:30 2024 +0200
+
+    add Ark-Vcs ignore file
+
+commit b431c9b75514f34a384aa179b7027bc26261ba1b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 09:59:25 2024 +0200
+
+    small fixes
+
+commit 781e7e4889ab57b60ccf856c9a4de1a0daf1bff6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 00:22:42 2024 +0200
+
+    improve push flow
+
+commit e53796415a0d784611eec187a7070809bf49dcaf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 00:21:46 2024 +0200
+
+    math: add cycle180 and cycle360
+
+commit 9e12dbb10ea0c211ed2a869ecb800c9f70ad4e95
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 4 00:10:44 2024 +0200
+
+    math: euler, eulerq fixes
+
+commit 5dca07d113df5e9785f855fac34ff7999ce84a46
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Sep 3 17:13:29 2024 +0200
+
+    fix idq and eulerq
+
+commit 55bb9d26c7b9e5abef7deb1bf4e27bfd1d3d81e9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Sep 3 15:18:39 2024 +0200
+
+    fix coord system
+
+commit 9bfb5b47fd6bc4b8246ec34733fb111216c8c665
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Sep 3 12:31:42 2024 +0200
+
+    per-instance frustum culling
+
+commit aec753e2c41ce15bb258f9df3296abaee399293a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Sep 3 11:41:33 2024 +0200
+
+    implement global frustum culling
+
+commit dfcb0877cac963769de71f7e07d319ce6c872ac9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 19:48:15 2024 +0200
+
+    fix model transparency detection
+
+commit b94145daca776c02a70d85607a700da35891dae4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 17:03:35 2024 +0200
+
+    penumbra tweaks
+
+commit 301a21a5e13e99a556dd8e73ea88c0546d678627
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 17:00:31 2024 +0200
+
+    add shadow penumbra
+
+commit 116c55cf22a7d5aa6a70e867090b631cf7a399d6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 16:31:13 2024 +0200
+
+    improve Git workflow
+
+commit 7b998afc08186868c565f6befd0021efc677db13
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 16:28:42 2024 +0200
+
+    remove deprecated shadow blur postfx
+
+commit 567afc66d2633e725d0dd74a5022902f3467068c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 16:00:21 2024 +0200
+
+    grab up axis from camera view mat
+
+commit 7cfbd8c9f89faf3b5ed10748854f6553778662ae
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 15:58:13 2024 +0200
+
+    improve pcss for vsm shadowmaps
+
+commit 80aad50ed3e48e6b50ca94d4beb7a30af40bd1d0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 15:45:52 2024 +0200
+
+    PCSS impl
+
+commit 82ec9fc3beb84e61c8c40aaff02ecbfc821bc93b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 2 13:10:35 2024 +0200
+
+    improve pcf shadows substantially
+
+commit ccd9702a26ebf9dbf04ef54049a2a1fc3c422e68
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 31 14:16:32 2024 +0200
+
+    improve shadowmap vram usage + ui_shadowmap
+
+commit a3b747fd46af279b106b4398ac549f97fe9c9f21
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 31 12:17:59 2024 +0200
+
+    UI changes + vram reduction
+
+commit 5eb53e7fa46fe192be757af6d5d67b651b545535
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 31 09:14:26 2024 +0200
+
+    scr
+
+commit c6dcb9029e755e7a8ff057543daf62ab1981c553
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 31 09:13:11 2024 +0200
+
+    .
+
+commit d8f3d06bb1cbc19e559245aac9f38069264a8a8a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 31 09:12:05 2024 +0200
+
+    improve script
+
+commit 9facdb275c23d64bca679d1805b03a4cda011846
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 31 09:04:08 2024 +0200
+
+    make push improv
+
+commit bba1b719e82c5149bb024c2d7428bb5300a6191d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 31 09:02:27 2024 +0200
+
+    sync depot
+
+commit e3b02f8832530931bd480cb7168daebd7e2c6233
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 31 09:02:19 2024 +0200
+
+    changes
+
+commit 9e2e216fd0f386e71f322527560b86c3109b92c8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 23:23:07 2024 +0200
+
+    more perf improvements
+
+commit 7fd64941f3916f7378e242b34ebac5db5cb8d84b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 21:00:04 2024 +0200
+
+    improved shadows again
+
+commit aa64db6e7ffa7c07e54786497a42b74f37682608
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 16:18:04 2024 +0200
+
+    tweak spotlight pos
+
+commit cf25895f60a0de265b35b0711779c600bf990d8f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 16:01:46 2024 +0200
+
+    fix shadow blending + bugs
+
+commit 19eeeb46962b523964c9964876fd47520894f541
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 14:26:44 2024 +0200
+
+    improve VSM variance
+
+commit 320e6535581955b7bb8a6462c724b249bc155294
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 14:25:47 2024 +0200
+
+    improve shadowmap factor blending
+
+commit 6c678a478af1bd0c8af511a7cc108ed698d478e1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 13:18:08 2024 +0200
+
+    shadows in scene api
+
+commit 5459b8aaf8eee0cd1b71849eda0a8a8ef77fa4fe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 12:54:28 2024 +0200
+
+    fix non-shadowed renders
+
+commit bd4261ed4f6988dd167bdd954eb33f1b2eeb441b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 12:25:57 2024 +0200
+
+    add shadowmap remarks
+
+commit 27b220c1040fa0552a6309fc516d659362f63895
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 12:19:50 2024 +0200
+
+    pcf improved, yes
+
+commit 8d2fd2660e6d8b5a04017050018530bdc95d2555
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 10:19:57 2024 +0200
+
+    improve csm
+
+commit 7edd72015c3b9fe35706c3a55a148b2f39d79fce
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 30 03:46:46 2024 +0200
+
+    CSM shadowmapping
+
+commit d219cb88a336c8e02b8d7bbc69785df59620ab41
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 29 20:51:44 2024 +0200
+
+    demo update
+
+commit 6319b11df65a0db25c098a4c872d5a1042e78950
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 29 20:46:30 2024 +0200
+
+    pcf shadows for dir light
+
+commit 2744bbbc473ae1df91a582f554ef725dcf662fff
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 29 17:32:34 2024 +0200
+
+    wip: shadowmaps
+
+commit ac0dd11cc18abb81cf9d83c6dce687da9d080ce7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 28 17:39:46 2024 +0200
+
+    further improve sh calcs
+
+commit 5b6afd747fe2705c45d33e0767046550deeb87dd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 28 17:02:13 2024 +0200
+
+    add: cubemap_sh_blend
+
+commit f7090441c08d240e13215a00c39cda7884ef9d73
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 28 16:41:47 2024 +0200
+
+    improve cubemap baking
+
+commit 61b94ed2252b9d7a9452cfaaa0e7489d46382e27
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 28 15:21:54 2024 +0200
+
+    wip: light probes + compute variant
+
+commit 0b8d85f81c71d9e2cc141098265e00cf01a8710d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 28 12:42:58 2024 +0200
+
+    WIP: light probes support
+
+commit 3bf4a4d8511878d994f1faecc276dc3be0eef951
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Aug 27 12:46:26 2024 +0200
+
+    sync depot
+
+commit e5062ef825c3fc056f9cd447a15b6f3008b7db92
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Aug 27 12:46:11 2024 +0200
+
+    add window_msaa and normalise occl query result
+
+commit 1e41f28033d9f09f639b80cf85539c22adb792cb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 26 19:18:43 2024 +0200
+
+    sync depot
+
+commit bc73c8ebb69d26d927826d8be2cc7017e164e302
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 26 19:18:11 2024 +0200
+
+    add point occlusion query tester
+
+commit cbd52d177a4637e9f9a96419900f115f5f765ceb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Aug 25 17:13:44 2024 +0200
+
+    sync depot
+
+commit 8f09aec00b433506ab238de20d16ffcd3352ee1b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Aug 25 17:13:34 2024 +0200
+
+    add u_global_alpha
+
+commit d1420e070b404929395ac04a0e9ca3e3779f1442
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Aug 25 02:58:42 2024 +0200
+
+    sync depot
+
+commit 0753cfdd886888578c3e899f177b00647ccd55a1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Aug 25 02:58:34 2024 +0200
+
+    gfx: add fog
+
+commit 8183821f4c2517cc9c9c8b71e407f41e9dce295a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 22:48:59 2024 +0200
+
+    fix luaffi on mac
+
+commit d704c2420e209c661be2689b941ed6801d786740
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 20:27:02 2024 +0200
+
+    only gamma correct PBR
+
+commit 7d54e637f1f1204ef3e243d2e0924cd9ed9d8647
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 20:09:56 2024 +0200
+
+    sync depot
+
+commit cde29d5a5af9608ec1ce5bbcd54f6088973a1557
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 20:09:41 2024 +0200
+
+    pbr load as srgb + gamma correction tweaks
+
+commit 9ed0c978a3a3de24105ffbd29bfaca1faea7f638
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 19:57:55 2024 +0200
+
+    enable analytical lights for PBR shading mode
+
+commit fff2db7ea5cb2ec1cb3f371cd63b251de0697057
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 19:40:02 2024 +0200
+
+    improve shading mode define picker
+
+commit 33eecb039b41c165f02c568923bafc7e7fe85f24
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 19:32:25 2024 +0200
+
+    inclusion guards for shaderlib
+
+commit 79dca69ac3114c9da765857370928fb038aa31b4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 19:25:29 2024 +0200
+
+    do_lightmap()
+
+commit 5d0ed47b3ab24961023fbd9044a6af79a42b4366
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 19:19:18 2024 +0200
+
+    rework model VS
+
+commit 7ceab7fe0fc04a6259e6f45ba948e584d75eb3f8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 19:07:09 2024 +0200
+
+    sync depot
+
+commit f47b9dea62b8b5150a89287a80569cb6a69ed7f6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 19:01:57 2024 +0200
+
+    render changes
+
+commit 15a495ad8d4b9cd843eaff124779906643debc4a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 18:34:32 2024 +0200
+
+    sync depot
+
+commit 54f442b7c9b195b7c06b71c4ab9dd57f172bffd1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 18:34:27 2024 +0200
+
+    more shader work
+
+commit 59ce5a1741f9d60a734bb751213d85f8c7b82a49
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 18:10:27 2024 +0200
+
+    sync depot
+
+commit c6b771056a465169124fb6fb8775685f71da6d33
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 18:10:21 2024 +0200
+
+    fix billboards
+
+commit 2eca87099ac85625113c269d4426bcf7d4cbf8aa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 18:03:23 2024 +0200
+
+    revamp all shaders
+
+commit 444285ca59a9b8467ad1ac099510e077bcadacd2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 15:29:05 2024 +0200
+
+    rename brdf_lut
+
+commit 4e346fdd9dff3afdbb1acb1ce6b60937588d7bc2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 15:24:44 2024 +0200
+
+    shaderlib wip
+
+commit d835b83aec18157b1337982a7adfc12a9c618701
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 15:04:48 2024 +0200
+
+    sync depot
+
+commit a4cf90838a2e1001667cfa3593d38f77a7e8d1bc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 15:04:33 2024 +0200
+
+    GLSL include support
+
+commit 851fc37ddfb02b158036f5c0bf10dd1efa585cad
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 14:23:14 2024 +0200
+
+    sync depot
+
+commit 92b61c99968b15836a21ec0b7f7d2d44e71d4b6e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 14:23:06 2024 +0200
+
+    minor culling tweaks
+
+commit d3cbd939c74dbbab6d89e518288743dc3f7d8fb1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 13:33:05 2024 +0200
+
+    frustum culling
+
+commit 708629c80f3a116bf6dbfe0ac5d6f08fc6c26474
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 13:02:36 2024 +0200
+
+    wip: frustum culling (per-model for now)
+
+commit d1cc36207fc718ee835e9152e4dc47d61a676404
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 11:49:16 2024 +0200
+
+    scene: improve retexturing
+
+commit 3858f73f3f77c5a31313782528ff9b128524a7e9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 11:18:40 2024 +0200
+
+    update vps cmd
+
+commit 7dfe61c4bbc262b1ebd1b5e3ca4f852331663684
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 10:43:02 2024 +0200
+
+    update render tests
+
+commit f95ba53ed1c660b0d1dfa5848aa6fc0ae1793281
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 10:40:53 2024 +0200
+
+    fix autotests
+
+commit a4dc5c0b9236db358aceb56e8f1f2f743bd9665c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 10:19:35 2024 +0200
+
+    copy cached v4k to workdir
+
+commit 9e2260bb77ab0d778fc0b8fe574fa16e0a693671
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 10:14:06 2024 +0200
+
+    improve
+
+commit e6a3e19c561a2d981d1cd051c40e51d9d98eb684
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 10:11:17 2024 +0200
+
+    sync depot
+
+commit 8638a1eecb85c1fd0890374fee57ca0892be2796
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 10:11:04 2024 +0200
+
+    improve build run cond
+
+commit e9ac209ec07f3b7e3cfca05b804ac4be34ef0818
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 08:26:43 2024 +0200
+
+    opaque is opaque
+
+commit fe31cf69dba1612c1a53f468ced6f6032b31c133
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 08:22:19 2024 +0200
+
+    fix sorting
+
+commit a9e6680d05cee301756ad0ebd4d98de5f496a00e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 00:21:51 2024 +0200
+
+    sync depot
+
+commit 50ad8f147eccba83ab6e2ed5d92464fbfea1453e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 00:21:43 2024 +0200
+
+    sync depot
+
+commit 4cec1b55e300ee3da011943901f05662d5be076d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 00:21:38 2024 +0200
+
+    gfx changes
+
+commit f7abcc036ce23cb4424385a9adf4de9a6066bcdf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 24 00:06:18 2024 +0200
+
+    wip: model_flush
+
+commit 87e5d825e6bc4aee3511f6c059165eb0f2ebb248
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 23 21:28:40 2024 +0200
+
+    gfx: render pass sorting
+
+commit 7f90d2304c6592491de9581c40e5ec1ee9aefbe8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 23 18:24:41 2024 +0200
+
+    sync depot
+
+commit 770f8be8f1faa3689b7b85c9810f23ae8fc61ffc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 23 18:24:24 2024 +0200
+
+    tools: ass2iqe opacity key support
+
+commit 89a09f127a648f01984cd2779724949fae49ba02
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 23 17:57:19 2024 +0200
+
+    vertex lit improvements
+
+commit 27392301ee00529cc8b0e584b9ed21c2d13f9582
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 23 14:16:07 2024 +0200
+
+    sync depot
+
+commit 097c1f286bd263ab01217eb55c8729cd86c180d4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 23 14:15:56 2024 +0200
+
+    fix vertex colors support
+
+commit de5f778843ede9fc2f678042693cf5195bf19e19
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 15:24:09 2024 +0200
+
+    update assimp
+
+commit 23ee065bc569d492d4eddfaad32296478496d592
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 14:10:35 2024 +0200
+
+    WIP progressive polygon reduction
+
+commit fbd958d659d985ba16e0ad02289d2f601919e9c8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 11:44:07 2024 +0200
+
+    omit modt
+
+commit 07c2c7dc1d7dc9e9583016480975340d27ba6c0d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 11:40:40 2024 +0200
+
+    oops
+
+commit 657d6dcf856770f3bb7cb7fa9e3c9c88027e34ce
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 11:38:59 2024 +0200
+
+    lods wip
+
+commit ff7f42aeb97309b2f2295b19bf429c4ed27321ba
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 11:20:23 2024 +0200
+
+    fixes
+
+commit 8e7d5909918d8c3c8cf9a6b59ebafd8e28cb9016
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 10:40:01 2024 +0200
+
+    yep
+
+commit c7c407f0ae9134cdfed052230d25100acba199c3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 10:37:51 2024 +0200
+
+    update tools
+
+commit 7cbd408b2f61b387bef7da7316fc880d7fc098fd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 10:36:16 2024 +0200
+
+    rename list -> l
+
+commit 9731482b5a30d54a0f29ba5dd38e38154844276b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 10:28:51 2024 +0200
+
+    fix typo
+
+commit 888340b57ab8d87c34b37a5a81fad0699e711b03
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 10:28:32 2024 +0200
+
+    rewrite split and join to C99
+
+commit 885a2d4c8d161ef3c757d531b7b3cb228c1d5a70
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 09:54:09 2024 +0200
+
+    sync depot
+
+commit 1d768e9dcc4235f81539a582b51d456650b443bf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 09:54:01 2024 +0200
+
+    switch workflow
+
+commit afa61873e618ea86ade60fe3b6f49bf60d39ac40
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 01:13:31 2024 +0200
+
+    sync depot
+
+commit 17108374ea9099cc2691954990879eaa0e0429fe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 01:13:13 2024 +0200
+
+    make engine branding optional
+
+commit 1112e99c58581a379a7dfad9dd956a9435feca94
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 01:04:58 2024 +0200
+
+    add steamcmd.exe
+
+commit 72b28c213c991d9ecabbfab937a1b14f1fc831c1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 01:01:25 2024 +0200
+
+    sync depot
+
+commit ab422135b6aadb1efb48e9f3987051dc8ad18647
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 01:01:18 2024 +0200
+
+    add startup branding
+
+commit 8eabaa22f0cba39afffe83fcec28999c63889b3a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 00:17:20 2024 +0200
+
+    ditto
+
+commit 4066a622d7a7a191029d2f2414eafe021679a98c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 00:16:19 2024 +0200
+
+    script
+
+commit 0618a98139e6d5c9e133bbe6bad4dae461ef8428
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 00:15:19 2024 +0200
+
+    improve push
+
+commit 0e6675cf5fd9759c15dd784bf23375ec5c78af1b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 00:13:57 2024 +0200
+
+    update build script
+
+commit cd0fb23e6efb7feeb1ed53020e8f864c631572c1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 19 00:01:09 2024 +0200
+
+    sync depot
+
+commit 011f0753ea29fe98bb77b6d31d04d2bda7144183
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Aug 18 23:37:24 2024 +0200
+
+    sync depot
+
+commit 20249d40e93d4d3a07d0c36dae39588d9a5fc34f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 17 10:50:27 2024 +0200
+
+    sync depot
+
+commit e53976c303a250a5912af2154690fd39a7891adc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 22:26:25 2024 +0200
+
+    sync depot
+
+commit 3e37455ea156639de8c657f987e9e3f6fdcb2741
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 21:08:45 2024 +0200
+
+    sync depot
+
+commit 667065543db674cece6dd1aad9f143466c6b3561
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 21:06:51 2024 +0200
+
+    sync depot
+
+commit 55262f094d3f910381779cf7a9ec27add408ef21
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 21:05:41 2024 +0200
+
+    ignore .sln
+
+commit d000f9c59f9e2e9a603f4f9d512e95c01d5b2769
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 20:52:39 2024 +0200
+
+    sync depot
+
+commit 4c56e24a5b6eca6f6fa574222bdce740def99061
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 20:07:49 2024 +0200
+
+    sync depot
+
+commit 06ba1b2f0ad06a8ef611896122b689e1e537fe34
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 20:02:40 2024 +0200
+
+    ignore .sav
+
+commit d973945ef2f417a2179b07bd45995f5b50025ca2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 20:01:46 2024 +0200
+
+    sync depot
+
+commit 825ea9670e9fc5fab01aeac691ac36ca3d7bd623
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 20:00:55 2024 +0200
+
+    sync depot
+
+commit 38219063fb4334fea6918d01852c6bf19701a5a1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 20:00:18 2024 +0200
+
+    sync depot
+
+commit 4a0f468623b144ab008e53af10f7081c5d3a7569
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 19:48:41 2024 +0200
+
+    sync depot
+
+commit a44b3bedf8ebc2895c73d0f7ea44ae2acad5f0ff
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 19:24:52 2024 +0200
+
+    sync depot
+
+commit 2ba0f637168bc0bb8ba266c527fbbc4688677747
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 18:27:46 2024 +0200
+
+    ui_notify tweaks
+
+commit 902e37b3e7edec460f6083a57a07d2623d93b0f6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 15:37:47 2024 +0200
+
+    sync depot
+
+commit 65a50eb3410b4dff4612d3680a30a98347a253c6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 14:17:25 2024 +0200
+
+    apply dd_line_width to text2d calls
+
+commit b771d31a1873c4cbdd710601b90e6b54619ba36d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 14:08:47 2024 +0200
+
+    ddraw text2d use dd_color
+
+commit bc81a034afde1f324428a215c32f37dc224119e2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 14:06:03 2024 +0200
+
+    sync depot
+
+commit a8f4bed7fdf95df48c5f0a5cca27098024b08a33
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 14:03:47 2024 +0200
+
+    sync depot
+
+commit 3447eaacc926434dedfca35b2f0381b9338b17e0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 14:03:27 2024 +0200
+
+    improve build info
+
+commit ba0ac1fae0c7c42cbbae8456bdc406cc97e11d76
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 13:33:08 2024 +0200
+
+    sync depot
+
+commit 1d13008fe47dac8ba7d40198fcf10527366e1df7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 13:00:52 2024 +0200
+
+    sync depot
+
+commit 60126f032e1ca35d75d807cb570d00a0404f5cb3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 13:00:22 2024 +0200
+
+    sync depot
+
+commit 00138db5a6307e2b7d73c05c951186ec034d7767
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 12:25:48 2024 +0200
+
+    sync depot
+
+commit 1edc7f8137ce3cda38e73a11fb159d54b22655ee
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 11:58:53 2024 +0200
+
+    sync depot
+
+commit 50981a680649841c0c970d8fc57532bfec03ef86
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 11:30:34 2024 +0200
+
+    sync depot
+
+commit 720719753c9e135dfa0a5683f67c250554e68cd8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 11:29:11 2024 +0200
+
+    no .vscode
+
+commit 868474be3a90f3b58d8f5cdbd03923ed0f92c1a5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 11:28:11 2024 +0200
+
+    sync depot
+
+commit 92ccaaf25d0fd5858177c224c4aa43fbd75d20fe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 11:27:47 2024 +0200
+
+    add window_destroy()
+
+commit 926a48bc502386980032c74dd3be4d65c5ba6b2e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 16 09:04:01 2024 +0200
+
+    add mapf and unmixf
+
+commit 48a6bd5911b064361196fec79c195a6647c198a3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 23:18:16 2024 +0200
+
+    stuff
+
+commit a28b243352b09dd9868601197bc6d3ee3a770794
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 23:17:31 2024 +0200
+
+    C/C++ INTEGRATION FOR VSCODE
+
+commit 4398cd805db145828c355dafe7e12c92c433e86b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 23:00:13 2024 +0200
+
+    cfg
+
+commit 315359a58132191e6d2e72122d36ca18abe843aa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 22:15:36 2024 +0200
+
+    sync depot
+
+commit bbdd3634af92e5aa894776d8bc98d328c5de8b14
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 21:49:44 2024 +0200
+
+    sync depot
+
+commit 4300977d7f8fbe40db52c3471976f79cf9e44fe4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 21:41:38 2024 +0200
+
+    sync depot
+
+commit f984b637956efbc79238cce71fbadcfc6f3832e5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 21:05:03 2024 +0200
+
+    sync depot
+
+commit 83b9677720d4c3cc36bc883511e51b61ac0ac63e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 20:55:50 2024 +0200
+
+    ignore .env files
+
+commit 62d45d38d228e3ed1203d69d9fbd60d4e9f353c5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 20:55:36 2024 +0200
+
+    sync depot
+
+commit 4e75c30890273a18c7587fc3dc1feee61d4ec73c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 20:49:48 2024 +0200
+
+    sync depot
+
+commit 85d6b91678e9cfb456eea2653fc6e1be8202e897
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 20:43:48 2024 +0200
+
+    sync depot
+
+commit 79f75e141b30aa3795cd08dd8e05e19aa4ff0456
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 19:49:41 2024 +0200
+
+    fullscreen improvements attempts
+
+commit 42779f47e6018c1198685104d65d1f67d711f626
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 19:49:33 2024 +0200
+
+    sync depot
+
+commit be8b5689a5d85f9daa3c9b848b0fd270b626ddc5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 18:56:45 2024 +0200
+
+    2nd try at fullscreen, disable top most
+
+commit 4760e3ea7278a623f6348ad307fdfb83fb9f686f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 18:54:21 2024 +0200
+
+    fix fullscreen
+
+commit ef6210040af39d4bb864df2d66079d70e48aae4c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 18:36:46 2024 +0200
+
+    sync depot
+
+commit a8a877e62fd133cec3d547736429729fb167f569
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 17:56:20 2024 +0200
+
+    sync depot
+
+commit e743ad1b66d5a31102a47b63ca591310c0606e0a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 13:16:13 2024 +0200
+
+    sync depot
+
+commit f80b2d51843253aa093bb910326f679134d7fc81
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 12:52:50 2024 +0200
+
+    sync depot
+
+commit b6dd7f50d3762ebe40a7d314542a5bede17cd184
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 12:35:28 2024 +0200
+
+    make dd_line_width stick to the draw command
+
+commit 6398fd62ad9d9a2cf1cb2dfc556c85c6a82fbbc4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 11:11:46 2024 +0200
+
+    bring poly back
+
+commit ba1d6e783ec64d3f237020d51bd08e104ca226aa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 15 10:40:23 2024 +0200
+
+    html5 assets
+
+commit 7f97051d1b9fa779037daeddf040715b0d0f75b7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 12 20:06:21 2024 +0200
+
+    sync depot
+
+commit 4c68dcc991ace1e753ff172c165f48f858be3e55
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 12 17:22:40 2024 +0200
+
+    updates
+
+commit fab879b5d8428d2ec09fdec0184dbe78c7d01c3c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 12 17:21:02 2024 +0200
+
+    fix shaders
+
+commit 8c99af4292fe603011904124c2a62af46dbc055c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 12 17:18:56 2024 +0200
+
+    small fx pass
+
+commit 5d7de442e74322e8c09b4070330714609142e915
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 12 17:11:25 2024 +0200
+
+    2nd sync pass
+
+commit a37e7970c1b172cedca8d15d812d33a7dd572109
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 12 17:10:31 2024 +0200
+
+    sync FWK
+
+commit 9d39fbe363e1842ac5e204e73ad06431a8998e04
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 12 16:55:46 2024 +0200
+
+    CRLF to LF
+
+commit c14df0b8a53a172d5385f62359dae9e35fc2d62f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 17:31:19 2024 +0200
+
+    sync depot
+
+commit a6541ef5f8c1ef005a16fbf2639b4f366d6c4423
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 15:00:21 2024 +0200
+
+    sync depot
+
+commit 452a6b885743986ef79caa2ab58f941dd6bedf92
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 14:39:18 2024 +0200
+
+    sync depot
+
+commit 889565a89e3323103930b1f1cee901b8f90838f1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 14:31:27 2024 +0200
+
+    sync depot
+
+commit 6997e7e14f70e75fab3254bc77379104b0297f9c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 14:31:07 2024 +0200
+
+    disable steamsdk codebase
+
+commit abd6bd3c68f370023e01af0b99db564b4a48c800
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 12:53:56 2024 +0200
+
+    2024.8 release
+
+commit 309f0f353ce816b82e2917f26b892685c36f7f98
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 12:51:57 2024 +0200
+
+    sync website
+
+commit 81c497c2378b51d522f5cc03d34da97407e66ec2
+Merge: 6596ecb 0536d99
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 10:53:55 2024 +0200
+
+    sync depot
+
+commit 6596ecbb010cd261509b668a8188361d10cac81b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Aug 7 10:53:39 2024 +0200
+
+    sync depot
+
+commit 0536d99b8084fa7f01478cbc99df16fd06cd2803
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Fri Aug 2 20:11:11 2024 +0300
+
+    minor changes
+
+commit dbb11d46e2525f7372c09f6b6dbbeb547174a28e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 1 09:24:14 2024 +0200
+
+    sync depot
+
+commit 9c48fbec13d80bc98f4e7aafbea7989a0ee78a36
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 1 07:15:42 2024 +0200
+
+    update v4k
+
+commit 927669505c434ba2edd067f488346daeb3bdba84
+Merge: ab7f89f 2a4784d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 1 07:14:27 2024 +0200
+
+    Merge branch 'main' of dev.v4.games:v4games/v4k
+
+commit ab7f89f085ecd9b9b23b7a2ce8656c4f9b49eee3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 1 07:13:43 2024 +0200
+
+    sync depot
+
+commit 2a4784dd060ccf10c2ab7c6644080b66af2bb903
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Wed Jul 31 23:39:02 2024 +0300
+
+    fixes to mac
+
+commit 6f9433b743bd76385ab1c7627bd6c0ad2d30ec5a
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Wed Jul 31 22:56:06 2024 +0300
+
+    fixed more macos tooling
+
+commit 050accbce18c6750cdd738ed512a82675a45cb6b
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Wed Jul 31 22:29:31 2024 +0300
+
+    added macos fixes
+
+commit c2338be74c20a86aeb54cc3f05904f7d8cba5073
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Wed Jul 31 22:15:17 2024 +0300
+
+    changed tool perms for macos
+
+commit a8a4b7eb4682d435f26606707bd2beaac8c054f8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 20:28:37 2024 +0200
+
+    sync depot
+
+commit d80cb917ae1001d3e4c3c33a7ad35b1a1a2a356f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 18:22:16 2024 +0200
+
+    sync depot
+
+commit 1baf6aeddef0de457dc819e2d73e47ea72ee3160
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 18:15:19 2024 +0200
+
+    sync depot
+
+commit cdc3821b72838ee82512ea9e5e2a37973b94431a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 18:13:06 2024 +0200
+
+    sync depot
+
+commit 064909c23c1df60f4c41a540f4fba8fa4ac2b669
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 18:04:01 2024 +0200
+
+    sync depot
+
+commit fbfe93c5156ecd4a81c6ed480975b0160d880ee5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 17:57:43 2024 +0200
+
+    sync depot
+
+commit d28ddb54b6f9a40911748c5de80ad03803036437
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 17:48:10 2024 +0200
+
+    sync depot
+
+commit a26fc115dac6ffc044ae5c45d4c2d63abadf2a97
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 16:57:25 2024 +0200
+
+    sync depot
+
+commit 7b865d902491b3a9b7905f0e94663bc6959968de
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 16:51:55 2024 +0200
+
+    sync depot
+
+commit 25904f226efd8a16cae98883de9ce9bb32c31ff9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 16:50:18 2024 +0200
+
+    sync depot
+
+commit 0961fee62f452262ba499fbd00789c60b4b350cf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 14:48:05 2024 +0200
+
+    sync depot
+
+commit 639c3d80aa393b361e3f08e1b08375e24da612b6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 14:05:36 2024 +0200
+
+    sync depot
+
+commit 58f36fddf18d6c179ceeb912a38fc6a0fd67f276
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 13:54:29 2024 +0200
+
+    window: window_fps_vsync
+
+commit 1ea72bc3725b1892d70388003df179514d01ee34
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 13:50:55 2024 +0200
+
+    sync depot
+
+commit 4bb4073287d8e0234ad350f2abe2819f5a1ce021
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 13:02:09 2024 +0200
+
+    sync depot
+
+commit 1822f324a64a94c38f7f8912741bffbb195528c7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 12:25:58 2024 +0200
+
+    sync depot
+
+commit 4f393caa8665ae3ad7013e3e2d2562369144f0e4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 31 10:37:11 2024 +0200
+
+    sync depot
+
+commit 25b0e1a166b8f3f3df8f201b7e3b7df76cf0a337
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 23:14:36 2024 +0200
+
+    sync depot
+
+commit a21632f5cff38eaec276ae0b1101a7ad3abfd593
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 23:07:46 2024 +0200
+
+    sync depot
+
+commit ab5fac9c46dd69bdd76402e6791bd87d2e86cc6d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 22:58:06 2024 +0200
+
+    sync depot
+
+commit 9a89f1df6dc84b269032b269afb88df65a09897c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 17:02:11 2024 +0200
+
+    sync depot
+
+commit 9c747c224528f58c679581ac1fc11d9f243fd8c6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 15:56:52 2024 +0200
+
+    sync depot
+
+commit daa7051dba2bd19d636fc706e61ca5b656eb23ed
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 15:43:57 2024 +0200
+
+    sync depot
+
+commit 6f86da85a6ff743cf6295e4ae90954f0e49cb7d3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 15:33:16 2024 +0200
+
+    sync depot
+
+commit 64330bbd071ea5e327f396a6107b1283b67f23df
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 15:17:47 2024 +0200
+
+    dd_line_width
+
+commit 8bf6562f192776d8a757e48791c1af79291d3d1f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 15:17:12 2024 +0200
+
+    sync depot
+
+commit 46745237652a5d035c77edfb28e3b934b12834b1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 14:34:59 2024 +0200
+
+    sync depot
+
+commit 121cbda50f5764200f39dd1871be71994119d6f3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 14:13:52 2024 +0200
+
+    sync depot
+
+commit 0ab90e5161a39adde9f0f982e9df7eff0e19f244
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 14:09:00 2024 +0200
+
+    sync depot
+
+commit d670cb4289565dacc5117ecf8f8ca9089b9db6e6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 13:35:33 2024 +0200
+
+    hack: LINE WIDTH 2x
+
+commit 447bd0aa631c6181c22835b32648a2888379c45d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 13:35:25 2024 +0200
+
+    sync depot
+
+commit cb20f53aa6dde0d9fa76f9028bc30353ebba3e86
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 13:09:02 2024 +0200
+
+    sync depot
+
+commit c9486d18286d0dedd216e50bba5e40c9a12ce8ee
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 12:44:00 2024 +0200
+
+    sync depot
+
+commit 429129fc218cabbaf52e66ed4e7ca4a43d3b370b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 12:33:17 2024 +0200
+
+    sync depot
+
+commit d715132caa2f000b228786afea88d854b047e4c3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 12:30:18 2024 +0200
+
+    sync depot
+
+commit f3c97f5ea6ae42e5387e38352d4dbf8fab46c435
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 11:55:08 2024 +0200
+
+    sync depot
+
+commit d82bcc899ac74de61fa7d8aec96a114d9e10e65c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 11:51:13 2024 +0200
+
+    sync depot
+
+commit f584724b95387d64fb57475fc8ee7046f3b09761
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 11:39:03 2024 +0200
+
+    sync depot
+
+commit e76c1d71383599ac349053979d6762f4d18ffc87
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 11:13:27 2024 +0200
+
+    sync depot
+
+commit e3c154318429e1156c4ff304eef0f32c4da7a6a7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 09:46:48 2024 +0200
+
+    sync depot
+
+commit 3328cad3e0668ab977e6e152898674028a5c8a1d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 09:20:33 2024 +0200
+
+    small changes
+
+commit 3da7e9ffa3518fabb5efb060dc0486ac5634726f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jul 29 09:20:24 2024 +0200
+
+    sync depot
+
+commit 36b24fcb6a8e7774c11d3b22502d4cbfbee6f001
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Jul 26 09:21:29 2024 +0200
+
+    sync website
+
+commit 46c227830f21753b62ee50860e9115e847b002c0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 23:13:19 2024 +0200
+
+    sync depot
+
+commit 13ee97e1dad7f4303f73bde78ec2873bea33289a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 22:24:02 2024 +0200
+
+    sync depot
+
+commit 930aaab273e61f24922a80a46d35b8fa4b74c825
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 16:24:18 2024 +0200
+
+    sync depot
+
+commit 5104f07657e8307fb2be874c38e8ef85f3b0d966
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 16:10:03 2024 +0200
+
+    sync depot
+
+commit 4c613361d5ff740e0034ba1f3c8f423227c97ceb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 14:16:58 2024 +0200
+
+    sync depot
+
+commit 5366d98c8e9e6b67ba0eaef24f6201da6e4a9888
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 13:00:07 2024 +0200
+
+    sync depot
+
+commit d2908de641b52a307e707ebb3ce8e4504012a097
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 10:48:51 2024 +0200
+
+    sync depot
+
+commit ccfe682de29cb2686efdc19bbeb21231db8804ad
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 08:11:55 2024 +0200
+
+    okay
+    okay#
+
+commit a2bd890709c61e8874274a720da5254970d3727c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jul 25 08:11:15 2024 +0200
+
+    sync depot
+
+commit f810fec3d242659599813c5495772bfbceadacc7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 24 22:31:56 2024 +0200
+
+    sync depot
+
+commit f449089359c9ab629479ccf27196e84cbe78c392
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jul 24 22:31:44 2024 +0200
+
+    improve fullscreen support
+
+commit 17894fa71254c9e6a919adde3162ecd00bb4d6cd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Jun 8 19:12:57 2024 +0200
+
+    sync depot
+
+commit 7624d8a6052a5c1fe9c646ce7c36e1812e6e4469
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Jun 8 19:12:12 2024 +0200
+
+    sync depot
+
+commit a884182da6bc31dad46288db6a4e42f6c2086a70
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Jun 8 19:02:33 2024 +0200
+
+    tooling
+
+commit 665b150a47e5764170f32ff92582a65ec34f465c
+Author: Dominik Madarász <zaklaus@madaraszd.net>
+Date:   Sun Jun 2 10:16:44 2024 +0200
+
+    sync depot
+
+commit 9c3d2a3fe1ada89251bd94871a0679f844434012
+Author: Dominik Madarász <zaklaus@madaraszd.net>
+Date:   Sat Jun 1 09:29:26 2024 +0200
+
+    sync depot
+
+commit 46e2769572242916b588e972478b33310a7163a0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Apr 23 11:22:04 2024 +0200
+
+    fix: prefer skysphere over skyenv
+
+commit 98bdd7136a82deb08ed543d0d53c68bb94c4ddfa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Apr 23 10:46:11 2024 +0200
+
+    fix: gamma correct IBL maps
+    new: support OcclusionMetallicRoughness maps
+
+commit 5b77483cf68e6d109d652327edbea2c7b5119f8b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Apr 23 02:30:52 2024 +0200
+
+    sync depot
+
+commit 428cf6037fbc7aeac4c273949d4938e8b36788a8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Apr 23 02:01:20 2024 +0200
+
+    sync depot
+
+commit 8626dcceaa3d53c2f875d1c3a139d25de3ff6380
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 22 18:09:03 2024 +0200
+
+    sync depot
+
+commit ad8f2d90c29ce496749d33d3927c9b15051325bc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 22 17:17:52 2024 +0200
+
+    sync depot
+
+commit 2f965aff2052a07fd57cc8434f789a2f802f638e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Apr 20 12:33:39 2024 +0200
+
+    sync depot
+
+commit a3398bfb16f457933033aebab1e136db8b74f51d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Apr 20 02:22:01 2024 +0200
+
+    sync depot
+
+commit 15bd8fae81232d1c7d58fc7a674d131e41a22a95
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 16:47:13 2024 +0200
+
+    sync depot
+
+commit 7f4ad5f6bca727e87ac8d30803ca45f7ec55fbbe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 16:04:29 2024 +0200
+
+    sync depot
+
+commit 462676c24ae470acb32e8db8b39ec883ce6ddb99
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 12:42:35 2024 +0200
+
+    sync depot
+
+commit e45ff89de4c3632812d85c4943ab5b09b012ea2c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 12:42:28 2024 +0200
+
+    sync depot
+
+commit f726a2af7b37b069ad42ad51efaf1fb300f5ebf0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 12:10:49 2024 +0200
+
+    new: renderstate add glColorMask fields
+
+commit 50b0d0766c5259c395f781d674ffd44e238bc275
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 11:31:43 2024 +0200
+
+    new: added fx_setparam
+
+commit f7015da22ed7409824d82fcd42e24b7e69af66dc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 11:18:12 2024 +0200
+
+    new: added fx_program(int pass)
+
+commit c9877e7b60a5be4c0d19b3e236056a4228bda14d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 09:57:49 2024 +0200
+
+    sync depot
+
+commit 7df5ea4ca66ce3c4b9ceccdc6eb87fb239019126
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 09:57:28 2024 +0200
+
+    new: renderstate additions
+
+commit ba60e8688233dcab9f30067080ec38d2e0d2293c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 09:13:11 2024 +0200
+
+    fix: fx stack fix blendFunc state
+
+commit 836640decdd219fb363aeebda7d043478895889d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 01:43:05 2024 +0200
+
+    sync depot
+
+commit 038386ef2da8d9714a1d079ba30071811f9dec39
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 18 01:42:40 2024 +0200
+
+    new: frame_time uniform
+
+commit 23c860ab9910d089fc3ef8fbb48f786697ec7f4b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 22:35:46 2024 +0200
+
+    new: MODEL_CULLFACE
+
+commit 3f1ab0daccbbfe0ae593988b4996db4518051614
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 22:35:28 2024 +0200
+
+    sync depot
+
+commit 571a848ed992e9c0621d810814500fc82021c73d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 22:21:33 2024 +0200
+
+    sync depot
+
+commit 8637f7ede3da174e2f559e2c2acb33ac6cfc38ae
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 13:31:56 2024 +0200
+
+    chg: centralise --capture to tests_captureframes()
+
+commit f9dec24eb5dc0c2fa49aa692bb3c9a779ab98da8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 13:05:53 2024 +0200
+
+    chg: --delta -> --fps
+
+commit 2683a634de3eb38e50958ac78327d5c3f6d83375
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 13:04:49 2024 +0200
+
+    fix: use --cook-jobs=0 option
+
+commit 505ecdc4c209c06de56031566ae2502513816fab
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 12:53:53 2024 +0200
+
+    chg: reenable UI on --capture + enforce window res
+
+commit c30a73877a4ab3de892ba1c2102af5880f1c98ab
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 12:46:55 2024 +0200
+
+    chg: don't render UI in --capture mode
+
+commit 20f7a3cfa26db9063d214d2a1ca0ada44dbfdac5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 12:21:14 2024 +0200
+
+    chg: tests add --mute flag
+
+commit 4ebca2e53b1b6d074b1d19d15fa9b40fa3489346
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 12:19:47 2024 +0200
+
+    chg: add Running... remark
+
+commit 0b048c960c82a20c5f3629bfe57bcf3bc0cafadb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 12:14:01 2024 +0200
+
+    chg: fix pacing on --capture
+
+commit b5fd58d69b90ad313a8d841a55631100ea900123
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 17 11:47:15 2024 +0200
+
+    chg: set fixed rnd seed for captures
+
+commit f13e6dc4acc64b4bd87474fcea7d1a5f810990fa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Apr 16 21:53:53 2024 +0200
+
+    chg: improve capture exit
+
+commit c1673be3fed3da562d4e4d8ebe111cc55c082f29
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 19:55:47 2024 +0200
+
+    new: automated tests
+
+commit 8fd7a4553378e457f6ac47f53e37302e6f4919e2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 18:28:09 2024 +0200
+
+    chg: update gamecontrollerdb.txt
+
+commit 470e455091684ca722e61b92b088cd608eb47814
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 16:00:46 2024 +0200
+
+    gfx: more state changes
+
+commit e59fba6cf2f50c230926e03d3ee675f87a8f1e5a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:42:38 2024 +0200
+
+    gfx: use dd_ontop to determine depth test, again
+
+commit 2ebaa545c0d6c5f12bb21c2fe5a58e84fe5f6c60
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:38:28 2024 +0200
+
+    gfx: ddraw push rs
+
+commit 4eec9cd8c4c15da4b8f825f820521060256f1ee7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:37:21 2024 +0200
+
+    gfx: fix ddraw culling
+
+commit 32ca7a2ad5b40fa9ebb82e7289406b44db5968ac
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:29:52 2024 +0200
+
+    sync depot
+
+commit 6a7950ff8224589013dd6a2230faadb9c9c4be55
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:28:40 2024 +0200
+
+    gfx: respect dd_ontop
+
+commit 4f0bd755d09215f04778c58529ca7230f5a5a719
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:23:11 2024 +0200
+
+    gfx: ddraw disable default depth test
+
+commit 881a36b75962d9c4578f4f258404ad669b75fce2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:14:50 2024 +0200
+
+    gfx: rename polygon mode state
+
+commit 41505bc56f768ccbfad7f0e236869711dbfa9e6f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:13:53 2024 +0200
+
+    gfx: remove wireframe state
+
+commit 9bd54e7ae1d28607f8d2ad9111f2f717d01484a1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 14:10:11 2024 +0200
+
+    gfx: finish up renderstate
+    
+    This reverts commit 115fff8ae08b0d6fcc4212c588dab09bd6c4bed6.
+
+commit 83464176bf8bf6742b87dbee5b03b64d3575189f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 13:37:34 2024 +0200
+
+    gfx: renderstate cleanup
+
+commit 57e55fd8f61c222d68d2a07d385716be568868c9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 12:07:05 2024 +0200
+
+    gfx: revert shader caching
+
+commit e74df3477c59b33ff64761552693257bb0717177
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 10:54:30 2024 +0200
+
+    gfx: unify shader locations in model api
+
+commit c34cde210295c43cc90519bd024277cb469ed5d1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 10:07:28 2024 +0200
+
+    gfx: centralise model shading init
+
+commit 8649efc974f6e79657aef5be5cfe9bf91249899b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 09:30:36 2024 +0200
+
+    gfx: disable uniform caching + perf tweaks
+
+commit 115fff8ae08b0d6fcc4212c588dab09bd6c4bed6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Apr 15 07:21:15 2024 +0200
+
+    gfx: shader instance caching
+
+commit 14a234f3ed5b654b416e3fa92dbc684cf482681c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Apr 12 21:19:31 2024 +0200
+
+    tools: luaffi
+
+commit 05f23f2ca64c063fe14000e5817e31666907fb65
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Apr 12 21:17:01 2024 +0200
+
+    add luaffi
+
+commit 0cf879297e3a28510494e6bc1a13496debbced28
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Apr 12 20:18:02 2024 +0200
+
+    sync depot
+
+commit e189e4defe345cff3c93f2559aeeb8691edfb621
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Apr 12 20:17:43 2024 +0200
+
+    sync depot
+
+commit b01ac27fca921fce7dc8508db2918cae31344fc3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Apr 12 19:53:46 2024 +0200
+
+    gfx: scene_render cleanup
+
+commit fd6b9ef6397fee2092a7ab7ee06c2e54292658e4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Apr 12 00:22:52 2024 +0200
+
+    gfx: model render pass switch + lmap fix
+
+commit d05c92a9b72e00b112ff4a2bb95df332421749e2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 10:04:52 2024 +0200
+
+    gfx: more cull face coverage
+
+commit 2277b42619663d0b359428839ff0469cb5dbc629
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 09:43:10 2024 +0200
+
+    gfx: figure out face culling defaults
+
+commit 50cc35db90ad68723bfdc277822d2180db9d5dbb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 01:23:21 2024 +0200
+
+    additional improvements
+
+commit 7b67f296114d8e4d3f345fe668ef30641db98c99
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 01:13:35 2024 +0200
+
+    gfx: drop viewport and scissor_box
+
+commit 66a2d1ff6da869906674d296c7ae34b59472c5af
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 01:06:46 2024 +0200
+
+    sync depot
+
+commit 90a7319eaf1a1192bbe59e776482477964250188
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 00:59:32 2024 +0200
+
+    gfx: postfx_end use rs
+
+commit 40783980c04d9a6da755460928e3fdb411b3132a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 00:55:14 2024 +0200
+
+    drop lightmap hack
+
+commit b4d410212f4a0d2ad3dd1ebd6cdc14d5af5da731
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 00:51:47 2024 +0200
+
+    demos: fix lmap and lod demo
+
+commit 99111665ba4c8a1c39c0464254ad56f78884217e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 00:42:53 2024 +0200
+
+    snake_case renderstate_t
+
+commit 1c19c4440079eb1297761d0b520438d77d124f4e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Apr 11 00:19:08 2024 +0200
+
+    wip: renderstate impl
+
+commit 87c37ae3ad050bad0de4b63a5cb767ab9a39ec15
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 3 14:40:29 2024 +0200
+
+    update tools
+
+commit 83a101097b1611e9a55b0c237f66e6de777e9730
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 3 14:38:31 2024 +0200
+
+    add build_tools.bat
+
+commit c4947bf868d46f39e68fd42bc7f2dd325c6bc0fb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 3 14:36:43 2024 +0200
+
+    add build_tools.bat
+
+commit 5820191ffaeff516fc20a0cdac9fd31519f314bb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 3 14:36:26 2024 +0200
+
+    add build_tools.bat
+
+commit 1bf57e8e1264ff8abd576ef788c91c71ddd04f8a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Apr 3 14:35:40 2024 +0200
+
+    add build_tools.bat
+
+commit 1b6169a5156416b7c4f7bad13b226aea37ef50be
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 29 00:21:53 2024 +0100
+
+    shadertoy: set viewport
+
+commit 594b8a01362bed50053a92668a6912ce4e15a628
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 21:58:15 2024 +0100
+
+    demos: shadertoy in material
+
+commit c55305c031503e98e76f8fe33d10d99c48f185f3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 21:57:58 2024 +0100
+
+    sync depot
+
+commit 989a86fb1a7a34515ab6263e07904e8955031680
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 20:21:52 2024 +0100
+
+    gfx: tweak sphere_to_polar
+
+commit ff72ac6bc9bc30d3e3100cbb1e096a4eff429e6c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 19:02:07 2024 +0100
+
+    gfx: generate brdf lut
+
+commit b94c56ec58935bab3370bd14a3d50d6c4707fbea
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 16:02:28 2024 +0100
+
+    fx: move tonemap shaders to engine art dir
+
+commit cc3eedce9bbc1e87aecb591e0245b2756b4444b1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 16:02:14 2024 +0100
+
+    sync depot
+
+commit e6ea4892bb202df76a0633b77c1a484d54a74a66
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 15:49:57 2024 +0100
+
+    sync depot
+
+commit 76b256ab02deb4bf71e0321ecb80458a910e92e2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 14:49:07 2024 +0100
+
+    fx: ui fixes
+
+commit f66f0336c242eb20d3a5ab40d4185375f41cec96
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 14:03:21 2024 +0100
+
+    fx: set default priority
+
+commit 9992c74e523cb85998f2eb5b4606c1ba38c67dee
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 14:00:03 2024 +0100
+
+    fx: fx_order support
+
+commit 2bc338172c823e4b6b81c5627dbdcff4e3650263
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 12:48:23 2024 +0100
+
+    improve pbr shader, introduce fxAces.fs
+
+commit a54a6392f3dc40bdd573b77c0be528fc7af1cfc0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 12:12:25 2024 +0100
+
+    sync depot
+
+commit 7037d7158b22cdaf8da115e98d5d01156442cad9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 12:11:39 2024 +0100
+
+    revert gamma correction code
+
+commit 0c5731b7ebe23f96275a2a548e9f183244b580c6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 08:38:22 2024 +0100
+
+    add gs.bat
+
+commit 59c9f8be4e53b71cdf5bc3d00f6dce42155aae7c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 27 08:36:32 2024 +0100
+
+    more gamma tweak-ups
+
+commit fabbcc4aa79af8a88485e852cb965c52192f8847
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 21:14:42 2024 +0100
+
+    gfx: TEXTURE_NO_SRGB
+
+commit b8be40e48979d1bf651aeb81a247dc6435e131e9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 20:15:30 2024 +0100
+
+    skinned gui srgb option
+
+commit 3b69af12474b6e954fc264e872e22c506eb97d56
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 20:15:13 2024 +0100
+
+    sync depot
+
+commit a7e3a924aa6fd31511ba9c092272dafea7c3db70
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 19:40:53 2024 +0100
+
+    sneaky shader
+
+commit bd19dba3a3ac061ab40a7cd36f912d54b2bac327
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 19:38:12 2024 +0100
+
+    last srgb change
+
+commit dc5bbd32e9339a83418525f18f03819bd26e65ba
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 19:31:03 2024 +0100
+
+    srgb
+
+commit 5f31dd100cff838888b6739174992cb95fadea5b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 19:13:55 2024 +0100
+
+    improve srgb control
+
+commit b27b265a8f9406a7835260940a9675ef379a1e7f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 19:12:41 2024 +0100
+
+    drop this
+
+commit b841064174b54e083870e3b49c47ae4b81063cdc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 17:15:02 2024 +0100
+
+    fix CRLF
+
+commit b14c31b4e09e5ea51e74af3c9b285ff28800410c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 17:05:14 2024 +0100
+
+    gfx: gamma correction
+
+commit 253b9310936671e75f49a1987c63b5f0181ac5f7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 15:34:25 2024 +0100
+
+    demos: fix 99-pbr
+
+commit d2582796a84f82536a55a9a0a518deb7d0306ad9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 15:22:36 2024 +0100
+
+    render: optimise pbr load
+
+commit d636c1c796004905f7fad6a6f3be58c7a0646290
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 15:09:49 2024 +0100
+
+    render: unify pbr materials
+
+commit a1e26f4842c8e6124b1936a19b0c867df3a2094b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 13:52:51 2024 +0100
+
+    make: improve dpush
+
+commit fc4cb0daba7e8e6aef1b5d406ca390767b250582
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 13:48:31 2024 +0100
+
+    add: make leak
+
+commit 583643859655b72620233a32cf252ce0f3821825
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 13:37:53 2024 +0100
+
+    update PLUG.bat
+
+commit 162da0948076ce19abd4acf39c449bd059522c99
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 13:37:32 2024 +0100
+
+    sync depot
+
+commit a347fb345c1817cf04eb5792f447f14348f19055
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 13:36:22 2024 +0100
+
+    update make.bat
+
+commit d1144180ed557bc7013dec82329e8b8d1cc0300f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Mar 26 11:44:21 2024 +0100
+
+    add lod wip
+
+commit 418a5ad5275546fcd9ddb55d0b4887aaedb708ba
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Mar 21 12:10:28 2024 +0100
+
+    fix mpeg decode for ycbcr
+
+commit b69eaee2ee3dfee1d58ea6c83c711a3c83c3a12b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Mar 21 08:28:12 2024 +0100
+
+    improve docs
+
+commit 311e5894a70f636659fb726b9df8091e39a92b6c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Mar 21 08:27:08 2024 +0100
+
+    promote texture_unit()
+
+commit 4fdc043677152d370e5796d1607e09b6f1976800
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Mar 21 08:13:47 2024 +0100
+
+    shader uniform caching
+
+commit 2f49239a9fa7b897962c3ed033afb02a87a47245
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Mar 21 07:47:28 2024 +0100
+
+    improve shader binding for PBR
+
+commit fad3653201edbe424a840ce068be529687bcfff7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Mar 21 07:43:51 2024 +0100
+
+    improve tex unit allocation
+
+commit c8a6c79bf198ecb5b8950cfe67624ae4f8fa9003
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Mar 21 07:13:18 2024 +0100
+
+    cycle texture units
+
+commit bbd9b4e950ec49247d28dc17914b435353726e20
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Mar 21 06:36:53 2024 +0100
+
+    support multiple PBR materials
+
+commit 4fcfb2690a9757c02a3f7b618548e5bf9800db1d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 22:49:11 2024 +0100
+
+    improve pbr analytical lights
+
+commit 2aee9c324042d38e973459cf201f3772e3c0e117
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 21:52:44 2024 +0100
+
+    disable cook on demand
+
+commit 64c6fb54a4be02e446e749c1ff3dcc9f22a3014e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 21:48:52 2024 +0100
+
+    drop flag check
+
+commit f620ed1938fb9b907daabdefa7809f59354383d7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 21:46:51 2024 +0100
+
+    optimise skybox_pbr
+
+commit 082f78d25ffc195620bba442057c97606c2dabea
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 21:25:47 2024 +0100
+
+    add cmft studio + hdr maps
+
+commit 7efc59079ae7fa3d8435ff9a4bf030b892e47986
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 20:46:40 2024 +0100
+
+    improve material demo
+
+commit 91d3f9a03aaf97ebdab59e2caef99def82e6505e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 19:42:49 2024 +0100
+
+    cleanup
+
+commit 6f83b811321575af3baa74addbaade8ce44549d7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 19:41:12 2024 +0100
+
+    preprocess shaders
+
+commit 363ae843f4a7e97d6b6caf84f53f96dd2a76a67e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 18:49:26 2024 +0100
+
+    add MODEL_PBR flag
+
+commit 920d8ecad41547162466e752526380aad9e691af
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Mar 20 18:33:02 2024 +0100
+
+    wip: pbr support
+
+commit c724645949d9b1a175ec07371b604e1088b58fa8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Mar 4 10:32:13 2024 +0100
+
+    sync depot
+
+commit 4a47787c12ba0d5206f60c3a926c2eb8e08a9668
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Mar 4 10:25:15 2024 +0100
+
+    sync depot
+
+commit d85f789a66ab484d45f3340a27e8c296fddac25b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Mar 4 10:12:46 2024 +0100
+
+    sync depot
+
+commit 445c7e465debb91de57ec88ab98585e361281fb8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Mar 4 10:10:42 2024 +0100
+
+    sync depot
+
+commit 9b8a562dd12976500d678be17ed62513d534b9ab
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Mar 4 09:59:45 2024 +0100
+
+    sync depot
+
+commit b5ed445310cae3364233c8d2ad7bc2e13646cce2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 12:37:42 2024 +0100
+
+    sync depot
+
+commit 33fb24142d83aca2ca3da3a2adcc2e35087e7c7a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 12:37:11 2024 +0100
+
+    renderer: mesh_destroy
+
+commit 45388ccfde08abd6f9a09faf04f1ca0bac9e7631
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 12:28:51 2024 +0100
+
+    sync depot
+
+commit c706296fd8c1298a0ca2a318be10813ed6f3b540
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 12:20:14 2024 +0100
+
+    sync depot
+
+commit 71ad13c1c11c1bc42a2d4825592ea38eba91070c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 11:59:50 2024 +0100
+
+    sync depot
+
+commit 6800b35151b319a41cf7a8569b7dcf283a1746e2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 11:55:06 2024 +0100
+
+    sync depot
+
+commit 2bc7aa8b4568790d55735ec6cef5625ebb591ba5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 11:54:05 2024 +0100
+
+    sync depot
+
+commit 38826593e35774bc094c283e7dba13491dcbecff
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 11:49:23 2024 +0100
+
+    sync depot
+
+commit 3070fece7e527d5e5a08fc5e7d6eb1ce4a82078a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 10:12:47 2024 +0100
+
+    fix enet
+
+commit 2ea8b3da07b7f14ca8a1284763b6f6a6cc36a2f2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Mar 1 08:46:17 2024 +0100
+
+    update enet
+
+commit ab9dc6af6c7eb7519d8367e1e98a89c644737344
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 13:14:38 2024 +0100
+
+    sync depot
+
+commit 2d93c20f8778c0a99a3a04cc6b2dcccd40579836
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 13:05:17 2024 +0100
+
+    sync depot
+
+commit 080dfa78c41beab2e7da98f44061559a8c298b90
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 12:27:43 2024 +0100
+
+    sync depot
+
+commit d07257be7ee7887cfc98634ce9bed745fadef815
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 12:11:55 2024 +0100
+
+    sync depot
+
+commit 6f97bafec827ed94d0a114aaab24e025894ca00a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 12:10:58 2024 +0100
+
+    sync depot
+
+commit aa926af2ee0285781c0362c90cd485d27f7c8041
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 12:07:55 2024 +0100
+
+    sync depot
+
+commit 6153893d6e18880824bd3bcbdc34a11ae3b51c5f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 12:01:57 2024 +0100
+
+    sync depot
+
+commit 5a4e56f63cbe2fd85fb8ef2d9b86911f1731e28e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 08:53:04 2024 +0100
+
+    win: add viewport_color
+
+commit d1b5c2b4e90f513632da04a286d1c4b5703e0980
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 28 08:52:44 2024 +0100
+
+    sync depot
+
+commit 623ccf09c5c74cf8c72bc5b5848b3d093e04a4b0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 23 09:16:22 2024 +0100
+
+    sync depot
+
+commit 76d857d396856ea936879afec14e5c6bf68b275f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 23 08:16:38 2024 +0100
+
+    sync depot
+
+commit dc7de85854e1a3f1ea79600eeea5f3b50efac9cf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 23 07:51:30 2024 +0100
+
+    sync depot
+
+commit fae49b09e22ecfaa0e9021bb9bea1f4a27d0aca6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 22 16:26:29 2024 +0100
+
+    sync depot
+
+commit 47c8b3c68913d9523379a6be63f9e82cd0264311
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 21 13:40:04 2024 +0100
+
+    scene: add camera_fps2
+
+commit a864065dd8d5c3c28408697ea442b8600438cfee
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 21 13:38:55 2024 +0100
+
+    sync depot
+
+commit b226d3f90711fcb899cb4cf4bb8196331b66c7c8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 20 17:07:43 2024 +0100
+
+    sync depot
+
+commit e5ef21fce9b92a1c977387b0c6bacae87fe5a620
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 20 14:49:27 2024 +0100
+
+    sync depot
+
+commit f79b1ecb219c78f5dbdda917712af21850655d65
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 20 14:42:26 2024 +0100
+
+    sync depot
+
+commit 55e45d2be59d9fe47653e62ff29b3821019a217c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 20 14:37:59 2024 +0100
+
+    sync depot
+
+commit 58c084e68406fc48807e152dc7aacd48cce994e1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 20 12:51:52 2024 +0100
+
+    sync depot
+
+commit b1f06323fb4171da2a5e3cf4afa91bc59f3dfa7e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 15:23:24 2024 +0100
+
+    sync depot
+
+commit fd95483dc45fc23fb8cb7cc2d9dab585082d5e5b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 15:06:18 2024 +0100
+
+    sync depot
+
+commit 9665e4191e0f06e57a8f0fd606f6d2c9a82d6af7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 14:36:48 2024 +0100
+
+    wip: rpc v_v sig
+
+commit 9e718c103447be274f8d7e2e7e4eeacb26df7972
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 14:36:39 2024 +0100
+
+    sync depot
+
+commit 466893d99c8ff60e4239d0b293b72d7cb09bcf79
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 14:16:45 2024 +0100
+
+    sync depot
+
+commit 5381ee4e68efedd0da09710c93cbccca78e38ca4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 14:00:06 2024 +0100
+
+    ci improvements
+
+commit a2f7d47a2e8f8faca90667672e7c07bee95676b2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 10:48:42 2024 +0100
+
+    sync depot
+
+commit 7eb46b8b2f4eb30fecc6e25e1a14f47137206a78
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 10:38:32 2024 +0100
+
+    sync depot
+
+commit 06560ae89666632b3b84ebf2c1834089db019eef
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 10:25:07 2024 +0100
+
+    sync depot
+
+commit efa54e9f77e05ba26c3f3c35747504697e3577fc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 10:12:31 2024 +0100
+
+    sync depot
+
+commit 1059a11ead04f09ebb52549236c8bb2c5deb6b2e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 10:08:40 2024 +0100
+
+    sync depot
+
+commit 92e8d94c6bd66a625c49e8ce350125fbf4c14b50
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 09:58:01 2024 +0100
+
+    sync depot
+
+commit 380196a747fcf16a1d50513281e1e89c31f0bb4d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 09:31:31 2024 +0100
+
+    sync depot
+
+commit 6d51887206793d2f4987faeff231ed4b33a212b5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 09:10:46 2024 +0100
+
+    sync depot
+
+commit 48520cf391c9cae8d34a3f9df8ec973c91895350
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 08:48:05 2024 +0100
+
+    sync depot
+
+commit 1e384eefc09194cddefbdbf189e86662649afb10
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 07:18:30 2024 +0100
+
+    sync depot
+
+commit 6a29fda1fd2ceef40c6b744fe328992466492b38
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 07:03:09 2024 +0100
+
+    sync depot
+
+commit 732ef563835d3d95db6a012c70963e44d3a4f421
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 18 06:01:25 2024 +0100
+
+    sync depot
+
+commit 506a77c7cf074693a42ee5ac216d2ca9fd851fea
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 17 19:38:17 2024 +0100
+
+    sync depot
+
+commit b8244e577d09b5343bab034ca3a065d99d339fdf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 17 19:20:21 2024 +0100
+
+    sync depot
+
+commit d046ca838bc77fc40b19e4b6fe4ae6246189996e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 17 19:18:09 2024 +0100
+
+    sync depot
+
+commit d1cf7eca6d26d22441c2cae44e942d9de08ad1ff
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 17 19:04:20 2024 +0100
+
+    sync depot
+
+commit 63d0693bbec093512c6c06a8c890b91d2ed1b011
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 17 18:27:37 2024 +0100
+
+    sync depot
+
+commit 9cdd623ca9ceb34bc3beb3083f1be15aefa5e8d2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 17 13:00:47 2024 +0100
+
+    sync depot
+
+commit c0b4f13c6fd5e2eb1aec0d79666638a1e289d565
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 17 12:17:04 2024 +0100
+
+    sync depot
+
+commit 8deace71ab2b04b3f46e37dbf77b91b47fb76d58
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 16 22:36:01 2024 +0100
+
+    sync depot
+
+commit b982336d252bec70387c2c65b42a571c723cc849
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 16 22:35:29 2024 +0100
+
+    support options
+
+commit 3b37d9c022e1d53aaebacd0d0425b407081bd660
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 16 20:03:05 2024 +0100
+
+    sync depot
+
+commit a005e93d967adb4868283253e13e5b13902400f7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 16 18:58:18 2024 +0100
+
+    sync depot
+
+commit 2d329d28c01e4e57ffb0ec6768f9250a6a46b8ce
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 16 18:57:52 2024 +0100
+
+    process compiler options
+
+commit 9337fdfa6ef9135f3d9a4fa6565048882b9a24e1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 16 18:41:02 2024 +0100
+
+    sync fwk
+
+commit 77af66bb2b3b7484ce60f863218ced87a598f5e8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 16 15:40:07 2024 +0100
+
+    sync depot
+
+commit 4982761b487f366f8366bcd71f194e0acfabf791
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Feb 16 15:38:45 2024 +0100
+
+    various improvements
+
+commit f2b56de4166e73d148593d4ce1715aaedab6fa81
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 17:34:54 2024 +0100
+
+    sync depot
+
+commit 6e95b2a5e91de2b79dbc10fc0cc1c1720efa88b7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 16:57:19 2024 +0100
+
+    sync depot
+
+commit c8e12ed3b2d6e049da03ba6a9f9a508680faa2ef
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 15:55:10 2024 +0100
+
+    sync depot
+
+commit 58e0724074e43d4c149dee3264eb3068d4e84ca2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 15:13:05 2024 +0100
+
+    sync depot
+
+commit 7d5efa6c62bd162df060302298ecdbf32cf38700
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 15:09:47 2024 +0100
+
+    draw: add TEXTURE_ANISOTROPY flag
+
+commit 7bb5bbad0dd0534e600f5da6db6b9af0e39224c3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 14:32:39 2024 +0100
+
+    sync depot
+
+commit aa2d4ce5d1945a71bd41209ba3a702a6d7eeb4ac
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 13:09:30 2024 +0100
+
+    sync depot
+
+commit b98f62f89caaea23f3efbcaad0edf03063954343
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 12:23:24 2024 +0100
+
+    sync depot
+
+commit 083174e68ce66b1b60ba00ac22b1ec9af05a3ca9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 11:52:50 2024 +0100
+
+    model: use linear filtering by default
+
+commit bdf184c2dad327c50bd15d852636beaf0739998e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 11:36:54 2024 +0100
+
+    sync depot
+
+commit cdabbe5150a16430ec41621c17f8e6b705ab7102
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 10:47:39 2024 +0100
+
+    sync depot
+
+commit db6e19ac9c50aeb4c5bb15fd40286c524a5aa729
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Feb 14 10:36:28 2024 +0100
+
+    sync depot
+
+commit cc42eedff448fcc250da5d38e462cd505af3e834
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 13 17:57:38 2024 +0100
+
+    sync depot
+
+commit 1a6778e3894e5c5c10a31089cdff182ed786e82d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 13 14:55:46 2024 +0100
+
+    sync depot
+
+commit 3290b073b2b5d621b12013c0a5a93924079652c4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 13 14:54:13 2024 +0100
+
+    sync depot
+
+commit 5d58e1b1d652fd0eee31999f4a291458397f4653
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Feb 13 14:23:22 2024 +0100
+
+    sync depot
+
+commit 4d3735414da808aab2ecf1a543cbcf3f66b517b9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Feb 12 10:56:46 2024 +0100
+
+    font: move shaders to art/ folder
+
+commit d37a3fec368380bf2d5f0b6c9f7c5866bb88e8b7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 15:53:22 2024 +0100
+
+    plug: syncall and update
+
+commit b729271aba92b24411798ec021e3a476cefd6b28
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 15:45:22 2024 +0100
+
+    addon: includes
+
+commit 86cbafa06c373a38f48a29c9b2db86cbfe067a08
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 15:34:47 2024 +0100
+
+    add support for fwk/v4k plugins
+
+commit f23b2b6e0863236d39430541eedaee8730e2a734
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 13:11:22 2024 +0100
+
+    reduce code in fps__timing_thread
+
+commit 78d44cff611625280f93b2ffd9bac8e10aea4129
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 12:01:03 2024 +0100
+
+    style change
+
+commit 6f9fb4536486b3d929ddb823a84d0825c5981895
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 11:57:05 2024 +0100
+
+    window: fix vsync flags
+
+commit 10746e8b0f963dbd82429d0e6478d2f0360c5979
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 11:38:40 2024 +0100
+
+    render: fix animations speed setup
+
+commit 0a2167cf684008217ddaefe22ca0cc80d04aa110
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 11:37:31 2024 +0100
+
+    add PLUG.bat
+
+commit b685dc7511bbc8d476eff35a2e71d9663b048058
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 03:56:45 2024 +0100
+
+    update help
+
+commit fdfae769f22bd996804edb6522869192a48fc619
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 03:49:33 2024 +0100
+
+    smol cleanup
+
+commit 034046320f79df25c7dfa5def206854d1372bf68
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 03:29:24 2024 +0100
+
+    ems fixes
+
+commit dd7003b2769210cfa3e2878b3f71795e0be2a20d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 03:23:53 2024 +0100
+
+    steam: fix ems build
+
+commit 4fd3e9cd6744b0caf603bc41f1c5a552fb2ddc9d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 03:17:40 2024 +0100
+
+    editor: improve engine_tick powersave feature
+
+commit e4b736e98ab74b257a3e41ce016152ef7b15d016
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 01:20:04 2024 +0100
+
+    make: fix tcc comp
+
+commit 698ed1a4773e486e1a29df5fa1c648f421cf90e1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 01:14:00 2024 +0100
+
+    demos: fix warn
+
+commit 709e60ca3155b10149967c140eda23a9442978ca
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 01:13:03 2024 +0100
+
+    sync depot
+
+commit 611829149d308209da82e3fab45825450906f114
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 01:06:03 2024 +0100
+
+    sync depot
+
+commit c7c347fa9065e21536677571b2ba9da2ec1cfa82
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Feb 11 01:01:49 2024 +0100
+
+    win: improve fps timing and fix glfw vsync
+
+commit 80f773ec0186ad9fae6112243461b4b7f9a787d7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 10 22:40:55 2024 +0100
+
+    sync depot
+
+commit 6743bc18fd577b6027d9cb1bdfe4bc57903ccfea
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 10 22:36:04 2024 +0100
+
+    font: optimise font_wrap
+
+commit c25f4ba912c71c2f205479b8b9628dbf7890ee84
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 10 22:14:00 2024 +0100
+
+    font: improve cursor advancing
+
+commit 737e4ce33fbcc422f4bdef42f7081134d09b5e08
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 10 21:55:16 2024 +0100
+
+    font: preserve font cursor
+
+commit 0ae82acfea66fbdb1acee7ccab763cfa2c1e4491
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 10 21:45:10 2024 +0100
+
+    demos: 01-font pan controls
+
+commit 77012ae90daeed58feab79a58c08c66b41ebc767
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 10 21:28:48 2024 +0100
+
+    font: font_wrap support
+
+commit 3a853d09d7f84c06ca2de1e1370b04c9875e9e75
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Feb 10 17:05:45 2024 +0100
+
+    font: font_print_rect -> font_clip + scissor test
+
+commit 65b57039a225b77f550971d7825e0bb0dff4b184
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 15:37:49 2024 +0100
+
+    font: drop tags that don't fit in buf
+
+commit bea30c6e12a005f89ec619c331dc4798f7c76cbc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 15:34:39 2024 +0100
+
+    font: improve tag collection
+
+commit 76dcaa51f098e0c489dbec3a38535fab5789dc80
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 15:17:51 2024 +0100
+
+    sync depot
+
+commit 64994fe27a0824401a77eed67d375c29e8e30b5c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 15:17:00 2024 +0100
+
+    font: small improvements
+
+commit 87d14392074f7bcfc0a5f9dc7d326da6ac312f46
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 14:30:55 2024 +0100
+
+    sync depot
+
+commit 0da93a645bc7c6a3bfc330bbfe4df91e7c8808cf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 14:21:19 2024 +0100
+
+    font: add FONT_JUSTIFY support
+
+commit b79492b709ca05ed24e112b134e5f425dc6d2ac0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 13:23:27 2024 +0100
+
+    font: text alignment fixes
+
+commit 295a9d932d171393df4aae5873bc37e0afdc6237
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 11:24:55 2024 +0100
+
+    font: fix linedist calc + add font_print_rect
+
+commit ee9bf54d433feb85e55c6097eb8f7797d1848d2a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Feb 8 11:23:59 2024 +0100
+
+    sync depot
+
+commit 25962371b1eb109203293d83233d5600e2639329
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jan 31 00:49:12 2024 +0100
+
+    sync depot
+
+commit 50d622da527ed0a7f7a9534f08a0a2bc2824a2d2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jan 31 00:48:42 2024 +0100
+
+    add window_debug()
+
+commit 06989e23eba3685cc1a005bd0a8a6dbda25ddd39
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jan 29 09:22:07 2024 +0100
+
+    sync depot
+
+commit 4c5b6d20bb8b4ea8f4e0a20e612efcf99020faa6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Jan 28 15:09:20 2024 +0100
+
+    sync depot
+
+commit a560fe7a19d7908a487c1251340d5870f97ee32e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Jan 28 14:56:17 2024 +0100
+
+    sync depot
+
+commit fc881e63b0e77c9498b39537c2bba4fc1719b5a0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Jan 20 02:14:36 2024 +0100
+
+    drop Args print
+
+commit 5b315439020edc5ae0d733b10721cc0f33c61c85
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Jan 20 02:14:10 2024 +0100
+
+    sync depot
+
+commit 6f462d93670b238a33dbfbccea6ca3e3ec146792
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Jan 20 02:12:45 2024 +0100
+
+    build: new addon system
+
+commit f6059af8a47d41ed32b85badc265199784ce139f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Jan 20 02:12:30 2024 +0100
+
+    sync depot
+
+commit 8f491444a55679b09f53c0c9bb7784af9ee6d83a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Jan 19 21:12:17 2024 +0100
+
+    sync depot
+
+commit e3e99d9477d945d36c0bf34189d6111651b4b93d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jan 18 19:55:47 2024 +0100
+
+    ignore .raddbg
+
+commit 0768e4eaf24a26386bbbb0279a3d9bd71c9f6753
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Jan 18 19:55:13 2024 +0100
+
+    sync depot
+
+commit db6b8d24532704c968139a8cd7d915a264479a9a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jan 8 00:14:30 2024 +0100
+
+    sync depot
+
+commit a5bbbd7aa61c3a2f873a7cc3394439ac8fe4f13a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jan 3 23:14:05 2024 +0100
+
+    sync depot
+
+commit 00bbc208fff2c5129539ec390f7cc06001c5172c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jan 3 22:47:14 2024 +0100
+
+    fix shader issue + demo assets
+
+commit fe50bb22157494e9dcc8e14ac6c77cdea46ed780
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Jan 3 09:37:54 2024 +0100
+
+    sync depot
+
+commit 0f817be23a5e9777d7ba9d38d47e131d37761d0a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Jan 2 20:52:20 2024 +0100
+
+    script api revamp
+
+commit 0c07910f0f587ca560926607c1f9c793beaee9c0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jan 1 22:16:01 2024 +0100
+
+    small tweaks
+
+commit 4e9bf5d6e7db81b5b4ef62dcd702965075652098
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jan 1 22:15:15 2024 +0100
+
+    update lua support
+
+commit 9e31348378eb15cbda618d72ca40fab6a0a99720
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jan 1 22:06:20 2024 +0100
+
+    sync fwk
+
+commit 433d741838d289259404fbbccf39134cf432b574
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jan 1 11:47:45 2024 +0100
+
+    sync fwk
+
+commit ba6aacaf5b84d05366fefa8de414b52611bdc273
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jan 1 11:37:22 2024 +0100
+
+    sync fwk
+
+commit d4a5fdcf46651b9d52dcd545080ca01216f0d5fa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Jan 1 11:33:05 2024 +0100
+
+    sync depot
+
+commit 2c326daedc2be7b519a1cf0663575f155339cc2b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 31 10:47:35 2023 +0100
+
+    sync depot
+
+commit 63f7ffb157ed02614a3fb06731f3151268d855bf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 31 10:18:48 2023 +0100
+
+    sync depot
+
+commit 9e802ac2fd36de7a4d24d9d3047555a06cd54a6e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 31 10:16:32 2023 +0100
+
+    sync depot
+
+commit 83e773cb3aff9d4f7d4fd6a984dc69ec3795a216
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 29 19:28:46 2023 +0100
+
+    sync depot
+
+commit c870f3db00321cffad52c85a2020fb6bd324a1ec
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 29 16:47:01 2023 +0100
+
+    sync depot
+
+commit bc4aa4551aafeed138b107f835e8c84406c339d4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 29 16:30:01 2023 +0100
+
+    sync depot
+
+commit 25b973284f50b7a2b939b0a297170d432bb1ce43
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Dec 28 19:04:22 2023 +0100
+
+    sync depot
+
+commit 8ebee97aba222707c5e82df03d3cf48af6a3c7de
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Dec 28 18:41:04 2023 +0100
+
+    sync depot
+
+commit ef9f492f17947971d8759ed318d1262c45fe92e1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Dec 28 17:01:26 2023 +0100
+
+    sync depot
+
+commit 2809e9e4200390732d8f4d7bde7bf2f7bf91f400
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Dec 28 16:54:56 2023 +0100
+
+    sync depot
+
+commit 6d12fef3ffae4337b419d9409d386d90cc4485e3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Dec 28 12:58:13 2023 +0100
+
+    sync depot
+
+commit ef82eb3005dca65d3bd6d945528c8dc545402a51
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 26 23:07:54 2023 +0100
+
+    sync depot
+
+commit 27ada2a14399294bcebe025948dc3ddac4195413
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 26 19:39:32 2023 +0100
+
+    sync depot
+
+commit 63b71c42ad696a91c7d08ceb3827d4d34dab85e2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 26 19:06:35 2023 +0100
+
+    sync depot
+
+commit a81cf799794a1a6beb80dc8223a2d342654c3d2d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 26 18:51:10 2023 +0100
+
+    sync depot
+
+commit ea80e16c9f0ad3c8258db6632ab4743077e5f672
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 26 18:41:39 2023 +0100
+
+    sync depot
+
+commit 8343869d19cb2a36ec7edb78ec9a7d7c6085b1df
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 26 15:24:05 2023 +0100
+
+    sync depot
+
+commit d4816ca365b163e817742c4a584a8d4b05f1f839
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 26 14:32:37 2023 +0100
+
+    sync depot
+
+commit 27beb2cc98ea52b8b4c95d621cefa1713a108970
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 26 12:28:47 2023 +0100
+
+    sync depot
+
+commit db99fe85e07a12e327342d02c4c0b61c80e0ecbe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Dec 13 09:42:55 2023 +0100
+
+    sync depot
+
+commit 3be5a1d9866176a4ede8d73f719649da90ecc54b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 19:18:36 2023 +0100
+
+    tidy *.ini
+
+commit b1e8e55a6bbdcc3e6cce66a891473a1595620b9a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 19:18:27 2023 +0100
+
+    sync depot
+
+commit a5df426a268edb0cf9343d4517ae193fc17ae1dd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 17:55:28 2023 +0100
+
+    sync depot
+
+commit 095c07e370fd8ef5089e84213d8552416e90d453
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 17:55:00 2023 +0100
+
+    sync depot
+
+commit 6d2d0ac215b347d1b1c925ecadb932f947d39b25
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 17:28:07 2023 +0100
+
+    tidy steam_appid.txt
+
+commit 95df3731cf48c433aee3f573f062b125f786f9a7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 17:27:42 2023 +0100
+
+    sync depot
+
+commit 7eb6cc637d3804c4c0a89d41e9064a744d9f3c09
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 16:27:26 2023 +0100
+
+    sync depot
+
+commit 8a0c0eb55c3e50e94a27f79cd1741380fb27fdd3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 16:21:01 2023 +0100
+
+    sync depot
+
+commit 6c272811ab925f753693194d7c1ffbd087a609fe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 15:24:37 2023 +0100
+
+    gui_label() now uses slice udata for text color
+
+commit 59dc726038a488d416b2e477d80dbc620098a50e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 12:56:07 2023 +0100
+
+    sync depot
+
+commit 6f0c44dd9b6225a5dd7628e4dbbdd4a379676bf9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 12:27:33 2023 +0100
+
+    sync depot
+
+commit 4c71f9899e546fcbccdb8409c08cc08cbab4fb2f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 11:56:44 2023 +0100
+
+    audio: add a few enhancements
+
+commit 427c957e49ad1cdd005af3e3aee252e0bc8628eb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 12 10:15:19 2023 +0100
+
+    sync fwk
+
+commit 22d3929b19556e7abaf46cba6e53a300726d3abb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 11 19:09:35 2023 +0100
+
+    font fixup
+
+commit efad62af54a0ee524feb17dcf9eee13165c3aa08
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 11 19:09:21 2023 +0100
+
+    font fixup
+
+commit 0e2f086ae54f83f1390257de90123da1cd27057f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 11 19:05:57 2023 +0100
+
+    sync fwk
+
+commit 0ddc564a09bfa4d08c4358a7763563e216a5290f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 11 19:03:29 2023 +0100
+
+    small fix in gui_panel_id
+
+commit 479af28c77658860e5acbf5f33805ac26acf555a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 11 18:55:52 2023 +0100
+
+    sync depot
+
+commit 5594e4d6420059839f3e72fdde6f747320f1aefc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 11 18:53:56 2023 +0100
+
+    fix glScissor coords bug
+
+commit cf17ea87551492d2222e59507786b86c2fdf95d7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 11 18:53:35 2023 +0100
+
+    sync depot
+
+commit 27a38a856a4093cba2db4511f92146435005cefb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 11 18:12:30 2023 +0100
+
+    sync depot
+
+commit d777a307eef48be4f37e617ccba1aa5042151a98
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 18:10:41 2023 +0100
+
+    sync depot
+
+commit 3fb808e4ae75ed9e1e2c911fc21736ea4ad6e81c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 18:08:59 2023 +0100
+
+    sync depot
+
+commit 83644f679a42d2de74e90dde057c89b1fc7f1ce8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 17:49:39 2023 +0100
+
+    fix typo in API
+
+commit 2f2da300ce23b12328c99aca6f9c4774099ccc9f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 17:49:05 2023 +0100
+
+    add fontview tool
+
+commit a3e8a7ecd3aed3c34a68e92a68045e721783551d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 17:48:34 2023 +0100
+
+    sync depot
+
+commit eebe5238f6772be116b09ff8cecf23528c2413aa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 17:08:22 2023 +0100
+
+    update demos
+
+commit 3008fb5b65e3da089c48859191e1a672187decdc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 16:48:21 2023 +0100
+
+    gitify last commit
+
+commit 616ade56d7af7cfb3e8b76f2ca98e07357d8285d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 16:47:42 2023 +0100
+
+    add font_metrics() method
+
+commit 83cbeddb88e5f50eaca2b993133e88e1e3c587f7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 16:02:20 2023 +0100
+
+    sync depot
+
+commit 02ddcb0af87542dcce62423fcbbfd555f035a49f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Dec 10 16:01:36 2023 +0100
+
+    font system improvements
+
+commit 990f58b282e93d93ecd60f7dd7a2afef5961f0b2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 5 00:09:46 2023 +0100
+
+    update layout viewer
+
+commit eca0c7056b331afcdcd22cab211b3c8955488ee6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Dec 5 00:09:41 2023 +0100
+
+    sync depot
+
+commit f77e5c3c1efa021605300e65d12d6e4adc7d02ac
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 4 15:38:06 2023 +0100
+
+    sync depot
+
+commit e97917d4c4a511bfdc06d1552dd8d439c5bb2e58
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 4 09:44:52 2023 +0100
+
+    improve build script
+
+commit 520270d6ea2bd3c53244957bf3357b9b4a89aa52
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 4 09:24:48 2023 +0100
+
+    update docs
+
+commit 928a58ef50c52cbcdcdd9fae8d9bb5a1433259af
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 4 09:15:35 2023 +0100
+
+    improve MAKE.bat
+
+commit b970e828b13395b1e0542a9944e5397b4a38df97
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 4 09:13:46 2023 +0100
+
+    sync fwk
+
+commit 4688b154e59352870cb7b70e789998ad19b1acbd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 4 09:10:39 2023 +0100
+
+    sync fwk
+
+commit 67f60ac798957dd8346b6c48b431aa35c0bedc43
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Dec 4 09:07:11 2023 +0100
+
+    sync fwk
+
+commit bc1ff71f742ead8e3a8dea4986aa1b706090c634
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Dec 2 11:05:15 2023 +0100
+
+    sync fwk
+
+commit fe24c0c5e7149aa528cc02448ad317b5d2f05869
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Dec 2 10:58:18 2023 +0100
+
+    improve lmap data
+
+commit f61b4c6653dbdee74a0334cbbb2b9f64988790b9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 23:12:02 2023 +0100
+
+    sync fwk
+
+commit 36309b841cb13c8b897d0a1d6425007b3a462129
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 23:03:32 2023 +0100
+
+    wip merging pipeline changes
+
+commit 5738a5615a92263b6c1f9a707aaca22de69de3a9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 22:27:44 2023 +0100
+
+    sync fwk
+
+commit 4af34422f2fc30fe70ea853db893b332b2e003b8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 22:19:41 2023 +0100
+
+    lmap updates
+
+commit 7bcfb3e00c992ee06880c34dad79b889626be1f2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 16:54:40 2023 +0100
+
+    add progress func
+
+commit 17dae10084ed8e1933d7675c642d5987ee04de2b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 16:33:57 2023 +0100
+
+    lmap boundary fixes + opts
+
+commit b802036590ec4b1148259e530a380a79e26cabcd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 16:05:57 2023 +0100
+
+    delete file
+
+commit 985b4de0d2d714ebf7c1acc78f5bb61e89a1804b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 16:05:38 2023 +0100
+
+    lightmapping support
+
+commit f5b664efe1ab37778feeeffe4bb3468225cee8ae
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 16:05:35 2023 +0100
+
+    sync depot
+
+commit c242b9fd6f0f3e6df9c2d773064c96abebfeb8f1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 12:02:11 2023 +0100
+
+    sync depot
+
+commit 084f549ba10c0d8f4512a3bb91334186f33638dd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Dec 1 12:01:03 2023 +0100
+
+    wip: lmap
+
+commit 32d4aa8d02a67f96b2f7c26de07765ba051d526b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 30 16:07:20 2023 +0100
+
+    add 'make swap' cmd
+
+commit ab06ce0192c8106a3cbb48d76b60280aa29c485f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 30 14:33:49 2023 +0100
+
+    wip lightmapper + GUI improvements
+
+commit 1e65c7cdcf016bed687b5b3d7b1404f9c7811716
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 21:04:46 2023 +0100
+
+    fix btn press regression
+
+commit a8cbc91bf6f3d7dc52912a2b6b69c1b27ab8bf70
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 16:37:20 2023 +0100
+
+    add gui_label and variants
+
+commit 5bd16646b4bcf2cbe0a9e66f3d83e0a1a5ca5f57
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 15:38:30 2023 +0100
+
+    fix slider cursor pos
+
+commit 7b6d120c107965acfce64f494399f07093237d87
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 14:52:32 2023 +0100
+
+    later docs
+
+commit c62dc88bc2c1fbf528f700b92b1c83585f592d1a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 14:50:32 2023 +0100
+
+    docs
+
+commit 3a0de7ba059b2fc45c18248ce77a5ba5f01a5b74
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 14:49:43 2023 +0100
+
+    improve docs
+
+commit d4d6a14694360e0437bfda7416858df5162a5be5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 14:48:54 2023 +0100
+
+    add style guide for gui_skinned()
+
+commit 3ed712c8b5c5f742e1e7eacdf3356f6eebe6d16b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 14:36:44 2023 +0100
+
+    only trigger slider change if changed by user
+
+commit 44e1bce7b6e72f8f308449b88a93f3a5f5a2c77e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 14:35:28 2023 +0100
+
+    return if gui_slider was changed
+
+commit 2b0e522adf9cb34ca45769241c3532f16ded2f80
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 14:34:34 2023 +0100
+
+    improve sliders
+
+commit 31acdce47dad476bb956ea6e3bd9a8582441141b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 28 14:31:56 2023 +0100
+
+    implement sliders and panels
+
+commit cbe002f8e80d4ece75911a15528fc5877fa991bd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 23:50:46 2023 +0100
+
+    add license
+
+commit 2562509584b2effa7b09c44d6f78750a235f30d3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 22:21:57 2023 +0100
+
+    2023.11 release!
+
+commit ed13bab0b9f9d6ef89892b0fe61d97eb5f1e9351
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 20:03:38 2023 +0100
+
+    gui: another pass
+
+commit 02ebdb77b2e19b87c734ed7978937da3f7a27b62
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 18:54:02 2023 +0100
+
+    gui cleanup
+
+commit 071d73dbe2b871796f95f3450994ad2687893913
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 17:07:33 2023 +0100
+
+    add GUI_PANEL render branch
+
+commit 46b82d564570a52043d8ecd3e43a73ed241827a6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 17:07:31 2023 +0100
+
+    sync depot
+
+commit d3f3abed023c330d549d7ef0c158e141bbeddd1e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 16:32:25 2023 +0100
+
+    update ase2ini
+
+commit 6da10bec7ca045c163164d46d1d1610ea7f872b3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 16:27:33 2023 +0100
+
+    integrate v4k_gui
+
+commit 5dd51bea5b3e6a9f0f87ecc7f20c6afd2207a230
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 16:27:30 2023 +0100
+
+    sync depot
+
+commit 4291c2590b1738654c4e3eb752c0e14d80bc2b09
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 16:06:55 2023 +0100
+
+    sync fwk
+
+commit 5540ff54caea14d86452ad5447a703fef38d3dbf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 16:01:12 2023 +0100
+
+    delete residue
+
+commit b6805c4943674a915b34ffe23f0755688e81184e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 16:00:28 2023 +0100
+
+    gui skinning
+
+commit d2d22af808c43184af216499e198437d3e5b9501
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 26 16:00:25 2023 +0100
+
+    sync depot
+
+commit 0a6967abfacc4c9daf10ad1a56f27440ebc7f8fd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 23 10:45:28 2023 +0100
+
+    update subl
+
+commit 2eaf673814feb7df1b2f2c5f9a916331fade8db5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 23 10:45:12 2023 +0100
+
+    sync depot
+
+commit 92512cf291e7904760db17fc52a043afc4b20e64
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 23 10:39:41 2023 +0100
+
+    sync depot
+
+commit 2a4c276bccbfba2cb2c0451745f02d8bc9dc43a7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 23 00:05:41 2023 +0100
+
+    sync depot
+
+commit 0a35caf42eee77a799f06baeeb625e1994f51ab6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 23 00:03:53 2023 +0100
+
+    sync depot
+
+commit f11e0cbe7c067d611835d3a1ee748f87ea38974d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 23:56:22 2023 +0100
+
+    add a new gui_vis tool
+
+commit c7b010e4a6cea2127d1080d4e28ec764e4a0324c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 23:56:16 2023 +0100
+
+    sync depot
+
+commit d2530a1dd12797ad5eced517df73ee28e3d44a18
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 23:03:35 2023 +0100
+
+    sync depot
+
+commit c28a3b4b8f72448f5dc26bc48bd32a59fd7d175f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 23:02:35 2023 +0100
+
+    sync depot
+
+commit 17f41fd361995d414abc3a384f88b95bc1c8bc90
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 22:57:44 2023 +0100
+
+    bring vfs_reload() back
+
+commit ffaeaca5dcae03d5dc499f4155f449b4ce90760d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 22:57:27 2023 +0100
+
+    sync depot
+
+commit 8a8d0e447429a69bc82f92cab681bd9b3d162e8c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 22:01:32 2023 +0100
+
+    sync depot
+
+commit ce19f2e60ceb7d88b33287371216452c9a4c1f6e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:54:43 2023 +0100
+
+    sync depot
+
+commit c1d172e9fc5f39f1446872148d63a43381bfdd4d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:53:12 2023 +0100
+
+    sync depot
+
+commit 5390cca719529537edd3f2084f1b01fe5b46c889
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:45:22 2023 +0100
+
+    sync depot
+
+commit eb3c67bb08c399a27804b431894a1a3045afaf7b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:44:24 2023 +0100
+
+    update steamcmd
+
+commit bf46c95d65ae3c704154928e3f07cfe874414719
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:44:06 2023 +0100
+
+    sync depot
+
+commit 5a9c00d229bcce213929db227607eacbdede055e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:31:44 2023 +0100
+
+    sync depot
+
+commit c8623d4f588eea95e138f9d074b247fa3cedac08
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:31:09 2023 +0100
+
+    sync depot
+
+commit a562057ca720559a07d9ef5d989b9bb65fc5eb33
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:23:14 2023 +0100
+
+    sync depot
+
+commit a441943794adc28f0c0b1a72a78076514f922d88
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:11:31 2023 +0100
+
+    sync depot
+
+commit ad3e031610c054d83a8046f9a7ced3a9d8c5409e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:10:02 2023 +0100
+
+    sync depot
+
+commit e3bf498b19d27edc1b6e38bbf6d4d2e401affe29
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:08:46 2023 +0100
+
+    sync depot
+
+commit 1ab76443f7a0c8aa92b702e24cd58a1c6c4e503a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:06:00 2023 +0100
+
+    sync depot
+
+commit ce48ba06ae589d84c5dadb5351694e6d7d7e0803
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 21:04:12 2023 +0100
+
+    sync depot
+
+commit a6ba140ba61d13e454d9edf723e1911f714fbb40
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 20:27:52 2023 +0100
+
+    sync depot
+
+commit 249eeb5d6cd13aa6874af66811479787f88a7ff1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 20:10:09 2023 +0100
+
+    sync depot
+
+commit 7db918871405fbd67193f67e3cf584b1580b1eb7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 20:01:47 2023 +0100
+
+    sync depot
+
+commit bfcbf0457e8a48a07652a893a333fc6da7d95dd9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 18:52:42 2023 +0100
+
+    sync depot
+
+commit 2c1b5b95de73a1479157380d075ae46c632fd8ca
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 18:08:40 2023 +0100
+
+    sync depot
+
+commit 05d4675689670e1905baee05eb0ee1424985077e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 18:08:21 2023 +0100
+
+    sync depot
+
+commit 590d2f70c8f396dc2b72c615029f3683669a9c7f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 18:07:18 2023 +0100
+
+    data: fix xml_string empty node return value
+
+commit 85bcfaf145276f4e3ed3984cafc14f2497f50ce7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 22 18:07:05 2023 +0100
+
+    sync depot
+
+commit 78d7726a689b0a672e12cb9efee144d7532d6437
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 21 17:12:47 2023 +0100
+
+    sync depot
+
+commit 89728b3795d799ae6180aa803f856b80569ba6b2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 21 16:31:41 2023 +0100
+
+    sync depot
+
+commit 2ccbe6e84e4f1ce7cf225fe0f025318a3239bda0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 21 15:04:10 2023 +0100
+
+    sync depot
+
+commit 6feabf82076c31dcea46e4b0f852e6a588ccc6fa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Nov 20 21:19:53 2023 +0100
+
+    sync fwk
+
+commit d72ed0aeee774afb3dfff9a8b26521cc3253a438
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 19 17:35:54 2023 +0100
+
+    v4k web improvements
+
+commit d046d4767fa0a05d87b56268e6da4fd7cbd5c732
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 19 17:10:42 2023 +0100
+
+    small docs update
+
+commit 52b250df831e6190535aa50cb3fee73e9d064c57
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 19 17:03:24 2023 +0100
+
+    cooking fixes + docs enhancements
+
+commit 68b3008ab2739ef659d6d922ade3833395679329
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 19 17:03:21 2023 +0100
+
+    sync depot
+
+commit 789706806920f6f0856a74830e0a7b12722f2dbc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 19 14:16:48 2023 +0100
+
+    sync fwk
+
+commit e807e4bef8f9adaafb39630b32fe0d9e6ecf73e1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 19 14:12:48 2023 +0100
+
+    sync fwk
+
+commit ceae5e2fe04dd05b80698131e622501bee67ba02
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 19 13:07:28 2023 +0100
+
+    sync fwk
+
+commit 144983571c81394d3cea8a9c54e4e9442050b090
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 16 14:37:26 2023 +0100
+
+    sync depot
+
+commit 7c61e3975a7fcc33b344757b4e864a344fc21567
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 16 14:37:04 2023 +0100
+
+    sync depot
+
+commit 7dcfbdf103fce75722325f2891b6ef8071cc1caa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 16 14:36:39 2023 +0100
+
+    sync fwk
+
+commit 5aa83a524a7b5d1d64c0b6fb009942552598d748
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 15 20:14:14 2023 +0100
+
+    huge v4k update
+
+commit dbef195cd2383891c04c37ff8200216fa5df6af2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 8 18:47:48 2023 +0100
+
+    sync depot
+
+commit b7344c7298fb84399303eebe9f67785c9de57577
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Nov 7 10:54:37 2023 +0100
+
+    small billboarding changes
+
+commit d5a0dac5d4d6acdd08b106630bf138241d6d33a1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Nov 6 13:51:17 2023 +0100
+
+    fix billboarding code
+
+commit 13845097afd9217675f12e3b19417f1afa8e7265
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Nov 6 10:40:54 2023 +0100
+
+    improve demos build pipeline
+
+commit 4fa1d5260981d6a1e72da2328d32ad3313987b95
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Nov 6 10:36:20 2023 +0100
+
+    editor uses monitor hz
+
+commit 8feb515d33e1a454458b65c6286e6c33a55fdac3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Nov 6 09:55:10 2023 +0100
+
+    editor sync
+
+commit 6e3943679215dbe44ff5c67eaf8b4ff49136fa51
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Nov 6 09:31:26 2023 +0100
+
+    delete old code
+
+commit 62390a3e4bdc19f7cdba84591e85345f92d7db78
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Nov 6 09:30:19 2023 +0100
+
+    billboarding fixed
+
+commit 4d00cce39d032f319d4c0fea9b803765b9a5a3e5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Nov 6 09:30:17 2023 +0100
+
+    sync depot
+
+commit 97973d344f07588a0a528f96993ff316d6c1f020
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Nov 5 16:30:11 2023 +0100
+
+    sync fwk
+
+commit 7c84c3b7a4d6cf853e91fa92346174ebb9bec548
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 19:39:14 2023 +0100
+
+    move stuff to demos
+
+commit 257a12aedb9e96dfdeb1cf0b5e8d2189249b6d59
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 19:39:11 2023 +0100
+
+    sync depot
+
+commit f63ee3164852dae1ec8be7a5c250faf25b90455c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 19:06:32 2023 +0100
+
+    add billboard demo
+
+commit c0d9abe43bd8abc9d957bb4d34cfc582fe6f2ba8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 19:06:26 2023 +0100
+
+    sync depot
+
+commit 47c3add1349f38d3a6eb5d377e5a82f5874ff7f5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 18:45:44 2023 +0100
+
+    add curve module
+
+commit 1e8f7c57e9b2091b32840a2790fc36d4ec014ae2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 18:22:55 2023 +0100
+
+    add splines demo
+
+commit 5850a5d918a6c307c1c1f9d3221d9337187fddde
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 11:22:42 2023 +0100
+
+    sync fwk
+
+commit 85ce116f94b6a1c09486dd5de0376827649937de
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 11:05:24 2023 +0100
+
+    fix 06-controller demo
+
+commit 9e9cb02a6a0615d04a16693c36b4898c2be9cc32
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 10:59:58 2023 +0100
+
+    sync fwk
+
+commit 16e546b2a23437c175a91a305425204760eddc49
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Nov 2 10:54:49 2023 +0100
+
+    sync fwk
+
+commit fb515681b1cf4a9bc6872439b9471ee5b455dba4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 1 12:24:16 2023 +0100
+
+    sync fwk
+
+commit 6aa3fc1d4ab55c9f6c25a7a102b130d48edb682c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Nov 1 12:24:12 2023 +0100
+
+    sync depot
+
+commit 0a009e4ef9d3bb769f2d80ee38f26ce732959147
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 12:37:09 2023 +0100
+
+    improve run cmd
+
+commit 6998920b35e1c6b3efbf057bf8ba25c879d812a5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 12:19:16 2023 +0100
+
+    sync fwk
+
+commit 27b868d522fdf4689e0fade2e2f7df97e22b9b2e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 09:39:25 2023 +0100
+
+    sync website
+
+commit 6efeaf351ff425e9a435e08a70cf68891495b740
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 09:05:54 2023 +0100
+
+    sync website
+
+commit 5f50277e4689a77ed63539f0a3df4f672b430b3b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 08:34:17 2023 +0100
+
+    sync website
+
+commit 49b95c711b314a5bceed6cc23cbcb082d0df5722
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 08:12:42 2023 +0100
+
+    sync website
+
+commit 71cdd3690713194abf95da47e7335b09098da7cd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 08:08:02 2023 +0100
+
+    sync website
+
+commit 4cf3bfe994b7e6701e4a7378398088fa641ad62f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 07:48:58 2023 +0100
+
+    sync website
+
+commit 65d2b1082487abfbe12aa05d741aab417c60d2c9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 00:22:02 2023 +0200
+
+    sync website
+
+commit 81d2bb04d5ac402b158c0d176405992cf8951e55
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 29 00:04:14 2023 +0200
+
+    sync website
+
+commit a8d3dd48d2f47ad8ea0e1e8f3436dade106de7b3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 23:42:10 2023 +0200
+
+    sync website
+
+commit e68e2f0695a2c8f81021c343026ea86afe0d9a67
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 23:24:36 2023 +0200
+
+    sync website
+
+commit 2e2da516a9d455a6b55653a5787421596540b0fd
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 23:00:49 2023 +0200
+
+    fix in engine_tick
+
+commit 9c9ac19cf597a29d330901f34a2811e26390bbb5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 22:53:59 2023 +0200
+
+    push editor
+
+commit 9b66b5fdc138441f369c030405993bbe7162de89
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 22:52:28 2023 +0200
+
+    editor: fix div-by-zero
+
+commit 5cd68a5729e4f6fae2dcf7468598c2320ec6943e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 22:37:44 2023 +0200
+
+    update docs tool
+
+commit 6bc3c82ff05c81991cecefc1198ff3f210ce9df8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 22:36:59 2023 +0200
+
+    sync fwk
+
+commit d4fcf42d7ae938a3e84b9448c8ff225ecde7fa60
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 22:23:24 2023 +0200
+
+    sync website
+
+commit b03173f0821782223ed90d9074f3f09fca3823f2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 21:58:41 2023 +0200
+
+    sync website
+
+commit 8fea3ae22cefb96a69810c2c3779359e31399d4f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 21:48:37 2023 +0200
+
+    sync website
+
+commit ccb27970f5691fa6b382a1ee55374ea8bbb97d85
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 21:37:39 2023 +0200
+
+    sync website
+
+commit 48130d649d219481089a35cb62e16a4ecf99684f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 21:01:16 2023 +0200
+
+    sync website
+
+commit e3afce099003c4061b05483c2ee31eff462cc9d5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 20:54:36 2023 +0200
+
+    sync website
+
+commit 1ae8058f58e9bb38ea45c161dfbbbe59a4306fa3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 20:28:33 2023 +0200
+
+    sync website
+
+commit 79265e0811158191e3ba6383b5171cd9a1a1a276
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 20:11:19 2023 +0200
+
+    improve v4web cmd
+
+commit 0e402e84edf62936743e60847ea4d390d123bc3c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 20:11:09 2023 +0200
+
+    sync website
+
+commit 7d00cf57612d268be4ba43c9563dba4dad7c8220
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 20:08:02 2023 +0200
+
+    update website
+
+commit 833f699c01ecc18ff367f314f4aefc8666e1f6bf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 20:04:10 2023 +0200
+
+    add website submodule
+
+commit 48ecfdef3ad4c5fca56bd36bcba5ae9825c0b57b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 14:16:41 2023 +0200
+
+    sync fwk
+
+commit 4cf144a0ddd20dfecfa2ef319aa51df3c3fba663
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 13:56:57 2023 +0200
+
+    introduce tween module
+
+commit 1f8d0e354342840d86330726957e628d14a0cbfe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 28 13:56:55 2023 +0200
+
+    sync depot
+
+commit 54d6774f3c85284256a59526495d25814933a946
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 27 09:49:24 2023 +0200
+
+    add editor_sync tool
+
+commit 036f0cce09b3a08448463df79701a15d6b9b5f6e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 27 09:43:43 2023 +0200
+
+    update editor
+
+commit b8b1043aad059a6ecb0aade5db4f76fbb2a712e3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 27 09:42:40 2023 +0200
+
+    sync fwk
+
+commit 7eeddad656a67aa78b874573c0bb5b7b90b6b758
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 27 09:42:37 2023 +0200
+
+    sync depot
+
+commit ddf1bfd2bd97ec353c937ced15400341edfc3ceb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 26 09:38:50 2023 +0200
+
+    improve engine_tick
+
+commit 71e631b9c869aa2a2e06129b2b024139961fabb5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 26 09:27:46 2023 +0200
+
+    sync fwk
+
+commit 692885e711d61dbe0b5a506eaf96de998cc1c811
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 26 09:20:59 2023 +0200
+
+    add todo cmd
+
+commit 4163fa610af1f7cd96300e2243360b3e757e0099
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 25 19:36:22 2023 +0200
+
+    sync depot
+
+commit 9f154e5945ceb9e22e0553dc2e8bf8f70701be82
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 25 19:04:30 2023 +0200
+
+    sync depot
+
+commit 31e944af6443a5ad75f81faae482d78c1a55a564
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 25 18:52:07 2023 +0200
+
+    ensure vfs_load() properly loads .hdr map
+
+commit 0907a7ac78988820e5f74aba4ca28d269ab126b0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 25 18:52:03 2023 +0200
+
+    sync depot
+
+commit 70609c0f8731ac2ca0522e6eda1802b0c626ed9e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 18:32:14 2023 +0200
+
+    sync depot
+
+commit a1e6225cd6ce13d9fb28bf50f96d5759d50a1254
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 18:27:32 2023 +0200
+
+    sync depot
+
+commit 6bb33756ac9e3b167eeee011ff25b780e38d2438
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 18:06:43 2023 +0200
+
+    sync depot
+
+commit 09a22842ced0e154a3f30368be46f96540edd1b3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 17:56:28 2023 +0200
+
+    sync depot
+
+commit 232c95504c51280cf4798c51766275a9c4075d0e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 17:50:35 2023 +0200
+
+    sync depot
+
+commit 2aea9ca1043fc3e25c1a61cdbd22d2c5ebc267c3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 17:22:12 2023 +0200
+
+    small changes in MAKE.bat
+
+commit dc8a8433000dc2a48727e643509f4ae6f050453a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 17:22:03 2023 +0200
+
+    sync depot
+
+commit 86cb8f97c2c3c02abe925f0fa353eca44febbc48
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 15:49:32 2023 +0200
+
+    ren checkmem -> test
+
+commit 1ff1a7af04a804d84a360ec1a3d8634007ae9ca5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 15:45:41 2023 +0200
+
+    speed up cl builds
+
+commit 67b610d398558a922abee4c9fe8019f281279934
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 15:22:15 2023 +0200
+
+    speed up builds
+
+commit 421529c130669e7f6151a9651333ae199588a460
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 15:17:57 2023 +0200
+
+    sync depot
+
+commit 40406ea750714b9e7920d6910ebd2b0f76da2cb0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 15:13:24 2023 +0200
+
+    sync depot
+
+commit f78e17648246a6b9c6bb964d1723e27aa0d8303a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 14:02:13 2023 +0200
+
+    sync depot
+
+commit 054de38f2e4a1c7244cc84dd018be5a278725873
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 13:59:11 2023 +0200
+
+    sync depot
+
+commit f100bc71cbe142df8f39c668729002ac22793990
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 11:59:13 2023 +0200
+
+    sync depot
+
+commit 44d168088030da90b28b7dd2d90fb7e9f767b13c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 11:44:36 2023 +0200
+
+    fix docs
+
+commit 21420bb86788cb173699423401463ff3bc116d1a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 24 11:43:43 2023 +0200
+
+    add track module
+
+commit 6a569424c467d1ba3f7dc99a39a71ad36b79ed7e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 23 16:00:03 2023 +0200
+
+    editor_rename helper script
+
+commit 49c41fb90ed02e248bd513ede2005c1b21644c04
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 23 15:25:03 2023 +0200
+
+    sync fwk
+
+commit e8bfb4bfb52f5a1ef3c7ea0f8f163a6cda1ba343
+Merge: 6be54e5 74abec6
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Sun Oct 22 19:48:35 2023 +0300
+
+    Merge branch 'main' of dev.v4.games:v4games/v4k
+
+commit 6be54e5b74398afe23946da5dfa1b38d3a22cca6
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Sun Oct 22 19:48:29 2023 +0300
+
+    added fix for osx caching
+
+commit 74abec6c0fcd13e74dfa663ad6ff1b08ec3f7521
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 17:57:34 2023 +0200
+
+    drop _mirror for real
+
+commit ad837572add667241f85e9b53de08e3fa5259f1e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 17:49:14 2023 +0200
+
+    use GH _mirror
+
+commit 31672552e99bbb31b4dd460643dfbf7f68a65961
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 17:47:07 2023 +0200
+
+    drop old _mirror
+
+commit acd126e326815565dc820f8bc12ea4c38699cd96
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 17:46:27 2023 +0200
+
+    cleanup no. 2
+
+commit 3195aae7770eca6d9be149efa09a3da1f22a4840
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 17:46:06 2023 +0200
+
+    cleanup
+
+commit 7465c37c0371586b8d1052d15539b094ea18c14d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 17:44:55 2023 +0200
+
+    drop old _mirror
+
+commit 821f6b741f943022934119bf2985c37ec7428b8a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 16:47:48 2023 +0200
+
+    sync depot
+
+commit dd683808a981c457a02e9ca907b098eddccaf559
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 16:45:59 2023 +0200
+
+    sync depot
+
+commit b17d9817d8d11ad5921a2b322fb2c7b5fb58f23e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 15:04:07 2023 +0200
+
+    sync depot
+
+commit b393130c5b67fc6d5ff1a9744d560586c605ffbe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 15:00:37 2023 +0200
+
+    sync depot
+
+commit f727f387aee2b7237d2e30de1196331403165cd4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 00:05:22 2023 +0200
+
+    sync fwk
+
+commit 011fb89b4b045646afefdd35ea584fb9425b302b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 00:02:41 2023 +0200
+
+    update docs tool
+
+commit 2c88826515d256b57cbf9146c8da2e8efc03ac69
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 22 00:01:56 2023 +0200
+
+    sync depot
+
+commit 96c80aadeb73e6c6500bf952333bc3fc19f76f2f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 23:54:35 2023 +0200
+
+    sync depot
+
+commit 1a8b3c1167a2fab464a4a47a6d280a527e5f56ab
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 23:49:59 2023 +0200
+
+    sync depot
+
+commit 149be959cc776e5074558cb5ed5a5410f3fb1cf3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 23:14:22 2023 +0200
+
+    sync depot
+
+commit 85aeac4cf07f1163fcfddf7d448440a8c3c259f7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 22:25:45 2023 +0200
+
+    sync depot
+
+commit 2f79536e6a9eb0ea6caed74d04db5e5f62734fdc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 20:49:18 2023 +0200
+
+    sync depot
+
+commit bb45f2b79a91c67cf9d939e54ac95deb70f64ce4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 20:30:23 2023 +0200
+
+    sync depot
+
+commit f9d23b574f0274603521cd2c800a0bbf6b0934de
+Merge: ef1d1e1 44a9eaf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 20:29:37 2023 +0200
+
+    Merge branch 'main' of dev.v4.games:v4games/v4k
+
+commit ef1d1e1d9ba1d005e841dfe255f17b398558af5a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 20:29:22 2023 +0200
+
+    sync fwk
+
+commit 44a9eaff2b70eca795ed6cfb57b7931769cf7db2
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Sat Oct 21 16:49:01 2023 +0300
+
+    updated gitignore
+
+commit de007125f2d304a6da9ef6b02dec41e85e3fd967
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Sat Oct 21 16:48:52 2023 +0300
+
+    added mac make
+
+commit 8528c3e38e698059129c201dad08757a152acfdf
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Sat Oct 21 16:48:43 2023 +0300
+
+    appl compile
+
+commit 7dfc8a2bf8791751611bbe6dcf82160d2b79f45a
+Merge: 9c7c0fd 2fddd84
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Sat Oct 21 16:47:52 2023 +0300
+
+    Merge branch 'main' of dev.v4.games:v4games/v4k
+
+commit 9c7c0fdb953243d163bccf53e0002cdcb2ebb102
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Sat Oct 21 16:47:14 2023 +0300
+
+    disabled retina
+
+commit 2fddd84946a3e63f7e296999b887b3346ba9d1e2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 21 11:18:13 2023 +0200
+
+    sync fwk
+
+commit 25224c6db191a9011dae7bc89539d17f83e13485
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 20 21:29:51 2023 +0200
+
+    update MAKE.bat
+
+commit ff08939b06740a0dc00caaa615e73356096d412b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 20 19:55:43 2023 +0200
+
+    sync fwk
+
+commit eb331e4251cb26547bc4511f5f6930e67c4a2049
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 19 13:08:02 2023 +0200
+
+    fix rgba
+
+commit 03b5815b2a425bb394eb7707b75e88be0d746d95
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 19 11:09:31 2023 +0200
+
+    depot sync
+
+commit e1f3c3c3d0d2fb19013a3e72627e5cbbef13e4c4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 19 11:08:18 2023 +0200
+
+    sync depot
+
+commit 697ad5581c4e7936f0d034fd26c659bbddf4e92a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 19 11:07:59 2023 +0200
+
+    font alpha
+
+commit 1812fe72230dcb4e3faab4ab9e75a5609f757d21
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Wed Oct 18 18:12:52 2023 +0300
+
+    updated the sublime project
+
+commit a739ca9b14a0109ee8689890bec7c601a19e44ec
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Tue Oct 17 22:07:05 2023 +0300
+
+    macos stuff
+
+commit 9499a5b9d99e922bb83e1b1840593919f42ab113
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 16 22:07:29 2023 +0200
+
+    sync fwk
+
+commit 1e3a34ddf33b3ce0421c818f1937b016651982f9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 16 17:20:31 2023 +0200
+
+    lock for OSX / temp /
+
+commit d822f4f16d25230001b4a830f3531703eaa5ff12
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 16 17:15:59 2023 +0200
+
+    sync fwk
+
+commit 7ec8d2aba73f69b75ca58a3e23fda54bb122bd2d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 16 14:02:45 2023 +0200
+
+    sync depot
+
+commit 27e569f1474defefb7159205cf0e22d089570364
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 15 23:46:42 2023 +0200
+
+    sync depot
+
+commit acf95693bb0cdb068c9b1f2b4ca88136a9478597
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 15 22:41:39 2023 +0200
+
+    sync depot
+
+commit c281f82c3865090236fbb25a213569c7d99c6731
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 15 13:22:55 2023 +0200
+
+    sync fwk
+
+commit dd783b1f54e218d7f4a93d7a7e8e4a4aff432a25
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 15 13:16:35 2023 +0200
+
+    sync fwk
+
+commit 5409007c2ae66d39becc0e78c5f2ce4ce736ef3a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 15 13:16:32 2023 +0200
+
+    sync depot
+
+commit 30b64d33080d54c5cc415dbaadac3ca61ab00722
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 15 13:16:22 2023 +0200
+
+    sync depot
+
+commit 9708fcf75668a96a6b1b1afbb4f5d67f5444b2a1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 15 08:01:43 2023 +0200
+
+    add retail profile
+
+commit 5e104ac4d23db52d19f48e80ac374010eccafd7d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 15 08:01:41 2023 +0200
+
+    sync depot
+
+commit b01c4f7f509c1a53b97d2bb77ce6eabfed12dc70
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 14 22:21:52 2023 +0200
+
+    sync depot
+
+commit 49d7893354ce0005e050ed92b37eab189ab72832
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 14 22:20:34 2023 +0200
+
+    fix ems
+
+commit 759ace344123f38cd89584b8662299e43bc46341
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 14 22:00:30 2023 +0200
+
+    update ark + fix omp parallel for deadlock
+
+commit 64a7eade9f3195770b5a0381b5fe4ebcfc0ce640
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 14 21:47:24 2023 +0200
+
+    sync fwk
+
+commit a9c5d6c269232d649137061f475118aca61090a8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 14 11:03:57 2023 +0200
+
+    sync depot
+
+commit dd14e928ba84759e89508352c0f3b8edd7c94197
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 14 10:24:21 2023 +0200
+
+    sync depot
+
+commit 497521a2c29c0fa42f85c2986ba08ca71cb38e81
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 14 10:23:49 2023 +0200
+
+    improve logs + docs
+
+commit 82058cf23cfa7ebad704e6278afec5df3ffadb29
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 22:16:25 2023 +0200
+
+    improve checkmem command
+
+commit 86abb661bd89110f67ebbb458e1858382fbc271c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 22:13:50 2023 +0200
+
+    sync depot
+
+commit 733f1b1eb14cb67b1e681eed4f34abd23c50db70
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 20:26:42 2023 +0200
+
+    close pipes on RETAIL
+
+commit 9a7e727cfcd14dd79baba7660f5a4cf578abc47e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 20:26:40 2023 +0200
+
+    sync depot
+
+commit 9fd068d8ce576666f24b4099bd01af276e9ecd4a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 20:11:37 2023 +0200
+
+    disable pipe closure on retail for now
+
+commit 4cf87fe890df3faf15e60c7bff2dd2187f4bb87e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 20:07:33 2023 +0200
+
+    close stdin and stdout on retail
+
+commit be8478c35c5a5038833386dae53c5ad0d16541bf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 20:04:39 2023 +0200
+
+    sync depot
+
+commit 0b1975a60f05dfad5e720b72f266bc4d9db9e1c0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 20:04:09 2023 +0200
+
+    sync depot
+
+commit fff8cb29c9f75c9901329b2914b406e039b8c18b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 19:20:49 2023 +0200
+
+    sync depot
+
+commit 22b271e0ce70d26e60ce39361d2d96ebd02506bb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 19:16:33 2023 +0200
+
+    sync depot
+
+commit e8ed3da7d7011a52359607294f3f2359f9eb37ff
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 19:12:18 2023 +0200
+
+    sync depot
+
+commit 5dd76aca567a310a9dd8979d2cf9438a922503b3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 18:35:08 2023 +0200
+
+    sync depot
+
+commit 136b87ab1c41e0ecd4e577773ddfc54e802f035c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 18:20:20 2023 +0200
+
+    keep COOK_DISABLED
+
+commit 0dcbce153be9549226439679f125b6188fbd745b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 18:20:17 2023 +0200
+
+    sync depot
+
+commit 53379cc6bad9d93e39f3dbd40d3ee47e3b04c9b5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 18:13:52 2023 +0200
+
+    fix ifdef
+
+commit 21a058ac233aca7c4e93c6dc5f591177effd0c98
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 17:56:26 2023 +0200
+
+    finalise ENABLE_RETAIL
+
+commit 6616dce555ffbca91689e8efc3ed74570c4fc340
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 17:22:57 2023 +0200
+
+    no prints on ENABLE_RETAIL build
+
+commit 7316666bcc33da9c78c2abce8bc3988da28e2f26
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 17:13:45 2023 +0200
+
+    ENABLE_RETAIL productionize
+
+commit cbe1f4d1a3e9523502f1de82bc565c2af7577393
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 17:13:29 2023 +0200
+
+    sync depot
+
+commit b043390964ee4f87ceb876e89f5774c0ab602680
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 14:07:53 2023 +0200
+
+    load icon from vfs + non-workdir
+
+commit c0c72ae39b3d786d8b4b929fbf459d13bdd95109
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 14:07:35 2023 +0200
+
+    sync depot
+
+commit 3da7b6dc9a85b0cdcec42ce08b3605528bc83915
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 12:59:44 2023 +0200
+
+    fwk sync
+
+commit fb2aefca71dd3deb5547dd3228d9df7870456eb1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 12:59:40 2023 +0200
+
+    sync depot
+
+commit d697d94f5775e7005449405ec9fee011a10dea08
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 12:09:54 2023 +0200
+
+    add `make dstat`
+
+commit 45529b1fc373bc76713469af300fa141d307b9a2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Oct 13 12:09:51 2023 +0200
+
+    sync depot
+
+commit 0ad540f97d31899c7dd2d45dd229e6bc1969b633
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 13:36:40 2023 +0200
+
+    small changes
+
+commit 646c1c6e4d7ac25a2ea785070319f089b139dc96
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 13:36:37 2023 +0200
+
+    sync depot
+
+commit 4ad1c1e9b07a499e9e159cec2445d25b8b5970b6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 09:12:33 2023 +0200
+
+    sync depot
+
+commit e7c753aa39e566805aa63f089ac097b2c49df62a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 09:08:56 2023 +0200
+
+    add depot shipping tools
+
+commit 517c6892922c8a9cba1c8301e4aa0a8da9576426
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 09:08:53 2023 +0200
+
+    sync depot
+
+commit e5fb01800aac3d0cc783be9ec310e07f7acca9bb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 08:33:36 2023 +0200
+
+    sync depot
+
+commit f8a3029b272421225d6094e77a852524dceffca0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 07:32:32 2023 +0200
+
+    sync depot
+
+commit 48022b47f01a43e72810fdc9ee6fecf518c4cc13
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 07:23:32 2023 +0200
+
+    cook: drop V4K_TITLE alias handling
+
+commit 9d26ece8da7c96a1c76e74c22fc56e7cf96cd8a2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 12 07:20:36 2023 +0200
+
+    sync depot
+
+commit d218326e9f0563eb1523e29a346cba74455e3c4c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 21:54:12 2023 +0200
+
+    sync depot
+
+commit b240bfc031be606e0ce81af8e927cee64a639920
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 21:23:13 2023 +0200
+
+    Revert "revert to older miniaudio"
+    
+    This reverts commit 8834e1671f4b3f0ad27e02db308c1da1d7e1f985.
+
+commit 8834e1671f4b3f0ad27e02db308c1da1d7e1f985
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 21:18:50 2023 +0200
+
+    revert to older miniaudio
+
+commit d0c0829fc0afe0b8344b127810d83eabba1bbeae
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 21:07:56 2023 +0200
+
+    audio: enable ma_backend_coreaudio for macos
+
+commit e312bcaad8e5b9c3a62f04ce0cc91bcd5503c2bf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 21:03:22 2023 +0200
+
+    sync depot
+
+commit 55d397ff70f51f80d712427352e9dfb58bdef145
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 21:01:06 2023 +0200
+
+    sync with FWK
+
+commit ae2a4208f0147d1027814daa24c925d4b68a1f3d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 20:43:11 2023 +0200
+
+    sync depot
+
+commit 67d5cdad7e86b418a75f4df5a4685901d0df6a9c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 19:40:58 2023 +0200
+
+    improve dpush
+
+commit a9701c31f03797896b91bd2cb1d1d9a7264375b4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 19:37:19 2023 +0200
+
+    sync depot
+
+commit 8ee82f24a1937b3690b14b5cbfb0b3e88b177b6d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 19:13:45 2023 +0200
+
+    sync depot
+
+commit 9fa356611f867d9a04041cdde70a5db16876bac2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 19:12:00 2023 +0200
+
+    sync depot
+
+commit 8df9e4132855319e48d1647fa0c7caecfc1fe8ed
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 18:56:11 2023 +0200
+
+    sync depot
+
+commit 0a69e7510bb9f92cb4c28b004f3cc270a8bb4bf9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 18:42:07 2023 +0200
+
+    update docs
+
+commit e7a1fd43cc183ae7a3f96ad1f8934650e20e9bcc
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 18:25:56 2023 +0200
+
+    sync depot
+
+commit fd571d0737b1ff11befd07cc530bfa347ecd2b2e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 17:55:46 2023 +0200
+
+    sync depot
+
+commit 1173ed5ff6bb51d8a3041aa01e13c66610fee640
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 17:35:24 2023 +0200
+
+    sync depot
+
+commit b6b6c200c6fa382c9f52f79e72f7bef83bfc8fb4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 17:24:37 2023 +0200
+
+    sync depot
+
+commit 5c8073e4ae7e605f36903fb68305695a3306643d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 17:21:23 2023 +0200
+
+    sync depot
+
+commit 4087f5b059e94e7cb1307d3f96ae172c24ef7ebe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 17:17:13 2023 +0200
+
+    sync depot
+
+commit b396ee7eb155f5eb339e2f4ccf703e3fe0afe922
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 16:19:50 2023 +0200
+
+    sync depot
+
+commit 14647399ef89f8f45bf5e2d4f05252e85218f1a9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 12:55:11 2023 +0200
+
+    sync depot
+
+commit 6410c06c387007c78682cc0a95b8de05e3bc0777
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 12:54:16 2023 +0200
+
+    sync depot
+
+commit 86b67db9c1a6f29dacad30d92a13a828888e7947
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 12:34:44 2023 +0200
+
+    sync depot
+
+commit 6921cb50436b75bf53896e9d08b1cb4867cb8bb3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 11:29:36 2023 +0200
+
+    sync depot
+
+commit 029c604db99a82628b450093eb3c264574fb5db4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 10:40:09 2023 +0200
+
+    sync depot
+
+commit cb1688defeb2e718e84b9422eac741f15018aea8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 10:34:29 2023 +0200
+
+    sync depot
+
+commit 6b09722a3e338f3b9cd50bbb85db22a45e882a04
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 09:56:33 2023 +0200
+
+    sync depot
+
+commit afaeba45da0d81645a9a34adf0dd3867ad9cab51
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 09:20:25 2023 +0200
+
+    pull before push in dpush
+
+commit 0219430edbadb42fd9a817457404dc459824485e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 09:19:53 2023 +0200
+
+    sync depot
+
+commit 86c78dabce328493df938222f835a582ce16bb80
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Oct 11 06:54:16 2023 +0200
+
+    sync depot
+
+commit 7067b94e0805c5d4966bbf58cdb2e5284337f246
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 21:11:17 2023 +0200
+
+    sync depot
+
+commit 2708d4dc909d8f833cc59512b24266ad69d6e46d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 21:10:22 2023 +0200
+
+    fixes
+
+commit 72b63d2ac02aaf7e471c26177c7c8e8f4e53a0b1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 21:10:20 2023 +0200
+
+    sync depot
+
+commit acebccb272a29bb617c953c09aea54138420b110
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 16:36:31 2023 +0200
+
+    sync depot
+
+commit a0aa0a1d3d07b1f95bb9f8b47dba3d3dfb67b9d4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 16:26:17 2023 +0200
+
+    window: add window_dpi()
+
+commit 8c05030d480319a187cbeb0761e0106b49944860
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 16:26:15 2023 +0200
+
+    sync depot
+
+commit a528fe96949f632929767ff4fe2463508fa991b4
+Author: Vladyslav Hrytsenko <vladgritsenko@gmail.com>
+Date:   Tue Oct 10 17:15:20 2023 +0300
+
+    updated support for mac
+
+commit 1ca48f82c00cbe2858d037c04c41a1db0293cd7a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 14:57:20 2023 +0200
+
+    sync depot
+
+commit 1430ee7b98454b577adf871f1be6b7ce64e14038
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 12:16:12 2023 +0200
+
+    tools: update cook
+
+commit 882c3a2a76ee684c973eadbf3ab4764a183cdba3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 12:15:14 2023 +0200
+
+    vfs: fix zip enum
+
+commit b2d7bcc8b2f58d44cb3dbfe00d587f6756619f5b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 10:52:29 2023 +0200
+
+    sync depot
+
+commit 15b3063733b58ecaebaa91b888027a876577f86d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 10:02:43 2023 +0200
+
+    sync depot
+
+commit e2d2a00f46eb4a5fea2b9a340c8ccb4d408686e6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 08:30:58 2023 +0200
+
+    improve depot push
+
+commit ea71398b3394bb93ceccd68265c40ee2b794f794
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 08:30:49 2023 +0200
+
+    sync depot
+
+commit fbd6839454e22ceea6203e6848d2593de0a699ef
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 08:24:02 2023 +0200
+
+    cook: add cook_disable()
+
+commit 94ecaa9399b19e3910f9ace429786cb74f8c02e2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 08:11:33 2023 +0200
+
+    cook: add cook_disable()
+
+commit 69373cea503e2f1a30fcf057723ca870cac96dd8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 07:59:15 2023 +0200
+
+    sync depot
+
+commit ffdc294d71f29dc06d93a49732bb003a076c6ddb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 07:55:06 2023 +0200
+
+    cook: handle V4K_TITLE path
+
+commit 1868986249c44121183908b40ea86118752ac9f4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 07:24:56 2023 +0200
+
+    emergency push for make run
+
+commit 67a57c4339de4b284cde1ecc46b1d3470d051e13
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 07:23:34 2023 +0200
+
+    always tidy after push
+
+commit fe1647947adb56390b36f666a6006c434e547115
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 07:22:43 2023 +0200
+
+    fix make dll incorrectly copying v4k.dll
+
+commit 219d7b9011c8bd2cecbe0d35b60963eb3c1d654f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 07:17:30 2023 +0200
+
+    make run hello now works
+
+commit a12f58ad91b65838b1fd166b1b7bb525f8b5d76d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 07:14:16 2023 +0200
+
+    detect single-header use in lab
+
+commit 602a4f780713adde0fb66de6be92086ebce1cc0c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 07:02:54 2023 +0200
+
+    tooling
+
+commit 8154649dc52add924e45a151b622d94bc1c5b93f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Oct 10 06:56:44 2023 +0200
+
+    sync depot
+
+commit 36192e0bb0941782120c23e411a88e35dd498f7a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 23:47:23 2023 +0200
+
+    update editor_pick
+
+commit de4f390376949fdd31350581bcb392d307ef493d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 18:53:56 2023 +0200
+
+    revert that decision
+
+commit 7e1980b73afb693ee9e306b5f88272d57633f6ac
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 18:53:05 2023 +0200
+
+    panic on shader error
+
+commit 0f328384b2c0b86b90272109427885568950bf48
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 18:15:02 2023 +0200
+
+    fix GL program used
+
+commit 9f691169f45b15d4cda46d98948b8067929fb487
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 17:05:56 2023 +0200
+
+    all around changes
+
+commit b9ceb42817a98c9086d0d2161efbc3b906c6103d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 08:43:21 2023 +0200
+
+    move bind out of engine folder
+
+commit d5443512f4a3d38a8c1c5a7fec1fa12bc0550b31
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 08:23:27 2023 +0200
+
+    bring FWK as a _mirror submodule
+
+commit 559b0ae2da538b033780ddfef83b553efdfc768b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 08:07:17 2023 +0200
+
+    new: struct packer
+    new: vle,int,float,half packers
+    new: crc64(), arc4(), entropy()
+    chg: reordered endianness utils
+
+commit c984ac338e2ec753d0eefaf6983d9dd17c19a39d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 07:55:43 2023 +0200
+
+    one extra change in tooling
+
+commit 3eaef450407032de23ec479fda8608d9a0cf3726
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Oct 9 07:50:16 2023 +0200
+
+    improve depot tooling
+
+commit 4822df172e1c23c5f84f412d32a0017a5e13010d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 22:06:48 2023 +0200
+
+    delete old labs dir
+
+commit 2157665a6d65cfa07f4e5adbf51ba66a520f67ba
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 21:47:29 2023 +0200
+
+    update tooling again
+
+commit f7f45251c5d5207098bb157226b6b1b3556f3a09
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 21:46:49 2023 +0200
+
+    update tooling
+
+commit 6e451189ad7fc2cdf0260e11bb1c31ea56957a3e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 21:34:56 2023 +0200
+
+    add depot monorepo
+
+commit 97d85002373ecdc5d9a3b7edd9ed2ca852fb9df8
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 20:07:13 2023 +0200
+
+    sync with FWK
+
+commit 66867deae6c423d4625367505084bf55129a6a76
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 19:25:05 2023 +0200
+
+    shuffle files around
+
+commit 796839ac745950eb7cf698a5a8532d55482eb1d3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 19:07:01 2023 +0200
+
+    html5: webaudio support WIP
+
+commit 1ff5ad2767308afb84219c1258b897408af1fc98
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 18:00:09 2023 +0200
+
+    html5: disable buggy webaudio backend
+
+commit 8003e408e109e2ce4b6169b4b26bfde27421266b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 17:53:48 2023 +0200
+
+    html5: fix canvas resize and fullscreen + HighDPI support
+
+commit 07c0d774fe7570b29ef48eb9faa15464fa165bc4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 8 09:48:47 2023 +0200
+
+    sync to FWK
+
+commit 5edc8228c7ec875d98f58bbbdd8e1f407aebe0a1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Oct 7 19:34:09 2023 +0200
+
+    sync with FWK
+
+commit 4e871b7612424e35c029587d548b7be1c338fbf4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 5 07:16:41 2023 +0200
+
+    sync to FWK
+
+commit daa56c3807791f5237f402052d61fbcd1a895122
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 5 05:36:42 2023 +0200
+
+    fix tcc
+
+commit a16adf57f0ec400d95fa9f349c2790642f9cae16
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Oct 5 05:26:00 2023 +0200
+
+    add sqlite3
+
+commit f026b9ff5b3fd604be747b8b2dd46b2adb998e19
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 1 08:49:56 2023 +0200
+
+    drop changelog
+
+commit 51f0959d75a70c7236e3dc96237fe2b6dd39117d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Oct 1 08:49:08 2023 +0200
+
+    sync to FWK 2023.9
+
+commit d93c8febbef956207e73483a82bd813da41a3a7b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 27 09:12:48 2023 +0200
+
+    fix html5 build + add a new HTML5 demo
+
+commit 2d56c302b85ccf4f86ed676c90054726e69babb2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 27 09:01:42 2023 +0200
+
+    dont delete .art[00].zip
+
+commit d029777c9db9ec29eba3aa78bd3dfdcee0b17eb4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Wed Sep 27 08:49:59 2023 +0200
+
+    sync with fwk
+
+commit a4869085a4207ab0f615f736c1600426d034bfee
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 25 12:24:49 2023 +0200
+
+    window: improve transparency pass (r-lyeh)
+
+commit a8c4b1816f179797b0e989c7c9f2a25a7471599a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 25 06:46:31 2023 +0200
+
+    html5: replace viewport_color3 call
+
+commit e437dcabe2a1c81ce725905ff37b12b01d225009
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 25 06:29:29 2023 +0200
+
+    sync to FWK
+    
+    new: FX params exposed automatically (int,float,vec2/3/4,color3/4), set/min/max/tooltips
+    new: atof2/3/4, ftoa2/3/4, swapf2/3/4, clamp2/3/4
+    lab: shader reflection API
+    brk: changed ui_enable() signature; renamed clamp234->clamp234f
+
+commit 4cd8f820def83e275619082ed31caac2e2b9183e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 25 06:10:36 2023 +0200
+
+    render: optimise lighting
+
+commit 9731ca611cb83d40d9615ef1ab035c521754cf48
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 23 22:00:22 2023 +0200
+
+    render: finalize phong shader
+
+commit fff4880c4f7d3dcbe1e9e1360eb2cfa4a1adba4d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 23 20:53:25 2023 +0200
+
+    render: finish up phong shading
+
+commit b44fd791a6af3852d14e49239b9e81b5e3f09065
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 23 18:23:38 2023 +0200
+
+    render: fx_end() no longer takes fb handle
+
+commit 0beb264e2b9778b0fe43bdfe92359726a229cf19
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 23 17:22:48 2023 +0200
+
+    scene: WIP lighting pass
+
+commit 8129920be21094342d6ae84007ab6862b709c483
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Sep 21 12:45:42 2023 +0200
+
+    window: transparent windows (r-lyeh)
+
+commit 1b294f1a27fb87ab77094eb074d89c7cc3ebd7c9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Sep 21 12:10:36 2023 +0200
+
+    rimlight control
+
+commit 70678e6ee1a9afa9f38f5c67950a2cea51a44a15
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Sep 19 06:50:53 2023 +0200
+
+    render: shader() now takes GLSL defines
+
+commit aeffb03aad81693b0d967ed9b849b3375931c134
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Sep 19 04:30:54 2023 +0200
+
+    fix up docs
+
+commit 9408093b0e3627e2d15d74fec6b6ed8900f00f21
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 18 19:59:59 2023 +0200
+
+    net: use InternetReadFile() on win32 tcc (r-lyeh)
+
+commit 20796c35fa25c9492d4fe3ef2e5f14537cbe0657
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 18 19:50:50 2023 +0200
+
+    dll based wb plugins
+
+commit e4269dbc0d98b49619d5a91cd2d10795482eb202
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 18 18:26:38 2023 +0200
+
+    and again
+
+commit 1dea3eac158a5bc980bae01ce6bf74158a35b445
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 18 18:24:09 2023 +0200
+
+    fix readme authors
+
+commit 67527c770d3cd3b972007737358cac62b84aa044
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 18 18:02:48 2023 +0200
+
+    net: fix IPV6_V6ONLY being 0, should be 27 on win32
+
+commit b7a6543c0785e4bc0d4896dbcfb3e991f486665b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 18 12:00:16 2023 +0200
+
+    wip asset reload
+
+commit 5f6fbab4dee55d0f203afab3e5984de020e3860d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 18 09:43:28 2023 +0200
+
+    system: add app_spawn
+
+commit 2ec699948c803575108efef175bbe85ca3a8ecf2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Sep 17 22:56:51 2023 +0200
+
+    workbench: initial impl wip
+    render: supporting changes
+    ui: new methods
+
+commit 5451fa6e9d5a973ebb042a58d4bc4e1683121d22
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Sep 17 11:50:34 2023 +0200
+
+    art: new system fonts
+    video: support VIDEO_LOOP
+    html5: drop JS worker
+
+commit 9724d064cf19126c9308e97423baa5e9392366fa
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 16 14:51:30 2023 +0200
+
+    html5: add worker js back
+
+commit ad9d3e8eee2c2510bfed4e3d2de8bb260352f2a1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 16 14:35:20 2023 +0200
+
+    bt: introduced a new behavior tree module
+    html5: drop the use of JS worker and provide host.py to serve test build
+    instead
+    demo: use pathfinding in 99-pathfind
+
+commit 43ca1c86bd1b799be3d42df6304a445a0c95af2c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 16 10:41:14 2023 +0200
+
+    demo: use pathfind_astar for player movement
+
+commit b437da684121d8029336d6b872882d74f848d780
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 15 11:36:37 2023 +0200
+
+    add tiny_impdef
+
+commit 7a89e8b6ca8594a2dffb93fab352317aac1c9753
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 15 10:55:29 2023 +0200
+
+    delete info.obj on `make docs`
+
+commit 08b9fd045746c9c4e3827eee35b6ad1cee0fc20f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 15 10:50:29 2023 +0200
+
+    update help screen
+
+commit 0275294472c682b05a2e4260a16f2d05f50120b1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 15 10:43:07 2023 +0200
+
+    add runtime args
+
+commit 95cb58aaff55b16470f84bb8801cf17df950d9a3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 15 10:37:25 2023 +0200
+
+    add run command
+
+commit c75cff8b0f7d539b2b2509d7c78f905bb76c024d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Sep 14 03:19:16 2023 +0200
+
+    new motto
+
+commit 07b002d5365d76967ad1d64b11e3f438fb7cc9e7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 15:22:16 2023 +0200
+
+    render: fix skybox_mie_calc_sh cast
+
+commit b47c47df5461f69480432c8ee856e811dbcd620b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 15:16:16 2023 +0200
+
+    render: improve skybox_mie_calc_sh and add sky_intensity
+
+commit 5747b95739b89b396ee3ee736759a0dc4941959d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 13:42:52 2023 +0200
+
+    adjust make.bat
+
+commit 1546a56a4aab7e3498af10575482907aee38028c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 13:41:56 2023 +0200
+
+    sponza demo slower cycle
+
+commit 53b63dff586d6178bd7ed8051f704f8280766553
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 13:38:43 2023 +0200
+
+    update sponza demo with day/night cycle
+
+commit aa66b03929791687f058912d1c806b00beb28199
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 13:27:24 2023 +0200
+
+    render: expose all params in mie sky shader
+
+commit 2e643e69c3715f8366073a80c0c5aeb1a004b712
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 13:01:26 2023 +0200
+
+    improve fwk and back cmds
+
+commit 5841bfbff25a671316b3dd7db522674d50968aed
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 12:23:33 2023 +0200
+
+    fwk: sync up
+
+commit afd2399ec0ed40b8b6198cd13816be59d64cf682
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 12:19:29 2023 +0200
+
+    fwk: sync + window: em fix resize + support fixed resize
+
+commit a20b0b73adc6495c36a3fdff972fcd2c3043ae38
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 11:07:59 2023 +0200
+
+    mie skybox no longer uses non-standard uniform default value
+
+commit 959f988836b8a408f5455f70e4d66db8e7fca989
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 10:23:02 2023 +0200
+
+    render: fix skybox_mie_calc_sh sampling cubemap upside down
+    render: skybox_mie_calc_sh match res to 1024
+
+commit 2a7b177fd8ee4c2b774b4893c5b4896b2f801b48
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 08:29:01 2023 +0200
+
+    small tweaks
+
+commit 031dbe05dfee2edad61f7e13ecdb321109a1f5b1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 07:38:57 2023 +0200
+
+    temp: revert demo url
+
+commit b31edaf5c01d82bba5405a79627939f22b789c89
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Sep 11 07:30:12 2023 +0200
+
+    update docs
+
+commit 495f9972e5c5a4ab5b8150121e98c25e4b5b4da1
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Sep 10 18:16:25 2023 +0200
+
+    render: api adjustments
+
+commit b8422c6eb94832f60cc7bb1258af246b91b6fa3e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Sep 10 17:10:49 2023 +0200
+
+    render: rework engine shaders to be loaded from disk
+
+commit 358522ea22b49e45c115d487140f3f5b51f5595a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Sep 10 16:46:07 2023 +0200
+
+    wip: shadowmap
+
+commit 687993ef40153213e41efb0c9a77da103d11db1c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Sep 10 15:14:34 2023 +0200
+
+    code cleanup
+
+commit 47e0d6c9698b61a0b924ee0141f9b22ad9beb12f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Sep 10 15:05:57 2023 +0200
+
+    small render fixes
+
+commit 2d6ed9740d38aece3fa055c9519d170b9a019f83
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Sep 10 15:03:01 2023 +0200
+
+    render: add skybox_mie_calc_sh
+
+commit d6d0294ae57d1ecb133c4c8f552316250166f45a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 9 15:16:05 2023 +0200
+
+    demo: temp F8 to switch backend
+
+commit dc2555af5833cf6f400ff75953c8d7739d45cb6e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 9 11:24:54 2023 +0200
+
+    demo: cook on demand
+
+commit bc5727eb20786474f32fa1c0644c74ec7ced4a7f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Sep 9 02:36:52 2023 +0200
+
+    demo: temperature sim
+
+commit 27805e26545e6d0689e648123688f568c963d87d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 23:22:54 2023 +0200
+
+    improve docs about page
+
+commit bda4cbb857fb34dab6209bffffa4a6d9a8305a5c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 23:11:23 2023 +0200
+
+    rpc: improve msg ctor
+
+commit d848c6a06a5673e1ececd1df2ae4fed81bbbcb39
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 23:00:22 2023 +0200
+
+    rpc: fix RPC_SIGNATURE_v_s case
+
+commit 3ed96fc62a741167fa449352d318a2e5e0f03bbb
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 22:38:35 2023 +0200
+
+    netsync: improve event ctor
+
+commit 9fa0c9f1ba89ab36cd2a40be18cc1b9a575c4cf7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 22:27:16 2023 +0200
+
+    we go public now!
+
+commit d83377e86c9b808699f1427a62e05563359e1cab
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 22:23:54 2023 +0200
+
+    docs: add commit url to commits
+
+commit 1062874d2701d9a05f22de7843e7c48670ef98f0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 22:20:55 2023 +0200
+
+    ignore v4k.html from now on
+
+commit 5f99b6777855e09c3ac553997898e4d522e21494
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 22:19:06 2023 +0200
+
+    sync up with FWK
+
+commit 208a5d877291a79e7647939e0de6ccf936340c68
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 22:14:11 2023 +0200
+
+    add changelog to docs
+
+commit fb3e0c55e8e50243aee68b1aee215b3ed0090922
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 15:17:40 2023 +0200
+
+    readme stuff
+
+commit 0440bfd3ccc5c09be70b7dca56ae4f492ed374f6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 15:06:07 2023 +0200
+
+    ugly but works html5 cook
+
+commit 64ee470bc462f57f2d8bef79c473b614061df784
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 14:42:05 2023 +0200
+
+    fix html5 build
+
+commit f77e03123ba4730755c98b8c63f5a352282116ca
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 14:33:36 2023 +0200
+
+    update docs
+
+commit 4bd94d78242fd2fc8bdb893d2442229b1758f5a3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 14:10:14 2023 +0200
+
+    add vps command to update v4k.dev site
+
+commit aea5470ca6a9adf471a21c8a8971fce5c3974b11
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 13:56:15 2023 +0200
+
+    update readme
+
+commit d1204acadaa0ff398dcb6c4623caeb6c7210526b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 11:41:51 2023 +0200
+
+    mesh_render_prim addition
+
+commit cf45869d14a1fbec8fc2cde288a7f6e3bebb53a5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 11:19:33 2023 +0200
+
+    geom shader support
+
+commit 5af4968eed87a1cbbaa9c121422265475d8eeed5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 10:00:26 2023 +0200
+
+    ssbo impl
+
+commit 34c58f04a9d602785b18b301fbe4b9ed5ce9fef9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 08:31:58 2023 +0200
+
+    improve shaders
+
+commit 51320bfab11853b3bba51da83bb350a6adb8402c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Sep 8 08:16:32 2023 +0200
+
+    compute shaders!
+
+commit 1d7e68f18c6ebc28611585ca44ec953c365d9b6d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Sep 7 11:40:43 2023 +0200
+
+    anims_t drop M
+
+commit 3a70df594b5786d238cd83f8ad320a1b90d28c46
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 26 15:33:29 2023 +0200
+
+    update cooker
+
+commit 380732c4ada0e0143560679930c3871c885481d7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sat Aug 26 01:32:43 2023 +0200
+
+    animlist support
+
+commit 99d688498434dc6897543af3071eadf96a9be1ce
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Aug 22 18:32:23 2023 +0200
+
+    netsync improv
+
+commit 3e1e170e1645d28ceadef7078198205a0be7c36b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Tue Aug 22 13:29:47 2023 +0200
+
+    use va() for events
+
+commit 36c7a8188465049c45b36dca4df18a68f91371f2
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 21:11:54 2023 +0200
+
+    stuff
+
+commit 86e129e210fa0fc0eae1edacde316298ca3e0ba9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 20:23:43 2023 +0200
+
+    add NETWORK_BUF_CLEAR_ON_JOIN option
+
+commit 1928f0a531888c16f36a114230f243f924f1b5d3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 20:07:24 2023 +0200
+
+    reuse IDs on reconnect
+
+commit 917a63625b06330b69f960ad21b0399606d88f10
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 18:36:31 2023 +0200
+
+    improve
+
+commit 849b7cfef7d7ac5f7d74b0d5373c5f527bccaf39
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 18:35:22 2023 +0200
+
+    allow for polling methods to return events
+
+commit 27b580dbd20b42e99f03c815b7bb37e635b077d6
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 18:07:45 2023 +0200
+
+    refactor netsync polling
+
+commit 4969ab42d91abf291ac43c2d4873bd970beacbf5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 14:58:12 2023 +0200
+
+    rpc support
+
+commit d5496d4ddbd2e772f9a741af84b605f037e9036d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 14:24:47 2023 +0200
+
+    add network event handling
+
+commit 4bc37fc6be085446d09eac2c172b47f3d406e5cf
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 12:33:11 2023 +0200
+
+    changes
+
+commit 4391fa7b33179fbbceffd04581035c4d373ff596
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 21 12:32:46 2023 +0200
+
+    netsync improvements
+
+commit 37db0c09fe525b90adb2f6b0581de2d758f6ba33
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Sun Aug 20 19:58:34 2023 +0200
+
+    improve shaders
+
+commit 178320f636a48ff757ce7763cd5e85f103f2fcd7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 18 14:53:59 2023 +0200
+
+    rsdf
+
+commit ec6e6c0e953507d8ab2b4054f15cb907186f8a5f
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 20:01:39 2023 +0200
+
+    oom
+
+commit 6f196a9fb6f505d2b2169c93692585e7bb340d9d
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:43:07 2023 +0200
+
+    make git now runs make prep
+
+commit 9fa2bf5e6fb895c183560f48737df5b2ea921942
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:42:15 2023 +0200
+
+    update deps
+
+commit 5264e113c312dae0e4b31fbd6391c5062e9f8ac5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:40:20 2023 +0200
+
+    new ver
+
+commit eea0b62112fc0d450c924f460473544f79255442
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:31:26 2023 +0200
+
+    rebrand
+
+commit bf8d7aecfd53a3b913861ca7715b104c907e5b93
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:30:36 2023 +0200
+
+    oompsie
+
+commit 59087657b3eff653abe3f887ca99c3ac15ae1bac
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:28:57 2023 +0200
+
+    dont do tools
+
+commit 6e9095097e319ba03391bafff03b9e9ec5028fbe
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:27:44 2023 +0200
+
+    fixes
+
+commit aa850b906f60f92ef7a9fd62beffa173e251ac45
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:25:13 2023 +0200
+
+    improve fwk/back
+
+commit 24775d1c825be80cfbb53f1ba0a10611275b33ba
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:14:44 2023 +0200
+
+    drop rem
+
+commit a70af46f954a38aa8151e155072ddeece355302b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:10:31 2023 +0200
+
+    fwkren improvements
+
+commit e4b6b8ba1f55496d14836622c25c0b80180acc66
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 19:05:37 2023 +0200
+
+    add fwkren as a replacement for powershell exec
+
+commit 8b6f07e5c5b30f74b929fe09767b8c41f74268be
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Mon Aug 14 18:30:52 2023 +0200
+
+    ass2iqe: animlist support + sample anim file
+
+commit fb2f7ee532bcfecc056c5d8754ca378816441f67
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 22:01:44 2023 +0200
+
+    update demo
+
+commit 1a1683aa29d8a7a64ca1d4672c15038f4feeb95b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 21:59:48 2023 +0200
+
+    upstream files
+
+commit cb37e1e9f4abe69ae53f41b6fa0d34e4229f4dd5
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 21:53:24 2023 +0200
+
+    upstream changes
+
+commit 69b7782b2ed97b5bce40176e35b9acc2f3745185
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 21:46:46 2023 +0200
+
+    0
+
+commit 458f0e6bd41270bf4e14751e201cf3575327fc22
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 20:59:46 2023 +0200
+
+    update MAKE.bat
+
+commit b118b990b85f4345e45fd20082cf80b85529041b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 10:32:36 2023 +0200
+
+    x
+
+commit affc8a9da5177346705207da0af0f9e817120a98
+Merge: 355f7b5 7f04463
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 10:32:07 2023 +0200
+
+    Merge remote-tracking branch 'fwk/main'
+
+commit 7f04463de96f51fd62467abb6f61d2d9de8c14d2
+Author: r-lyeh <rlyeh.2015@gmail.com>
+Date:   Fri Aug 4 21:39:36 2023 +0200
+
+    chg: bring back project generators `MAKE proj` (premake5)
+    chg: bring back most demos/ `MAKE demos`
+    fix: ui: fixed crash when no cooked fonts were available (ui_notify)
+    fix: html5: added pthreads support (@zpl-zak)
+    fix: html5: allowed coi requests in localhost served contents (@zpl-zak)
+    chg: html5: instantiate web server only if content is not being served
+    chg: bring back demos/html5/
+    chg: bring back tools/editor/
+    chg: bring back some audio tunes
+    chg: update docs
+
+commit 355f7b52cea0bda89d99a997a7ce09267cb11245
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 02:09:08 2023 +0200
+
+    add sponza demo
+
+commit d11546ad726a7d9d3d0f57694e4f9c607593336c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 01:43:12 2023 +0200
+
+    fix FX load
+
+commit 4093f97dec674d6fccb0bf26d6fca24001c334f9
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 01:17:10 2023 +0200
+
+    another change
+
+commit 4964c6dc045c5fda145d079fbd6cb0f6d00c8fa0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 01:16:08 2023 +0200
+
+    all means extras too
+
+commit 7f5f6e7a5830cb78492a97a8a02dbe27a2c551ab
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 01:15:15 2023 +0200
+
+    add more demos
+
+commit 0a87150932821fa323223e9d125b77574dbd8725
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 00:47:48 2023 +0200
+
+    keep comments
+
+commit 82a2db5301413c9436f76a4760c015f0a04e834a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 00:46:04 2023 +0200
+
+    keep comments
+
+commit a70636955779db0067e7cbf35e4e3c3f7b754720
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 00:39:57 2023 +0200
+
+    add glslcc tool
+
+commit e30c8bb1900eee8a37dba694a2bc0a305cadba39
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 00:28:06 2023 +0200
+
+    add extras switch
+
+commit 5565dcc4ad48d1fa6408312c4a2e33348dcb0ba7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 00:19:00 2023 +0200
+
+    add some assets from FWK 2022
+
+commit 3c3c88df5fc3b8e6782f52481e08926c1b5e0c1a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 00:14:08 2023 +0200
+
+    update demos
+
+commit 8550b1275731ffb3ddd3652d5ac5d53fc2113e94
+Merge: 1c9f410 54aa82a
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Fri Aug 11 00:09:38 2023 +0200
+
+    Merge remote-tracking branch 'fwk/main'
+
+commit 1c9f410e361a2e4b5f7a93834ff041466fec91c7
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 23:53:51 2023 +0200
+
+    add glsl join/split tools
+
+commit 54aa82aecfc13709cf8331e520f1712a200167cd
+Author: r-lyeh <rlyeh.2015@gmail.com>
+Date:   Fri Aug 4 21:39:36 2023 +0200
+
+    chg: bring back project generators `MAKE proj` (premake5)
+    chg: bring back most demos/ `MAKE demos`
+    fix: ui: fixed crash when no cooked fonts were available (ui_notify)
+    fix: html5: added pthreads support (@zpl-zak)
+    fix: html5: allowed coi requests in localhost served contents (@zpl-zak)
+    chg: html5: instantiate web server only if content is not being served
+    chg: bring back demos/html5/
+    chg: bring back tools/editor/
+    chg: bring back some audio tunes
+    chg: update docs
+
+commit e5b504773f4e81988f3ed0ea813f9e1b976d44c3
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 22:34:20 2023 +0200
+
+    make web
+
+commit 9e2d449d926c6bd15d8a37942573444f376fc2ba
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 21:52:43 2023 +0200
+
+    lua stuff
+
+commit 654bf9ff5bd03518a0ecada5f65a8f238bd96d5e
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 21:27:16 2023 +0200
+
+    improve rpc
+
+commit 6fe631b5d5f79e030ac0262a5fe9900445088550
+Merge: 3b958eb 1fa7710
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 21:20:34 2023 +0200
+
+    Merge remote-tracking branch 'fwk/main'
+
+commit 3b958eb73d1640a0f4bb2e526715d21c0fc57ab0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 21:00:12 2023 +0200
+
+    dont complain about missing dir
+
+commit d5979e16dd60f8eb5ac3a5c0f964c28f0dccdea0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 20:52:50 2023 +0200
+
+    add fwk command to prep fwk PRs
+
+commit 1fa7710d349b62b007b56be792bb072f5c0bae67
+Author: r-lyeh <rlyeh.2015@gmail.com>
+Date:   Fri Aug 4 21:39:36 2023 +0200
+
+    fix: html5: added pthreads support (@zpl-zak)
+    fix: html5: allowed coi requests in localhost served contents (@zpl-zak)
+    fix: html5: instantiate web server only if content is not being served
+    chg: bring back demos/html5/
+    chg: bring back tools/editor/
+    chg: bring back some audio tunes
+    chg: update docs
+
+commit 8fc280e6ff13a5e3f437f99ff45c84e61e38d2ca
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 19:56:28 2023 +0200
+
+    update docs
+
+commit 5cb2c38b253ec3e2390c622ec640f2f6de1ee85b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 19:55:53 2023 +0200
+
+    rpc support in v4k
+
+commit ee76c55b0ee7fd8f65d3a99486691e5c70a3610c
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 18:26:54 2023 +0200
+
+    update make pull
+
+commit 109a41093a47caa43b3e7162bffdc6fcfe772fc0
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 18:25:52 2023 +0200
+
+    rename
+
+commit 9dbeb39fd3c2b955f574b4f21f369cea37a6db7c
+Merge: 80effb7 e2fa783
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 18:25:18 2023 +0200
+
+    Merge remote-tracking branch 'fwk/main'
+
+commit 80effb7e2e4644b81b53e8e10799041637d04f0b
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 18:21:32 2023 +0200
+
+    ensure FWK upstream is always present
+
+commit aa5f7085fe26a4fc128d34f06024a40215fc5e63
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 18:19:39 2023 +0200
+
+    add sublime-project
+
+commit 01f7395c8215f2df936a6dab0442fe12c28af387
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 16:57:57 2023 +0200
+
+    update ports
+
+commit 5f798d0d8df7d0fc2c3573fa37cfedc034c3caa4
+Author: Dominik Madarász <zaklaus@outlook.com>
+Date:   Thu Aug 10 16:30:56 2023 +0200
+
+    v4k initial commit
+
+commit e2fa783a689b5dcdc579bbf56c12774332ecc2c1
+Author: r-lyeh <rlyeh.2015@gmail.com>
+Date:   Fri Aug 4 21:39:36 2023 +0200
+
+    chg: bring back some audio tunes
+    chg: bring back tools/editor/
+    chg: update docs
+
+commit 3b67efc1f56b4d7b1e35165ecc32e46adf50aa03
+Author: r-lyeh <35402248+r-lyeh@users.noreply.github.com>
+Date:   Sun Jul 30 21:18:50 2023 +0200
+
+    chg: replicate previous project tree layout
+    fix: fixed issue when mounting empty zipfiles (likely to happen in computers with many cpu cores) (thanks @zpl-zak!)
+    new: forked milestone in https://github.com/r-lyeh/FWK.2022
+    chg: update teal + gamecontrollerdb
+    add: added tools/plugins/ stub folder
+    brk: renamed `WITH_` > `ENABLE_` directives
+    chg: updated docs
