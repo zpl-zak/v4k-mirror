@@ -427,7 +427,7 @@ if "%1"=="addons[" (
     if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "v4k=yes" && set "hello=no"&& goto loop
     if "%1"=="run"      set "run=yes" && goto loop
-    if "%1"=="share"    set "share=yes" && set "dll=static" && goto loop
+    if "%1"=="share"    set "share=yes" && set "dll=static" && set "cc=tcc" && goto loop
     if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "lab=yes" && set "hello=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
@@ -780,6 +780,7 @@ if "!share!"=="yes" (
         )
         echo run !exename! !run_args!
         !exename! --cook-on-demand=1 !run_args! || set rc=1
+        @REM call tools\upx.exe !exename!
         call make.bat fuse
     )
 )
