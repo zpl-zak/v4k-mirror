@@ -24,24 +24,18 @@ int main() {
         },
         {
             position:[-5.0,-2.0,2.0],
-            rotation: [0.0,0.0,0.0],
+            rotation: [90.0,-90.0,0.0],
             scale:0.20,
-            //anchor/pivot:[],
-            // vertex:'p3 t2',
             mesh:'models/witch/witch.obj',
             texture:'models/witch/witch_diffuse.tga.png',
-//            swapzy:true,
             flipuv:false,
         },
         {
             position:[-5.0,-2.0,2.0],
-            rotation: [90.0,0.0,180.0],
+            rotation: [90.0,-90.0,0.0],
             scale:2.20,
-            //anchor/pivot:[],
-            // vertex:'p3 t2',
             mesh:'models/witch/witch_object.obj',
             texture:'models/witch/witch_object_diffuse.tga.png',
-//            swapzy:true,
             flipuv:false,
         },
     ]);
@@ -57,7 +51,7 @@ int main() {
     object_diffuse(obj3, t1);
     object_scale(obj3, vec3(3,3,3));
     object_move(obj3, vec3(-10,0,-10));
-    object_pivot(obj3, vec3(-90+180,180,0));
+    object_pivot(obj3, vec3(90,-90,0));
 
     // camera
     camera_t cam = camera();

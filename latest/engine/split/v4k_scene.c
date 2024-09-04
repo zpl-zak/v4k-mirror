@@ -240,8 +240,6 @@ void object_update(object_t *obj) {
     quat p = eulerq(vec3(obj->pivot.x,obj->pivot.y,obj->pivot.z));
     quat e = eulerq(vec3(obj->euler.x,obj->euler.y,obj->euler.z));
     compose44(obj->transform, obj->pos, mulq(e, p), obj->sca);
-
-
 }
 
 object_t object() {
