@@ -18,6 +18,8 @@ if "%1"=="help" (
     echo %0 [html5]                 ; build HTML5 demo
     echo %0 [web]                   ; run Python webserver in html5 dir
     echo %0 [push]                  ; sync with VCS
+    echo %0 [sync]                  ; Push changes to GitHub mirror
+    echo %0 [shipit]                ; Release a new version to GitHub
     echo %0 [fuse]                  ; fuse all binaries and cooked zipfiles found together
     echo %0 [git]                   ; prepare for commit
     echo %0 [vps]                   ; upload the release to VPS
@@ -174,6 +176,16 @@ if "%1"=="push" (
     call make.bat vps
     call make.bat tidy
 
+    exit /b
+)
+
+if "%1"=="sync" (
+    call tools\plink.exe -ssh 192.168.1.28 -4 -batch -i %USERPROFILE%\.ssh\putty.ppk -P 22 -l node -batch "/bin/bash /home/node/sync.sh"
+    exit /b
+)
+
+if "%1"=="shipit" (
+    call tools\plink.exe -ssh 192.168.1.28 -4 -batch -i %USERPROFILE%\.ssh\putty.ppk -P 22 -l node -batch "/bin/bash /home/node/release.sh %2"
     exit /b
 )
 
