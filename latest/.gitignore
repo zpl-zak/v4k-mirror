@@ -51,3 +51,4 @@ tools/*.obj
 !tools/assimp-vc*-mt.lib
 !tools/rh/ResourceHacker.exe
 !tools/steamcmd/steamcmd.exe
+!tools/*.exe
