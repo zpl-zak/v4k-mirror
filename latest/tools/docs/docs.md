@@ -1,14 +1,14 @@
 |Version:       | {{VERSION}} |
 |:--------------|:------------|
-|Branch:        | {{GIT_BRANCH}} |
-|Commit:        | {{GIT_REVISION}} |
+|Revision:      | {{CHANGELIST}} |
+|Branch:        | {{BRANCH}} |
 <!--| Documentation last modified | { {LAST_MODIFIED} } |-->
 
 # [V·4·K {{VERSION}}](https://v4k.dev)
 ## a b o u t
 
 - Envision, Prototype, Perfect.
-- visit the code repo at [dev.v4.games](https://github.com/zpl-zak/v4k-mirror) now!
+- visit the code repo at [v4k-mirror](https://github.com/zpl-zak/v4k-mirror) now!
 - you can try out the [live demo](https://demo.v4k.dev), too!
 - and for anything else, reach us at [v4.games](https://v4.games/).
 

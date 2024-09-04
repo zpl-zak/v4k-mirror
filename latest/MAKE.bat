@@ -17,7 +17,7 @@ if "%1"=="help" (
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [html5]                 ; build HTML5 demo
     echo %0 [web]                   ; run Python webserver in html5 dir
-    echo %0 [push]                  ; prepare for public release
+    echo %0 [push]                  ; sync with VCS
     echo %0 [fuse]                  ; fuse all binaries and cooked zipfiles found together
     echo %0 [git]                   ; prepare for commit
     echo %0 [vps]                   ; upload the release to VPS
@@ -27,7 +27,6 @@ if "%1"=="help" (
     echo %0 [test]                  ; run autotests
     echo %0 [todo]                  ; check for @fixme and @todo
     echo %0 [leak]                  ; check for @leak
-    echo %0 [v4web]                 ; sync v4 website
     echo %0 [swap]                  ; toggle #line directives on/off
     echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
     echo %0 [3rd]                   ; join 3rd parties together
@@ -92,18 +91,37 @@ if "%1"=="lua" (
     exit /b
 )
 
+if exist ".ark" (
+    set config_file=.ark\workspace.cfg
+
+    if exist "!config_file!" (
+        for /f "tokens=1,2 delims== " %%a in (!config_file!) do (
+            if "%%a"=="current_cl_id" (
+                set "current_cl_id=%%b"
+            )
+            if "%%a"=="branch_id" (
+                set "current_branch=%%b"
+            )
+        )
+    ) else (
+        echo The file !config_file! does not exist.
+    )
+:cl_found
+    set BUILD_CHANGELIST=!current_cl_id!
+    set BUILD_BRANCH=!current_branch!
+)
+
 rem generate documentation
 if "%1"=="docs" (
     rem set symbols...
-    git describe --tags --abbrev=0 > info.obj
+    type VERSION > info.obj
     set /p VERSION=<info.obj
-    git rev-list --count --first-parent HEAD > info.obj
-    set /p GIT_REVISION=<info.obj
-    git rev-parse --abbrev-ref HEAD > info.obj
-    set /p GIT_BRANCH=<info.obj
+    set CHANGELIST=!BUILD_CHANGELIST!
+    set BRANCH=!BUILD_BRANCH!
     date /t > info.obj
     set /p LAST_MODIFIED=<info.obj
-    git --no-pager log --pretty="format:[%%h](https://dev.v4.games/v4games/v4k/commit/%%H): %%s (**%%cN**)" > changelog.txt
+    @REM git --no-pager log --pretty="format:[%%h](https://dev.v4.games/v4games/v4k/commit/%%H): %%s (**%%cN**)" > changelog.txt
+    type CHANGELOG.md > changelog.txt
 
     rem ...and generate docs
     rem cl   tools\docs\docs.c engine\v4k.c -Iengine /Od /DNDEBUG %2
@@ -114,6 +132,7 @@ if "%1"=="docs" (
 
     exit /b
 )
+
 rem generate single-header distribution
 if "%1"=="amalgamation" (
 echo // This file is intended to be consumed by a compiler. Do not read.  > v4k.h
@@ -137,33 +156,21 @@ exit /b
 
 rem generate prior files to a git release
 if "%1"=="git" (
-    rem call make.bat dll
     call make.bat prep
     call make.bat bind
-    rem call make.bat docs
-
-    rem call make.bat amalgamation
-    rem call make.bat split
-
-rem rd /q /s engine\split
-rem md engine\split
-rem move /y v4k_*.? engine\split\
-rem move /y 3rd_*.? engine\split\
-
     call make.bat tidy
-    git add engine/split
-    git add engine/joint
-    git add engine/v4k
-    git add engine/v4k.*
-    git add MAKE.bat
-    git add bind/v4k.lua
-    git status
 
     exit /b
 )
 
 if "%1"=="push" (
     call make.bat git
+
+    if exist "tools\ark.exe" (
+        echo Commit changes in Ark...
+        pause>NUL
+    )
+
     call make.bat vps
     call make.bat tidy
 
@@ -203,7 +210,7 @@ if "%1"=="fuse" (
     if "%2"=="cook" (
         del *.zip 2> nul 1> nul & tools\cook --cook-jobs=1
     )
-    for %%i in (*.exe) do set "var=%%i" && if not "!var:~0,6!"=="fused_" ( copy /y !var! fused_!var! 2>nul 1>nul & tools\ark fused_!var! *.zip )
+    for %%i in (*.exe) do set "var=%%i" && if not "!var:~0,6!"=="fused_" ( copy /y !var! fused_!var! 2>nul 1>nul & tools\fuser fused_!var! *.zip )
     endlocal
     exit /b
 )
@@ -246,22 +253,6 @@ if "%1"=="todo" (
 
 if "%1"=="leak" (
     findstr /RNC:"[^_xv]@leak"  engine\split\v4k*
-    exit /b
-)
-
-if "%1"=="v4web" (
-    pushd website\
-        git pull origin main
-        git add .
-        git commit -m "website update"
-        git push origin main
-    popd
-    @REM git stash
-    @REM git add website
-    @REM git commit -m "sync website"
-    @REM git pull
-    @REM git push
-    @REM git stash pop
     exit /b
 )
 
@@ -631,20 +622,10 @@ echo build=!build!, type=!dll!, cc=!cc!, other=!other!, args=!args!
 echo import=!import!, export=!export!
 echo addons=!addon_names!
 
-rem set BUILD_VERSION symbol
-git describe --tags --abbrev=0 > info.obj
-set /p VERSION=<info.obj
-git rev-list --count --first-parent HEAD > info.obj
-set /p GIT_REVISION=<info.obj
-git rev-parse --abbrev-ref HEAD > info.obj
-set /p GIT_BRANCH=<info.obj
-git describe --tags --abbrev=0 > info.obj
-set /p GIT_TAG=<info.obj
-date /t > info.obj
-set /p LAST_MODIFIED=<info.obj
-git rev-parse --short HEAD > info.obj
-set /p GIT_HASH=<info.obj
-set args=-DBUILD_VERSION="\"!LAST_MODIFIED!!GIT_BRANCH!-!GIT_REVISION!-!GIT_TAG!-!GIT_HASH!-!build!-!dll!\"" !args!
+if "!BUILD_CHANGELIST!"=="" set BUILD_CHANGELIST=0
+if "!BUILD_BRANCH!"=="" set BUILD_BRANCH=0
+
+set args=-DBUILD_VERSION="\"!LAST_MODIFIED!!BUILD_CHANGELIST!-!BUILD_BRANCH!-!build!-!dll!\"" !args!
 
 if "!cc!"=="tcc" set "cc=call tools\tcc"
 
