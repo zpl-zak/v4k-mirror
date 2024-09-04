@@ -631,6 +631,10 @@ echo addons=!addon_names!
 if "!BUILD_CHANGELIST!"=="" set BUILD_CHANGELIST=0
 if "!BUILD_BRANCH!"=="" set BUILD_BRANCH=0
 
+date /t > info.obj
+set /p LAST_MODIFIED=<info.obj
+del info.obj
+
 set args=-DBUILD_VERSION="\"!LAST_MODIFIED!!BUILD_CHANGELIST!-!BUILD_BRANCH!-!build!-!dll!\"" !args!
 
 if "!cc!"=="tcc" set "cc=call tools\tcc"
