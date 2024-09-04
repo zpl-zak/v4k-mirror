@@ -428,9 +428,11 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     g->height = window_height();
     PRINTF("Window: %dx%d\n", g->width, g->height);
 
+#if !is(ems)
     if (glfwRawMouseMotionSupported()) {
         glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
+#endif
 
     // window_cursor(flags & WINDOW_NO_MOUSE ? false : true);
     glfwSetDropCallback(window, window_drop_callback);

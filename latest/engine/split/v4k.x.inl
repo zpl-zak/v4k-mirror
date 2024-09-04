@@ -230,7 +230,4 @@ static char *ui_filter = 0;
 //#define LM_DEBUG_INTERPOLATION
 {{FILE:3rd_lightmapper.h}}
 
-#define STEAM_API() //@hack
-{{FILE:3rd_sdk_steam.h}}
-
 #endif // V4K_3RD

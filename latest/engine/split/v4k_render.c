@@ -1585,8 +1585,8 @@ void light_update(unsigned num_lights, light_t *lv) {
 
 void ui_light(light_t *l) {
     ui_int("Type", &l->type);
-    ui_vec3("Position", &l->pos);
-    ui_vec3("Direction", &l->dir);
+    ui_float3("Position", &l->pos.x);
+    ui_float3("Direction", &l->dir.x);
     ui_color3f("Diffuse", &l->diffuse.x);
     ui_color3f("Specular", &l->specular.x);
     ui_color3f("Ambient", &l->ambient.x);
@@ -1641,6 +1641,8 @@ void shadowmap_init_common_resources(shadowmap_t *s, int vsm_texture_width, int 
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+
+#if !is(ems)
 static inline void
 shadowmap_init_caster_vsm(shadowmap_t *s, int light_index, int texture_width) {
     float borderColor[] = {1.0, 1.0, 1.0, 1.0};
@@ -1690,7 +1692,7 @@ shadowmap_init_caster_csm(shadowmap_t *s, int light_index, int texture_width) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-static inline
+static inline void
 shadowmap_init_caster(shadowmap_t *s, int light_index) {
     shadowmap_init_caster_vsm(s, light_index, s->vsm_texture_width);
     shadowmap_init_caster_csm(s, light_index, s->csm_texture_width);
@@ -2129,7 +2131,110 @@ void ui_shadowmap(shadowmap_t *s) {
         ui_collapse_end();
     }
 }
+#else // @todo ems support
+shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 4096
+    shadowmap_t s = {0};
+    s.vsm_texture_width = vsm_texture_width;
+    s.csm_texture_width = csm_texture_width;
+    s.saved_fb = 0;
+    s.filter_size = 8;
+    s.window_size = 10;
+#if 0
+    s.cascade_splits[0] = 0.1f;
+    s.cascade_splits[1] = 0.3f;
+    s.cascade_splits[2] = 0.7f;
+    s.cascade_splits[3] = 1.0f;
+    s.cascade_splits[4] = 1.0f;
+    s.cascade_splits[5] = 1.0f; /* sticks to camera far plane */
+#else
+    s.cascade_splits[0] = 0.1f;
+    s.cascade_splits[1] = 0.5f;
+    s.cascade_splits[2] = 1.0f;
+    s.cascade_splits[3] = 1.0f;  /* sticks to camera far plane */
+#endif
+    // glGenFramebuffers(1, &s.fbo);
 
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &s.saved_fb);
+
+    // shadowmap_init_common_resources(&s, vsm_texture_width, csm_texture_width);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, s.saved_fb);
+    return s;
+}
+
+static inline
+void shadowmap_destroy_light(shadowmap_t *s, int light_index) {
+    s->maps[light_index].gen = 0;
+    s->maps[light_index].shadow_technique = 0xFFFF;
+
+    // if (s->maps[light_index].texture) {
+    //     glDeleteTextures(1, &s->maps[light_index].texture);
+    //     s->maps[light_index].texture = 0;
+    // }
+    
+    // for (int i = 0; i < NUM_SHADOW_CASCADES; i++) {
+    //     if (s->maps[light_index].texture_2d[i]) {
+    //         glDeleteTextures(1, &s->maps[light_index].texture_2d[i]);
+    //         s->maps[light_index].texture_2d[i] = 0;
+    //     }
+    // }
+}
+
+void shadowmap_destroy(shadowmap_t *s) {
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        shadowmap_destroy_light(s, i);
+    }
+
+
+    // if (s->depth_texture) {
+    //     glDeleteTextures(1, &s->depth_texture);
+    //     s->depth_texture = 0;
+    // }
+
+    // if (s->depth_texture_2d) {
+    //     glDeleteTextures(1, &s->depth_texture_2d);
+    //     s->depth_texture_2d = 0;
+    // }
+
+    shadowmap_t z = {0};
+    *s = z;
+}
+
+static shadowmap_t *active_shadowmap = NULL;
+
+void shadowmap_begin(shadowmap_t *s) {
+    glGetIntegerv(GL_VIEWPORT, s->saved_vp);
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &s->saved_fb);
+
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        if (s->maps[i].gen != s->gen) {
+            shadowmap_destroy_light(s, i);
+        }
+    }
+
+    s->step = 0;
+    s->light_step = 0;
+    s->cascade_index = 0;
+    s->gen++;
+    active_shadowmap = s;
+    s->saved_pass = model_getpass();
+}
+
+bool shadowmap_step(shadowmap_t *s) {
+    s->skip_render = true;
+    return false;
+}
+
+void shadowmap_light(shadowmap_t *s, light_t *l, mat44 cam_proj, mat44 cam_view) {
+    l->processed_shadows = false;
+}
+
+void shadowmap_end(shadowmap_t *s) {
+}
+
+void ui_shadowmap(shadowmap_t *s) {
+}
+#endif
 // -----------------------------------------------------------------------------
 // Occlusion queries
 

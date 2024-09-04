@@ -263,6 +263,7 @@ if "%1"=="leak" (
 )
 
 if "%1"=="html5" (
+    call MAKE.bat prep
     pushd demos\html5
         call make.bat %2
     popd
