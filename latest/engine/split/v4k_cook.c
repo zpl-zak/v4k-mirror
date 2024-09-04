@@ -459,7 +459,7 @@ static cook_worker jobs[JOBS_MAX] = {0};
 static volatile bool cook_cancelable = false, cook_cancelling = false, cook_debug = false;
 
 #ifndef COOK_ON_DEMAND
-#define COOK_ON_DEMAND ifdef(cook, optioni("--cook-on-demand", 0), false)
+#define COOK_ON_DEMAND ifdef(cook, optioni("--cook-on-demand", 1), false)
 #endif
 
 static

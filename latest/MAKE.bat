@@ -351,6 +351,7 @@ set vis=no
 set proj=no
 set rc=0
 set run=no
+set share=no
 set addons=
 set addons_names=
 set addons_includes=
@@ -426,6 +427,7 @@ if "%1"=="addons[" (
     if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "v4k=yes" && set "hello=no"&& goto loop
     if "%1"=="run"      set "run=yes" && goto loop
+    if "%1"=="share"    set "share=yes" && set "dll=static" && goto loop
     if "%1"=="all"      set "v4k=yes" && set "demos=yes" && set "lab=yes" && set "hello=yes" && goto loop
 
     if "%1"=="tcc"      set "cc=%1" && goto loop
@@ -624,6 +626,10 @@ if "!cc!"=="cl" (
     set echo=echo
 )
 
+if "!share!"=="yes" (
+    call make.bat tidy
+)
+
 echo build=!build!, type=!dll!, cc=!cc!, other=!other!, args=!args!
 echo import=!import!, export=!export!
 echo addons=!addon_names!
@@ -761,6 +767,20 @@ if "!run!"=="yes" (
         )
         echo run !exename! !run_args!
         !exename! !run_args! || set rc=1
+    )
+)
+
+if "!share!"=="yes" (
+    if "!rc!"=="1" (
+        echo build failed. skipping run!
+    ) else (
+        set exename=hello.exe
+        if not "!other!"=="" (
+            for /f "tokens=*" %%a in ("!other!") do set exename=%%~na.exe
+        )
+        echo run !exename! !run_args!
+        !exename! --cook-on-demand=1 !run_args! || set rc=1
+        call make.bat fuse
     )
 )
 
