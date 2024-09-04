@@ -22608,7 +22608,7 @@ void model_shading_custom(model_t *m, int shading, const char *vs, const char *f
     }
 
     {
-        int shaderprog = shader(vs, vfs_read("shaders/fs_shadow_vsm.glsl"), //fs,
+        int shaderprog = shader(vs, vfs_read("shaders/fs_shadow_pass.glsl"), //fs,
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragcolor",
             va("SHADOW_CAST,%s", defines ? defines : "NO_CUSTOM_DEFINES"));
         m->shadow_program = shaderprog;
@@ -22907,8 +22907,7 @@ lightmap_t lightmap(int hmsize, float cnear, float cfar, vec3 color, int passes,
         return lm;
     }
 
-    const char *symbols[] = { "{{include-shadowmap}}", vfs_read("shaders/fs_0_0_shadowmap_lit.glsl") }; // #define RIM
-    lm.shader = shader(strlerp(1,symbols,vfs_read("shaders/vs_323444143_16_3322_model.glsl")), strlerp(1,symbols,vfs_read("shaders/fs_32_4_model.glsl")), //fs,
+    lm.shader = shader(vfs_read("shaders/vs_323444143_16_3322_model.glsl"), vfs_read("shaders/fs_32_4_model.glsl"), //fs,
         "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
         va("%s", "LIGHTMAP_BAKING"));
 
