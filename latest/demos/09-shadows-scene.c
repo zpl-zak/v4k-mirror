@@ -135,7 +135,7 @@ int main() {
         if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
         vec2 mouselook = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
         vec3 wasdec = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-input(KEY_C),input(KEY_W)-input(KEY_S)), cam.speed);
-        camera_moveby(&cam, wasdec);
+        camera_moveby(&cam, scale3(wasdec, window_delta() * 60));
         camera_fps(&cam, mouselook.x,mouselook.y);
         window_cursor( !active );
 
