@@ -133,7 +133,6 @@ if "%1"=="docs" (
 
 rem generate prior files to a git release
 if "%1"=="git" (
-    call make.bat prep
     call make.bat bind
     call make.bat tidy
 
