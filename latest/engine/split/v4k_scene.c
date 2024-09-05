@@ -507,11 +507,6 @@ void scene_render(int flags) {
 
             model_skybox(model, last_scene->skybox, 0);
 
-            if (!obj->disable_frustum_check)
-                model_set_frustum(model, frustum_state);
-            else
-                model_clear_frustum(model);
-
             if (anim) {
                 float delta = window_delta() * obj->anim_speed;
                 model->curframe = model_animate_clip(*model, model->curframe + delta, anim->from, anim->to, anim->flags & ANIM_LOOP );
