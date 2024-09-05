@@ -21,7 +21,6 @@ if "%1"=="help" (
     echo %0 [sync]                  ; Push changes to GitHub mirror
     echo %0 [shipit]                ; Release a new version to GitHub
     echo %0 [fuse]                  ; fuse all binaries and cooked zipfiles found together
-    echo %0 [git]                   ; prepare for commit
     echo %0 [vps]                   ; upload the release to VPS
     echo %0 [tidy]                  ; clean up temp files
     echo %0 [bind]                  ; generate lua bindings
@@ -105,6 +104,7 @@ if exist ".ark" (
     )
 :cl_found
     set BUILD_CHANGELIST=!current_cl_id!
+    set /a BUILD_NEXT_CHANGELIST=!current_cl_id!+1
     set BUILD_BRANCH=!current_branch!
 )
 
@@ -130,18 +130,14 @@ if "%1"=="docs" (
     exit /b
 )
 
-rem generate prior files to a git release
-if "%1"=="git" (
-    call make.bat bind
-    call make.bat tidy
-
-    exit /b
-)
-
 if "%1"=="push" (
-    call make.bat git
+    call make.bat bind
     call make.bat vps
     call make.bat tidy
+
+    if exist ".ark" (
+        call tools\ark.exe commit -ws_cl 1
+    )
 
     exit /b
 )
