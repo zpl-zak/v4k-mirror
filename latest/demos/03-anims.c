@@ -17,10 +17,12 @@ int main() {
     bool do_showbones = 0;
     bool do_showmodel = 1;
     bool do_showgizmo = 1;
+    bool do_anims = 1;
 
     // 75% sized, MSAAx2
     window_create(75, WINDOW_MSAA2);
     window_title(__FILE__);
+    window_fps_unlock();
 
     camera_t cam = camera();
     skybox_t sky = skybox("cubemaps/stardust", 0);
@@ -69,9 +71,11 @@ int main() {
         // skeletal update
         static bool is_dragging_slider = 0;
         vec2i anim = vec2i( a.anims[ a.inuse ].from, a.anims[ a.inuse ].to );
-        profile("Skeletal update") {
-            float delta = window_delta() * 30 * a.speed * !is_dragging_slider; // 30fps anim timer
-            if(!window_has_pause()) mdl.curframe = model_animate_clip(mdl, mdl.curframe + delta, anim.min, anim.max, a.anims[a.inuse].flags & ANIM_LOOP );
+        if (do_anims) {
+            profile("Skeletal update") {
+                float delta = window_delta() * 30 * a.speed * !is_dragging_slider; // 30fps anim timer
+                if(!window_has_pause()) mdl.curframe = model_animate_clip(mdl, mdl.curframe + delta, anim.min, anim.max, a.anims[a.inuse].flags & ANIM_LOOP );
+            }
         }
 
         // render
@@ -124,7 +128,8 @@ int main() {
             if( ui_bool("Show bones", &do_showbones) );
             if( ui_bool("Show models", &do_showmodel) );
             if( ui_bool("Show gizmo", &do_showgizmo) );
-
+            if( ui_bool("Anims", &do_anims) );
+            
             ui_separator();
             if( ui_int("Instances", &NUM_INSTANCES)) NUM_INSTANCES = clampi(NUM_INSTANCES, 1, array_count(M));
             ui_separator();

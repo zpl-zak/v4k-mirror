@@ -4199,6 +4199,7 @@ typedef struct iqm_t {
     mat34 *baseframe, *inversebaseframe, *outframe, *frames;
     GLint bonematsoffset;
     vec4 *colormaps;
+    uint32_t instancing_checksum;
 } iqm_t;
 
 void model_set_texture(model_t *m, texture_t t) {
@@ -4469,6 +4470,21 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     }
 }
 #endif
+
+static inline
+uint32_t model_instancing_checksum(mat44 *matrices, int count) {
+    uint32_t checksum = 0;
+    float *data = (float*)matrices;
+    int total_floats = count * 16;
+
+    for (int i = 0; i < total_floats; i++) {
+        uint32_t int_value = *(uint32_t*)&data[i];
+        checksum = ((checksum << 5) + checksum) + int_value;
+    }
+
+    return checksum;
+}
+
 static
 void model_set_state(model_t m) {
     if(!m.iqm) return;
@@ -4514,7 +4530,12 @@ void model_set_state(model_t m) {
 
         // vertex buffer object
         glBindBuffer(GL_ARRAY_BUFFER, m.vao_instanced);
-        glBufferData(GL_ARRAY_BUFFER, m.num_instances * mat4_size, m.instanced_matrices, GL_STREAM_DRAW);
+
+        uint32_t checksum = model_instancing_checksum(m.instanced_matrices, m.num_instances);
+        if (checksum != q->instancing_checksum) {
+            q->instancing_checksum = checksum;
+            glBufferData(GL_ARRAY_BUFFER, m.num_instances * mat4_size, m.instanced_matrices, GL_STREAM_DRAW);
+        }
 
         glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(0 * vec4_size)));
         glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4_size, (GLvoid*)(((char*)NULL)+(1 * vec4_size)));
