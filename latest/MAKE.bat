@@ -104,7 +104,6 @@ if exist ".ark" (
     )
 :cl_found
     set BUILD_CHANGELIST=!current_cl_id!
-    set /a BUILD_NEXT_CHANGELIST=!current_cl_id!+1
     set BUILD_BRANCH=!current_branch!
 )
 
