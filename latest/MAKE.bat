@@ -29,7 +29,6 @@ if "%1"=="help" (
     echo %0 [test]                  ; run autotests
     echo %0 [todo]                  ; check for @fixme and @todo
     echo %0 [leak]                  ; check for @leak
-    echo %0 [3rd]                   ; join 3rd parties together
     echo %0 [lua]                   ; execute lua script with v4k
     echo %0 [sln]                   ; generate a xcode/gmake/ninja/visual studio solution
     echo %0 [addons[ names ] ]      ; specify list of addons you want to compile with the engine
@@ -136,11 +135,6 @@ if "%1"=="git" (
     call make.bat bind
     call make.bat tidy
 
-    exit /b
-)
-
-if "%1"=="3rd" (
-    call tools\join.bat
     exit /b
 )
 

@@ -1,5 +1,5 @@
-// cl modhash.c /O2 /Oy /MT /DNDEBUG /link setargv.obj
-// tcc modhash.c -O2
+// cl file2hash.c /O2 /Oy /MT /DNDEBUG /link setargv.obj
+// tcc file2hash.c -O2
 
 #include <stdio.h>
 #include <stdint.h>
@@ -23,6 +23,9 @@ uint64_t hash_bin(const void* ptr, unsigned len) {
 uint64_t hash_str(const char* str) {
     return hash_bin(str, strlen(str)+1);
 }
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 char *file_load(const char *filename, int *len) { // @todo: 32 counters/thread enough?
     FILE *fp = fopen(filename, "rb");
@@ -35,6 +38,34 @@ char *file_load(const char *filename, int *len) { // @todo: 32 counters/thread e
         buffer[sz] = 0;
         if(len) *len = (int)sz;
         fclose(fp);
+
+        // Process for include directives
+        char *line = strtok(buffer, "\n");
+        while (line) {
+            if (strncmp(line, "#include", 8) == 0) {
+                char *include_file = strchr(line, '"');
+                if (include_file) {
+                    include_file++; // Move past the opening quote
+                    char *end_quote = strchr(include_file, '"');
+                    if (end_quote) {
+                        *end_quote = '\0'; // Null-terminate the filename
+                        int include_len;
+                        char *include_content = file_load(include_file, &include_len);
+                        if (include_content) {
+                            // Append include content to buffer
+                            buffer = realloc(buffer, sz + include_len + 1);
+                            memcpy(buffer + sz, include_content, include_len);
+                            sz += include_len;
+                            buffer[sz] = 0;
+                            free(include_content);
+                        }
+                    }
+                }
+            }
+            line = strtok(NULL, "\n");
+        }
+
+        if(len) *len = (int)sz;
         return buffer; // @fixme: return 0 on error instead?
     }
     if (len) *len = 0;
