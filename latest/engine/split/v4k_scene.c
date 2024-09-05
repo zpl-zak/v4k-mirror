@@ -538,7 +538,6 @@ void scene_render(int flags) {
             shadowmap_end(sm);
         }
 
-        
         /* Collect all transparency enabled models and sort them by distance */
         static array(object_t*) transparent_objects = 0;
         for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
