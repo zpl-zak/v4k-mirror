@@ -67,7 +67,7 @@ int main() {
 
             // move
             sw.steering_targets[0] = cam.position;
-            swarm_update(&sw, window_delta());
+            swarm_update(&sw, window_delta()*60);
 
             // draw
             for (int j = 0, end = array_count(sw.boids); j < end; ++j) {

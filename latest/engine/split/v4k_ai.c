@@ -209,7 +209,7 @@ void swarm_update_acceleration_and_velocity_only(swarm_t *self, float delta) {
 
     for( int i = 0, end = array_count(self->boids); i < end; ++i ) {
         boid_t *b = &(self->boids)[i];
-        b->velocity = clamplen3(add3(b->velocity, scale3(b->acceleration, delta)), self->max_velocity);
+        b->velocity = clamplen3(add3(b->velocity, b->acceleration), self->max_velocity);
     }
 }
 
@@ -219,7 +219,7 @@ void swarm_update(swarm_t *self, float delta) {
     for( int i = 0, end = array_count(self->boids); i < end; ++i ) {
         boid_t *b = &(self->boids)[i];
         b->prev_position = b->position;
-        b->position = add3(b->position, scale3(b->velocity, delta));
+        b->position = add3(b->position, b->velocity);
     }
 }
 
