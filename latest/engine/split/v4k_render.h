@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// naive rendering framework
+// (not so) naive rendering framework
 // - rlyeh, public domain
 //
 // IQM skeletal meshes by @lsalzman (public domain) - https://bit.ly/2OQh0Me

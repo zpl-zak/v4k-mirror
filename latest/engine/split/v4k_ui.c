@@ -2020,7 +2020,7 @@ int ui_color3f(const char *label, float *color) {
     nk_layout_row_dynamic(ui_ctx, 0, 2);
     ui_label_(label, NK_TEXT_LEFT);
 
-    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, color[3]*ui_alpha }, before = after;
+    struct nk_colorf after = { color[0]*ui_alpha, color[1]*ui_alpha, color[2]*ui_alpha, 1.0f }, before = after;
     struct nk_colorf clamped = { clampf(after.r,0,1), clampf(after.g,0,1), clampf(after.b,0,1), ui_alpha };
     if (nk_combo_begin_color(ui_ctx, nk_rgb_cf(clamped), nk_vec2(200,400))) {
         nk_layout_row_dynamic(ui_ctx, 120, 1);
