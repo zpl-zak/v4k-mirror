@@ -41,6 +41,19 @@
 #define ENABLE_RPMALLOC         0 // ifdef(tcc, 0, 1) // forbidden on tcc because of lacking TLS support
 #endif
 
+#ifndef GLOBAL_FRUSTUM_ENABLED
+#define GLOBAL_FRUSTUM_ENABLED 1 ///+
+#endif
+
+#ifndef GLOBAL_FRUSTUM_DEBUG_DRAW
+#define GLOBAL_FRUSTUM_DEBUG_DRAW 0 ///+
+#endif
+
+#ifndef GLOBAL_FRUSTUM_FOV_MULTIPLIER
+#define GLOBAL_FRUSTUM_FOV_MULTIPLIER 1.5f ///+
+#endif
+
+
 // -----------------------------------------------------------------------------
 // if/n/def hell
 

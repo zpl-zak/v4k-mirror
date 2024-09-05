@@ -29,12 +29,8 @@ if "%1"=="help" (
     echo %0 [test]                  ; run autotests
     echo %0 [todo]                  ; check for @fixme and @todo
     echo %0 [leak]                  ; check for @leak
-    echo %0 [swap]                  ; toggle #line directives on/off
-    echo %0 [split^|join]            ; engine/v4k* ^>split^> engine/split/* or engine/split/* ^>join^> engine/v4k*
     echo %0 [3rd]                   ; join 3rd parties together
     echo %0 [lua]                   ; execute lua script with v4k
-    echo %0 [amalgamation]          ; combine engine/v4k* into a single-header file
-    echo %0 [prep]                  ; combine split files into a single-header file, ready for use
     echo %0 [sln]                   ; generate a xcode/gmake/ninja/visual studio solution
     echo %0 [addons[ names ] ]      ; specify list of addons you want to compile with the engine
     echo %0 [cl^|tcc^|cc^|gcc^|clang^|clang-cl] [dbg^|dev^|rel^|ret] [static^|dll] [nov4k^|nodemos^|editor] [vis] [-- args]
@@ -135,33 +131,17 @@ if "%1"=="docs" (
     exit /b
 )
 
-rem generate single-header distribution
-if "%1"=="amalgamation" (
-echo // This file is intended to be consumed by a compiler. Do not read.  > v4k.h
-echo // **Browse to any of the sources in engine/split/ folder instead** >> v4k.h
-echo // ---------------------------------------------------------------- >> v4k.h
-echo // #define V4K_IMPLEMENTATION early in **one** C file to unroll the >> v4k.h
-echo // implementation. The symbol must be defined in a C (not C++^) file>> v4k.h
-echo // ---------------------------------------------------------------- >> v4k.h
-echo #pragma once                                                        >> v4k.h
-type engine\split\3rd_icon_md.h                                          >> v4k.h
-type engine\split\3rd_glad.h                                             >> v4k.h
-type engine\v4k.h                                                        >> v4k.h
-echo #ifdef V4K_IMPLEMENTATION                                           >> v4k.h
-echo #define V4K_3RD                                                     >> v4k.h
-type engine\v4k                                                          >> v4k.h
-type engine\v4k.c                                                        >> v4k.h
-echo #endif // V4K_IMPLEMENTATION                                        >> v4k.h
-move /y v4k.h engine\joint
-exit /b
-)
-
 rem generate prior files to a git release
 if "%1"=="git" (
     call make.bat prep
     call make.bat bind
     call make.bat tidy
 
+    exit /b
+)
+
+if "%1"=="3rd" (
+    call tools\join.bat
     exit /b
 )
 
@@ -180,33 +160,6 @@ if "%1"=="sync" (
 
 if "%1"=="shipit" (
     call tools\plink.exe -ssh 192.168.1.28 -4 -batch -i %USERPROFILE%\.ssh\putty.ppk -P 22 -l node -batch "/bin/bash /home/node/release.sh %2"
-    exit /b
-)
-
-if "%1"=="prep" (
-    call make.bat join
-    call make.bat amalgamation
-    exit /b
-)
-
-rem shortcuts for split & join amalgamation scripts
-if "%1"=="split" (
-    call tools\split.bat
-    exit /b
-)
-if "%1"=="join" (
-    call tools\join.bat
-    exit /b
-)
-if "%1"=="3rd" (
-    call tools\join_3rd.bat
-    exit /b
-)
-if "%1"=="swap" (
-    echo Swapping #line on v4k.h
-    call tools\linswap engine\v4k.h
-    echo Swapping #line on v4k.c
-    call tools\linswap engine\v4k.c
     exit /b
 )
 
@@ -278,7 +231,6 @@ if "%1"=="web" (
 if "%1"=="vps" (
     call make.bat docs
     tools\pscp -4 -batch -i %USERPROFILE%\.ssh\putty.ppk -P 22 -l app engine\v4k.html 192.168.1.21:/home/v4k/htdocs/v4k.dev/index.html
-    @REM tools\pscp -4 -batch -i %USERPROFILE%\.ssh\putty.ppk -P 22 -l app engine\joint\v4k.h 192.168.1.21:/home/v4k/htdocs/v4k.dev/v4k.h
     exit /b
 )
 
@@ -331,11 +283,6 @@ rem rd /q /s _project               > nul 2> nul
     del sh.bat                      > nul 2> nul
     exit /b
 )
-
-@REM join split files together before we compile
-setlocal
-call make.bat prep
-endlocal
 
 set cc=%cc%
 set dll=dll
@@ -650,14 +597,13 @@ rem detect wether user-defined sources use single-header distro
 rem if so, remove API=IMPORT flags and also do not produce v4k.dll by default
 if not "!other!"=="" (
     >nul find "V4K_IMPLEMENTATION" !other! && (
-      set import=
-      set v4k=no
+      echo "V4K_IMPLEMENTATION found in !other!"
     )
 )
 
 rem framework
 if "!v4k!"=="yes" (
-    tools\file2hash engine\v4k.c engine\v4k.h engine\v4k engine\joint\v4k.h !addons! -- !build! !import! !export! !args! !dll! > nul
+    tools\file2hash engine\v4k.c engine\v4k.h engine\v4k !addons! -- !build! !import! !export! !args! !dll! > nul
     set cache=_cache\.!errorlevel!
     md _cache 2>nul >nul
 
@@ -694,7 +640,7 @@ rem editor
 if "!editor!"=="yes" (
 set edit=-DCOOK_ON_DEMAND
 rem set edit=-DUI_LESSER_SPACING -DUI_ICONS_SMALL !edit!
-!echo! editor      && !cc! !o! editor.exe engine\editor.c engine\v4k.c !addon_includes! !edit! -Iengine/joint !args! || set rc=1
+!echo! editor      && !cc! !o! editor.exe engine\editor.c engine\v4k.c !addon_includes! !edit! !args! || set rc=1
 
 rem if "!cc!"=="cl" (
 rem set plug_export=/LD
@@ -719,7 +665,7 @@ if "!demos!"=="yes" (
             if not "!fname:~0,2!"=="99" (
                 set limport=!import!
                 >nul find "V4K_IMPLEMENTATION" "demos\!fname!.c" && (
-                    set limport=
+                    echo "V4K_IMPLEMENTATION found in demos\!fname!.c"
                 )
                 !echo! !fname! && !cc! !o! !fname!.exe "demos\!fname!.c" !addon_includes! !limport! !args! || set rc=1
             )
@@ -733,7 +679,7 @@ if "!lab!"=="yes" (
     for %%f in ("demos\99-*") do (
         set limport=!import!
         >nul find "V4K_IMPLEMENTATION" demos\%%~nf.c && (
-          set limport=
+          echo "V4K_IMPLEMENTATION found in demos\%%~nf.c"
         )
         !echo! %%~nf         && !cc! !o! %%~nf.exe         demos\%%~nf.c           !addon_includes! !limport! !args! || set rc=1
     )

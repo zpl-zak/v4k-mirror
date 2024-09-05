@@ -4745,7 +4745,7 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
 
         m->meshcenters[i] = center;
         m->meshbounds[i] = box;
-        m->meshradii[i] = sqrtf(max_distance_squared);
+        m->meshradii[i] = max_distance_squared*2.0f;
 #endif
     }
 
@@ -5451,8 +5451,6 @@ void model_clear_frustum(model_t *m) {
     m->frustum_enabled = 0;
 }
 
-#define GLOBAL_FRUSTUM_ENABLED 0
-#define GLOBAL_FRUSTUM_FOV_MULTIPLIER 1.5f
 static frustum global_frustum;
 static mat44 global_frustum_stored_mat_proj;
 static mat44 global_frustum_stored_mat_view;
@@ -5508,9 +5506,9 @@ bool model_is_visible(model_t m, int mesh, mat44 model_mat, mat44 proj, mat44 vi
     ddraw_position(s.c, 3.0f);
 #endif
 
-    if (!frustum_test_aabb(fr, box)) {
-        return false;
-    }
+    // if (!frustum_test_aabb(fr, box)) {
+    //     return false;
+    // }
 
     return true;
 }
