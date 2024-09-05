@@ -702,9 +702,14 @@ if "!run!"=="yes" (
         if not "!other!"=="" (
             for /f "tokens=*" %%a in ("!other!") do set exename=%%~na.exe
         )
-        if "!build!"=="dbg" if exist "depot\tools\remedy\remedybg.exe" (
-            echo dbg !exename! !run_args!
-            call depot\tools\remedy\remedybg.exe -g -q !exename! !run_args! || set rc=1
+        if "!build!"=="dbg" (
+            if exist "depot\tools\remedy\remedybg.exe" (
+                echo dbg !exename! !run_args!
+                call depot\tools\remedy\remedybg.exe -g -q !exename! !run_args! || set rc=1
+            ) else (
+                echo run !exename! !run_args!
+                !exename! !run_args! || set rc=1
+            )
         ) else (
             echo run !exename! !run_args!
             !exename! !run_args! || set rc=1
