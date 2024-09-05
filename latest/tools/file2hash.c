@@ -27,6 +27,25 @@ uint64_t hash_str(const char* str) {
 #include <stdlib.h>
 #include <string.h>
 
+char *file_load_fast(const char *filename, int *len) {
+    char namepath[1024];
+    sprintf(namepath, "engine/%s", filename);
+    FILE *fp = fopen(namepath, "rb");
+    if( fp ) {
+        fseek(fp, 0L, SEEK_END);
+        size_t sz = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+        char *buffer = malloc(sz+1);
+        sz *= fread(buffer,sz,1,fp) == 1;
+        buffer[sz] = 0; 
+        if(len) *len = (int)sz;
+        fclose(fp);
+        return buffer;
+    }
+    if (len) *len = 0;
+    return 0;
+}
+
 char *file_load(const char *filename, int *len) { // @todo: 32 counters/thread enough?
     FILE *fp = fopen(filename, "rb");
     if( fp ) {
@@ -40,7 +59,10 @@ char *file_load(const char *filename, int *len) { // @todo: 32 counters/thread e
         fclose(fp);
 
         // Process for include directives
-        char *line = strtok(buffer, "\n");
+        char *read_buffer = malloc(sz + 1);
+        memcpy(read_buffer, buffer, sz);
+        read_buffer[sz] = '\0';
+        char *line = strtok(read_buffer, "\n");
         while (line) {
             if (strncmp(line, "#include", 8) == 0) {
                 char *include_file = strchr(line, '"');
@@ -50,7 +72,7 @@ char *file_load(const char *filename, int *len) { // @todo: 32 counters/thread e
                     if (end_quote) {
                         *end_quote = '\0'; // Null-terminate the filename
                         int include_len;
-                        char *include_content = file_load(include_file, &include_len);
+                        char *include_content = file_load_fast(include_file, &include_len);
                         if (include_content) {
                             // Append include content to buffer
                             buffer = realloc(buffer, sz + include_len + 1);
@@ -65,6 +87,7 @@ char *file_load(const char *filename, int *len) { // @todo: 32 counters/thread e
             line = strtok(NULL, "\n");
         }
 
+        free(read_buffer);
         if(len) *len = (int)sz;
         return buffer; // @fixme: return 0 on error instead?
     }

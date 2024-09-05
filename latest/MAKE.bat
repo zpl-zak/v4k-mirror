@@ -705,7 +705,7 @@ if "!run!"=="yes" (
         if "!build!"=="dbg" (
             if exist "depot\tools\remedy\remedybg.exe" (
                 echo dbg !exename! !run_args!
-                call depot\tools\remedy\remedybg.exe -g -q !exename! !run_args! || set rc=1
+                call depot\tools\remedy\remedybg.exe -q !exename! !run_args! || set rc=1
             ) else (
                 echo run !exename! !run_args!
                 !exename! !run_args! || set rc=1

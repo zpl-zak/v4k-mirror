@@ -4472,9 +4472,9 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
 #endif
 
 static inline
-uint32_t model_instancing_checksum(mat44 *matrices, int count) {
+uint32_t model_instancing_checksum(float *matrices, unsigned count) {
     uint32_t checksum = 0;
-    float *data = (float*)matrices;
+    float *data = matrices;
     int total_floats = count * 16;
 
     for (int i = 0; i < total_floats; i++) {
@@ -4766,7 +4766,7 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
 
         m->meshcenters[i] = center;
         m->meshbounds[i] = box;
-        m->meshradii[i] = max_distance_squared*2.0f;
+        m->meshradii[i] = sqrtf(max_distance_squared);
 #endif
     }
 
@@ -5511,7 +5511,29 @@ bool model_is_visible(model_t m, int mesh, mat44 model_mat, mat44 proj, mat44 vi
 
     if(!is_enabled) return true;
 
-    sphere s; s.c = transform344(model_mat, m.meshcenters[mesh]); s.r = m.meshradii[mesh];
+    // @todo: there's a chance skeletal meshes have their vertices scaled by joints.
+    //        In this case, we need to use the joint transforms to get the correct bounds.
+    //        For the moment we skip that part and always assume mesh is visible.
+    if (m.iqm->numjoints > 0) {
+        return true;
+    }
+
+    float radius = m.meshradii[mesh];
+    // Extract scale from model_mat
+    vec3 scale;
+    scale.x = len3(vec3(model_mat[0], model_mat[1], model_mat[2]));
+    scale.y = len3(vec3(model_mat[4], model_mat[5], model_mat[6]));
+    scale.z = len3(vec3(model_mat[8], model_mat[9], model_mat[10]));
+
+    // Find the largest scale component
+    float max_scale = scale.x;
+    if (scale.y > max_scale) max_scale = scale.y;
+    if (scale.z > max_scale) max_scale = scale.z;
+
+    // Scale the radius
+    radius *= max_scale;
+
+    sphere s; s.c = transform344(model_mat, m.meshcenters[mesh]); s.r = radius;
 
     if (!frustum_test_sphere(fr, s)) {
         return false;

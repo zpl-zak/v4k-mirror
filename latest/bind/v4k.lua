@@ -416,7 +416,7 @@ typedef struct swarm_t {
 } swarm_t;
  swarm_t swarm();
  void swarm_update(swarm_t *self, float delta);
- void swarm_update_acceleration_only(swarm_t *self);
+ void swarm_update_acceleration_only(swarm_t *self, float delta);
  void swarm_update_acceleration_and_velocity_only(swarm_t *self, float delta);
  int ui_swarm(swarm_t *self);
  void midi_send(unsigned midi_msg);
