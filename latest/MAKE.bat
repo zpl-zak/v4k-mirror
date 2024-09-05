@@ -392,8 +392,9 @@ set vs=00
 rem detect setup
 if "!cc!"=="" (
     set cc=cl
+    echo CL!
     where cl /q
-    if not %ERRORLEVEL%==0 (
+    if not !ERRORLEVEL! == 0 (
         echo Detecting VS 2022/2019/2017/2015/2013 x64 ...
         if exist "%VS170COMNTOOLS%/../../VC/Auxiliary/Build/vcvarsx86_amd64.bat" (
                   @call "%VS170COMNTOOLS%/../../VC/Auxiliary/Build/vcvarsx86_amd64.bat" > nul && set "vs=22"
