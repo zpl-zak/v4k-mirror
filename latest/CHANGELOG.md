@@ -5,6 +5,7 @@
 - Render: Shadowmapping! VSM and CSM, soft shadows, directional/point/spot lights
 - Render: Model auto LOD generation (WIP!)
 - Render: Shader uniform caching (huge fps speedup)
+- Render: Reworked model instancing to avoid glBufferData() overhead for single-instance models
 - Render: added `model_get_bone_position()`
 - Render: Implemented VertexLit shading (for the cool PSX looks!)
 - Render: Improved vertex color support
