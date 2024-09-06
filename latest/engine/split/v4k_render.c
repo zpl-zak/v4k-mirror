@@ -4698,77 +4698,7 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
 
     q->textures = CALLOC(hdr->num_meshes * 8, sizeof(GLuint));
     q->colormaps = CALLOC(hdr->num_meshes * 8, sizeof(vec4));
-    m->meshcenters = CALLOC(hdr->num_meshes, sizeof(vec3));
-    m->meshbounds = CALLOC(hdr->num_meshes, sizeof(aabb));
-    m->meshradii = CALLOC(hdr->num_meshes, sizeof(float));
     m->mesh_visible = CALLOC(hdr->num_meshes, sizeof(bool));
-
-    for(int i = 0; i < (int)hdr->num_meshes; i++) {
-        int invalid = texture_checker().id;
-        q->textures[i] = invalid;
-        struct iqmmesh *mesh = &q->meshes[i];
-#if 0
-        GLfloat *pos = verts[q->meshes[i].first_vertex].position;
-        m->meshcenters[i] = vec3(pos[0], pos[1], pos[2]);
-#else
-        int first_triangle = mesh->first_triangle;
-        int num_triangles = mesh->num_triangles;
-        int vertex_count = 0;
-        vec3 center = {0};
-        aabb box = {
-            .min = {FLT_MAX, FLT_MAX, FLT_MAX},
-            .max = {-FLT_MAX, -FLT_MAX, -FLT_MAX}
-        };
-        float max_distance_squared = 0.0f;
-        for (int j = first_triangle; j < num_triangles+first_triangle; ++j) {
-            struct iqmtriangle *tri = &tris[j];
-
-            // calculate mesh center
-            for (int k = 0; k < 3; ++k) {
-                iqm_vertex *v = &verts[tri->vertex[k]];
-                GLfloat *pos = v->position;
-                center.x += pos[0];
-                center.y += pos[1];
-                center.z += pos[2];
-                vertex_count++;
-
-                // Update AABB
-                box.min.x = fminf(box.min.x, pos[0]);
-                box.min.y = fminf(box.min.y, pos[1]);
-                box.min.z = fminf(box.min.z, pos[2]);
-                box.max.x = fmaxf(box.max.x, pos[0]);
-                box.max.y = fmaxf(box.max.y, pos[1]);
-                box.max.z = fmaxf(box.max.z, pos[2]);
-            }
-        }
-
-        if (vertex_count) {
-            center.x /= vertex_count;
-            center.y /= vertex_count;
-            center.z /= vertex_count;
-        }
-
-        // Compute bounding sphere radius
-        for (int j = first_triangle; j < num_triangles + first_triangle; ++j) {
-            struct iqmtriangle *tri = &tris[j];
-
-            for (int k = 0; k < 3; ++k) {
-                int vertex_index = tri->vertex[k];
-                GLfloat *pos = verts[vertex_index].position;
-
-                float dx = pos[0] - center.x;
-                float dy = pos[1] - center.y;
-                float dz = pos[2] - center.z;
-                float distance_squared = dx*dx + dy*dy + dz*dz;
-                max_distance_squared = fmaxf(max_distance_squared, distance_squared);
-            }
-        }
-
-        m->meshcenters[i] = center;
-        m->meshbounds[i] = box;
-        m->meshradii[i] = sqrtf(max_distance_squared);
-#endif
-    }
 
     const char *str = hdr->ofs_text ? (char *)&q->buf[hdr->ofs_text] : "";
     for(int i = 0; i < (int)hdr->num_meshes; i++) {
@@ -5511,47 +5441,17 @@ bool model_is_visible(model_t m, int mesh, mat44 model_mat, mat44 proj, mat44 vi
 
     if(!is_enabled) return true;
 
-    // @todo: there's a chance skeletal meshes have their vertices scaled by joints.
-    //        In this case, we need to use the joint transforms to get the correct bounds.
-    //        For the moment we skip that part and always assume mesh is visible.
-    if (m.iqm->numjoints > 0) {
-        return true;
-    }
-
-    float radius = m.meshradii[mesh];
-    // Extract scale from model_mat
-    vec3 scale;
-    scale.x = len3(vec3(model_mat[0], model_mat[1], model_mat[2]));
-    scale.y = len3(vec3(model_mat[4], model_mat[5], model_mat[6]));
-    scale.z = len3(vec3(model_mat[8], model_mat[9], model_mat[10]));
-
-    // Find the largest scale component
-    float max_scale = scale.x;
-    if (scale.y > max_scale) max_scale = scale.y;
-    if (scale.z > max_scale) max_scale = scale.z;
-
-    // Scale the radius
-    radius *= max_scale;
-
-    sphere s; s.c = transform344(model_mat, m.meshcenters[mesh]); s.r = radius;
+    sphere s = model_bsphere(m, model_mat);
 
     if (!frustum_test_sphere(fr, s)) {
         return false;
     }
 
-    aabb box = m.meshbounds[mesh];
-    box.min = transform344(model_mat, box.min);
-    box.max = transform344(model_mat, box.max);
+    aabb box = model_aabb(m, model_mat);
 
-#if 0
-    // ddraw_sphere(s.c, s.r);
-    ddraw_aabb(box.min, box.max);
-    ddraw_position(s.c, 3.0f);
-#endif
-
-    // if (!frustum_test_aabb(fr, box)) {
-    //     return false;
-    // }
+    if (!frustum_test_aabb(fr, box)) {
+        return false;
+    }
 
     return true;
 }
@@ -5623,7 +5523,7 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
                     // calculate distance from camera
                     // @todo: improve me, uses first mesh triangle
                     {
-                        call.distance = len3sq(sub3(cam_pos, transform344(model_mat, m.meshcenters[i])));
+                        call.distance = len3sq(sub3(cam_pos, transform344(model_mat, model_bsphere(m, model_mat).c)));
                     }
 
                     if (m.shading == SHADING_PBR)
@@ -5969,6 +5869,18 @@ aabb model_aabb(model_t m, mat44 transform) {
     return aabb(vec3(0,0,0),vec3(0,0,0));
 }
 
+sphere model_bsphere(model_t m, mat44 transform) {
+    iqm_t *q = m.iqm;
+    if( q && q->bounds ) {
+    int f = ( (int)m.curframe ) % (q->numframes + !q->numframes);
+    vec3 bbmin = ptr3(q->bounds[f].bbmin);
+    vec3 bbmax = ptr3(q->bounds[f].bbmax);
+    aabb box = aabb_transform(aabb(bbmin,bbmax), transform);
+    return sphere(scale3(add3(box.min, box.max), 0.5f), 0.5f * (len3(sub3(box.min, box.max))));
+    }
+    return sphere(vec3(0,0,0), 0);
+}
+
 static inline int MapReduce(array(int) collapse_map, int n, int mx) {
     while( n >= mx ) n = collapse_map[n];
     return n;
@@ -6141,9 +6053,6 @@ void model_destroy(model_t m) {
         FREE(m.texture_names[i]);
     }
     array_free(m.texture_names);
-    FREE(m.meshcenters);
-    FREE(m.meshbounds);
-    FREE(m.meshradii);
     FREE(m.mesh_visible);
 
     iqm_t *q = m.iqm;

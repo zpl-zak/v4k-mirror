@@ -1492,9 +1492,6 @@ typedef struct model_t {
     void *verts;
     int num_verts;
     void *tris;
-    vec3 *meshcenters;
-    aabb *meshbounds;
-    float *meshradii;
     bool *mesh_visible;
     int num_tris;
     handle vao, ibo, vbo, vao_instanced;
@@ -1525,6 +1522,7 @@ enum BILLBOARD_MODE {
  float model_animate_clip(model_t, float curframe, int minframe, int maxframe, bool loop);
  float model_animate_blends(model_t m, anim_t *primary, anim_t *secondary, float delta);
  aabb model_aabb(model_t, mat44 transform);
+ sphere model_bsphere(model_t, mat44 transform);
  void model_lod(model_t*, float lo_detail, float hi_detail, float morph);
  void model_shading(model_t*, int shading);
  void model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);

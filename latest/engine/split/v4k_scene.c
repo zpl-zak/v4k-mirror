@@ -547,7 +547,7 @@ void scene_render(int flags) {
             if (obj->skip_draw) continue;
 
             if (model_has_transparency(*model)) {
-                obj->distance = len3sq(sub3(cam->position, transform344(model->pivot, add3(obj->pos, model->meshcenters[0]))));
+                obj->distance = len3sq(sub3(cam->position, transform344(model->pivot, obj->pos)));
                 array_push(transparent_objects, obj);
             }
         }
