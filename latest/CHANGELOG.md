@@ -1,11 +1,15 @@
 *2024.9*
 - Render: mesh-level sorting based on render pass
 - Render: mesh-level frustum culling
+- Render: Added model_bsphere()
 - Render: Shadowmapping! VSM and CSM, soft shadows, directional/point/spot lights
 - Render: Model auto LOD generation (WIP!)
 - Render: Shader uniform caching (huge fps speedup)
 - Render: added `model_get_bone_position()`
 - Render: Implemented VertexLit shading (for the cool PSX looks!)
+- Render: Improved vertex color support
+- Render: Fixed wrong axis order used during model import (BREAKING!)
+- Render: Revamped the model API (BREAKING!)
 - Render: Added fog support (WIP!)
 - Render: Revamped the shader system to be more flexible and modular
 - Render: Introduction of the shader library (see `engine/art/shaderlib/`)
