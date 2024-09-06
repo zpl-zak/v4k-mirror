@@ -29,6 +29,7 @@ Envision, Prototype, Perfect<br/>
 - [x] Model: IQM/E, GLTF/2, GLB, FBX, OBJ, DAE, BLEND, MD3/5, MS3D, SMD, X, 3DS, BVH, DXF, LWO.
 - [x] Render: Renderstate driven rendering.
 - [x] Render: Global frustum culling and scene mesh render sorting.
+- [x] Render: Light probes. Environmental probe generation.
 - [x] Render: PBR (metallic-roughness) workflow. <!-- @todo: merge demo_pbr.c rendering code into v4k_render.c -->
 - [x] Render: Soft shadows, Cascaded shadowmaps, Variance shadowmaps.
 - [x] Render: Cubemaps, panoramas and spherical harmonics. Rayleigh/Mie scattering.
