@@ -5027,7 +5027,7 @@ void model_set_renderstates(model_t *m) {
         csm_shadow_rs->blend_dst = GL_ONE_MINUS_SRC_ALPHA;
         csm_shadow_rs->depth_test_enabled = true;
         csm_shadow_rs->depth_write_enabled = true;
-        csm_shadow_rs->cull_face_enabled = 0;
+        csm_shadow_rs->cull_face_enabled = 1;
         csm_shadow_rs->cull_face_mode = GL_BACK;
         csm_shadow_rs->front_face = GL_CW;
         csm_shadow_rs->depth_clamp_enabled = 1;
@@ -5040,7 +5040,7 @@ void model_set_renderstates(model_t *m) {
         vsm_shadow_rs->blend_dst = GL_ONE_MINUS_SRC_ALPHA;
         vsm_shadow_rs->depth_test_enabled = true;
         vsm_shadow_rs->depth_write_enabled = true;
-        vsm_shadow_rs->cull_face_enabled = 0;
+        vsm_shadow_rs->cull_face_enabled = 1;
         vsm_shadow_rs->cull_face_mode = GL_BACK;
         vsm_shadow_rs->front_face = GL_CW;
         vsm_shadow_rs->depth_clamp_enabled = 1;
