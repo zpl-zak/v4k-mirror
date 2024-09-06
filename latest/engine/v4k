@@ -226,8 +226,4 @@ static char *ui_filter = 0;
 #include "3rd/3rd_lite_sys.h"
 #include "3rd/3rd_lite.h"
 
-#define LIGHTMAPPER_IMPLEMENTATION
-//#define LM_DEBUG_INTERPOLATION
-#include "3rd/3rd_lightmapper.h"
-
 #endif // V4K_3RD

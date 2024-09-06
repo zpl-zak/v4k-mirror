@@ -47,10 +47,8 @@ surface_t surface() {
     s.alpha = 1.0;
     
     // SH lighting
-    if (!u_texlit) {
-        vec3 result = sh_lighting(s.normal);
-        if( (result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) s.light_indirect = result;
-    }
+    vec3 result = sh_lighting(s.normal);
+    if( (result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) s.light_indirect = result;
 
 #ifdef SHADING_PHONG
     material_t dummy_mat;
@@ -192,18 +190,6 @@ surface_t surface() {
         s.albedo = texture(u_texture2d, v_texcoord);
     } else {
         s.albedo = u_diffuse;
-    }
-
-    if (u_texlit) {
-        vec4 litsample = texture(u_lightmap, v_texcoord);
-
-        if (u_texmod) {
-            s.albedo *= litsample;
-        } else {
-            s.albedo += litsample;
-        }
-
-        s.albedo.rgb += sh_lighting(s.normal);
     }
 #endif
 

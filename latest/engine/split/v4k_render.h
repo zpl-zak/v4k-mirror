@@ -745,7 +745,6 @@ enum RENDER_PASS {
     RENDER_PASS_SHADOW_VSM,
     RENDER_PASS_SHADOW_END,
     
-    RENDER_PASS_LIGHTMAP,
     RENDER_PASS_CUSTOM, // make sure to apply renderstate before calling this
     RENDER_PASS_OVERRIDES_END,
     
@@ -874,36 +873,6 @@ API unsigned model_getpass();
 API unsigned model_setpass(unsigned pass);
 
 API vec3     pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
-
-// -----------------------------------------------------------------------------
-// model animations
-
-typedef struct anims_t {
-    int   inuse; // animation number in use
-    float speed; // x1.00
-    array(anim_t) anims; // [begin,end,flags] frames of every animation in set
-} anims_t;
-
-API anims_t animations(const char *pathfile, int flags);
-
-// -----------------------------------------------------------------------------
-// lightmapping utils
-// @fixme: support xatlas uv packing
-
-typedef struct lightmap_t {
-    struct lm_context *ctx; // private
-    bool ready;
-    int w, h;
-    int atlas_w, atlas_h; //@fixme: implement
-    texture_t atlas; //@fixme: implement this
-    array(model_t*) models;
-    unsigned shader;
-} lightmap_t;
-
-API lightmap_t lightmap(int hmsize /*64*/, float near, float far, vec3 color /*1,1,1 for AO*/, int passes /*2*/, float threshold /*0.01f*/, float distmod /*0.0f*/);
-API void       lightmap_setup(lightmap_t *lm, int w, int h);
-API void          lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void (*progressupdate)(float progress), void *userdata);
-API void       lightmap_destroy(lightmap_t *lm);
 
 // -----------------------------------------------------------------------------
 // post-fxs

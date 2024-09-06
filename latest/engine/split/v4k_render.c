@@ -4350,13 +4350,6 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     if( (loc = glGetUniformLocation(shader, "u_billboard")) >= 0 ) {
         glUniform1i( loc, m.billboard );
     }
-    if( (loc = glGetUniformLocation(shader, "texlit")) >= 0 ) {
-        glUniform1i( loc, (m.lightmap.w != 0) );
-    }
-    else
-    if( (loc = glGetUniformLocation(shader, "u_texlit")) >= 0 ) {
-        glUniform1i( loc, (m.lightmap.w != 0) );
-    }
 #if 0
     // @todo: mat44 projview (useful?)
 #endif
@@ -5044,14 +5037,6 @@ void model_set_renderstates(model_t *m) {
         vsm_shadow_rs->cull_face_mode = GL_BACK;
         vsm_shadow_rs->front_face = GL_CW;
         vsm_shadow_rs->depth_clamp_enabled = 1;
-    }
-
-    // Lightmap pass
-    renderstate_t *lightmap_rs = &m->rs[RENDER_PASS_LIGHTMAP];
-    {
-        lightmap_rs->blend_enabled = 0;
-        lightmap_rs->cull_face_enabled = 0;
-        lightmap_rs->front_face = GL_CW;
     }
 }
 
@@ -6082,116 +6067,3 @@ unsigned model_setpass(unsigned pass) {
     model_renderpass = pass;
     return old_pass;
 }
-
-anims_t animations(const char *pathfile, int flags) {
-    anims_t a = {0};
-    a.anims = animlist(pathfile);
-    if(a.anims) a.speed = 1.0;
-    return a;
-}
-
-// -----------------------------------------------------------------------------
-// lightmapping utils
-// @fixme: support xatlas uv packing, add UV1 coords to vertex model specs
-lightmap_t lightmap(int hmsize, float cnear, float cfar, vec3 color, int passes, float threshold, float distmod) {
-    lightmap_t lm = {0};
-    lm.ctx = lmCreate(hmsize, cnear, cfar, color.x, color.y, color.z, passes, threshold, distmod);
-
-    if (!lm.ctx) {
-        PANIC("Error: Could not initialize lightmapper.\n");
-        return lm;
-    }
-
-    lm.shader = shader(vfs_read("shaders/vs_323444143_16_3322_model.glsl"), vfs_read("shaders/fs_32_4_model.glsl"), //fs,
-        "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
-        va("%s", "LIGHTMAP_BAKING"));
-
-    return lm;
-}
-
-void lightmap_destroy(lightmap_t *lm) {
-    lmDestroy(lm->ctx);
-    shader_destroy(lm->shader);
-    //
-}
-
-void lightmap_setup(lightmap_t *lm, int w, int h) {
-    lm->ready=1;
-    //@fixme: prep atlas for lightmaps
-    lm->w = w;
-    lm->h = h;
-}
-
-void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void (*progressupdate)(float progress), void *userdata) {
-    ASSERT(lm->ready);
-    // @fixme: use xatlas to UV pack all models, update their UV1 and upload them to GPU.
-
-    int w = lm->w, h = lm->h;
-    for (int i = 0; i < array_count(lm->models); i++) {
-        model_t *m = lm->models[i];
-        if (m->lightmap.w != 0) {
-            texture_destroy(&m->lightmap);
-        }
-        m->lightmap = texture_create(w, h, 4, 0, TEXTURE_LINEAR|TEXTURE_FLOAT);
-        glBindTexture(GL_TEXTURE_2D, m->lightmap.id);
-        unsigned char emissive[] = { 0, 0, 0, 255 };
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, emissive);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    unsigned old_pass = model_setpass(RENDER_PASS_LIGHTMAP);
-
-    for (int b = 0; b < bounces; b++) {
-        model_setpass(RENDER_PASS_LIGHTMAP);
-        for (int i = 0; i < array_count(lm->models); i++) {
-            model_t *m = lm->models[i];
-            if (!m->lmdata) {
-                m->lmdata = CALLOC(w*h*4, sizeof(float));
-            }
-            memset(m->lmdata, 0, w*h*4);
-            lmSetTargetLightmap(lm->ctx, m->lmdata, w, h, 4);
-            lmSetGeometry(lm->ctx, m->pivot,
-                LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, position), sizeof(iqm_vertex),
-                LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, normal), sizeof(iqm_vertex),
-                LM_FLOAT, (uint8_t*)m->verts + offsetof(iqm_vertex, texcoord), sizeof(iqm_vertex),
-                m->num_tris*3, LM_UNSIGNED_INT, m->tris);
-
-            int vp[4];
-            float view[16], projection[16];
-            while (lmBegin(lm->ctx, vp, view, projection))
-            {
-                // render to lightmapper framebuffer
-                glViewport(vp[0], vp[1], vp[2], vp[3]);
-                drawscene(lm, m, view, projection, userdata);
-                if (progressupdate) progressupdate(lmProgress(lm->ctx));
-                lmEnd(lm->ctx);
-            }
-        }
-
-        model_setpass(old_pass);
-
-        // postprocess texture
-        for (int i = 0; i < array_count(lm->models); i++) {
-            model_t *m = lm->models[i];
-            float *temp = CALLOC(w * h * 4, sizeof(float));
-            for (int i = 0; i < 16; i++)
-            {
-                lmImageDilate(m->lmdata, temp, w, h, 4);
-                lmImageDilate(temp, m->lmdata, w, h, 4);
-            }
-            lmImageSmooth(m->lmdata, temp, w, h, 4);
-            lmImageDilate(temp, m->lmdata, w, h, 4);
-            lmImagePower(m->lmdata, w, h, 4, 1.0f / 2.2f, 0x7); // gamma correct color channels
-            FREE(temp);
-
-            // save result to a file
-            // if (lmImageSaveTGAf("result.tga", m->lmdata, w, h, 4, 1.0f))
-            //     printf("Saved result.tga\n");
-            // upload result
-            glBindTexture(GL_TEXTURE_2D, m->lightmap.id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_FLOAT, m->lmdata);
-            FREE(m->lmdata); m->lmdata = NULL;
-        }
-    }
-}
-

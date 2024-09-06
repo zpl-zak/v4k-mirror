@@ -1436,7 +1436,6 @@ enum RENDER_PASS {
     RENDER_PASS_SHADOW_CSM,
     RENDER_PASS_SHADOW_VSM,
     RENDER_PASS_SHADOW_END,
-    RENDER_PASS_LIGHTMAP,
     RENDER_PASS_CUSTOM,
     RENDER_PASS_OVERRIDES_END,
     NUM_RENDER_PASSES
@@ -1545,25 +1544,6 @@ enum BILLBOARD_MODE {
  unsigned model_getpass();
  unsigned model_setpass(unsigned pass);
  vec3 pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
-typedef struct anims_t {
-    int inuse;
-    float speed;
-    anim_t* anims;
-} anims_t;
- anims_t animations(const char *pathfile, int flags);
-typedef struct lightmap_t {
-    struct lm_context *ctx;
-    bool ready;
-    int w, h;
-    int atlas_w, atlas_h;
-    texture_t atlas;
-    model_t** models;
-    unsigned shader;
-} lightmap_t;
- lightmap_t lightmap(int hmsize , float near, float far, vec3 color , int passes , float threshold , float distmod );
- void lightmap_setup(lightmap_t *lm, int w, int h);
- void lightmap_bake(lightmap_t *lm, int bounces, void (*drawscene)(lightmap_t *lm, model_t *m, float *view, float *proj, void *userdata), void (*progressupdate)(float progress), void *userdata);
- void lightmap_destroy(lightmap_t *lm);
  void viewport_color(unsigned color);
  void viewport_clear(bool color, bool depth);
  void viewport_clip(vec2 from, vec2 to);
