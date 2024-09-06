@@ -5537,9 +5537,13 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
                     drawcall_t call;
                     call.mesh = i;
                     call.tex = m.textures[i];
+                    struct iqmmesh *im = &q->meshes[i];
                     
                     // calculate distance from camera
-                    call.distance = len3sq(sub3(cam_pos, transform344(model_mat, model_bsphere(m, model_mat).c)));
+                    {
+                        vec3 pos = ptr3(((struct iqm_vertex*)m.verts)[im->first_vertex].position);
+                        call.distance = len3sq(sub3(cam_pos, transform344(model_mat, pos)));
+                    }
 
                     if (m.shading == SHADING_PBR)
                         call.tex = m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id : texture_checker().id;
