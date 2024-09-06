@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
             if (follow_cam) {
                 probe_pos = cam.position;
             }
-            unsigned tex_size = 32;
+            unsigned tex_size = 128;
             cubemap_bake_begin(&env_probe.cubemap, probe_pos, tex_size, tex_size);
             while (cubemap_bake_step(&env_probe.cubemap, probe_proj, probe_view)) {
                 skybox_render(&sky, probe_proj, probe_view);
