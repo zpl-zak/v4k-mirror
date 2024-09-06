@@ -50,7 +50,7 @@
 #endif
 
 #ifndef GLOBAL_FRUSTUM_FOV_MULTIPLIER
-#define GLOBAL_FRUSTUM_FOV_MULTIPLIER 1.5f ///+
+#define GLOBAL_FRUSTUM_FOV_MULTIPLIER 1.0f ///+
 #endif
 
 

@@ -13,7 +13,7 @@ camera_t camera() {
         cam.updir = vec3(0,1,0);
         cam.rightdir = vec3(1,0,0);
         cam.fov = 45;
-        cam.frustum_fov_multiplier = 1.5f;
+        cam.frustum_fov_multiplier = 1.0f;
         cam.orthographic = false;
         cam.distance = 3; // len3(cam.position);
         cam.near_clip = 0.1f;
