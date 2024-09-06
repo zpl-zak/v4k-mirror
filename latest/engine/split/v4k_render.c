@@ -4490,6 +4490,8 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         glUseProgram(old_shader);
     }
 
+    int empty = texture_unit();
+    glActiveTexture(GL_TEXTURE0 + empty);
     glBindTexture(GL_TEXTURE_3D, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
@@ -5537,10 +5539,7 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
                     call.tex = m.textures[i];
                     
                     // calculate distance from camera
-                    // @todo: improve me, uses first mesh triangle
-                    {
-                        call.distance = len3sq(sub3(cam_pos, transform344(model_mat, model_bsphere(m, model_mat).c)));
-                    }
+                    call.distance = len3sq(sub3(cam_pos, transform344(model_mat, model_bsphere(m, model_mat).c)));
 
                     if (m.shading == SHADING_PBR)
                         call.tex = m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id : texture_checker().id;
