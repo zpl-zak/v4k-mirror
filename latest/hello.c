@@ -11,8 +11,7 @@
 // - linux/tcc    : tcc hello.c -lm -ldl -lpthread -lX11 -D__STDC_NO_VLA__
 // - osx          : cc -ObjC hello.c -framework cocoa -framework iokit -framework audiotoolbox
 
-// #define V4K_IMPLEMENTATION      // unrolls single-header implementation
-#include "engine/v4k.c"   // single-header file
+#include "engine/v4k.h"
 
 int main() {
     // options

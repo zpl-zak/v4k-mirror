@@ -483,9 +483,9 @@ if "!cc!"=="cl" (
         set import=/DAPI=IMPORT v4k.lib
     )
 
-    set warnings_fwkc=-Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare
+    set warnings_v4kc=-Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare
     set warnings_demos=-Wno-empty-body -Wno-format-security -Wno-pointer-sign
-    set warnings=!warnings_fwkc! !warnings_demos!
+    set warnings=!warnings_v4kc! !warnings_demos!
 
     if "!build!"=="ret" (
         set args=-DENABLE_RETAIL -Dmain=WinMain !args!
