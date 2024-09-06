@@ -4464,15 +4464,6 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_U_SHADOW_RECEIVER]) >= 0) {
                 glUniform1i(loc, GL_FALSE);
             }
-            for (int i = 0; i < MAX_LIGHTS; i++) {
-                shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], 0, texture_unit());
-                for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                    shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + i * NUM_SHADOW_CASCADES + j], 0, texture_unit());
-                }
-            }
-            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
-                shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], 0, texture_unit());
-            }
         }
     }
 
@@ -4498,6 +4489,10 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         shader_texture_(q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut());
         glUseProgram(old_shader);
     }
+
+    glBindTexture(GL_TEXTURE_3D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 static inline
