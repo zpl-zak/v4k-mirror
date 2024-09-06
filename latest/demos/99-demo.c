@@ -141,7 +141,7 @@ int main() {
             gizmo(&p, &r, &s);
             mat44 M; rotationq44(M, eulerq(r)); scale44(M, s.x,s.y,s.z); relocate44(M, p.x,p.y,p.z);
 
-            model_render(girl, cam.proj, cam.view, M, 0);
+            model_render(girl, cam.proj, cam.view, M);
 
             aabb box = model_aabb(girl, M);
             ddraw_color(YELLOW);
@@ -153,7 +153,7 @@ int main() {
             //gizmo(&p, &r, &s);
             mat44 M; rotationq44(M, eulerq(r)); scale44(M, s.x,s.y,s.z); relocate44(M, p.x,p.y,p.z);
 
-            model_render(alien, cam.proj, cam.view, M, 0);
+            model_render(alien, cam.proj, cam.view, M);
 
             aabb box = model_aabb(alien, M); // @fixme: neg Y
             ddraw_color(YELLOW);
@@ -163,19 +163,19 @@ int main() {
         profile("Skeletal render") for(int i = 0; i < countof(robots); ++i) {
             float scale = 0.50;
             mat44 M; copy44(M, robots[i].pivot); translate44(M, i*3,0,0); scale44(M, scale,scale,scale);
-            model_render(robots[i], cam.proj, cam.view, M, 0);
+            model_render(robots[i], cam.proj, cam.view, M);
         }
 
         if(do_sponza) profile("Sponza") {
             float scale = 1.00;
             mat44 M; copy44(M, sponza.pivot); translate44(M, 0,0,0); scale44(M, scale,scale,scale);
-            model_render(sponza, cam.proj, cam.view, M, 0);
+            model_render(sponza, cam.proj, cam.view, M);
         }
 
         if(do_shaderball) profile("Shaderball") {
             float scale = 1.00;
             mat44 M; copy44(M, shaderball.pivot); translate44(M, 0,0,0); scale44(M, scale,scale,scale);
-            model_render(shaderball, cam.proj, cam.view, M, 0);
+            model_render(shaderball, cam.proj, cam.view, M);
         }
 
         // post-fxs end here

@@ -121,7 +121,7 @@ int main() {
 
             // render model. transforms on top of initial pivot and scale
             mat44 M; compose44(M, p->pos, eulerq(add3(p->pivot,vec3(atan2(p->dir.z,p->dir.x)*180/C_PI,0,0))),vec3(p->scale,p->scale,p->scale));
-            model_render(p->mdl, cam.proj, cam.view, M, 0);
+            model_render(p->mdl, cam.proj, cam.view, M);
 
             // ui
             if( yaw||fwd ) if( !p->notified ) p->notified = 1, ui_notify(0, va(ICON_MD_GAMEPAD " %s joined the game.", p->name));

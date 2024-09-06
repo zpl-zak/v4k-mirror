@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
             sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
             sm = shadowmap(512, 4096);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
-            shader_bind(mdl.program);
+            model_bind_shader(mdl);
             cubemap_sh_shader(&sky.cubemap);
         }
 
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
             for (int i = 0; i < array_count(lights); i++) {
                 while (shadowmap_step(&sm)) {
                     shadowmap_light(&sm, &lights[i], cam.proj, cam.view);
-                    model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
+                    model_render(mdl, cam.proj, cam.view, mdl.pivot);
                 }
             }
         }
@@ -191,11 +191,11 @@ int main(int argc, char** argv) {
         {
             skybox_render(&sky, cam.proj, cam.view);
             
-            shader_bind(mdl.program);
+            model_bind_shader(mdl);
             light_update(array_count(lights), lights);
 
             model_shadow(&mdl, &sm);
-            model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
+            model_render(mdl, cam.proj, cam.view, mdl.pivot);
         }
 
         if( ui_panel("Scene", 0)) {

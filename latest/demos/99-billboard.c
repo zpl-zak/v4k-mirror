@@ -45,7 +45,7 @@ int main() {
         static int billboard_z = 0; if( input_down(KEY_3) ) billboard_z ^= 1;
         cube.billboard = (billboard_x << 2)|(billboard_y << 1)|(billboard_z << 0);
 
-        model_render(cube, cam.proj, cam.view, cube.pivot, 0);
+        model_render(cube, cam.proj, cam.view, cube.pivot);
 
         window_title(va("billboard_x: %s, billboard_y: %s, billboard_z: %s %s", billboard_x ? "on":"off", billboard_y ? "on":"off", billboard_z ? "on":"off", billboard_name(billboard_x,billboard_y,billboard_z)));
     }

@@ -13,7 +13,7 @@ int main() {
     // load static scene
     model_t map;
     map = model(option("--model","sorting_test.obj"), 0); // MODEL_NO_TEXTURES);
-    shader_bind(map.program);
+    model_bind_shader(map);
     skybox_sh_shader(&sky);
 
     // camera
@@ -45,6 +45,6 @@ int main() {
 
         mat44 M; copy44(M, map.pivot);// translate44(M, 0,0,0); scale44(M, scale,scale,scale);
 
-        model_render(map, cam.proj, cam.view, M, 0);
+        model_render(map, cam.proj, cam.view, M);
     }
 }

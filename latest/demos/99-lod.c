@@ -16,7 +16,7 @@ int main() {
     camera_t cam = camera();
 
     // scene light
-    shader_bind(mdl.program);
+    model_bind_shader(mdl);
     light_t *l = scene_spawn_light();
     light_update(1, l);
     skybox_sh_shader(&sky);
@@ -47,7 +47,7 @@ int main() {
         // draw scene
         skybox_render(&sky, cam.proj, cam.view);
 
-        model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
+        model_render(mdl, cam.proj, cam.view, mdl.pivot);
 
         if( ui_panel("LODs", PANEL_OPEN) ) {
             float old_lo = lo_detail;

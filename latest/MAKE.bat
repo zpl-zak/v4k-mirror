@@ -361,7 +361,6 @@ if "%1"=="addons[" (
     if "%1"=="demos"    set "demos=yes" && set "hello=no" && goto loop
     if "%1"=="lab"      set "lab=yes" && set "hello=no" && goto loop
     if "%1"=="noeditor" set "editor=no" && goto loop
-    if "%1"=="hello"    set "hello=yes" && goto loop
     if "%1"=="editor"   set "editor=yes" && set "v4k=yes" && set "hello=no"&& goto loop
     if "%1"=="run"      set "run=yes" && goto loop
     if "%1"=="share"    set "share=yes" && set "dll=static" && set "cc=tcc" && goto loop
@@ -673,11 +672,6 @@ if "!lab!"=="yes" (
         )
         !echo! %%~nf         && !cc! !o! %%~nf.exe         demos\%%~nf.c           !addon_includes! !limport! !args! || set rc=1
     )
-)
-
-rem hello
-if "!hello!"=="yes" (
-!echo! hello         && !cc! !o! hello.exe         hello.c                          !addon_includes! !args! || set rc=1
 )
 
 rem user-defined apps

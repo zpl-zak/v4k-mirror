@@ -14,9 +14,10 @@ int main() {
     model_t map, prop;
     map = model(option("--model","sorting_test.obj"), 0); // MODEL_NO_TEXTURES);
     prop = model(option("--model","sorting_test2.obj"), 0); // MODEL_NO_TEXTURES);
-    shader_bind(map.program);
+    model_bind_shader(map);
     skybox_sh_shader(&sky);
-    prop.program = map.program;
+    model_bind_shader(prop);
+    skybox_sh_shader(&sky);
 
     // define scene
     object_t *prop_obj = scene_spawn();

@@ -63,10 +63,10 @@ int main() {
         float scale = 1.00;
         mat44 M; copy44(M, sponza.pivot); translate44(M, 0,0,0); scale44(M, scale,scale,scale);
 
-        shader_bind(sponza.program);
+        model_bind_shader(sponza);
         shader_vec3v("u_coefficients_sh", 9, sky.cubemap.sh);
 
-        model_render(sponza, cam.proj, cam.view, M, 0);
+        model_render(sponza, cam.proj, cam.view, M);
 
         // post-fxs end here
         fx_end(0);

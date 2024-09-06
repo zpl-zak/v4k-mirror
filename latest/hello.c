@@ -76,7 +76,7 @@ int main() {
             girl.curframe = model_animate(girl, girl.curframe + delta);
 
             // draw girl
-            model_render(girl, cam.proj, cam.view, girl.pivot, no_flags);
+            model_render(girl, cam.proj, cam.view, girl.pivot);
 
         // post-fxs end here
         fx_end();

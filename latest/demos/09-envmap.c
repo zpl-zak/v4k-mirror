@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
             sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
             env_probe = skybox(0, 0);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
-            shader_bind(mdl.program);
+            model_bind_shader(mdl);
             vec3 clr[9]={0};
             shader_vec3v("u_coefficients_sh", 9, clr);
             // rotation44(mdl.pivot, 0, 1,0,0); // @fixme: -90,1,0,0 -> should we rotate SHMs as well? compensate rotation in shader?
@@ -96,9 +96,9 @@ int main(int argc, char** argv) {
             while (cubemap_bake_step(&env_probe.cubemap, probe_proj, probe_view)) {
                 skybox_render(&sky, probe_proj, probe_view);
 
-                shader_bind(mdl.program);
+                model_bind_shader(mdl);
                 cubemap_sh_shader(0);
-                model_render(mdl, probe_proj, probe_view, mdl.pivot, 0);
+                model_render(mdl, probe_proj, probe_view, mdl.pivot);
             }
             cubemap_bake_end(&env_probe.cubemap, 4, 1.0f);
         }
@@ -112,11 +112,11 @@ int main(int argc, char** argv) {
                 skybox_render(&env_probe, cam.proj, cam.view);
             } else {
                 skybox_render(&sky, cam.proj, cam.view);
-                shader_bind(mdl.program);
+                model_bind_shader(mdl);
                 cubemap_sh_blend(vec3(0,0,0), 10.0f, 1, &env_probe.cubemap);
                 shader_int("u_textured", false);
 
-                model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
+                model_render(mdl, cam.proj, cam.view, mdl.pivot);
             }
         }
 

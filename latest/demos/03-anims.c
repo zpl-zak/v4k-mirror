@@ -31,6 +31,7 @@ int main() {
     bool do_showmodel = 1;
     bool do_showgizmo = 1;
     bool do_anims = 1;
+    bool do_instancing = 1;
 
     // 75% sized, MSAAx2
     window_create(75, WINDOW_MSAA2);
@@ -54,9 +55,9 @@ int main() {
         }
     }
 
-    // shader_bind(mdl.program);
-    // shader_vec3("u_rimcolor", vec3(0.12,0.23,0.34));
-    // shader_vec3("u_rimrange", vec3(0.06,0.74,0.5));
+    model_bind_shader(mdl);
+    shader_vec3("u_rimcolor", vec3(0.12,0.23,0.34));
+    shader_vec3("u_rimrange", vec3(0.06,0.74,0.5));
 
     // load all postfx files in all subdirs
     fx_load("fx**.fs");
@@ -105,7 +106,15 @@ int main() {
 
             // characters
             profile("Skeletal render") {
-                if( do_showmodel ) model_render_instanced(mdl, cam.proj, cam.view, M /*mdl.pivot*/, 0, NUM_INSTANCES);
+                if( do_showmodel ) {
+                    if (do_instancing) {
+                        model_render_instanced(mdl, cam.proj, cam.view, M /*mdl.pivot*/, NUM_INSTANCES);
+                    } else {
+                        for (int i = 0; i < NUM_INSTANCES; i++) {
+                            model_render(mdl, cam.proj, cam.view, M[i] /*mdl.pivot*/);
+                        }
+                    }
+                }
 
                 if( do_showbones ) model_render_skeleton(mdl, M[0] /*mdl.pivot*/);
 
@@ -131,7 +140,7 @@ int main() {
             ui_clampf("High", &rimrange.y, 0, 1);
             ui_clampf("Mix", &rimrange.z, 0, 1);
             // ui_vec
-            shader_bind(mdl.program);
+            model_bind_shader(mdl);
             shader_vec3("u_rimcolor", rimcolor);
             shader_vec3("u_rimrange", rimrange);
             ui_panel_end();
@@ -142,6 +151,7 @@ int main() {
             if( ui_bool("Show models", &do_showmodel) );
             if( ui_bool("Show gizmo", &do_showgizmo) );
             if( ui_bool("Anims", &do_anims) );
+            if( ui_bool("Instancing", &do_instancing) );
             
             ui_separator();
             if( ui_int("Instances", &NUM_INSTANCES)) NUM_INSTANCES = clampi(NUM_INSTANCES, 1, array_count(M));

@@ -67,11 +67,11 @@ int main(int argc, char** argv) {
 
             skybox_render(&sky, cam.proj, cam.view);
 
-            shader_bind(mdl.program);
+            model_bind_shader(mdl);
             shader_vec3v("u_coefficients_sh", 9, sky.cubemap.sh);
             shader_int("u_textured", false);
 
-            model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
+            model_render(mdl, cam.proj, cam.view, mdl.pivot);
 
         }
 

@@ -758,14 +758,25 @@ enum MODEL_UNIFORMS {
     MODEL_UNIFORM_CAM_POS,
     MODEL_UNIFORM_CAM_DIR,
     MODEL_UNIFORM_BILLBOARD,
-    MODEL_UNIFORM_TEXLIT,
     MODEL_UNIFORM_MODEL,
     MODEL_UNIFORM_VIEW,
     MODEL_UNIFORM_INV_VIEW,
     MODEL_UNIFORM_PROJ,
     MODEL_UNIFORM_SKINNED,
+    MODEL_UNIFORM_INSTANCED,
     MODEL_UNIFORM_VS_BONE_MATRIX,
     MODEL_UNIFORM_U_MATCAPS,
+    MODEL_UNIFORM_FRAME_COUNT,
+    MODEL_UNIFORM_FRAME_TIME,
+    MODEL_UNIFORM_SHADOW_CAMERA_TO_SHADOW_VIEW,
+    MODEL_UNIFORM_SHADOW_CAMERA_TO_SHADOW_PROJECTOR,
+    MODEL_UNIFORM_SHADOW_TECHNIQUE,
+    MODEL_UNIFORM_U_SHADOW_RECEIVER,
+    MODEL_UNIFORM_SHADOW_OFFSETS,
+    MODEL_UNIFORM_SHADOW_FILTER_SIZE,
+    MODEL_UNIFORM_SHADOW_WINDOW_SIZE,
+
+    // PBR
     MODEL_UNIFORM_RESOLUTION,
     MODEL_UNIFORM_HAS_TEX_SKYSPHERE,
     MODEL_UNIFORM_HAS_TEX_SKYENV,
@@ -773,11 +784,19 @@ enum MODEL_UNIFORMS {
     MODEL_UNIFORM_SKYSPHERE_MIP_COUNT,
     MODEL_UNIFORM_TEX_SKYENV,
     MODEL_UNIFORM_TEX_BRDF_LUT,
-    MODEL_UNIFORM_FRAME_COUNT,
+    
+    // Shadows
+    MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES,
+    MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES_COUNT = MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES+NUM_SHADOW_CASCADES*MAX_LIGHTS,
+
+    MODEL_UNIFORM_SHADOW_MAP_2D,
+    MODEL_UNIFORM_SHADOW_MAP_2D_COUNT = MODEL_UNIFORM_SHADOW_MAP_2D+NUM_SHADOW_CASCADES*MAX_LIGHTS,
+    
+    MODEL_UNIFORM_SHADOW_MAP_CUBEMAP,
+    MODEL_UNIFORM_SHADOW_MAP_CUBEMAP_COUNT = MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+MAX_LIGHTS,
 
     NUM_MODEL_UNIFORMS
 };
-
 
 typedef struct model_t {
     struct iqm_t *iqm; // private
@@ -787,20 +806,14 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     array(material_t) materials;
-    int uniforms[NUM_MODEL_UNIFORMS];
     
     texture_t sky_refl, sky_env;
-
-    texture_t lightmap;
-    float *lmdata;
 
     unsigned num_meshes;
     unsigned num_triangles;
     unsigned num_joints; // num_poses;
     unsigned num_anims;
     unsigned num_frames;
-    handle program;
-    handle shadow_program;
     shadowmap_t *shadow_map;
     bool shadow_receiver;
     float curframe;
@@ -855,11 +868,12 @@ API void     model_shading_custom(model_t*, int shading, const char *vs, const c
 API void     model_skybox(model_t*, skybox_t sky, bool load_sh);
 API void     model_shadow(model_t*, shadowmap_t *sm);
 API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
-API void     model_render(model_t, mat44 proj, mat44 view, mat44 model, int shader);
+API void     model_bind_shader(model_t); // @todo: delete me later
+API void     model_render(model_t, mat44 proj, mat44 view, mat44 model);
 API void     model_render_skeleton(model_t, mat44 model);
-API void     model_render_instanced(model_t, mat44 proj, mat44 view, mat44 *models, int shader, unsigned count);
-API void     model_render_instanced_pass(model_t m, mat44 proj, mat44 view, mat44* models, int shader, unsigned count, int pass);
-API void     model_render_pass(model_t m, mat44 proj, mat44 view, mat44 model, int shader, int pass);
+API void     model_render_instanced(model_t, mat44 proj, mat44 view, mat44 *models, unsigned count);
+API void     model_render_instanced_pass(model_t m, mat44 proj, mat44 view, mat44* models, unsigned count, int pass);
+API void     model_render_pass(model_t m, mat44 proj, mat44 view, mat44 model, int pass);
 API void     model_set_texture(model_t*, texture_t t);
 API bool     model_has_transparency_mesh(model_t m, int mesh);
 API bool     model_has_transparency(model_t m);

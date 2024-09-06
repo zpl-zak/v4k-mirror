@@ -39,12 +39,12 @@ int main() {
 
         static model_t mdl;
         do_once mdl = model("meshes/gizmo.fbx", 0);
-        shader_bind(mdl.program);
+        model_bind_shader(mdl);
         vec3 color = {0,0,0};
         vec3 coeff[9] = { color,color,color,color,color,color,color,color,color,  };
         shader_vec3v("u_coefficients_sh", 9, coeff);
         shader_int("u_textured", false);
-        model_render(mdl, cam.proj, cam.view, mdl.pivot, 0);
+        model_render(mdl, cam.proj, cam.view, mdl.pivot);
 
         static mat44 pivot = {0};
         static int do_showgizmo = 1;

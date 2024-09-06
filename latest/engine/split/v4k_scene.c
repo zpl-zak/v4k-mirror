@@ -496,12 +496,12 @@ void scene_render(int flags) {
 
             if ( do_relighting || !obj->light_cached ) {
                 obj->light_cached = 1;
-                shader_bind(model->program);
+                shader_bind(model->iqm->program);
                 light_update(array_count(last_scene->lights), last_scene->lights);
             }
 
             if ( flags&SCENE_UPDATE_SH_COEF ) {
-                shader_bind(model->program);
+                shader_bind(model->iqm->program);
                 skybox_sh_shader(&last_scene->skybox);
             }
 
@@ -530,7 +530,7 @@ void scene_render(int flags) {
                         object_t *obj = scene_index(j);
                         model_t *model = &obj->model;
                         if (obj->cast_shadows) {
-                            model_render(*model, cam->proj, cam->view, obj->transform, 0);
+                            model_render(*model, cam->proj, cam->view, obj->transform);
                         }
                     }
                 }
@@ -561,11 +561,11 @@ void scene_render(int flags) {
             if (obj->skip_draw) continue;
 
             if (sm) {
-                shader_bind(model->program);
+                shader_bind(model->iqm->program);
                 light_update(array_count(last_scene->lights), last_scene->lights);
             }
             model_shadow(model, sm);
-            model_render_pass(*model, cam->proj, cam->view, obj->transform, model->program, RENDER_PASS_OPAQUE);
+            model_render_pass(*model, cam->proj, cam->view, obj->transform, RENDER_PASS_OPAQUE);
         }
 
         /* Transparency pass */
@@ -575,11 +575,11 @@ void scene_render(int flags) {
             if (obj->skip_draw) continue;
 
             if (sm) {
-                shader_bind(model->program);
+                shader_bind(model->iqm->program);
                 light_update(array_count(last_scene->lights), last_scene->lights);
             }
             model_shadow(model, sm);
-            model_render_pass(*model, cam->proj, cam->view, obj->transform, model->program, RENDER_PASS_TRANSPARENT);
+            model_render_pass(*model, cam->proj, cam->view, obj->transform, RENDER_PASS_TRANSPARENT);
         }
 
         array_resize(transparent_objects, 0);

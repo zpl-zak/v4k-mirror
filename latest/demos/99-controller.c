@@ -63,10 +63,10 @@ int main() {
 
             // models
             compose44(girl.pivot, girl_p, eulerq(girl_r), girl_s);
-            model_render(girl, cam.proj, cam.view, girl.pivot, 0);
+            model_render(girl, cam.proj, cam.view, girl.pivot);
 
             // compose44(witch.pivot, witch_p, eulerq(witch_r), witch_s);
-            // model_render(witch, cam.proj, cam.view, witch.pivot, 0);
+            // model_render(witch, cam.proj, cam.view, witch.pivot);
 
         // render end (postfx)
         fx_end();
