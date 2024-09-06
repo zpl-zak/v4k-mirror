@@ -4489,13 +4489,13 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         glUniform1i(q->uniforms[slot][MODEL_UNIFORM_HAS_TEX_SKYENV], has_tex_skyenv);
         if( has_tex_skysphere ) {
             float mipCount = floor( log2( max(m.sky_refl.w, m.sky_refl.h) ) );
-            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], m.sky_refl.id, texture_unit());
+            shader_texture_(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], m.sky_refl);
             glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SKYSPHERE_MIP_COUNT], mipCount);
         }
         if( has_tex_skyenv ) {
-            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], m.sky_env.id, texture_unit());
+            shader_texture_(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], m.sky_env);
         }
-        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut().id, texture_unit());
+        shader_texture_(q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut());
         glUseProgram(old_shader);
     }
 }
