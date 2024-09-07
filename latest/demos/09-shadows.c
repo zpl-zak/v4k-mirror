@@ -19,7 +19,7 @@ const char *OBJ_MDLS[] = {
 
 int main(int argc, char** argv) {
     window_create(85, WINDOW_MSAA8);
-    // window_fps_unlock();
+    window_fps_unlock();
 
     camera_t cam = camera(); {
         cam.position = vec3(0, 7.5, 15);

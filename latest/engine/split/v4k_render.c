@@ -1553,6 +1553,16 @@ void light_cone(light_t* l, float innerCone, float outerCone) {
     l->outerCone = acos(outerCone);
 }
 
+static inline
+char *light_fieldname(const char *fmt, ...) {
+    static char buf[1024];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    return buf;
+}
+
 void light_update(unsigned num_lights, light_t *lv) {
     if (num_lights > MAX_LIGHTS) {
         num_lights = MAX_LIGHTS;
@@ -1561,29 +1571,29 @@ void light_update(unsigned num_lights, light_t *lv) {
 
     for (unsigned i=0; i < num_lights; ++i) {
         lv[i].cached = 1;
-        shader_int(va("u_lights[%d].type", i), lv[i].type);
-        shader_vec3(va("u_lights[%d].pos", i), lv[i].pos);
-        shader_vec3(va("u_lights[%d].dir", i), lv[i].dir);
-        shader_vec3(va("u_lights[%d].diffuse", i), lv[i].diffuse);
-        shader_vec3(va("u_lights[%d].specular", i), lv[i].specular);
-        shader_vec3(va("u_lights[%d].ambient", i), lv[i].ambient);
-        shader_float(va("u_lights[%d].power", i), lv[i].specularPower);
-        shader_float(va("u_lights[%d].radius", i), lv[i].radius);
-        shader_float(va("u_lights[%d].constant", i), lv[i].falloff.constant);
-        shader_float(va("u_lights[%d].linear", i), lv[i].falloff.linear);
-        shader_float(va("u_lights[%d].quadratic", i), lv[i].falloff.quadratic);
-        shader_float(va("u_lights[%d].innerCone", i), lv[i].innerCone);
-        shader_float(va("u_lights[%d].outerCone", i), lv[i].outerCone);
-        shader_float(va("u_lights[%d].shadow_bias", i), lv[i].shadow_bias);
-        shader_float(va("u_lights[%d].normal_bias", i), lv[i].normal_bias);
-        shader_float(va("u_lights[%d].shadow_softness", i), lv[i].shadow_softness);
-        shader_float(va("u_lights[%d].penumbra_size", i), lv[i].penumbra_size);
-        shader_float(va("u_lights[%d].min_variance", i), lv[i].min_variance);
-        shader_float(va("u_lights[%d].variance_transition", i), lv[i].variance_transition);
-        shader_bool(va("u_lights[%d].processed_shadows", i), lv[i].processed_shadows);
+        shader_int(light_fieldname("u_lights[%d].type", i), lv[i].type);
+        shader_vec3(light_fieldname("u_lights[%d].pos", i), lv[i].pos);
+        shader_vec3(light_fieldname("u_lights[%d].dir", i), lv[i].dir);
+        shader_vec3(light_fieldname("u_lights[%d].diffuse", i), lv[i].diffuse);
+        shader_vec3(light_fieldname("u_lights[%d].specular", i), lv[i].specular);
+        shader_vec3(light_fieldname("u_lights[%d].ambient", i), lv[i].ambient);
+        shader_float(light_fieldname("u_lights[%d].power", i), lv[i].specularPower);
+        shader_float(light_fieldname("u_lights[%d].radius", i), lv[i].radius);
+        shader_float(light_fieldname("u_lights[%d].constant", i), lv[i].falloff.constant);
+        shader_float(light_fieldname("u_lights[%d].linear", i), lv[i].falloff.linear);
+        shader_float(light_fieldname("u_lights[%d].quadratic", i), lv[i].falloff.quadratic);
+        shader_float(light_fieldname("u_lights[%d].innerCone", i), lv[i].innerCone);
+        shader_float(light_fieldname("u_lights[%d].outerCone", i), lv[i].outerCone);
+        shader_float(light_fieldname("u_lights[%d].shadow_bias", i), lv[i].shadow_bias);
+        shader_float(light_fieldname("u_lights[%d].normal_bias", i), lv[i].normal_bias);
+        shader_float(light_fieldname("u_lights[%d].shadow_softness", i), lv[i].shadow_softness);
+        shader_float(light_fieldname("u_lights[%d].penumbra_size", i), lv[i].penumbra_size);
+        shader_float(light_fieldname("u_lights[%d].min_variance", i), lv[i].min_variance);
+        shader_float(light_fieldname("u_lights[%d].variance_transition", i), lv[i].variance_transition);
+        shader_bool(light_fieldname("u_lights[%d].processed_shadows", i), lv[i].processed_shadows);
         if (lv[i].processed_shadows && lv[i].shadow_technique == SHADOW_CSM) {
             for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                shader_mat44(va("light_shadow_matrix_csm[%d]", j), lv[i].shadow_matrix[j]);
+                shader_mat44(light_fieldname("light_shadow_matrix_csm[%d]", j), lv[i].shadow_matrix[j]);
             }
         }
     }
@@ -1983,6 +1993,7 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
     copy44(l->shadow_matrix[s->cascade_index], PV);
 
     l->processed_shadows = true;
+    l->cached = 0;
     s->shadow_technique = l->shadow_technique = SHADOW_CSM;
     model_setpass(RENDER_PASS_SHADOW_CSM);
 }
@@ -5663,7 +5674,7 @@ void model_render_instanced_pass(model_t mdl, mat44 proj, mat44 view, mat44* mod
         mdl.instanced_matrices = (float*)pass_model_matrices;
         model_set_state(mdl);
     }
-    textureUnit = 0;
+    // textureUnit = 0;
 
     int shader = mdl.iqm->program;
     if (model_getpass() > RENDER_PASS_SHADOW_BEGIN && model_getpass() < RENDER_PASS_SHADOW_END) {

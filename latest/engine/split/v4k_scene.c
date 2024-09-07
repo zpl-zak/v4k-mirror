@@ -496,8 +496,9 @@ void scene_render(int flags) {
 
             if ( do_relighting || !obj->light_cached ) {
                 obj->light_cached = 1;
-                shader_bind(model->iqm->program);
-                light_update(array_count(last_scene->lights), last_scene->lights);
+                // shader_bind(model->iqm->program);
+                // light_update(array_count(last_scene->lights), last_scene->lights);
+                // @todo: rework light caching
             }
 
             if ( flags&SCENE_UPDATE_SH_COEF ) {
@@ -560,11 +561,8 @@ void scene_render(int flags) {
             model_t *model = &obj->model;
             if (obj->skip_draw) continue;
 
-            if (sm) {
-                shader_bind(model->iqm->program);
-                light_update(array_count(last_scene->lights), last_scene->lights);
-            }
             model_shadow(model, sm);
+            model_light(model, array_count(last_scene->lights), last_scene->lights);
             model_render_pass(*model, cam->proj, cam->view, obj->transform, RENDER_PASS_OPAQUE);
         }
 
@@ -574,10 +572,6 @@ void scene_render(int flags) {
             model_t *model = &obj->model;
             if (obj->skip_draw) continue;
 
-            if (sm) {
-                shader_bind(model->iqm->program);
-                light_update(array_count(last_scene->lights), last_scene->lights);
-            }
             model_shadow(model, sm);
             model_render_pass(*model, cam->proj, cam->view, obj->transform, RENDER_PASS_TRANSPARENT);
         }
