@@ -1555,7 +1555,6 @@ void light_cone(light_t* l, float innerCone, float outerCone) {
 
 void light_update(unsigned num_lights, light_t *lv) {
     if (num_lights > MAX_LIGHTS) {
-        PRINTF("WARNING: num_lights > MAX_LIGHTS, clamping to MAX_LIGHTS\n");
         num_lights = MAX_LIGHTS;
     }
     shader_int("u_num_lights", num_lights);
@@ -1582,9 +1581,9 @@ void light_update(unsigned num_lights, light_t *lv) {
         shader_float(va("u_lights[%d].min_variance", i), lv[i].min_variance);
         shader_float(va("u_lights[%d].variance_transition", i), lv[i].variance_transition);
         shader_bool(va("u_lights[%d].processed_shadows", i), lv[i].processed_shadows);
-        if (lv[i].processed_shadows) {
+        if (lv[i].processed_shadows && lv[i].shadow_technique == SHADOW_CSM) {
             for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                shader_mat44(va("u_lights[%d].shadow_matrix[%d]", i, j), lv[i].shadow_matrix[j]);
+                shader_mat44(va("light_shadow_matrix_csm[%d]", j), lv[i].shadow_matrix[j]);
             }
         }
     }
@@ -2015,6 +2014,10 @@ bool shadowmap_step(shadowmap_t *s) {
         }
     }
 
+    if (s->light_step >= MAX_SHADOW_LIGHTS) {
+        return false;
+    }
+
     s->step++;
     s->skip_render = false;
     s->lights_pushed = 0;
@@ -2054,7 +2057,7 @@ void shadowmap_light(shadowmap_t *s, light_t *l, mat44 cam_proj, mat44 cam_view)
         }
 
         if (s->maps[s->light_step].shadow_technique != l->shadow_technique) {
-            shadowmap_destroy_light(s, s->light_step); // @todo: we might wanna free the other set
+            shadowmap_destroy_light(s, s->light_step);
             if (l->shadow_technique == SHADOW_VSM) {
                 shadowmap_init_caster_vsm(s, s->light_step, s->vsm_texture_width);
             } else if (l->shadow_technique == SHADOW_CSM) {
@@ -4341,13 +4344,13 @@ void model_init_uniforms(iqm_t *q, int slot, int program) {
     if ((loc = glGetUniformLocation(shader, "tex_brdf_lut")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT] = loc;
 
+    for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
+        if ((loc = glGetUniformLocation(shader, va("u_cascade_distances[%d]", j))) >= 0)
+            q->uniforms[slot][MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES + j] = loc;
+        if ((loc = glGetUniformLocation(shader, va("shadowMap2D[%d]", j))) >= 0)
+            q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j] = loc;
+    }
     for (int i = 0; i < MAX_LIGHTS; i++) {
-        for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-            if ((loc = glGetUniformLocation(shader, va("u_cascade_distances[%d]", i * NUM_SHADOW_CASCADES + j))) >= 0)
-                q->uniforms[slot][MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES + i * NUM_SHADOW_CASCADES + j] = loc;
-            if ((loc = glGetUniformLocation(shader, va("shadowMap2D[%d]", i * NUM_SHADOW_CASCADES + j))) >= 0)
-                q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + i * NUM_SHADOW_CASCADES + j] = loc;
-        }
         if ((loc = glGetUniformLocation(shader, va("shadowMap[%d]", i))) >= 0)
             q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i] = loc;
     }
@@ -4439,15 +4442,37 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         }
     } else {
         // Shadow receiving
+
+        // Clean up shadowmap uniforms
+        {
+            for (int i = 0; i < m.lights.count; i++) {
+                light_t *light = &m.lights.base[i];
+                for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
+                    shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], 0, texture_unit());
+                }
+                shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], 0, texture_unit());
+            }
+            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
+                shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], 0, texture_unit());
+            }
+        }
+
         if (m.shadow_map && m.shadow_receiver) {
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_U_SHADOW_RECEIVER]) >= 0) {
                 glUniform1i(loc, GL_TRUE);
             }
-            for (int i = 0; i < MAX_LIGHTS; i++) {
-                shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], m.shadow_map->maps[i].texture, texture_unit());
-                for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                    shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + i * NUM_SHADOW_CASCADES + j], m.shadow_map->maps[i].texture_2d[j], texture_unit());
-                    glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES + i * NUM_SHADOW_CASCADES + j], m.shadow_map->maps[i].cascade_distances[j]);
+
+            for (int i = 0; i < m.lights.count; i++) {
+                light_t *light = &m.lights.base[i];
+
+                if (light->shadow_technique == SHADOW_CSM) {
+                    for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
+                        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], m.shadow_map->maps[i].texture_2d[j], texture_unit());
+                        glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES + j], m.shadow_map->maps[i].cascade_distances[j]);
+                    }
+                }
+                else if (light->shadow_technique == SHADOW_VSM) {
+                    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], m.shadow_map->maps[i].texture, texture_unit());
                 }
             }
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
@@ -4489,12 +4514,6 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         shader_texture_(q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut());
         glUseProgram(old_shader);
     }
-
-    int empty = texture_unit();
-    glActiveTexture(GL_TEXTURE0 + empty);
-    glBindTexture(GL_TEXTURE_3D, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 static inline
@@ -5645,13 +5664,19 @@ void model_render_instanced_pass(model_t mdl, mat44 proj, mat44 view, mat44* mod
         mdl.instanced_matrices = (float*)pass_model_matrices;
         model_set_state(mdl);
     }
+    textureUnit = 0;
 
     int shader = mdl.iqm->program;
     if (model_getpass() > RENDER_PASS_SHADOW_BEGIN && model_getpass() < RENDER_PASS_SHADOW_END) {
         shader = mdl.iqm->shadow_program;
+        model_set_uniforms(mdl, shader, mv, proj, view, pass_model_matrices[0]);
+        model_draw_call(mdl, shader, pass, pos44(view), pass_model_matrices[0], proj, view);
+        return;
     }
 
-    textureUnit = 0;
+    shader_bind(shader);
+    light_update(mdl.lights.count, mdl.lights.base);
+
     model_set_uniforms(mdl, shader, mv, proj, view, pass_model_matrices[0]);
     model_draw_call(mdl, shader, pass, pos44(view), pass_model_matrices[0], proj, view);
 }
@@ -5748,6 +5773,11 @@ void model_shadow(model_t *mdl, shadowmap_t *sm) {
         mdl->shadow_receiver = false;
         mdl->shadow_map = NULL;
     }
+}
+
+void model_light(model_t *mdl, unsigned count, light_t *lights) {
+    mdl->lights.base = lights;
+    mdl->lights.count = count;
 }
 
 void model_fog(model_t *mdl, unsigned mode, vec3 color, float start, float end, float density) {

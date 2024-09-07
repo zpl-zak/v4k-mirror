@@ -1,7 +1,8 @@
 #ifndef LIGHT_GLSL
 #define LIGHT_GLSL
 
-#define MAX_LIGHTS 4
+#define MAX_LIGHTS 16
+#define MAX_SHADOW_LIGHTS 8
 #define NUM_SHADOW_CASCADES 4
 
 #include "brdf.glsl"
@@ -25,7 +26,6 @@ struct light_t {
     float quadratic;
 
     // shadows
-    mat4 shadow_matrix[NUM_SHADOW_CASCADES];
     float shadow_bias;
     float normal_bias;
     float min_variance;

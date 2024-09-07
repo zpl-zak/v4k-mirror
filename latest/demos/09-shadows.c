@@ -58,6 +58,18 @@ int main(int argc, char** argv) {
         // lit4.shadow_distance = 2000.0f;
         lit4.diffuse = vec3(1, 0.7, 0.8);
     }
+    light_t lit5 = light(); {
+        lit5.type = LIGHT_POINT;
+        lit5.cast_shadows = true;
+        // lit4.shadow_distance = 2000.0f;
+        lit5.diffuse = vec3(1, 0, 0);
+    }
+    light_t lit6 = light(); {
+        lit6.type = LIGHT_POINT;
+        lit6.cast_shadows = true;
+        // lit4.shadow_distance = 2000.0f;
+        lit6.diffuse = vec3(0, 1, 0);
+    }
 
     array(light_t) point_lights = 0;
     array_push(point_lights, lit);
@@ -74,6 +86,8 @@ int main(int argc, char** argv) {
     array_push(all_lights, lit2);
     array_push(all_lights, lit3);
     array_push(all_lights, lit4);
+    array_push(all_lights, lit5);
+    array_push(all_lights, lit6);
 
     bool initialized = 0;
     bool must_reload = 0;
@@ -109,7 +123,7 @@ int main(int argc, char** argv) {
         enum {
             POINT, SPOT, DIR, ALL
         };
-        static unsigned mode = ALL;
+        static unsigned mode = POINT;
 
         if (!ui_active()) {
             if (input_down(KEY_1)) mode = POINT;
@@ -172,6 +186,9 @@ int main(int argc, char** argv) {
             lights[2].dir = cam.lookdir;
 
             lights[3].dir = vec3(1,-1,-1);
+
+            lights[4].pos = vec3(-3, 3, 0);
+            lights[5].pos = vec3(3, 3, 0);
         }
 
         // Render shadowmap
@@ -190,11 +207,9 @@ int main(int argc, char** argv) {
         mat44 mvp; multiply44x2(mvp, cam.proj, cam.view);
         {
             skybox_render(&sky, cam.proj, cam.view);
-            
-            model_bind_shader(mdl);
-            light_update(array_count(lights), lights);
 
             model_shadow(&mdl, &sm);
+            model_light(&mdl, array_count(lights), lights);
             model_render(mdl, cam.proj, cam.view, mdl.pivot);
         }
 

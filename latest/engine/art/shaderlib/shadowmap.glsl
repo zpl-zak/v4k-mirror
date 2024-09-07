@@ -6,12 +6,13 @@
 #include "utils.glsl"
 
 uniform bool u_shadow_receiver;
-uniform float u_cascade_distances[MAX_LIGHTS * NUM_SHADOW_CASCADES];
-uniform samplerCube shadowMap[MAX_LIGHTS];
-uniform sampler2D shadowMap2D[MAX_LIGHTS * NUM_SHADOW_CASCADES];
+uniform float u_cascade_distances[NUM_SHADOW_CASCADES];
+uniform samplerCube shadowMap[MAX_SHADOW_LIGHTS];
+uniform sampler2D shadowMap2D[NUM_SHADOW_CASCADES];
 uniform sampler3D shadow_offsets;
 uniform int shadow_filter_size;
 uniform int shadow_window_size;
+uniform mat4 light_shadow_matrix_csm[NUM_SHADOW_CASCADES];
 
 // const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](0.95, 0.35, 0.20, 0.1, 0.1, 0.1);
 const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](1.0, 6.0, 9.0, 16.0);
@@ -111,8 +112,8 @@ float shadowmap_cascade_sample(vec2 sc, int cascade_index, float blend_factor, o
 float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bias, float normal_bias, float shadow_softness) {
     // Determine which cascade to use
     int cascade_index = -1;
-    int min_cascades_range = light_index * NUM_SHADOW_CASCADES;
-    int max_cascades_range = min_cascades_range + NUM_SHADOW_CASCADES;
+    int min_cascades_range = 0;
+    int max_cascades_range = NUM_SHADOW_CASCADES;
     for (int i = min_cascades_range; i < max_cascades_range; i++) {
         if (distance < u_cascade_distances[i]) {
             cascade_index = i;
@@ -142,7 +143,7 @@ float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bi
 
     light_t light = u_lights[light_index];
 
-    vec4 fragPosLightSpace = light.shadow_matrix[matrix_index] * vec4(v_position_ws, 1.0);
+    vec4 fragPosLightSpace = light_shadow_matrix_csm[matrix_index] * vec4(v_position_ws, 1.0);
 
     // Perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;

@@ -284,7 +284,8 @@ API void     fbo_destroy(unsigned id);
 // lights
 
 enum {
-    MAX_LIGHTS = 4,
+    MAX_LIGHTS = 16,
+    MAX_SHADOW_LIGHTS = 8,
 };
 
 enum LIGHT_TYPE {
@@ -787,16 +788,21 @@ enum MODEL_UNIFORMS {
     
     // Shadows
     MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES,
-    MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES_COUNT = MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES+NUM_SHADOW_CASCADES*MAX_LIGHTS,
+    MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES_COUNT = MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES+NUM_SHADOW_CASCADES,
 
     MODEL_UNIFORM_SHADOW_MAP_2D,
-    MODEL_UNIFORM_SHADOW_MAP_2D_COUNT = MODEL_UNIFORM_SHADOW_MAP_2D+NUM_SHADOW_CASCADES*MAX_LIGHTS,
+    MODEL_UNIFORM_SHADOW_MAP_2D_COUNT = MODEL_UNIFORM_SHADOW_MAP_2D+NUM_SHADOW_CASCADES,
     
     MODEL_UNIFORM_SHADOW_MAP_CUBEMAP,
     MODEL_UNIFORM_SHADOW_MAP_CUBEMAP_COUNT = MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+MAX_LIGHTS,
 
     NUM_MODEL_UNIFORMS
 };
+
+typedef struct lightarray_t {
+    light_t *base;
+    unsigned count;
+} lightarray_t;
 
 typedef struct model_t {
     struct iqm_t *iqm; // private
@@ -815,6 +821,7 @@ typedef struct model_t {
     unsigned num_anims;
     unsigned num_frames;
     shadowmap_t *shadow_map;
+    lightarray_t lights;
     bool shadow_receiver;
     float curframe;
     mat44 pivot;
@@ -867,6 +874,7 @@ API void     model_shading(model_t*, int shading);
 API void     model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);
 API void     model_skybox(model_t*, skybox_t sky, bool load_sh);
 API void     model_shadow(model_t*, shadowmap_t *sm);
+API void     model_light(model_t*, unsigned count, light_t *lights);
 API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
 API void     model_bind_shader(model_t); // @todo: delete me later
 API void     model_render(model_t, mat44 proj, mat44 view, mat44 model);
