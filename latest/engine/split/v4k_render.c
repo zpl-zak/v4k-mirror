@@ -1099,6 +1099,44 @@ texture_t texture_checker() {
     return texture;
 }
 
+texture_t _texture_empty_cubemap() {
+    static texture_t texture = {0};
+    if( !texture.id ) {
+        glGenTextures(1, &texture.id);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, texture.id);
+        for (int i = 0; i < 6; i++) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        }
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    return texture;
+}
+
+texture_t _texture_empty_2d() {
+    static texture_t texture = {0};
+    if( !texture.id ) {
+        glGenTextures(1, &texture.id);
+        glBindTexture(GL_TEXTURE_2D, texture.id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    return texture;
+}
+
+texture_t _texture_empty_3d() {
+    static texture_t texture = {0};
+    if( !texture.id ) {
+        glGenTextures(1, &texture.id);
+        glBindTexture(GL_TEXTURE_3D, texture.id);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 1, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    return texture;
+}
+
 texture_t texture_from_mem(const void *ptr, int len, int flags) {
     image_t img = image_from_mem(ptr, len, flags);
     if( img.pixels ) {
@@ -4476,22 +4514,31 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
                 int slot = 0;
                 int loc = 0;
                 for (int i = 0; i < MAX_LIGHTS; i++) {
-                    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], 0, texture_unit());
+                    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], _texture_empty_cubemap().id, texture_unit());
                     for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + i * NUM_SHADOW_CASCADES + j], 0, texture_unit());
+                        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + i * NUM_SHADOW_CASCADES + j], _texture_empty_2d().id, texture_unit());
                     }
                 }
                 if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
-                    shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], 0, texture_unit());
+                    shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], _texture_empty_3d().id, texture_unit());
                 }
             }
         }
 
-        if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_VSM]) >= 0) {
-            glUniform1i(loc, 1.0f / m.shadow_map->vsm_texture_width);
-        }
-        if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_CSM]) >= 0) {
-            glUniform1i(loc, 1.0f / m.shadow_map->csm_texture_width);
+        if (m.shadow_map != NULL) {
+            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_VSM]) >= 0) {
+                glUniform1i(loc, 1.0f / m.shadow_map->vsm_texture_width);
+            }
+            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_CSM]) >= 0) {
+                glUniform1i(loc, 1.0f / m.shadow_map->csm_texture_width);
+            }
+        } else {
+            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_VSM]) >= 0) {
+                glUniform1i(loc, 1.0f);
+            }
+            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_CSM]) >= 0) {
+                glUniform1i(loc, 1.0f);
+            }
         }
     }
 

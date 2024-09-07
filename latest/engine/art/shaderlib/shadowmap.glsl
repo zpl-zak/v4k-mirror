@@ -46,7 +46,7 @@ float shadow_vsm(float distance, vec3 dir, int light_index, float min_variance, 
     vec4 sc = vec4(dir, 1.0);
     sc.z = dir.z;
 
-    vec3 texelSize = vec3(shadow_vsm_size);
+    vec3 texelSize = vec3(shadow_vsm_ratio);
     vec3 light_plane_normal = normalize(dir);
     vec3 up_axis = normalize(view[1].xyz);
     vec3 tangent = normalize(cross(light_plane_normal, up_axis));
@@ -166,7 +166,7 @@ float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bi
  
     // CSM
     float shadow = 0.0;
-    vec2 texelSize = vec2(shadow_csm_size);
+    vec2 texelSize = vec2(shadow_csm_ratio);
 
     // Get the offset coordinates
     ivec3 ofs_coord = ivec3(0);
