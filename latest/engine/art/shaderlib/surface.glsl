@@ -1,6 +1,8 @@
 #ifndef SURFACE_GLSL
 #define SURFACE_GLSL
 
+uniform int u_lighting_pass; /// set:0
+
 #include "sh_lighting.glsl"
 #include "rimlight.glsl"
 #include "light.glsl"
