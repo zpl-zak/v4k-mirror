@@ -1,6 +1,8 @@
 #ifndef SHADOWMAP_GLSL
 #define SHADOWMAP_GLSL
 
+#ifndef NO_SHADOWS
+
 #include "utils.glsl"
 
 uniform bool u_shadow_receiver;
@@ -231,6 +233,14 @@ vec4 shadowing(int idx) {
         return vec4(1.0);
     }
 }
+
+#else
+
+vec4 shadowing(int idx) {
+    return vec4(1.0);
+}
+
+#endif
 
 #endif
 
