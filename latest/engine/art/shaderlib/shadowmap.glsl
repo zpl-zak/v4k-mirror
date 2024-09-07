@@ -13,6 +13,9 @@ uniform sampler3D shadow_offsets;
 uniform int shadow_filter_size;
 uniform int shadow_window_size;
 
+uniform int shadow_csm_ratio;
+uniform int shadow_vsm_ratio;
+
 // const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](0.95, 0.35, 0.20, 0.1, 0.1, 0.1);
 const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](1.0, 6.0, 9.0, 16.0);
 // const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](0.95, 0.35, 0.20, 0.15);
@@ -43,8 +46,7 @@ float shadow_vsm(float distance, vec3 dir, int light_index, float min_variance, 
     vec4 sc = vec4(dir, 1.0);
     sc.z = dir.z;
 
-    vec2 tex_size = textureSize(shadowMap[light_index], 0);
-    vec3 texelSize = 1.0 / vec3(tex_size.xyy);
+    vec3 texelSize = vec3(shadow_vsm_size);
     vec3 light_plane_normal = normalize(dir);
     vec3 up_axis = normalize(view[1].xyz);
     vec3 tangent = normalize(cross(light_plane_normal, up_axis));
@@ -164,7 +166,7 @@ float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bi
  
     // CSM
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap2D[cascade_index], 0);
+    vec2 texelSize = vec2(shadow_csm_size);
 
     // Get the offset coordinates
     ivec3 ofs_coord = ivec3(0);

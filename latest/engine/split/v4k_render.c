@@ -4319,6 +4319,12 @@ void model_init_uniforms(iqm_t *q, int slot, int program) {
     if ((loc = glGetUniformLocation(shader, "shadow_window_size")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_SHADOW_WINDOW_SIZE] = loc;
 
+    if ((loc = glGetUniformLocation(shader, "shadow_csm_ratio")) >= 0)
+        q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_CSM] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "shadow_vsm_ratio")) >= 0)
+        q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_VSM] = loc;
+
     // PBR Uniforms
     if ((loc = glGetUniformLocation(shader, "resolution")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_RESOLUTION] = loc;
@@ -4479,6 +4485,13 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
                     shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], 0, texture_unit());
                 }
             }
+        }
+
+        if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_VSM]) >= 0) {
+            glUniform1i(loc, 1.0f / m.shadow_map->vsm_texture_width);
+        }
+        if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_CSM]) >= 0) {
+            glUniform1i(loc, 1.0f / m.shadow_map->csm_texture_width);
         }
     }
 
