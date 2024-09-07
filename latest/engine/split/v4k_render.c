@@ -1099,45 +1099,6 @@ texture_t texture_checker() {
     return texture;
 }
 
-static uint8_t _empty_pixel[3] = {0, 0, 0};
-texture_t _texture_empty_cubemap() {
-    static texture_t texture = {0};
-    if( !texture.id ) {
-        glGenTextures(1, &texture.id);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, texture.id);
-        for (int i = 0; i < 6; i++) {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, _empty_pixel);
-        }
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    return texture;
-}
-
-texture_t _texture_empty_2d() {
-    static texture_t texture = {0};
-    if( !texture.id ) {
-        glGenTextures(1, &texture.id);
-        glBindTexture(GL_TEXTURE_2D, texture.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, _empty_pixel);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    return texture;
-}
-
-texture_t _texture_empty_3d() {
-    static texture_t texture = {0};
-    if( !texture.id ) {
-        glGenTextures(1, &texture.id);
-        glBindTexture(GL_TEXTURE_3D, texture.id);
-        glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 1, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, _empty_pixel);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    return texture;
-}
-
 texture_t texture_from_mem(const void *ptr, int len, int flags) {
     image_t img = image_from_mem(ptr, len, flags);
     if( img.pixels ) {
@@ -4358,12 +4319,6 @@ void model_init_uniforms(iqm_t *q, int slot, int program) {
     if ((loc = glGetUniformLocation(shader, "shadow_window_size")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_SHADOW_WINDOW_SIZE] = loc;
 
-    if ((loc = glGetUniformLocation(shader, "shadow_csm_ratio")) >= 0)
-        q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_CSM] = loc;
-
-    if ((loc = glGetUniformLocation(shader, "shadow_vsm_ratio")) >= 0)
-        q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_VSM] = loc;
-
     // PBR Uniforms
     if ((loc = glGetUniformLocation(shader, "resolution")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_RESOLUTION] = loc;
@@ -4509,35 +4464,6 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_U_SHADOW_RECEIVER]) >= 0) {
                 glUniform1i(loc, GL_FALSE);
             }
-
-            // @note: Intel bug fix for shadow map rendering
-            {
-                for (int i = 0; i < MAX_LIGHTS; i++) {
-                    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], _texture_empty_cubemap().id, texture_unit());
-                    for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + i * NUM_SHADOW_CASCADES + j], _texture_empty_2d().id, texture_unit());
-                    }
-                }
-                if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
-                    shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], _texture_empty_3d().id, texture_unit());
-                }
-            }
-        }
-
-        if (m.shadow_map != NULL) {
-            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_VSM]) >= 0) {
-                glUniform1i(loc, 1.0f / m.shadow_map->vsm_texture_width);
-            }
-            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_CSM]) >= 0) {
-                glUniform1i(loc, 1.0f / m.shadow_map->csm_texture_width);
-            }
-        } else {
-            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_VSM]) >= 0) {
-                glUniform1i(loc, 1.0f);
-            }
-            if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_RATIO_CSM]) >= 0) {
-                glUniform1i(loc, 1.0f);
-            }
         }
     }
 
@@ -4563,6 +4489,12 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         shader_texture_(q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut());
         glUseProgram(old_shader);
     }
+
+    int empty = texture_unit();
+    glActiveTexture(GL_TEXTURE0 + empty);
+    glBindTexture(GL_TEXTURE_3D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 static inline
