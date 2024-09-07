@@ -1099,13 +1099,14 @@ texture_t texture_checker() {
     return texture;
 }
 
+static uint8_t _empty_pixel[3] = {0, 0, 0};
 texture_t _texture_empty_cubemap() {
     static texture_t texture = {0};
     if( !texture.id ) {
         glGenTextures(1, &texture.id);
         glBindTexture(GL_TEXTURE_CUBE_MAP, texture.id);
         for (int i = 0; i < 6; i++) {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, _empty_pixel);
         }
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1118,7 +1119,7 @@ texture_t _texture_empty_2d() {
     if( !texture.id ) {
         glGenTextures(1, &texture.id);
         glBindTexture(GL_TEXTURE_2D, texture.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, _empty_pixel);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
@@ -1130,7 +1131,7 @@ texture_t _texture_empty_3d() {
     if( !texture.id ) {
         glGenTextures(1, &texture.id);
         glBindTexture(GL_TEXTURE_3D, texture.id);
-        glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 1, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 1, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, _empty_pixel);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
@@ -4511,8 +4512,6 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
 
             // @note: Intel bug fix for shadow map rendering
             {
-                int slot = 0;
-                int loc = 0;
                 for (int i = 0; i < MAX_LIGHTS; i++) {
                     shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], _texture_empty_cubemap().id, texture_unit());
                     for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
