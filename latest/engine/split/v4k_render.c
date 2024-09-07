@@ -1719,7 +1719,7 @@ shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 
     s.vsm_texture_width = vsm_texture_width;
     s.csm_texture_width = csm_texture_width;
     s.saved_fb = 0;
-    s.filter_size = 8;
+    s.filter_size = 4;
     s.window_size = 10;
 #if 0
     s.cascade_splits[0] = 0.1f;
