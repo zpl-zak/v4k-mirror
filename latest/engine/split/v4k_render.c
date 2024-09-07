@@ -4366,7 +4366,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         model_init_uniforms(q, slot, shader);
     }
 
-    glUseProgram(shader);
+    shader_bind(shader);
     int loc;
 
     if ((loc = q->uniforms[slot][MODEL_UNIFORM_MV]) >= 0) {
@@ -4445,8 +4445,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
 
         // Clean up shadowmap uniforms
         {
-            for (int i = 0; i < m.lights.count; i++) {
-                light_t *light = &m.lights.base[i];
+            for (int i = 0; i < MAX_LIGHTS; i++) {
                 for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
                     shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], 0, texture_unit());
                 }

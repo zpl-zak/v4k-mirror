@@ -1138,7 +1138,8 @@ typedef struct cubemap_t {
  void fbo_unbind();
  void fbo_destroy(unsigned id);
 enum {
-    MAX_LIGHTS = 4,
+    MAX_LIGHTS = 16,
+    MAX_SHADOW_LIGHTS = 8,
 };
 enum LIGHT_TYPE {
     LIGHT_DIRECTIONAL,
@@ -1472,13 +1473,17 @@ enum MODEL_UNIFORMS {
     MODEL_UNIFORM_TEX_SKYENV,
     MODEL_UNIFORM_TEX_BRDF_LUT,
     MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES,
-    MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES_COUNT = MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES+4*MAX_LIGHTS,
+    MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES_COUNT = MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES+4,
     MODEL_UNIFORM_SHADOW_MAP_2D,
-    MODEL_UNIFORM_SHADOW_MAP_2D_COUNT = MODEL_UNIFORM_SHADOW_MAP_2D+4*MAX_LIGHTS,
+    MODEL_UNIFORM_SHADOW_MAP_2D_COUNT = MODEL_UNIFORM_SHADOW_MAP_2D+4,
     MODEL_UNIFORM_SHADOW_MAP_CUBEMAP,
     MODEL_UNIFORM_SHADOW_MAP_CUBEMAP_COUNT = MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+MAX_LIGHTS,
     NUM_MODEL_UNIFORMS
 };
+typedef struct lightarray_t {
+    light_t *base;
+    unsigned count;
+} lightarray_t;
 typedef struct model_t {
     struct iqm_t *iqm;
     int shading;
@@ -1493,6 +1498,7 @@ typedef struct model_t {
     unsigned num_anims;
     unsigned num_frames;
     shadowmap_t *shadow_map;
+    lightarray_t lights;
     bool shadow_receiver;
     float curframe;
     mat44 pivot;
@@ -1536,6 +1542,7 @@ enum BILLBOARD_MODE {
  void model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);
  void model_skybox(model_t*, skybox_t sky, bool load_sh);
  void model_shadow(model_t*, shadowmap_t *sm);
+ void model_light(model_t*, unsigned count, light_t *lights);
  void model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
  void model_bind_shader(model_t);
  void model_render(model_t, mat44 proj, mat44 view, mat44 model);
