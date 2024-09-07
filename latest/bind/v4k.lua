@@ -1138,7 +1138,7 @@ typedef struct cubemap_t {
  void fbo_unbind();
  void fbo_destroy(unsigned id);
 enum {
-    MAX_LIGHTS = 16,
+    MAX_LIGHTS = 8,
 };
 enum LIGHT_TYPE {
     LIGHT_DIRECTIONAL,
