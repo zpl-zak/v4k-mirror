@@ -51,8 +51,7 @@ int main(int argc, char** argv) {
             sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
             mdl = model("plane.obj", 0);
             scale44(mdl.pivot, 150, 1, 150);
-            model_bind_shader(mdl);
-            cubemap_sh_shader(&sky.cubemap);
+            model_skybox(&mdl, sky, 1);
         }
 
         // fps camera
