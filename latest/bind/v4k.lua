@@ -1138,8 +1138,8 @@ typedef struct cubemap_t {
  void fbo_unbind();
  void fbo_destroy(unsigned id);
 enum {
-    MAX_LIGHTS = 16,
-    MAX_SHADOW_LIGHTS = 8,
+    MAX_LIGHTS = 96,
+    MAX_SHADOW_LIGHTS = 16,
 };
 enum LIGHT_TYPE {
     LIGHT_DIRECTIONAL,
@@ -1180,12 +1180,12 @@ typedef struct light_t {
  void light_specular(light_t* l, vec3 color);
  void light_ambient(light_t* l, vec3 color);
  void light_teleport(light_t* l, vec3 pos);
+ void light_pos(light_t* l, vec3 pos);
  void light_dir(light_t* l, vec3 dir);
  void light_power(light_t* l, float power);
  void light_radius(light_t* l, float radius);
  void light_falloff(light_t* l, float constant, float linear, float quadratic);
  void light_cone(light_t* l, float innerCone, float outerCone);
- void light_update(unsigned num_lights, light_t *lv);
  void ui_light(light_t *l);
  void ui_lights(unsigned num_lights, light_t *lights);
 typedef struct shadowmap_t {
@@ -1267,7 +1267,7 @@ enum BUFFER_MODE {
  void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access);
  void write_barrier();
  void write_barrier_image();
-enum SSBO_USAGE {
+enum BUFFER_USAGE {
     STATIC_DRAW,
     STATIC_READ,
     STATIC_COPY,
@@ -1290,6 +1290,11 @@ enum SSBO_ACCESS {
  void *ssbo_map(unsigned access);
  void ssbo_unmap();
  void ssbo_unbind();
+ unsigned ubo_create(void *data, int size, unsigned usage);
+ void ubo_update(unsigned ubo, int offset, void *data, int size);
+ void ubo_bind(unsigned ubo, unsigned unit);
+ void ubo_unbind(unsigned unit);
+ void ubo_destroy(unsigned ubo);
 enum MESH_FLAGS {
     MESH_STATIC = 0,
     MESH_STREAM = 1,

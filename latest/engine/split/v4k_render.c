@@ -1635,11 +1635,11 @@ void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
         light_object_t *light = &lights[i];
         {
             light->type = lv[i].type;
-            light->diffuse = ptr4(&lv[i].diffuse.x);
-            light->specular = ptr4(&lv[i].specular.x);
-            light->ambient = ptr4(&lv[i].ambient.x);
-            light->pos = ptr4(&lv[i].pos.x);
-            light->dir = ptr4(&lv[i].dir.x);
+            light->diffuse = vec34(lv[i].diffuse, 0.0f);
+            light->specular = vec34(lv[i].specular, 0.0f);
+            light->ambient = vec34(lv[i].ambient, 0.0f);
+            light->pos = vec34(lv[i].pos, 0.0f);
+            light->dir = vec34(lv[i].dir, 0.0f);
             light->power = lv[i].specularPower;
             light->radius = lv[i].radius;
             light->innerCone = lv[i].innerCone;
