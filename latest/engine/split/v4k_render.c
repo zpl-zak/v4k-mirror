@@ -1557,6 +1557,11 @@ void light_teleport(light_t* l, vec3 pos) {
     l->pos = pos;
 }
 
+void light_pos(light_t* l, vec3 pos) {
+    l->cached = 0;
+    l->pos = pos;
+}
+
 void light_dir(light_t* l, vec3 dir) {
     l->cached = 0;
     l->dir = dir;
@@ -1619,6 +1624,7 @@ typedef struct light_object_t {
     int _padding;
 } light_object_t;
 
+static inline
 void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
     if (num_lights > MAX_LIGHTS) {
         num_lights = MAX_LIGHTS;
