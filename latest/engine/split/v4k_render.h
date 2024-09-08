@@ -284,8 +284,8 @@ API void     fbo_destroy(unsigned id);
 // lights
 
 enum {
-    MAX_LIGHTS = 16,
-    MAX_SHADOW_LIGHTS = 8,
+    MAX_LIGHTS = 96,
+    MAX_SHADOW_LIGHTS = 16,
 };
 
 enum LIGHT_TYPE {
@@ -343,7 +343,7 @@ API void    light_power(light_t* l, float power);
 API void    light_radius(light_t* l, float radius);
 API void    light_falloff(light_t* l, float constant, float linear, float quadratic);
 API void    light_cone(light_t* l, float innerCone, float outerCone);
-API void    light_update(unsigned num_lights, light_t *lv);
+API void    light_update(unsigned* ubo, unsigned num_lights, light_t *lv);
 
 API void    ui_light(light_t *l);
 API void    ui_lights(unsigned num_lights, light_t *lights);
@@ -489,12 +489,7 @@ API void write_barrier();
 /// Blocks main thread until all image operations are done by the GPU.
 API void write_barrier_image();
 
-// ssbo
-/// `STATIC`, `DYNAMIC` AND `STREAM` specify the frequency at which we intend to access the data.
-/// `DRAW` favors CPU->GPU operations.
-/// `READ` favors GPU->CPU operations.
-/// `COPY` favors CPU->GPU->CPU operations.
-enum SSBO_USAGE {
+enum BUFFER_USAGE {
     STATIC_DRAW,
     STATIC_READ,
     STATIC_COPY,
@@ -507,6 +502,12 @@ enum SSBO_USAGE {
     STREAM_READ,
     STREAM_COPY
 };
+
+// ssbo
+/// `STATIC`, `DYNAMIC` AND `STREAM` specify the frequency at which we intend to access the data.
+/// `DRAW` favors CPU->GPU operations.
+/// `READ` favors GPU->CPU operations.
+/// `COPY` favors CPU->GPU->CPU operations.
 
 enum SSBO_ACCESS {
     SSBO_READ = BUFFER_READ,
@@ -551,8 +552,16 @@ API void ssbo_unmap();
 /// Unbinds an SSBO resource
 API void ssbo_unbind();
 
+// ubo
+
+API unsigned ubo_create(void *data, int size, unsigned usage);
+API void       ubo_update(unsigned ubo, int offset, void *data, int size);
+API void       ubo_bind(unsigned ubo, unsigned unit);
+API void       ubo_unbind(unsigned unit);
+API void     ubo_destroy(unsigned ubo);
+
 // -----------------------------------------------------------------------------
-// meshes (@fixme: deprecate?)
+// meshes
 
 enum MESH_FLAGS {
     MESH_STATIC = 0, // STATIC, DYNAMIC, STREAM // zero|single|many updates per frame

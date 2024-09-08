@@ -141,7 +141,7 @@ float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bi
     //     }
     // }
 
-    light_t light = u_lights[light_index];
+    light_t light = lightBuffer.lights[light_index];
 
     vec4 fragPosLightSpace = light_shadow_matrix_csm[matrix_index] * vec4(v_position_ws, 1.0);
 
@@ -211,13 +211,13 @@ float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bi
 vec4 shadowmap(int idx, in vec4 peye, in vec4 neye) {
     vec3 fragment = vec3(peye);
     float shadowFactor = 1.0;
-    light_t light = u_lights[idx];
+    light_t light = lightBuffer.lights[idx];
 
     if (light.processed_shadows) {
         if (light.type == LIGHT_DIRECTIONAL) {
-            shadowFactor = shadow_csm(-peye.z, light.dir, idx, light.shadow_bias, light.normal_bias, light.shadow_softness);
+            shadowFactor = shadow_csm(-peye.z, light.dir.xyz, idx, light.shadow_bias, light.normal_bias, light.shadow_softness);
         } else if (light.type == LIGHT_POINT || light.type == LIGHT_SPOT) {
-            vec3 light_pos = (view * vec4(light.pos, 1.0)).xyz;
+            vec3 light_pos = (view * vec4(light.pos.xyz, 1.0)).xyz;
             vec3 dir = light_pos - fragment;
             vec4 sc = inv_view * vec4(dir, 0.0);
             shadowFactor = shadow_vsm(length(dir), -sc.xyz, idx, light.min_variance, light.variance_transition, light.shadow_softness, light.penumbra_size);

@@ -750,6 +750,38 @@ void ssbo_unbind(){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
+// ubo
+
+unsigned ubo_create(void *data, int size, unsigned usage) {
+    static GLuint gl_usage[] = { GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_DYNAMIC_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY };
+    GLuint ubo;
+    glGenBuffers(1, &ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+    glBufferData(GL_UNIFORM_BUFFER, size, data, gl_usage[usage]);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    return ubo;
+}
+
+void ubo_update(unsigned ubo, int offset, void *data, int size) {
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+    glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void ubo_bind(unsigned ubo, unsigned unit) {
+    glBindBufferBase(GL_UNIFORM_BUFFER, unit, ubo);
+}
+
+void ubo_unbind(unsigned unit) {
+    glBindBufferBase(GL_UNIFORM_BUFFER, unit, 0);
+}
+
+void ubo_destroy(unsigned ubo) {
+    glDeleteBuffers(1, &ubo);
+}
+
+// shaders
+
 static __thread unsigned last_shader = -1;
 
 int shader_uniform(const char *name) {
@@ -1563,34 +1595,75 @@ char *light_fieldname(const char *fmt, ...) {
     return buf;
 }
 
-void light_update(unsigned num_lights, light_t *lv) {
+typedef struct light_object_t {
+    vec4 diffuse;
+    vec4 specular;
+    vec4 ambient;
+    vec4 pos;
+    vec4 dir;
+    float power;
+    float radius;
+    float innerCone;
+    float outerCone;
+    float constant;
+    float linear;
+    float quadratic;
+    float shadow_bias;
+    float normal_bias;
+    float min_variance;
+    float variance_transition;
+    float shadow_softness;
+    float penumbra_size;
+    int type;
+    int processed_shadows;
+    int _padding;
+} light_object_t;
+
+void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
     if (num_lights > MAX_LIGHTS) {
         num_lights = MAX_LIGHTS;
     }
+
+    light_object_t lights[MAX_LIGHTS] = {0};
+    for (unsigned i = 0; i < num_lights; i++) {
+        light_object_t *light = &lights[i];
+        {
+            light->type = lv[i].type;
+            light->diffuse = ptr4(&lv[i].diffuse.x);
+            light->specular = ptr4(&lv[i].specular.x);
+            light->ambient = ptr4(&lv[i].ambient.x);
+            light->pos = ptr4(&lv[i].pos.x);
+            light->dir = ptr4(&lv[i].dir.x);
+            light->power = lv[i].specularPower;
+            light->radius = lv[i].radius;
+            light->innerCone = lv[i].innerCone;
+            light->outerCone = lv[i].outerCone;
+            light->processed_shadows = lv[i].processed_shadows;
+            light->constant = lv[i].falloff.constant;
+            light->linear = lv[i].falloff.linear;
+            light->quadratic = lv[i].falloff.quadratic;
+            light->shadow_bias = lv[i].shadow_bias;
+            light->normal_bias = lv[i].normal_bias;
+            light->min_variance = lv[i].min_variance;
+            light->variance_transition = lv[i].variance_transition;
+            light->shadow_softness = lv[i].shadow_softness;
+            light->penumbra_size = lv[i].penumbra_size;
+        }
+    }
+
     shader_int("u_num_lights", num_lights);
+    ASSERT(ubo);
+
+    if (*ubo == NULL /* buffer not created */) {
+        *ubo = ubo_create(&lights[0], sizeof(light_object_t) * MAX_LIGHTS, DYNAMIC_DRAW);
+    } else {
+        ubo_update(*ubo, 0, &lights[0], sizeof(light_object_t) * MAX_LIGHTS);
+    }
+
+    ubo_bind(*ubo, 0);
 
     for (unsigned i=0; i < num_lights; ++i) {
         lv[i].cached = 1;
-        shader_int(light_fieldname("u_lights[%d].type", i), lv[i].type);
-        shader_vec3(light_fieldname("u_lights[%d].pos", i), lv[i].pos);
-        shader_vec3(light_fieldname("u_lights[%d].dir", i), lv[i].dir);
-        shader_vec3(light_fieldname("u_lights[%d].diffuse", i), lv[i].diffuse);
-        shader_vec3(light_fieldname("u_lights[%d].specular", i), lv[i].specular);
-        shader_vec3(light_fieldname("u_lights[%d].ambient", i), lv[i].ambient);
-        shader_float(light_fieldname("u_lights[%d].power", i), lv[i].specularPower);
-        shader_float(light_fieldname("u_lights[%d].radius", i), lv[i].radius);
-        shader_float(light_fieldname("u_lights[%d].constant", i), lv[i].falloff.constant);
-        shader_float(light_fieldname("u_lights[%d].linear", i), lv[i].falloff.linear);
-        shader_float(light_fieldname("u_lights[%d].quadratic", i), lv[i].falloff.quadratic);
-        shader_float(light_fieldname("u_lights[%d].innerCone", i), lv[i].innerCone);
-        shader_float(light_fieldname("u_lights[%d].outerCone", i), lv[i].outerCone);
-        shader_float(light_fieldname("u_lights[%d].shadow_bias", i), lv[i].shadow_bias);
-        shader_float(light_fieldname("u_lights[%d].normal_bias", i), lv[i].normal_bias);
-        shader_float(light_fieldname("u_lights[%d].shadow_softness", i), lv[i].shadow_softness);
-        shader_float(light_fieldname("u_lights[%d].penumbra_size", i), lv[i].penumbra_size);
-        shader_float(light_fieldname("u_lights[%d].min_variance", i), lv[i].min_variance);
-        shader_float(light_fieldname("u_lights[%d].variance_transition", i), lv[i].variance_transition);
-        shader_bool(light_fieldname("u_lights[%d].processed_shadows", i), lv[i].processed_shadows);
         if (lv[i].processed_shadows && lv[i].shadow_technique == SHADOW_CSM) {
             for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
                 shader_mat44(light_fieldname("light_shadow_matrix_csm[%d]", j), lv[i].shadow_matrix[j]);
@@ -4224,6 +4297,7 @@ typedef struct iqm_t {
     int uniforms[2][NUM_MODEL_UNIFORMS];
     handle program;
     handle shadow_program;
+    unsigned light_ubo;
 } iqm_t;
 
 void model_set_texture(model_t *m, texture_t t) {
@@ -5685,10 +5759,17 @@ void model_render_instanced_pass(model_t mdl, mat44 proj, mat44 view, mat44* mod
     }
 
     shader_bind(shader);
-    light_update(mdl.lights.count, mdl.lights.base);
+
+    if (mdl.lights.count > 0) {
+        light_update(&q->light_ubo, mdl.lights.count, mdl.lights.base);
+    }
 
     model_set_uniforms(mdl, shader, mv, proj, view, pass_model_matrices[0]);
     model_draw_call(mdl, shader, pass, pos44(view), pass_model_matrices[0], proj, view);
+    
+    if (q->light_ubo) {
+        ubo_unbind(q->light_ubo);
+    }
 }
 
 void model_render_instanced(model_t m, mat44 proj, mat44 view, mat44* models, unsigned count) {
@@ -5757,6 +5838,9 @@ void model_shading_custom(model_t *m, int shading, const char *vs, const char *f
     }
     model_init_uniforms(q, 0, q->program);
     model_init_uniforms(q, 1, q->shadow_program);
+
+    unsigned block_index = glGetUniformBlockIndex(q->program, "LightBuffer");
+    glUniformBlockBinding(q->program, block_index, 0);
 }
 
 void model_shading(model_t *m, int shading) {
@@ -6020,6 +6104,10 @@ void model_destroy(model_t m) {
     }
     array_free(m.texture_names);
     FREE(m.mesh_visible);
+
+    if (m.iqm->light_ubo) {
+        ubo_destroy(m.iqm->light_ubo);
+    }
 
     iqm_t *q = m.iqm;
 //    if(m.mesh) mesh_destroy(m.mesh);

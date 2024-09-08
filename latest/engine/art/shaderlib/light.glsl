@@ -1,45 +1,44 @@
 #ifndef LIGHT_GLSL
 #define LIGHT_GLSL
 
-#define MAX_LIGHTS 16
-#define MAX_SHADOW_LIGHTS 8
+#define MAX_LIGHTS 96
+#define MAX_SHADOW_LIGHTS 16
 #define NUM_SHADOW_CASCADES 4
 
 #include "brdf.glsl"
 
 struct light_t {
-    int type;
-    vec3 diffuse;
-    vec3 specular;
-    vec3 ambient;
-    vec3 pos;
-    vec3 dir;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 ambient;
+    vec4 pos;
+    vec4 dir;
     float power;
     float radius;
     float innerCone;
     float outerCone;
-    bool processed_shadows;
-
-    // falloff
     float constant;
     float linear;
     float quadratic;
-
-    // shadows
     float shadow_bias;
     float normal_bias;
     float min_variance;
     float variance_transition;
     float shadow_softness;
     float penumbra_size;
-};
+    int type;
+    bool processed_shadows;
+} lights;
+
+layout(std140) uniform LightBuffer {
+    light_t lights[MAX_LIGHTS];
+} lightBuffer;
 
 const int LIGHT_DIRECTIONAL = 0;
 const int LIGHT_POINT = 1;
 const int LIGHT_SPOT = 2;
 
 uniform int u_num_lights;
-uniform light_t u_lights[MAX_LIGHTS];
 
 #ifdef FS_PASS
 #include "shadowmap.glsl"
@@ -59,9 +58,9 @@ vec3 shading_light(light_t l, material_t m) {
     float attenuation = 1.0;
 
     if (l.type == LIGHT_DIRECTIONAL) {
-        lightDir = normalize(-l.dir);
+        lightDir = normalize(-l.dir.xyz);
     } else if (l.type == LIGHT_POINT || l.type == LIGHT_SPOT) {
-        vec3 toLight = l.pos - v_position_ws;
+        vec3 toLight = l.pos.xyz - v_position_ws;
         lightDir = normalize(toLight);
         float distance = length(toLight);
         
@@ -72,7 +71,7 @@ vec3 shading_light(light_t l, material_t m) {
         attenuation = 1.0 / (l.constant + l.linear * distance + l.quadratic * (distance * distance));
 
         if (l.type == LIGHT_SPOT) {
-            float angle = dot(l.dir, -lightDir);
+            float angle = dot(l.dir.xyz, -lightDir);
             if (angle > l.innerCone) {
                 float intensity = (angle-l.innerCone)/(l.outerCone-l.innerCone);
                 attenuation *= clamp(intensity, 0.0, 1.0);
@@ -88,7 +87,7 @@ vec3 shading_light(light_t l, material_t m) {
     }
 
 #ifdef SHADING_PBR
-    vec3 radiance = l.diffuse * BOOST_LIGHTING;
+    vec3 radiance = l.diffuse.rgb * BOOST_LIGHTING;
     vec3 V = normalize( v_to_camera );
     vec3 N = m.normal;
     vec3 L = normalize( lightDir );
@@ -121,7 +120,7 @@ vec3 shading_light(light_t l, material_t m) {
     vec3 halfVec = normalize(lightDir + u_cam_dir);
     float specular = pow(max(dot(n, halfVec), 0.0), l.power);
 
-    return (attenuation*l.ambient + diffuse*attenuation*l.diffuse + specular*attenuation*l.specular);
+    return (attenuation*l.ambient.rgb + diffuse*attenuation*l.diffuse.rgb + specular*attenuation*l.specular.rgb);
 #endif
 }
 
@@ -129,7 +128,7 @@ vec3 lighting(material_t m) {
     vec3 lit = vec3(0,0,0);
 #ifndef SHADING_NONE
     for (int i=0; i<u_num_lights; i++) {
-        vec3 lit_contrib = shading_light(u_lights[i], m);
+        vec3 lit_contrib = shading_light(lightBuffer.lights[i], m);
 
 #ifdef FS_PASS
         if (lit_contrib.xyz != vec3(0,0,0)) {

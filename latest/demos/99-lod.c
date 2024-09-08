@@ -6,10 +6,11 @@ int main() {
 
     // load skybox: launch with --mie for rayleigh/mie scattering
     skybox_t sky = skybox(flag("--mie") ? 0 : "cubemaps/stardust", 0);
+    light_t *l = scene_spawn_light();
 
     // terrain model
     model_t mdl = model("rabbit.obj", 0); {
-        
+        model_light(mdl, 1, l);
     }
 
     // camera
@@ -17,9 +18,6 @@ int main() {
 
     // scene light
     model_bind_shader(mdl);
-    light_t *l = scene_spawn_light();
-    light_update(1, l);
-    skybox_sh_shader(&sky);
 
     // initialise LOD
     float lo_detail=0.25f;
