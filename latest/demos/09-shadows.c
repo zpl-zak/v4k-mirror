@@ -18,7 +18,7 @@ const char *OBJ_MDLS[] = {
 };
 
 int main(int argc, char** argv) {
-    window_create(85, WINDOW_MSAA8);
+    window_create(85, 0);
     window_fps_unlock();
 
     camera_t cam = camera(); {

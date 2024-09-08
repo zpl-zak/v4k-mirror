@@ -34,7 +34,7 @@ int main() {
     bool do_instancing = 1;
 
     // 75% sized, MSAAx2
-    window_create(75, WINDOW_MSAA2);
+    window_create(75, 0);
     window_title(__FILE__);
     window_fps_unlock();
 
