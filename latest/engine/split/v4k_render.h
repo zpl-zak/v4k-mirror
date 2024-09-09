@@ -834,6 +834,7 @@ typedef struct model_t {
     bool shadow_receiver;
     float curframe;
     mat44 pivot;
+    int texture_unit;
 
     int stride; // usually 68 bytes for a p3 u2 u2 n3 t4 i4B w4B c4B vertex stream
     void *verts;

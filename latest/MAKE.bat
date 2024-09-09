@@ -698,7 +698,12 @@ if "!run!"=="yes" (
         )
         if "!build!"=="dbg" (
             echo dbg !exename! !run_args!
-            call devenv.exe !exename! !run_args! || set rc=1
+            tasklist /FI "IMAGENAME eq devenv.exe" 2>NUL | find /I /N "devenv.exe">NUL
+            if "%ERRORLEVEL%"=="1" (
+                start devenv.exe !exename! !run_args! || set rc=1
+            ) else (
+                echo devenv.exe is already running. Skipping launch.
+            )
             @REM if exist "depot\tools\remedy\remedybg.exe" (
             @REM     echo dbg !exename! !run_args!
             @REM     call depot\tools\remedy\remedybg.exe -g -q !exename! !run_args! || set rc=1
