@@ -1507,7 +1507,6 @@ typedef struct model_t {
     bool shadow_receiver;
     float curframe;
     mat44 pivot;
-    int texture_unit;
     int stride;
     void *verts;
     int num_verts;

@@ -4447,13 +4447,6 @@ void model_init_uniforms(iqm_t *q, int slot, int program) {
     }
 }
 
-static int model_totalTextureUnits = 0;
-static inline int model_texture_unit(model_t *m) {
-    do_once glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &model_totalTextureUnits);
-    // ASSERT(textureUnit < totalTextureUnits, "%d texture units exceeded", totalTextureUnits);
-    return m->texture_unit++ % model_totalTextureUnits;
-}
-
 static
 void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view, mat44 model) {
     if(!m.iqm) return;
@@ -4550,16 +4543,16 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
 
                 if (light->shadow_technique == SHADOW_CSM) {
                     for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], m.shadow_map->maps[i].texture_2d[j], model_texture_unit(&m));
+                        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], m.shadow_map->maps[i].texture_2d[j], texture_unit());
                         glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES + j], m.shadow_map->maps[i].cascade_distances[j]);
                     }
                 }
                 else if (light->shadow_technique == SHADOW_VSM) {
-                    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], m.shadow_map->maps[i].texture, model_texture_unit(&m));
+                    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], m.shadow_map->maps[i].texture, texture_unit());
                 }
             }
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
-                shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], m.shadow_map->offsets_texture, model_texture_unit(&m));
+                shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], m.shadow_map->offsets_texture, texture_unit());
             }
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_FILTER_SIZE]) >= 0) {
                 glUniform1i(loc, m.shadow_map->filter_size);
@@ -4574,16 +4567,16 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             }
             for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
                 if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j]) >= 0) {
-                    glUniform1i(loc, model_texture_unit(&m));
+                    glUniform1i(loc, texture_unit());
                 }
             }
             for (int i = 0; i < MAX_LIGHTS; i++) {
                 if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP + i]) >= 0) {
-                    glUniform1i(loc, model_texture_unit(&m));
+                    glUniform1i(loc, texture_unit());
                 }
             }
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
-                glUniform1i(q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], model_texture_unit(&m));
+                glUniform1i(q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], texture_unit());
             }
         }
     }
@@ -4599,13 +4592,13 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         glUniform1i(q->uniforms[slot][MODEL_UNIFORM_HAS_TEX_SKYENV], has_tex_skyenv);
         if( has_tex_skysphere ) {
             float mipCount = floor( log2( max(m.sky_refl.w, m.sky_refl.h) ) );
-            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], m.sky_refl.id, model_texture_unit(&m));
+            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], m.sky_refl.id, texture_unit());
             glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SKYSPHERE_MIP_COUNT], mipCount);
         }
         if( has_tex_skyenv ) {
             shader_texture_(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], m.sky_env);
         }
-        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut().id, model_texture_unit(&m));
+        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut().id, texture_unit());
     }
 }
 
@@ -5471,7 +5464,7 @@ void shader_colormap_model_internal(model_t *m,const char *col_name, const char 
     // assumes shader uses `struct { vec4 color; bool has_tex } name + sampler2D name_tex;`
     shader_vec4( col_name, c.color );
     shader_bool( bool_name, c.texture != NULL );
-    if( c.texture ) shader_texture_unit_kind_(GL_TEXTURE_2D, shader_uniform(tex_name), c.texture->id, model_texture_unit(m));
+    if( c.texture ) shader_texture(tex_name, *c.texture);
 }
 
 
@@ -5594,7 +5587,7 @@ void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
 
     if (m.shading != SHADING_PBR) {
         int loc = glGetUniformLocation(shader, "u_texture2d");
-        shader_texture_unit_kind_(GL_TEXTURE_2D, loc, q->textures[i], model_texture_unit(&m));
+        shader_texture_unit_kind_(GL_TEXTURE_2D, loc, q->textures[i], texture_unit());
 
         if ((loc = glGetUniformLocation(shader, "u_textured")) >= 0) {
             bool textured = !!q->textures[i] && q->textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
@@ -5767,7 +5760,6 @@ void model_render_instanced_pass(model_t mdl, mat44 proj, mat44 view, mat44* mod
         mdl.instanced_matrices = (float*)pass_model_matrices;
         model_set_state(mdl);
     }
-    mdl.texture_unit = 0;
 
     int shader = mdl.iqm->program;
     if (model_getpass() > RENDER_PASS_SHADOW_BEGIN && model_getpass() < RENDER_PASS_SHADOW_END) {
