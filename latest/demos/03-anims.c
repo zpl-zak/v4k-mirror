@@ -36,7 +36,7 @@ int main() {
     // 75% sized, MSAAx2
     window_create(75, 0);
     window_title(__FILE__);
-    window_fps_unlock();
+    // window_fps_unlock();
 
     camera_t cam = camera();
     skybox_t sky = skybox("cubemaps/stardust", 0);

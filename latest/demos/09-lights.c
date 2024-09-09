@@ -11,7 +11,8 @@ const char *SKY_DIRS[] = {
 
 int main(int argc, char** argv) {
     window_create(85, 0);
-    window_fps_unlock();
+    window_title(__FILE__);
+    // window_fps_unlock();
 
     camera_t cam = camera(); {
         cam.position = vec3(0, 500, 0);
