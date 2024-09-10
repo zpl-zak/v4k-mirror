@@ -1596,10 +1596,10 @@ enum BILLBOARD_MODE {
  void model_lod(model_t*, float lo_detail, float hi_detail, float morph);
  void model_shading(model_t*, int shading);
  void model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);
- void model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
  void model_tweak(model_t*, model_tweak_t tweak);
  void model_tweak_array(model_t*, unsigned count, model_tweak_t *tweaks);
  void model_tweak_apply(model_t m, const model_tweak_t *tweak);
+ void model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
  void model_skybox(model_t*, skybox_t sky);
  void model_cubemap(model_t*, cubemap_t *c);
  void model_probe(model_t*, vec3 center, float radius, unsigned count, cubemap_t *c);

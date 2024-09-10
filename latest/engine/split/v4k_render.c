@@ -5936,11 +5936,7 @@ void model_cubemap(model_t *mdl, cubemap_t *c) {
         }
     }
     for (int i = 0; i < 9; i++) {
-        if (c) {
-            model_tweak(mdl, (model_tweak_t){coef_names[i], UNIFORM_VEC3, {.v3 = c->sh[i]}});
-        } else {
-            model_tweak(mdl, (model_tweak_t){coef_names[i], UNIFORM_VEC3, {.v3 = vec3(0,0,0)}});
-        }
+        model_tweak(mdl, (model_tweak_t){coef_names[i], UNIFORM_VEC3, {.v3 = c ? c->sh[i] : vec3(0,0,0)}});
     }
 }
 
