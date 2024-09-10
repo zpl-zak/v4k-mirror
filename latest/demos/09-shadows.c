@@ -107,8 +107,7 @@ int main(int argc, char** argv) {
             sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
             sm = shadowmap(512, 4096);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
-            model_bind_shader(mdl);
-            cubemap_sh_shader(&sky.cubemap);
+            model_skybox(&mdl, sky);
         }
 
         // fps camera
