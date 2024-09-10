@@ -435,6 +435,7 @@ light_t* scene_index_light(unsigned light_index) {
 }
 
 void scene_skybox(skybox_t sky) {
+    skybox_destroy(&last_scene->skybox);
     last_scene->skybox = sky;
 }
 

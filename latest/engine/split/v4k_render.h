@@ -960,7 +960,7 @@ API void     model_cubemap(model_t*, cubemap_t *c);
 API void     model_probe(model_t*, vec3 center, float radius, unsigned count, cubemap_t *c);
 API void     model_shadow(model_t*, shadowmap_t *sm);
 API void     model_light(model_t*, unsigned count, light_t *lights);
-API void     model_rimlight(model_t*, vec3 rim_range, vec3 rim_color);
+API void     model_rimlight(model_t*, vec3 rim_range, vec3 rim_color, vec3 rim_pivot, bool rim_ambient);
 API void     model_render(model_t, mat44 proj, mat44 view, mat44 model);
 API void     model_render_skeleton(model_t, mat44 model);
 API void     model_render_instanced(model_t, mat44 proj, mat44 view, mat44 *models, unsigned count);

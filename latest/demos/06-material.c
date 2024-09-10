@@ -138,7 +138,7 @@ int main() {
                 // bool selected = !strcmp(g_skybox.reflection->filename, file_name(filename));
                 bool selected = false;
                 if( ui_bool( filename, &selected ) ) {
-                    scene_get_active()->skybox = skybox_pbr(skyboxes[i][0], skyboxes[i][0], skyboxes[i][1]);
+                    scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][0], skyboxes[i][1]));
                 }
             }
             ui_panel_end();

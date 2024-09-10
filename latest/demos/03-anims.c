@@ -78,6 +78,11 @@ int main() {
             window_cursor( !active );
         }
 
+        static vec3 rimcolor = {0.2,0.2,0.2};
+        static vec3 rimrange = {0.11,0.98,0.5};
+        static vec3 rim_pivot = {0,0,0};
+        static bool rim_ambient = true;
+
         // skeletal update
         static bool is_dragging_slider = 0;
         vec2i anim = vec2i( a.anims[ a.inuse ].from, a.anims[ a.inuse ].to );
@@ -103,6 +108,7 @@ int main() {
             // characters
             profile("Skeletal render") {
                 if( do_showmodel ) {
+                    model_rimlight(&mdl, rimrange, rimcolor, rim_pivot, rim_ambient);
                     if (do_instancing) {
                         model_render_instanced(mdl, cam.proj, cam.view, M /*mdl.pivot*/, NUM_INSTANCES);
                     } else {
@@ -129,8 +135,6 @@ int main() {
         fx_end();
 
         if ( ui_panel("Rim lighting", 0) ) {
-            static vec3 rimcolor = {0.2,0.2,0.2};
-            static vec3 rimrange = {0.11,0.98,0.5};
             ui_color3f("Color", &rimcolor.x);
             ui_clampf("Low", &rimrange.x, 0, 1);
             ui_clampf("High", &rimrange.y, 0, 1);

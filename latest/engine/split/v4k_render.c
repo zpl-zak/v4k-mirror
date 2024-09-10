@@ -5901,7 +5901,7 @@ void model_shading_custom(model_t *m, int shading, const char *vs, const char *f
     {
         int shaderprog = shader(vs, fs,
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
-            va("%s,%s", defines ? defines : "NO_CUSTOM_DEFINES", shading_define));
+            va("%s,%s,%s", (flags & MODEL_RIMLIGHT) ? "RIM" : "NORIM", defines ? defines : "NO_CUSTOM_DEFINES", shading_define));
         q->program = shaderprog;
     }
 
@@ -5963,9 +5963,11 @@ void model_light(model_t *mdl, unsigned count, light_t *lights) {
     mdl->lights.count = count;
 }
 
-void model_rimlight(model_t *mdl, vec3 rim_range, vec3 rim_color) {
+void model_rimlight(model_t *mdl, vec3 rim_range, vec3 rim_color, vec3 rim_pivot, bool rim_ambient) {
     model_adduniform(mdl, model_uniform("u_rimrange", UNIFORM_VEC3, .v3 = rim_range));
     model_adduniform(mdl, model_uniform("u_rimcolor", UNIFORM_VEC3, .v3 = rim_color));
+    model_adduniform(mdl, model_uniform("u_rimpivot", UNIFORM_VEC3, .v3 = rim_pivot));
+    model_adduniform(mdl, model_uniform("u_rimambient", UNIFORM_BOOL, .i = rim_ambient));
 }
 
 void model_fog(model_t *mdl, unsigned mode, vec3 color, float start, float end, float density) {
@@ -5994,13 +5996,13 @@ void model_applyuniform(model_t m, const model_uniform_t *t) {
         glUniform1ui(shader_uniform(t->name), t->u);
         break;
     case UNIFORM_VEC2:
-        glUniform2fv(shader_uniform(t->name), 2, &t->v2.x);
+        glUniform2fv(shader_uniform(t->name), 1, &t->v2.x);
         break;
     case UNIFORM_VEC3:
-        glUniform3fv(shader_uniform(t->name), 3, &t->v3.x);
+        glUniform3fv(shader_uniform(t->name), 1, &t->v3.x);
         break;
     case UNIFORM_VEC4:
-        glUniform4fv(shader_uniform(t->name), 4, &t->v4.x);
+        glUniform4fv(shader_uniform(t->name), 1, &t->v4.x);
         break;
     case UNIFORM_MAT3:
         glUniformMatrix3fv(shader_uniform(t->name), 1, GL_FALSE, t->m33);

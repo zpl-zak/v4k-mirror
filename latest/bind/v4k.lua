@@ -1606,7 +1606,7 @@ enum BILLBOARD_MODE {
  void model_probe(model_t*, vec3 center, float radius, unsigned count, cubemap_t *c);
  void model_shadow(model_t*, shadowmap_t *sm);
  void model_light(model_t*, unsigned count, light_t *lights);
- void model_rimlight(model_t*, vec3 rim_range, vec3 rim_color);
+ void model_rimlight(model_t*, vec3 rim_range, vec3 rim_color, vec3 rim_pivot, bool rim_ambient);
  void model_render(model_t, mat44 proj, mat44 view, mat44 model);
  void model_render_skeleton(model_t, mat44 model);
  void model_render_instanced(model_t, mat44 proj, mat44 view, mat44 *models, unsigned count);
