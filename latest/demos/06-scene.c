@@ -29,6 +29,7 @@ int main() {
             mesh:'models/witch/witch.obj',
             texture:'models/witch/witch_diffuse.tga.png',
             flipuv:false,
+            fullbright:true,
         },
         {
             position:[-5.0,-2.0,2.0],
@@ -37,6 +38,7 @@ int main() {
             mesh:'models/witch/witch_object.obj',
             texture:'models/witch/witch_object_diffuse.tga.png',
             flipuv:false,
+            fullbright:true,
         },
     ]);
     int num_spawned = scene_merge(my_scene);
@@ -47,6 +49,7 @@ int main() {
     model_t m1 = model("kgirl/kgirls01.fbx", 0); //MODEL_NO_ANIMS);
     texture_t t1 = texture("kgirl/g01_texture.png", 0);
     object_t* obj3 = scene_spawn();
+    obj3->fullbright = true;
     object_model(obj3, m1);
     object_diffuse(obj3, t1);
     object_scale(obj3, vec3(3,3,3));
@@ -112,7 +115,7 @@ int main() {
 
         profile("Skeletal update") if(!window_has_pause()) {
             float delta = window_delta() * 30 ; // 30fps anim
-            m1.curframe = model_animate(m1, m1.curframe + delta);
+            obj3->model.curframe = model_animate(obj3->model, obj3->model.curframe + delta);
 
             ddraw_text(vec3(-10,5,-10), 0.05, va("Frame: %.1f", m1.curframe));
         }

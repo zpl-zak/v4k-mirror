@@ -361,6 +361,7 @@ int scene_merge(const char *source) {
             vec3 scale = scale3(vec3(1,1,1), json_float("/[%d]/scale",i));
             bool opt_swap_zy = json_int("/[%d]/swapzy",i);
             bool opt_flip_uv = json_int("/[%d]/flipuv",i);
+            bool opt_fullbright = json_int("/[%d]/fullbright",i);
             PRINTF("Scene %d/%d Loading: %s\n", i, e, mesh_file);
             PRINTF("Scene %d/%d Texture: %s\n", i, e, texture_file);
             PRINTF("Scene %d/%d Animation: %s\n", i, e, animation_file);
@@ -377,6 +378,7 @@ int scene_merge(const char *source) {
             object_scale(o, scale);
             object_teleport(o, position);
             object_pivot(o, rotation); // object_rotate(o, rotation);
+            o->fullbright = opt_fullbright;
             //object_name(x), scene_find(name)
 // o->bounds = aabb(mul3(m.bounds.min,o->sca),mul3(m.bounds.max,o->sca));
 // PRINTF("aabb={%f,%f,%f},{%f,%f,%f}\n", o->bounds.min.x, o->bounds.min.y, o->bounds.min.z, o->bounds.max.x, o->bounds.max.y, o->bounds.max.z);
@@ -505,7 +507,12 @@ void scene_render(int flags) {
                 // @todo: rework light caching
             }
 
-            model_skybox(model, last_scene->skybox);
+            if (!obj->fullbright) {
+                model_skybox(model, last_scene->skybox);
+            } else {
+                skybox_t sb = {0};
+                model_skybox(model, sb);
+            }
 
             if (anim) {
                 float delta = window_delta() * obj->anim_speed;

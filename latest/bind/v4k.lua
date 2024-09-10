@@ -1735,6 +1735,7 @@ typedef struct object_t {
     unsigned billboard;
     bool disable_frustum_check;
     bool cast_shadows;
+    bool fullbright;
     handle* old_texture_ids;
     texture_t* old_textures;
     float distance;

@@ -53,6 +53,7 @@ typedef struct object_t {
     unsigned billboard; // [0..7] x(4),y(2),z(1) masks
     bool disable_frustum_check;
     bool cast_shadows;
+    bool fullbright;
 
     // internal states
     array(handle) old_texture_ids;
