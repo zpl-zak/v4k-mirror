@@ -2,11 +2,11 @@
 
 
 const char *skyboxes[][2] = { // reflection, env, metadata
+    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
     {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
     {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Env.hdr"},
     {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
     {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
-    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
     {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Env.hdr"},
     {"hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_Env.hdr"},
     {"hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_Env.hdr"},
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     light_t lit2 = light(); {
         lit2.type = LIGHT_POINT;
         lit2.cast_shadows = true;
-        lit2.diffuse = vec3(1, 0.7, 0.8);
+        lit2.diffuse = scale3(vec3(1, 0.7, 0.8), 1.5f);
         // lit2.shadow_distance = 1.0f;
         // lit2.falloff.linear = 0.5f;
         lit2.falloff.quadratic = 0.1f;
@@ -55,25 +55,25 @@ int main(int argc, char** argv) {
         lit3.type = LIGHT_SPOT;
         lit3.cast_shadows = true;
         // lit3.shadow_distance = 5.0f;
-        lit3.diffuse = vec3(1, 0.7, 0.8);
+        lit3.diffuse = scale3(vec3(1, 0.7, 0.8), 1.5f);
     }
     light_t lit4 = light(); {
         lit4.type = LIGHT_DIRECTIONAL;
         lit4.cast_shadows = true;
         // lit4.shadow_distance = 2000.0f;
-        lit4.diffuse = vec3(1, 0.7, 0.8);
+        lit4.diffuse = scale3(vec3(1, 0.7, 0.8), 1.5f);
     }
     light_t lit5 = light(); {
         lit5.type = LIGHT_POINT;
         lit5.cast_shadows = true;
         // lit4.shadow_distance = 2000.0f;
-        lit5.diffuse = vec3(1, 0, 0);
+        lit5.diffuse = scale3(vec3(1, 0, 0), 1.5f);
     }
     light_t lit6 = light(); {
         lit6.type = LIGHT_POINT;
         lit6.cast_shadows = true;
         // lit4.shadow_distance = 2000.0f;
-        lit6.diffuse = vec3(0, 1, 0);
+        lit6.diffuse = scale3(vec3(0, 1, 0), 1.5f);
     }
 
     array(light_t) point_lights = 0;
