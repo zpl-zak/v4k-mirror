@@ -5048,7 +5048,7 @@ void model_load_pbr(model_t *m, material_t *mt, int mesh) {
     mt->layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(0.5,0.5,0.5,1.0);
     mt->layer[MATERIAL_CHANNEL_ROUGHNESS].map.color = vec4(1,1,1,1);
     mt->layer[MATERIAL_CHANNEL_METALLIC].map.color = vec4(0,0,0,0);
-    mt->layer[MATERIAL_CHANNEL_AO].map.color = vec4(1,1,1,1);
+    mt->layer[MATERIAL_CHANNEL_AO].map.color = vec4(0,0,0,0);
     mt->layer[MATERIAL_CHANNEL_AMBIENT].map.color = vec4(0,0,0,1);
     mt->layer[MATERIAL_CHANNEL_EMISSIVE].map.color = vec4(0,0,0,0);
 
