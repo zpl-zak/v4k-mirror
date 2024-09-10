@@ -97,7 +97,7 @@ int main() {
     // l->diffuse = vec3(0,0,0);
 
     // load skybox
-    scene_get_active()->skybox = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);
+    scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]));
 
 
     while(window_swap() && !input(KEY_ESC)) {

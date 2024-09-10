@@ -432,6 +432,10 @@ light_t* scene_index_light(unsigned light_index) {
     return &last_scene->lights[light_index];
 }
 
+void scene_skybox(skybox_t sky) {
+    last_scene->skybox = sky;
+}
+
 static
 int scene_obj_distance_compare(const void *a, const void *b) {
     const object_t *da = a, *db = b;
@@ -501,12 +505,7 @@ void scene_render(int flags) {
                 // @todo: rework light caching
             }
 
-            if ( flags&SCENE_UPDATE_SH_COEF ) {
-                shader_bind(model->iqm->program);
-                skybox_sh_shader(&last_scene->skybox);
-            }
-
-            model_skybox(model, last_scene->skybox, 0);
+            model_skybox(model, last_scene->skybox);
 
             if (anim) {
                 float delta = window_delta() * obj->anim_speed;

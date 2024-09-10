@@ -2977,15 +2977,6 @@ void cubemap_sh_reset(cubemap_t *c) {
     }
 }
 
-void cubemap_sh_shader(cubemap_t *c) {
-    if (c) {
-        shader_vec3v("u_coefficients_sh", 9, c->sh);
-    } else {
-        vec3 clr[9] = {0};
-        shader_vec3v("u_coefficients_sh", 9, clr);
-    }
-}
-
 void cubemap_sh_add_light(cubemap_t *c, vec3 light, vec3 dir, float strength) {
     // Normalize the direction
     vec3 norm_dir = norm3(dir);
@@ -3000,9 +2991,9 @@ void cubemap_sh_add_light(cubemap_t *c, vec3 light, vec3 dir, float strength) {
     c->sh[3] = add3(c->sh[3], scale3(scaled_light, -0.488603f * norm_dir.x));
 }
 
-void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes) {
+void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 *out_sh) {
     if (count == 0) {
-        cubemap_sh_shader(0);
+        memset(out_sh, 0, 9 * sizeof(vec3));
         return;
     }
 
@@ -3028,7 +3019,7 @@ void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probe
     }
 
     // Apply SH coefficients to the shader
-    shader_vec3v("u_coefficients_sh", 9, final_sh);
+    memcpy(out_sh, final_sh, 9 * sizeof(vec3));
 }
 
 // -----------------------------------------------------------------------------
@@ -3181,14 +3172,6 @@ void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
         skybox_render_rayleigh(sky, proj, view);
     }
     cubemap_bake_end(&sky->cubemap, 0, sky_intensity);
-}
-
-void skybox_sh_reset(skybox_t *sky) {
-    cubemap_sh_reset(&sky->cubemap);
-}
-
-void skybox_sh_shader(skybox_t *sky) {
-    cubemap_sh_shader(&sky->cubemap);
 }
 
 void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength) {
@@ -4307,6 +4290,58 @@ typedef struct iqm_t {
     int texture_unit;
 } iqm_t;
 
+//
+// model tweaks
+//
+
+static inline
+bool model_tweak_compare_entry(const model_tweak_t *a, const model_tweak_t *b) {
+    if (a->kind != b->kind) return false;
+    if (strcmp(a->name, b->name) != 0) return false;
+
+    switch (a->kind) {
+        case UNIFORM_FLOAT:
+            if (a->f != b->f) return false;
+            break;
+        case UNIFORM_INT:
+        case UNIFORM_UINT:
+        case UNIFORM_BOOL:
+        case UNIFORM_SAMPLER2D:
+        case UNIFORM_SAMPLER3D:
+        case UNIFORM_SAMPLERCUBE:
+            if (a->i != b->i) return false;
+            break;
+        case UNIFORM_VEC2:
+            if (!memcmp(&a->v2.x, &b->v2.x, sizeof(vec2)) != 0) return false;
+            break;
+        case UNIFORM_VEC3:
+            if (memcmp(&a->v3.x, &b->v3.x, sizeof(vec3)) != 0) return false;
+            break;
+        case UNIFORM_VEC4:
+            if (memcmp(&a->v4.x, &b->v4.x, sizeof(vec4)) != 0) return false;
+            break;
+        case UNIFORM_MAT3:
+            if (memcmp(a->m33, b->m33, sizeof(mat33)) != 0) return false;
+            break;
+        case UNIFORM_MAT4:
+            if (memcmp(a->m44, b->m44, sizeof(mat44)) != 0) return false;
+            break;
+        default:
+            return false;
+    }
+    return true;
+}
+
+bool model_tweak_compare(unsigned s1, const model_tweak_t **a, unsigned s2, const model_tweak_t **b) {
+    if (s1 != s2) return false;
+    
+    for (unsigned i = 0; i < s1; ++i) {
+        if (!model_tweak_compare_entry(a[i], b[i])) return false;
+    }
+    
+    return true;
+}
+
 void model_set_texture(model_t *m, texture_t t) {
     if(!m->iqm) return;
     iqm_t *q = m->iqm;
@@ -4453,7 +4488,7 @@ static int model_totalTextureUnits = 0;
 int model_texture_unit(model_t *m) {
     do_once glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &model_totalTextureUnits);
     // ASSERT(textureUnit < totalTextureUnits, "%d texture units exceeded", totalTextureUnits);
-    return m->iqm->texture_unit++ % model_totalTextureUnits;
+    return MODEL_TEXTURE_USER_DEFINED + (m->iqm->texture_unit++ % (model_totalTextureUnits - MODEL_TEXTURE_USER_DEFINED));
 }
 
 
@@ -4555,27 +4590,27 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
 
                     if (light->shadow_technique == SHADOW_CSM) {
                         for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], m.shadow_map->maps[i].texture_2d[j], model_texture_unit(&m));
+                            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], m.shadow_map->maps[i].texture_2d[j], MODEL_TEXTURE_SHADOW_MAP_2D + j);
                             glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SHADOW_CASCADE_DISTANCES + j], m.shadow_map->maps[i].cascade_distances[j]);
                         }
                         was_csm_pushed = 1;
-                        shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], 0, model_texture_unit(&m));
+                        shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], 0, MODEL_TEXTURE_SHADOW_MAP_CUBEMAP+i);
                     }
                     else if (light->shadow_technique == SHADOW_VSM) {
-                        shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], m.shadow_map->maps[i].texture, model_texture_unit(&m));
+                        shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], m.shadow_map->maps[i].texture, MODEL_TEXTURE_SHADOW_MAP_CUBEMAP+i);
                     }
                 } else {
                     if (!was_csm_pushed) {
                         was_csm_pushed = 1;
                         for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
-                            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], model_texture_unit(&m));
+                            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j], MODEL_TEXTURE_SHADOW_MAP_2D + j);
                         }
                     }
-                    glUniform1i(q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], model_texture_unit(&m));
+                    glUniform1i(q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+i], MODEL_TEXTURE_SHADOW_MAP_CUBEMAP+i);
                 }
             }
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
-                shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], m.shadow_map->offsets_texture, model_texture_unit(&m));
+                shader_texture_unit_kind_(GL_TEXTURE_3D, q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], m.shadow_map->offsets_texture, MODEL_TEXTURE_SHADOW_OFFSETS);
             }
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_FILTER_SIZE]) >= 0) {
                 glUniform1i(loc, m.shadow_map->filter_size);
@@ -4590,16 +4625,16 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             }
             for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
                 if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_2D + j]) >= 0) {
-                    glUniform1i(loc, model_texture_unit(&m));
+                    glUniform1i(loc, MODEL_TEXTURE_SHADOW_MAP_2D + j);
                 }
             }
             for (int i = 0; i < MAX_LIGHTS; i++) {
                 if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP + i]) >= 0) {
-                    glUniform1i(loc, model_texture_unit(&m));
+                    glUniform1i(loc, MODEL_TEXTURE_SHADOW_MAP_CUBEMAP + i);
                 }
             }
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS]) >= 0) {
-                glUniform1i(q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], model_texture_unit(&m));
+                glUniform1i(q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS], MODEL_TEXTURE_SHADOW_OFFSETS);
             }
         }
     }
@@ -4615,13 +4650,18 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         glUniform1i(q->uniforms[slot][MODEL_UNIFORM_HAS_TEX_SKYENV], has_tex_skyenv);
         if( has_tex_skysphere ) {
             float mipCount = floor( log2( max(m.sky_refl.w, m.sky_refl.h) ) );
-            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], m.sky_refl.id, model_texture_unit(&m));
+            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], m.sky_refl.id, MODEL_TEXTURE_SKYSPHERE);
             glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SKYSPHERE_MIP_COUNT], mipCount);
         }
         if( has_tex_skyenv ) {
-            shader_texture_(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], m.sky_env);
+            shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], m.sky_env.id, MODEL_TEXTURE_SKYENV);
         }
-        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut().id, model_texture_unit(&m));
+        shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut().id, MODEL_TEXTURE_BRDF_LUT);
+    }
+
+    /* apply custom model tweaks */
+    for (int i = 0; i < array_count(m.tweaks); i++) {
+        model_tweak_apply(m, &m.tweaks[i]);
     }
 }
 
@@ -5483,11 +5523,11 @@ float model_animate(model_t m, float curframe) {
 
 // @fixme: store uniform handles into model_t/colormap_t and rely on those directly
 static inline
-void shader_colormap_model_internal(model_t *m,const char *col_name, const char *bool_name, const char *tex_name, colormap_t c ) {
+void shader_colormap_model_internal(model_t *m,const char *col_name, const char *bool_name, const char *tex_name, colormap_t c, int slot ) {
     // assumes shader uses `struct { vec4 color; bool has_tex } name + sampler2D name_tex;`
     shader_vec4( col_name, c.color );
     shader_bool( bool_name, c.texture != NULL );
-    if( c.texture ) shader_texture_unit_kind_(GL_TEXTURE_2D, shader_uniform(tex_name), c.texture->id, model_texture_unit(m));
+    if( c.texture ) shader_texture_unit_kind_(GL_TEXTURE_2D, shader_uniform(tex_name), c.texture->id, slot);
 }
 
 
@@ -5610,7 +5650,7 @@ void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
 
     if (m.shading != SHADING_PBR) {
         int loc = glGetUniformLocation(shader, "u_texture2d");
-        shader_texture_unit_kind_(GL_TEXTURE_2D, loc, q->textures[i], model_texture_unit(&m));
+        shader_texture_unit_kind_(GL_TEXTURE_2D, loc, q->textures[i], MODEL_TEXTURE_DIFFUSE);
 
         if ((loc = glGetUniformLocation(shader, "u_textured")) >= 0) {
             bool textured = !!q->textures[i] && q->textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
@@ -5622,17 +5662,16 @@ void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
 
     } else {
         const material_t *material = &m.materials[i];
-        shader_colormap_model_internal(&m, "map_diffuse.color", "map_diffuse.has_tex", "map_diffuse_tex", material->layer[MATERIAL_CHANNEL_DIFFUSE].map );
-        shader_colormap_model_internal(&m, "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map );
+        shader_colormap_model_internal(&m, "map_diffuse.color", "map_diffuse.has_tex", "map_diffuse_tex", material->layer[MATERIAL_CHANNEL_DIFFUSE].map, MODEL_TEXTURE_DIFFUSE);
+        shader_colormap_model_internal(&m, "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map, MODEL_TEXTURE_ALBEDO);
         if (rs_idx < RENDER_PASS_SHADOW_BEGIN || rs_idx > RENDER_PASS_SHADOW_END) {
-            shader_colormap_model_internal(&m, "map_normals.color", "map_normals.has_tex", "map_normals_tex", material->layer[MATERIAL_CHANNEL_NORMALS].map );
-            shader_colormap_model_internal(&m, "map_specular.color", "map_specular.has_tex", "map_specular_tex", material->layer[MATERIAL_CHANNEL_SPECULAR].map );
-            shader_colormap_model_internal(&m, "map_roughness.color", "map_roughness.has_tex", "map_roughness_tex", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map );
-            shader_colormap_model_internal(&m, "map_metallic.color", "map_metallic.has_tex", "map_metallic_tex", material->layer[MATERIAL_CHANNEL_METALLIC].map );
-            shader_colormap_model_internal(&m, "map_ao.color", "map_ao.has_tex", "map_ao_tex", material->layer[MATERIAL_CHANNEL_AO].map );
-            shader_colormap_model_internal(&m, "map_ambient.color", "map_ambient.has_tex", "map_ambient_tex", material->layer[MATERIAL_CHANNEL_AMBIENT].map );
-            shader_colormap_model_internal(&m, "map_emissive.color", "map_emissive.has_tex", "map_emissive_tex", material->layer[MATERIAL_CHANNEL_EMISSIVE].map );
-            // shader_float( "specular_shininess", material->specular_shininess ); // unused, basic_specgloss.fs only
+            shader_colormap_model_internal(&m, "map_normals.color", "map_normals.has_tex", "map_normals_tex", material->layer[MATERIAL_CHANNEL_NORMALS].map, MODEL_TEXTURE_NORMALS);
+            shader_colormap_model_internal(&m, "map_specular.color", "map_specular.has_tex", "map_specular_tex", material->layer[MATERIAL_CHANNEL_SPECULAR].map, MODEL_TEXTURE_SPECULAR);
+            shader_colormap_model_internal(&m, "map_roughness.color", "map_roughness.has_tex", "map_roughness_tex", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map, MODEL_TEXTURE_ROUGHNESS);
+            shader_colormap_model_internal(&m, "map_metallic.color", "map_metallic.has_tex", "map_metallic_tex", material->layer[MATERIAL_CHANNEL_METALLIC].map, MODEL_TEXTURE_METALLIC);
+            shader_colormap_model_internal(&m, "map_ao.color", "map_ao.has_tex", "map_ao_tex", material->layer[MATERIAL_CHANNEL_AO].map, MODEL_TEXTURE_AO);
+            shader_colormap_model_internal(&m, "map_ambient.color", "map_ambient.has_tex", "map_ambient_tex", material->layer[MATERIAL_CHANNEL_AMBIENT].map, MODEL_TEXTURE_AMBIENT);
+            shader_colormap_model_internal(&m, "map_emissive.color", "map_emissive.has_tex", "map_emissive_tex", material->layer[MATERIAL_CHANNEL_EMISSIVE].map, MODEL_TEXTURE_EMISSIVE);
         }
     }
 }
@@ -5883,16 +5922,34 @@ void model_shading(model_t *m, int shading) {
     model_shading_custom(m, shading, NULL, NULL, NULL);
 }
 
-void model_skybox(model_t *mdl, skybox_t sky, bool load_sh) {
-    if (load_sh) {
-        unsigned oldprog = last_shader;
-        shader_bind(mdl->iqm->program);
-        shader_vec3v("u_coefficients_sh", 9, sky.cubemap.sh);
-        shader_bind(oldprog);
-    }
-
+void model_skybox(model_t *mdl, skybox_t sky) {
+    model_cubemap(mdl, &sky.cubemap);
     mdl->sky_refl = sky.refl;
     mdl->sky_env = sky.env;
+}
+
+void model_cubemap(model_t *mdl, cubemap_t *c) {
+    static char coef_names[9][128] = {0};
+    do_once {
+        for (int i = 0; i < 9; i++) {
+            sprintf(coef_names[i], "u_coefficients_sh[%d]", i);
+        }
+    }
+    for (int i = 0; i < 9; i++) {
+        if (c) {
+            model_tweak(mdl, (model_tweak_t){coef_names[i], UNIFORM_VEC3, {.v3 = c->sh[i]}});
+        } else {
+            model_tweak(mdl, (model_tweak_t){coef_names[i], UNIFORM_VEC3, {.v3 = vec3(0,0,0)}});
+        }
+    }
+}
+
+void model_probe(model_t *mdl, vec3 center, float radius, unsigned count, cubemap_t *c) {
+    vec3 sh[9] = {0};
+    cubemap_sh_blend(center, radius, count, c, sh);
+    cubemap_t sh_cubemap = {0};
+    memcpy(sh_cubemap.sh, sh, sizeof(sh));
+    model_cubemap(mdl, &sh_cubemap);
 }
 
 void model_shadow(model_t *mdl, shadowmap_t *sm) {
@@ -5910,15 +5967,79 @@ void model_light(model_t *mdl, unsigned count, light_t *lights) {
     mdl->lights.count = count;
 }
 
+void model_rimlight(model_t *mdl, vec3 rim_range, vec3 rim_color) {
+    model_tweak(mdl, (model_tweak_t){"u_rimrange", UNIFORM_VEC3, {.v3 = rim_range}});
+    model_tweak(mdl, (model_tweak_t){"u_rimcolor", UNIFORM_VEC3, {.v3 = rim_color}});
+}
+
 void model_fog(model_t *mdl, unsigned mode, vec3 color, float start, float end, float density) {
-    unsigned oldprog = last_shader;
-    shader_bind(mdl->iqm->program);
-    shader_vec3("u_fog_color", color);
-    shader_float("u_fog_density", density);
-    shader_float("u_fog_start", start);
-    shader_float("u_fog_end", end);
-    shader_int("u_fog_type", mode);
+    model_tweak(mdl, (model_tweak_t){"u_fog_color", UNIFORM_VEC3, {.v3 = color}});
+    model_tweak(mdl, (model_tweak_t){"u_fog_density", UNIFORM_FLOAT, {.f = density}});
+    model_tweak(mdl, (model_tweak_t){"u_fog_start", UNIFORM_FLOAT, {.f = start}});
+    model_tweak(mdl, (model_tweak_t){"u_fog_end", UNIFORM_FLOAT, {.f = end}});
+    model_tweak(mdl, (model_tweak_t){"u_fog_type", UNIFORM_INT, {.i = mode}});
+}
+
+void model_tweak_apply(model_t m, const model_tweak_t *t) {
+    if (!m.iqm) return;
+    iqm_t *q = m.iqm;
+
+    int oldprog = last_shader;
+    shader_bind(q->program);
+
+    switch (t->kind) {
+    case UNIFORM_FLOAT:
+        glUniform1f(shader_uniform(t->name), t->f);
+        break;
+    case UNIFORM_INT:
+    case UNIFORM_BOOL:
+        glUniform1i(shader_uniform(t->name), t->i);
+    case UNIFORM_UINT:
+        glUniform1ui(shader_uniform(t->name), t->u);
+        break;
+    case UNIFORM_VEC2:
+        glUniform2fv(shader_uniform(t->name), 2, &t->v2.x);
+        break;
+    case UNIFORM_VEC3:
+        glUniform3fv(shader_uniform(t->name), 3, &t->v3.x);
+        break;
+    case UNIFORM_VEC4:
+        glUniform4fv(shader_uniform(t->name), 4, &t->v4.x);
+        break;
+    case UNIFORM_MAT3:
+        glUniformMatrix3fv(shader_uniform(t->name), 1, GL_FALSE, t->m33);
+        break;
+    case UNIFORM_MAT4:
+        glUniformMatrix4fv(shader_uniform(t->name), 1, GL_FALSE, t->m44);
+        break;
+    case UNIFORM_SAMPLER2D:
+        shader_texture_unit_kind_(GL_TEXTURE_2D, shader_uniform(t->name), t->u, model_texture_unit(&m));
+        break;
+    case UNIFORM_SAMPLER3D:
+        shader_texture_unit_kind_(GL_TEXTURE_3D, shader_uniform(t->name), t->u, model_texture_unit(&m));
+        break;
+    case UNIFORM_SAMPLERCUBE:
+        shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, shader_uniform(t->name), t->u, model_texture_unit(&m));
+        break;
+    }
+
     shader_bind(oldprog);
+}
+
+void model_tweak(model_t* m, model_tweak_t tweak) {
+    for (unsigned i = 0; i < array_count(m->tweaks); i++) {
+        if (strcmp(m->tweaks[i].name, tweak.name) == 0) {
+            m->tweaks[i] = tweak;
+            return;
+        }
+    }
+    array_push(m->tweaks, tweak);
+}
+
+void model_tweak_array(model_t* m, unsigned count, model_tweak_t* tweaks) {
+    for (unsigned i = 0; i < count; i++) {
+        model_tweak(m, tweaks[i]);
+    }
 }
 
 void model_bind_shader(model_t m) {
@@ -6157,6 +6278,7 @@ void model_destroy(model_t m) {
     FREE(q->frames);
     FREE(q->buf);
     FREE(q);
+    array_free(m.tweaks);
 }
 
 static unsigned model_renderpass = RENDER_PASS_OPAQUE;

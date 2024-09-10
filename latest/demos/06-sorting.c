@@ -13,8 +13,7 @@ int main() {
     // load static scene
     model_t map;
     map = model(option("--model","sorting_test.obj"), 0); // MODEL_NO_TEXTURES);
-    model_bind_shader(map);
-    skybox_sh_shader(&sky);
+    model_skybox(&map, sky);
 
     // camera
     camera_t cam = camera();

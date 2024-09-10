@@ -57,19 +57,12 @@ int main(int argc, char** argv) {
         {
             do_once {
                 if (flag("--mie")) {
-                    // skybox_sh_reset(&sky);
                     skybox_mie_calc_sh(&sky, 4.0f);
-                    // float x = cosf((float)window_time())*4;
-                    // skybox_sh_add_light(&sky, vec3(0.3,0.3,0.3), vec3(0,1,0), 16*absf(cosf((float)window_time()*2))+2);
-                    // skybox_sh_add_light(&sky, vec3(0.6,0,0), vec3(x,1,0), 2);
                 }
             }
 
             skybox_render(&sky, cam.proj, cam.view);
-
-            model_bind_shader(mdl);
-            shader_vec3v("u_coefficients_sh", 9, sky.cubemap.sh);
-            shader_int("u_textured", false);
+            model_skybox(&mdl, sky);
 
             model_render(mdl, cam.proj, cam.view, mdl.pivot);
 

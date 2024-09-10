@@ -55,10 +55,6 @@ int main() {
         }
     }
 
-    model_bind_shader(mdl);
-    shader_vec3("u_rimcolor", vec3(0.12,0.23,0.34));
-    shader_vec3("u_rimrange", vec3(0.06,0.74,0.5));
-
     // load all postfx files in all subdirs
     fx_load("fx**.fs");
 
@@ -139,10 +135,6 @@ int main() {
             ui_clampf("Low", &rimrange.x, 0, 1);
             ui_clampf("High", &rimrange.y, 0, 1);
             ui_clampf("Mix", &rimrange.z, 0, 1);
-            // ui_vec
-            model_bind_shader(mdl);
-            shader_vec3("u_rimcolor", rimcolor);
-            shader_vec3("u_rimrange", rimrange);
             ui_panel_end();
         }
         if( ui_panel("Animation", PANEL_OPEN) ) {

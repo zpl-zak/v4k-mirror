@@ -265,12 +265,10 @@ API void       cubemap_bake_begin(cubemap_t *c, vec3 pos, unsigned width, unsign
 API bool       cubemap_bake_step(cubemap_t *c, mat44 proj /* out */, mat44 view /* out */);
 API void       cubemap_bake_end(cubemap_t *c, int step /* = 16 */, float sky_intensity /* = 1.0f */);
 API void       cubemap_sh_reset(cubemap_t *c);
-API void       cubemap_sh_shader(cubemap_t *c);
 API void       cubemap_sh_add_light(cubemap_t *c, vec3 light, vec3 dir, float strength);
 
 // lighting probe blending
-// @note: uploads SH coefficients to shader
-API void       cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes);
+API void       cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 *out_sh /* expects 9 vec3 coefficients */);
 
 // -----------------------------------------------------------------------------
 // fbos
@@ -716,6 +714,41 @@ API anim_t loop(float minframe, float maxframe, float blendtime, unsigned flags)
 API array(anim_t) animlist(const char *filename);
 
 // -----------------------------------------------------------------------------
+// model tweaks
+
+enum UNIFORM_KIND {
+    UNIFORM_BOOL,
+    UNIFORM_INT,
+    UNIFORM_UINT,
+    UNIFORM_FLOAT,
+    UNIFORM_VEC2,
+    UNIFORM_VEC3,
+    UNIFORM_VEC4,
+    UNIFORM_MAT3,
+    UNIFORM_MAT4,
+    UNIFORM_SAMPLER2D,
+    UNIFORM_SAMPLER3D,
+    UNIFORM_SAMPLERCUBE,
+};
+
+typedef struct model_tweak_t {
+    const char *name;
+    int kind;
+    union {
+        float f;
+        int i;
+        unsigned u;
+        vec2 v2;
+        vec3 v3;
+        vec4 v4;
+        mat33 m33;
+        mat44 m44;
+    };
+} model_tweak_t;
+
+API bool model_tweak_compare(unsigned s1, const model_tweak_t **a, unsigned s2, const model_tweak_t **b);
+
+// -----------------------------------------------------------------------------
 // models
 
 enum MODEL_FLAGS {
@@ -808,6 +841,37 @@ enum MODEL_UNIFORMS {
     NUM_MODEL_UNIFORMS
 };
 
+enum MODEL_TEXTURE_SLOTS {
+    MODEL_TEXTURE_DIFFUSE,
+    MODEL_TEXTURE_NORMALS,
+    MODEL_TEXTURE_SPECULAR,
+    MODEL_TEXTURE_ALBEDO,
+    MODEL_TEXTURE_ROUGHNESS,
+    MODEL_TEXTURE_METALLIC,
+    MODEL_TEXTURE_AO,
+    MODEL_TEXTURE_AMBIENT,
+    MODEL_TEXTURE_EMISSIVE,
+
+    // PBR
+    MODEL_TEXTURE_SKYSPHERE,
+    MODEL_TEXTURE_SKYENV,
+    MODEL_TEXTURE_BRDF_LUT,
+
+    // Shadows
+    MODEL_TEXTURE_SHADOW_MAP_2D,
+    MODEL_TEXTURE_SHADOW_MAP_2D_COUNT = MODEL_TEXTURE_SHADOW_MAP_2D+NUM_SHADOW_CASCADES,
+
+    MODEL_TEXTURE_SHADOW_MAP_CUBEMAP,
+    MODEL_TEXTURE_SHADOW_MAP_CUBEMAP_COUNT = MODEL_TEXTURE_SHADOW_MAP_CUBEMAP+MAX_SHADOW_LIGHTS,
+
+    MODEL_TEXTURE_SHADOW_OFFSETS,
+
+    // User-defined slot
+    MODEL_TEXTURE_USER_DEFINED,
+
+    NUM_MODEL_TEXTURE_SLOTS
+};
+
 typedef struct lightarray_t {
     light_t *base;
     unsigned count;
@@ -860,6 +924,8 @@ typedef struct model_t {
 
     bool frustum_enabled;
     frustum frustum_state;
+
+    model_tweak_t *tweaks; //< array
 } model_t;
 
 enum BILLBOARD_MODE {
@@ -876,16 +942,22 @@ API model_t  model_from_mem(const void *mem, int sz, int flags);
 API float    model_animate(model_t, float curframe);
 API float    model_animate_clip(model_t, float curframe, int minframe, int maxframe, bool loop);
 API float    model_animate_blends(model_t m, anim_t *primary, anim_t *secondary, float delta);
+API int      model_texture_unit(model_t *m);
 API aabb     model_aabb(model_t, mat44 transform);
 API sphere   model_bsphere(model_t, mat44 transform);
 API void     model_lod(model_t*, float lo_detail, float hi_detail, float morph);
 API void     model_shading(model_t*, int shading);
 API void     model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);
-API void     model_skybox(model_t*, skybox_t sky, bool load_sh);
+API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
+API void     model_tweak(model_t*, model_tweak_t tweak);
+API void     model_tweak_array(model_t*, unsigned count, model_tweak_t *tweaks);
+API void     model_tweak_apply(model_t m, const model_tweak_t *tweak);
+API void     model_skybox(model_t*, skybox_t sky);
+API void     model_cubemap(model_t*, cubemap_t *c);
+API void     model_probe(model_t*, vec3 center, float radius, unsigned count, cubemap_t *c);
 API void     model_shadow(model_t*, shadowmap_t *sm);
 API void     model_light(model_t*, unsigned count, light_t *lights);
-API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
-API void     model_bind_shader(model_t); // @todo: delete me later
+API void     model_rimlight(model_t*, vec3 rim_range, vec3 rim_color);
 API void     model_render(model_t, mat44 proj, mat44 view, mat44 model);
 API void     model_render_skeleton(model_t, mat44 model);
 API void     model_render_instanced(model_t, mat44 proj, mat44 view, mat44 *models, unsigned count);

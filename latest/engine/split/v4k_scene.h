@@ -114,3 +114,4 @@ API object_t* scene_index(unsigned index);
 API light_t*  scene_spawn_light();
 API unsigned  scene_count_light();
 API light_t*  scene_index_light(unsigned index);
+API void      scene_skybox(skybox_t sky);

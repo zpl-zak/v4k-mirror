@@ -8,16 +8,12 @@ int main() {
     window_fps_unlock();
 
     // load skybox
-    skybox_t sky = skybox("bridge3", 0); 
+    scene_skybox(skybox("bridge3", 0)); 
 
     // load static scene
     model_t map, prop;
     map = model(option("--model","sorting_test.obj"), 0); // MODEL_NO_TEXTURES);
     prop = model(option("--model","sorting_test2.obj"), 0); // MODEL_NO_TEXTURES);
-    model_bind_shader(map);
-    skybox_sh_shader(&sky);
-    model_bind_shader(prop);
-    skybox_sh_shader(&sky);
 
     // define scene
     object_t *prop_obj = scene_spawn();
@@ -48,11 +44,6 @@ int main() {
         camera_fps(&cam, mouse.x,mouse.y);
         window_cursor( !active );
 
-        // draw skybox
-        profile("Skybox") {
-            skybox_render(&sky, cam.proj, cam.view);
-        }
-
-        scene_render(SCENE_FOREGROUND);
+        scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND);
     }
 }

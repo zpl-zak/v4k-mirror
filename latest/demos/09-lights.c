@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
             sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
             mdl = model("plane.obj", 0);
             scale44(mdl.pivot, 150, 1, 150);
-            model_skybox(&mdl, sky, 1);
+            model_skybox(&mdl, sky);
         }
 
         // fps camera
