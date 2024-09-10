@@ -109,6 +109,8 @@ int main(int argc, char** argv) {
         if( !initialized ) {
             initialized = 1;
             sky = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);
+            // sky = skybox(skyboxes[0][0], 0);//, skyboxes[0][0], skyboxes[0][1]);
+            // sky = skybox(0, 0);//, skyboxes[0][0], skyboxes[0][1]);
             sm = shadowmap(512, 4096);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
             model_skybox(&mdl, sky);

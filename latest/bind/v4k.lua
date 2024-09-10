@@ -1503,8 +1503,10 @@ enum MODEL_UNIFORMS {
     MODEL_UNIFORM_SHADOW_FILTER_SIZE,
     MODEL_UNIFORM_SHADOW_WINDOW_SIZE,
     MODEL_UNIFORM_RESOLUTION,
+    MODEL_UNIFORM_HAS_TEX_ENV_CUBEMAP,
     MODEL_UNIFORM_HAS_TEX_SKYSPHERE,
     MODEL_UNIFORM_HAS_TEX_SKYENV,
+    MODEL_UNIFORM_TEX_ENV_CUBEMAP,
     MODEL_UNIFORM_TEX_SKYSPHERE,
     MODEL_UNIFORM_SKYSPHERE_MIP_COUNT,
     MODEL_UNIFORM_TEX_SKYENV,
@@ -1527,6 +1529,7 @@ enum MODEL_TEXTURE_SLOTS {
     MODEL_TEXTURE_AO,
     MODEL_TEXTURE_AMBIENT,
     MODEL_TEXTURE_EMISSIVE,
+    MODEL_TEXTURE_ENV_CUBEMAP,
     MODEL_TEXTURE_SKYSPHERE,
     MODEL_TEXTURE_SKYENV,
     MODEL_TEXTURE_BRDF_LUT,
@@ -1549,7 +1552,7 @@ typedef struct model_t {
     handle *textures;
     char **texture_names;
     material_t* materials;
-    texture_t sky_refl, sky_env;
+    texture_t sky_refl, sky_env, sky_cubemap;
     unsigned num_meshes;
     unsigned num_triangles;
     unsigned num_joints;

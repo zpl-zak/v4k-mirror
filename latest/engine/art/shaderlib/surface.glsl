@@ -48,7 +48,7 @@ surface_t surface() {
     
     // SH lighting
     vec3 result = sh_lighting(s.normal);
-    if( (result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) s.light_indirect = result;
+    if((result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) s.light_indirect = result;
 
 #ifdef SHADING_PHONG
     material_t dummy_mat;
@@ -60,6 +60,9 @@ surface_t surface() {
 #endif
 
 #ifdef SHADING_PBR
+    // if (!has_tex_skysphere && !has_tex_skycube) {
+    //     s.light_indirect = vec3(0);
+    // }
     vec4 baseColor_alpha;
     if ( map_albedo.has_tex )
         baseColor_alpha = sample_colormap( map_albedo, v_texcoord );
@@ -119,7 +122,7 @@ surface_t surface() {
     vec3 F0 = vec3(0.04);
     F0 = mix( F0, s.albedo.rgb, s.metallic );
 
-    bool use_ibl = has_tex_skysphere;
+    bool use_ibl = has_tex_skysphere || has_tex_skycube;
 
     material_t pbr_mat;
     pbr_mat.albedo = s.albedo.rgb;
@@ -143,16 +146,7 @@ surface_t surface() {
         // Image based lighting.
         // Based on https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 
-        vec3 irradiance = vec3(0.);
-
-        if ( USE_BRUTEFORCE_IRRADIANCE )
-        {
-            irradiance = sample_irradiance_slow( N, v_tangent );
-        }
-        else
-        {
-            irradiance = sample_irradiance_fast( N, v_tangent );
-        }
+        vec3 irradiance = sample_irradiance_fast( N, v_tangent );
 
         // Compute the Fresnel term for a perfect mirror reflection with L = R.
         // In this case the halfway vector H = N.

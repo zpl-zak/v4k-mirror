@@ -4454,6 +4454,12 @@ void model_init_uniforms(iqm_t *q, int slot, int program) {
     if ((loc = glGetUniformLocation(shader, "resolution")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_RESOLUTION] = loc;
 
+    if ((loc = glGetUniformLocation(shader, "has_tex_skycube")) >= 0)
+        q->uniforms[slot][MODEL_UNIFORM_HAS_TEX_ENV_CUBEMAP] = loc;
+
+    if ((loc = glGetUniformLocation(shader, "tex_skycube")) >= 0)
+        q->uniforms[slot][MODEL_UNIFORM_TEX_ENV_CUBEMAP] = loc;
+
     if ((loc = glGetUniformLocation(shader, "has_tex_skysphere")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_HAS_TEX_SKYSPHERE] = loc;
 
@@ -4649,21 +4655,28 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             glUniform2f(loc, (float)window_width(), (float)window_height());
         }
         
-        bool has_tex_skysphere = m.sky_refl.id != texture_checker().id;
-        bool has_tex_skyenv = m.sky_env.id != texture_checker().id;
+        bool has_tex_skysphere = m.sky_refl.id != 0;
+        bool has_tex_skyenv = m.sky_env.id != 0;
+        bool has_tex_env_cubemap = m.sky_cubemap.id != 0;
+        glUniform1i(q->uniforms[slot][MODEL_UNIFORM_HAS_TEX_ENV_CUBEMAP], has_tex_env_cubemap);
         glUniform1i(q->uniforms[slot][MODEL_UNIFORM_HAS_TEX_SKYSPHERE], has_tex_skysphere);
         glUniform1i(q->uniforms[slot][MODEL_UNIFORM_HAS_TEX_SKYENV], has_tex_skyenv);
+        if (has_tex_env_cubemap) {
+            shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, q->uniforms[slot][MODEL_UNIFORM_TEX_ENV_CUBEMAP], m.sky_cubemap.id, MODEL_TEXTURE_ENV_CUBEMAP);
+        } else {
+            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_TEX_ENV_CUBEMAP], MODEL_TEXTURE_ENV_CUBEMAP);
+        }
         if( has_tex_skysphere ) {
             float mipCount = floor( log2( max(m.sky_refl.w, m.sky_refl.h) ) );
             shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], m.sky_refl.id, MODEL_TEXTURE_SKYSPHERE);
             glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SKYSPHERE_MIP_COUNT], mipCount);
         } else {
-            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], 0);
+            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], MODEL_TEXTURE_SKYSPHERE);
         }
         if( has_tex_skyenv ) {
             shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], m.sky_env.id, MODEL_TEXTURE_SKYENV);
         } else {
-            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], 0);
+            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], MODEL_TEXTURE_SKYENV);
         }
         shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut().id, MODEL_TEXTURE_BRDF_LUT);
     }
@@ -5970,6 +5983,7 @@ void model_shading(model_t *m, int shading) {
 
 void model_skybox(model_t *mdl, skybox_t sky) {
     model_cubemap(mdl, &sky.cubemap);
+    mdl->sky_cubemap.id = sky.cubemap.id;
     mdl->sky_refl = sky.refl;
     mdl->sky_env = sky.env;
 }

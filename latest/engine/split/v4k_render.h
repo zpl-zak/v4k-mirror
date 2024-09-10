@@ -1,4 +1,5 @@
 // -----------------------------------------------------------------------------
+// (likely) naive rendering framework
 // - rlyeh, public domain
 //
 // IQM skeletal meshes by @lsalzman (public domain) - https://bit.ly/2OQh0Me
@@ -8,7 +9,7 @@
 typedef unsigned handle; // GLuint
 
 // -----------------------------------------------------------------------------
-// renderstate
+// renderstat
 typedef struct renderstate_t {
     // Clear color
     float clear_color[4];
@@ -829,8 +830,10 @@ enum MODEL_UNIFORMS {
 
     // PBR
     MODEL_UNIFORM_RESOLUTION,
+    MODEL_UNIFORM_HAS_TEX_ENV_CUBEMAP,
     MODEL_UNIFORM_HAS_TEX_SKYSPHERE,
     MODEL_UNIFORM_HAS_TEX_SKYENV,
+    MODEL_UNIFORM_TEX_ENV_CUBEMAP,
     MODEL_UNIFORM_TEX_SKYSPHERE,
     MODEL_UNIFORM_SKYSPHERE_MIP_COUNT,
     MODEL_UNIFORM_TEX_SKYENV,
@@ -861,6 +864,7 @@ enum MODEL_TEXTURE_SLOTS {
     MODEL_TEXTURE_EMISSIVE,
 
     // PBR
+    MODEL_TEXTURE_ENV_CUBEMAP,
     MODEL_TEXTURE_SKYSPHERE,
     MODEL_TEXTURE_SKYENV,
     MODEL_TEXTURE_BRDF_LUT,
@@ -894,7 +898,7 @@ typedef struct model_t {
     char **texture_names;
     array(material_t) materials;
     
-    texture_t sky_refl, sky_env;
+    texture_t sky_refl, sky_env, sky_cubemap;
 
     unsigned num_meshes;
     unsigned num_triangles;

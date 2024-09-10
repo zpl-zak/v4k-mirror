@@ -37,10 +37,12 @@ uniform float skysphere_mip_count;
 uniform float exposure; /// set:1
 uniform float specular_shininess;
 
+uniform samplerCube tex_skycube;
 uniform sampler2D tex_skysphere;
 uniform sampler2D tex_skyenv;
 uniform sampler2D tex_brdf_lut;
 
+uniform bool has_tex_skycube;
 uniform bool has_tex_skysphere;
 uniform bool has_tex_skyenv;
 
@@ -152,13 +154,16 @@ vec3 sample_irradiance_fast( vec3 normal, vec3 vertex_tangent )
         vec2 polar = sphere_to_polar( normal );
         return textureLod( tex_skyenv, polar, 0.0 ).rgb * exposure;
     }
-    else
+    else if (has_tex_skysphere)
     {
         vec2 polar = sphere_to_polar( normal );
         return textureLod( tex_skysphere, polar, 0.80 * skysphere_mip_count ).rgb * exposure;
     }
+    else
+    {
+        return textureLod(tex_skycube, normal, 0.0).rgb * exposure;
+    }
 }
-
 
 vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel )
 {
