@@ -749,7 +749,8 @@ typedef struct model_uniform_t {
 
 #define model_uniform(name, kind, ...) (model_uniform_t){ name, kind, __VA_ARGS__ }
 
-API bool model_uniform_compare(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b);
+API bool model_compareuniform(const model_uniform_t *a, const model_uniform_t *b);
+API bool model_compareuniforms(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b);
 
 // -----------------------------------------------------------------------------
 // models

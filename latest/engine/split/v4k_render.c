@@ -4294,8 +4294,7 @@ typedef struct iqm_t {
 // model binds
 //
 
-static inline
-bool model_uniform_compare_entry(const model_uniform_t *a, const model_uniform_t *b) {
+bool model_compareuniform(const model_uniform_t *a, const model_uniform_t *b) {
     if (a->kind != b->kind) return false;
     if (strcmp(a->name, b->name) != 0) return false;
 
@@ -4332,11 +4331,11 @@ bool model_uniform_compare_entry(const model_uniform_t *a, const model_uniform_t
     return true;
 }
 
-bool model_uniform_compare(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b) {
+bool model_compareuniforms(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b) {
     if (s1 != s2) return false;
     
     for (unsigned i = 0; i < s1; ++i) {
-        if (!model_uniform_compare_entry(a[i], b[i])) return false;
+        if (!model_compareuniform(a[i], b[i])) return false;
     }
     
     return true;

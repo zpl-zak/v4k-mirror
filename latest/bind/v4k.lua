@@ -1439,7 +1439,8 @@ typedef struct model_uniform_t {
         mat44 m44;
     };
 } model_uniform_t;
- bool model_uniform_compare(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b);
+ bool model_compareuniform(const model_uniform_t *a, const model_uniform_t *b);
+ bool model_compareuniforms(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b);
 enum MODEL_FLAGS {
     MODEL_NO_ANIMATIONS = 1,
     MODEL_NO_MESHES = 2,
