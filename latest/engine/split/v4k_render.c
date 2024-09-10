@@ -4291,11 +4291,11 @@ typedef struct iqm_t {
 } iqm_t;
 
 //
-// model tweaks
+// model binds
 //
 
 static inline
-bool model_tweak_compare_entry(const model_tweak_t *a, const model_tweak_t *b) {
+bool model_uniform_compare_entry(const model_uniform_t *a, const model_uniform_t *b) {
     if (a->kind != b->kind) return false;
     if (strcmp(a->name, b->name) != 0) return false;
 
@@ -4332,11 +4332,11 @@ bool model_tweak_compare_entry(const model_tweak_t *a, const model_tweak_t *b) {
     return true;
 }
 
-bool model_tweak_compare(unsigned s1, const model_tweak_t **a, unsigned s2, const model_tweak_t **b) {
+bool model_uniform_compare(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b) {
     if (s1 != s2) return false;
     
     for (unsigned i = 0; i < s1; ++i) {
-        if (!model_tweak_compare_entry(a[i], b[i])) return false;
+        if (!model_uniform_compare_entry(a[i], b[i])) return false;
     }
     
     return true;
@@ -4491,6 +4491,7 @@ int model_texture_unit(model_t *m) {
     return MODEL_TEXTURE_USER_DEFINED + (m->iqm->texture_unit++ % (model_totalTextureUnits - MODEL_TEXTURE_USER_DEFINED));
 }
 
+void model_applyuniform(model_t m, const model_uniform_t *t);
 
 static
 void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view, mat44 model) {
@@ -4659,9 +4660,9 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut().id, MODEL_TEXTURE_BRDF_LUT);
     }
 
-    /* apply custom model tweaks */
-    for (int i = 0; i < array_count(m.tweaks); i++) {
-        model_tweak_apply(m, &m.tweaks[i]);
+    /* apply custom model uniforms */
+    for (int i = 0; i < array_count(m.uniforms); i++) {
+        model_applyuniform(m, &m.uniforms[i]);
     }
 }
 
@@ -5936,7 +5937,7 @@ void model_cubemap(model_t *mdl, cubemap_t *c) {
         }
     }
     for (int i = 0; i < 9; i++) {
-        model_tweak(mdl, (model_tweak_t){coef_names[i], UNIFORM_VEC3, {.v3 = c ? c->sh[i] : vec3(0,0,0)}});
+        model_adduniform(mdl, model_uniform(coef_names[i], UNIFORM_VEC3, .v3 = c ? c->sh[i] : vec3(0,0,0)));
     }
 }
 
@@ -5964,19 +5965,19 @@ void model_light(model_t *mdl, unsigned count, light_t *lights) {
 }
 
 void model_rimlight(model_t *mdl, vec3 rim_range, vec3 rim_color) {
-    model_tweak(mdl, (model_tweak_t){"u_rimrange", UNIFORM_VEC3, {.v3 = rim_range}});
-    model_tweak(mdl, (model_tweak_t){"u_rimcolor", UNIFORM_VEC3, {.v3 = rim_color}});
+    model_adduniform(mdl, model_uniform("u_rimrange", UNIFORM_VEC3, .v3 = rim_range));
+    model_adduniform(mdl, model_uniform("u_rimcolor", UNIFORM_VEC3, .v3 = rim_color));
 }
 
 void model_fog(model_t *mdl, unsigned mode, vec3 color, float start, float end, float density) {
-    model_tweak(mdl, (model_tweak_t){"u_fog_color", UNIFORM_VEC3, {.v3 = color}});
-    model_tweak(mdl, (model_tweak_t){"u_fog_density", UNIFORM_FLOAT, {.f = density}});
-    model_tweak(mdl, (model_tweak_t){"u_fog_start", UNIFORM_FLOAT, {.f = start}});
-    model_tweak(mdl, (model_tweak_t){"u_fog_end", UNIFORM_FLOAT, {.f = end}});
-    model_tweak(mdl, (model_tweak_t){"u_fog_type", UNIFORM_INT, {.i = mode}});
+    model_adduniform(mdl, model_uniform("u_fog_color", UNIFORM_VEC3, .v3 = color));
+    model_adduniform(mdl, model_uniform("u_fog_density", UNIFORM_FLOAT, .f = density));
+    model_adduniform(mdl, model_uniform("u_fog_start", UNIFORM_FLOAT, .f = start));
+    model_adduniform(mdl, model_uniform("u_fog_end", UNIFORM_FLOAT, .f = end));
+    model_adduniform(mdl, model_uniform("u_fog_type", UNIFORM_INT, .i = mode));
 }
 
-void model_tweak_apply(model_t m, const model_tweak_t *t) {
+void model_applyuniform(model_t m, const model_uniform_t *t) {
     if (!m.iqm) return;
     iqm_t *q = m.iqm;
 
@@ -6022,24 +6023,20 @@ void model_tweak_apply(model_t m, const model_tweak_t *t) {
     shader_bind(oldprog);
 }
 
-void model_tweak(model_t* m, model_tweak_t tweak) {
-    for (unsigned i = 0; i < array_count(m->tweaks); i++) {
-        if (strcmp(m->tweaks[i].name, tweak.name) == 0) {
-            m->tweaks[i] = tweak;
+void model_adduniform(model_t* m, model_uniform_t uniform) {
+    for (unsigned i = 0; i < array_count(m->uniforms); i++) {
+        if (strcmp(m->uniforms[i].name, uniform.name) == 0) {
+            m->uniforms[i] = uniform;
             return;
         }
     }
-    array_push(m->tweaks, tweak);
+    array_push(m->uniforms, uniform);
 }
 
-void model_tweak_array(model_t* m, unsigned count, model_tweak_t* tweaks) {
+void model_adduniforms(model_t* m, unsigned count, model_uniform_t* uniforms) {
     for (unsigned i = 0; i < count; i++) {
-        model_tweak(m, tweaks[i]);
+        model_adduniform(m, uniforms[i]);
     }
-}
-
-void model_bind_shader(model_t m) {
-    shader_bind(m.iqm->program);
 }
 
 // static
@@ -6274,7 +6271,7 @@ void model_destroy(model_t m) {
     FREE(q->frames);
     FREE(q->buf);
     FREE(q);
-    array_free(m.tweaks);
+    array_free(m.uniforms);
 }
 
 static unsigned model_renderpass = RENDER_PASS_OPAQUE;

@@ -17,7 +17,7 @@ int main() {
     camera_t cam = camera();
 
     // scene light
-    model_bind_shader(mdl);
+    model_uniform_shader(mdl);
 
     // initialise LOD
     float lo_detail=0.25f;

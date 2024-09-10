@@ -1424,12 +1424,13 @@ enum UNIFORM_KIND {
     UNIFORM_SAMPLER3D,
     UNIFORM_SAMPLERCUBE,
 };
-typedef struct model_tweak_t {
+typedef struct model_uniform_t {
     const char *name;
     int kind;
     union {
         float f;
         int i;
+        bool b;
         unsigned u;
         vec2 v2;
         vec3 v3;
@@ -1437,8 +1438,8 @@ typedef struct model_tweak_t {
         mat33 m33;
         mat44 m44;
     };
-} model_tweak_t;
- bool model_tweak_compare(unsigned s1, const model_tweak_t **a, unsigned s2, const model_tweak_t **b);
+} model_uniform_t;
+ bool model_uniform_compare(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b);
 enum MODEL_FLAGS {
     MODEL_NO_ANIMATIONS = 1,
     MODEL_NO_MESHES = 2,
@@ -1576,7 +1577,7 @@ typedef struct model_t {
     renderstate_t rs[NUM_RENDER_PASSES];
     bool frustum_enabled;
     frustum frustum_state;
-    model_tweak_t *tweaks;
+    model_uniform_t *uniforms;
 } model_t;
 enum BILLBOARD_MODE {
     BILLBOARD_X = 0x1,
@@ -1596,9 +1597,8 @@ enum BILLBOARD_MODE {
  void model_lod(model_t*, float lo_detail, float hi_detail, float morph);
  void model_shading(model_t*, int shading);
  void model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);
- void model_tweak(model_t*, model_tweak_t tweak);
- void model_tweak_array(model_t*, unsigned count, model_tweak_t *tweaks);
- void model_tweak_apply(model_t m, const model_tweak_t *tweak);
+ void model_adduniform(model_t*, model_uniform_t uniform);
+ void model_adduniforms(model_t*, unsigned count, model_uniform_t *uniforms);
  void model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
  void model_skybox(model_t*, skybox_t sky);
  void model_cubemap(model_t*, cubemap_t *c);

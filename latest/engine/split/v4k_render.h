@@ -714,7 +714,7 @@ API anim_t loop(float minframe, float maxframe, float blendtime, unsigned flags)
 API array(anim_t) animlist(const char *filename);
 
 // -----------------------------------------------------------------------------
-// model tweaks
+// model uniforms
 
 enum UNIFORM_KIND {
     UNIFORM_BOOL,
@@ -731,12 +731,13 @@ enum UNIFORM_KIND {
     UNIFORM_SAMPLERCUBE,
 };
 
-typedef struct model_tweak_t {
+typedef struct model_uniform_t {
     const char *name;
     int kind;
     union {
         float f;
         int i;
+        bool b;
         unsigned u;
         vec2 v2;
         vec3 v3;
@@ -744,9 +745,11 @@ typedef struct model_tweak_t {
         mat33 m33;
         mat44 m44;
     };
-} model_tweak_t;
+} model_uniform_t;
 
-API bool model_tweak_compare(unsigned s1, const model_tweak_t **a, unsigned s2, const model_tweak_t **b);
+#define model_uniform(name, kind, ...) (model_uniform_t){ name, kind, __VA_ARGS__ }
+
+API bool model_uniform_compare(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b);
 
 // -----------------------------------------------------------------------------
 // models
@@ -925,7 +928,7 @@ typedef struct model_t {
     bool frustum_enabled;
     frustum frustum_state;
 
-    model_tweak_t *tweaks; //< array
+    model_uniform_t *uniforms; //< array
 } model_t;
 
 enum BILLBOARD_MODE {
@@ -948,9 +951,8 @@ API sphere   model_bsphere(model_t, mat44 transform);
 API void     model_lod(model_t*, float lo_detail, float hi_detail, float morph);
 API void     model_shading(model_t*, int shading);
 API void     model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);
-API void     model_tweak(model_t*, model_tweak_t tweak);
-API void     model_tweak_array(model_t*, unsigned count, model_tweak_t *tweaks);
-API void     model_tweak_apply(model_t m, const model_tweak_t *tweak);
+API void     model_adduniform(model_t*, model_uniform_t uniform);
+API void     model_adduniforms(model_t*, unsigned count, model_uniform_t *uniforms);
 API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
 API void     model_skybox(model_t*, skybox_t sky);
 API void     model_cubemap(model_t*, cubemap_t *c);

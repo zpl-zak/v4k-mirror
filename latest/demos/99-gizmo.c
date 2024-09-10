@@ -39,7 +39,7 @@ int main() {
 
         static model_t mdl;
         do_once mdl = model("meshes/gizmo.fbx", 0);
-        model_bind_shader(mdl);
+        model_uniform_shader(mdl);
         vec3 color = {0,0,0};
         vec3 coeff[9] = { color,color,color,color,color,color,color,color,color,  };
         shader_vec3v("u_coefficients_sh", 9, coeff);
