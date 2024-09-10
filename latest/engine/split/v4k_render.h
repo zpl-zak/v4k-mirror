@@ -661,6 +661,8 @@ typedef struct material_t {
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
 } material_t;
 
+API void ui_material(material_t *m);
+
 // -----------------------------------------------------------------------------
 // shadertoys
 
@@ -981,6 +983,8 @@ API unsigned model_getpass();
 API unsigned model_setpass(unsigned pass);
 
 API vec3     pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
+
+API void ui_materials(model_t *m);
 
 // -----------------------------------------------------------------------------
 // post-fxs

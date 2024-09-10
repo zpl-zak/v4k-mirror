@@ -1372,6 +1372,7 @@ typedef struct material_t {
     char *name;
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
 } material_t;
+ void ui_material(material_t *m);
 enum {
     SHADERTOY_FLIP_Y = 2,
     SHADERTOY_IGNORE_FBO = 4,
@@ -1624,6 +1625,7 @@ enum BILLBOARD_MODE {
  unsigned model_getpass();
  unsigned model_setpass(unsigned pass);
  vec3 pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
+ void ui_materials(model_t *m);
  void viewport_color(unsigned color);
  void viewport_clear(bool color, bool depth);
  void viewport_clip(vec2 from, vec2 to);

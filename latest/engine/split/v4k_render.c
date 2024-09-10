@@ -4979,6 +4979,37 @@ bool model_load_anims(iqm_t *q, const struct iqmheader *hdr) {
     return true;
 }
 
+void ui_material(material_t *m) {
+    static char* channel_names[] = {
+        "Diffuse", "Normals", "Specular", "Albedo", "Roughness", "Metallic", "AO", "Ambient", "Emissive"
+    };
+    for (int i = 0; i < MAX_CHANNELS_PER_MATERIAL; i++) {
+        
+        if (ui_collapse(channel_names[i], va("%s_%d", m->name, i))) {
+            ui_color4f(va("%s Color", channel_names[i]), &m->layer[i].map.color.x);
+            
+            if (m->layer[i].map.texture) {
+                ui_texture(va("%s Texture", channel_names[i]), *m->layer[i].map.texture);
+            }
+            
+            if (i == MATERIAL_CHANNEL_SPECULAR) {
+                ui_float("Specular Shininess", &m->layer[i].value);
+            }
+            
+            ui_collapse_end();
+        }
+    }
+}
+
+void ui_materials(model_t *m) {
+    for (int i = 0; i < array_count(m->materials); i++) {
+        if (ui_collapse(m->materials[i].name, va("material_%d", i))) {
+            ui_material(&m->materials[i]);
+            ui_collapse_end();
+        }
+    }
+}
+
 // prevents crash on osx when strcpy'ing non __restrict arguments
 static char* strcpy_safe(char *d, const char *s) {
     sprintf(d, "%s", s);
@@ -4997,7 +5028,7 @@ void model_load_pbr(model_t *m, material_t *mt, int mesh) {
     struct iqm_t *q = m->iqm;
 
     // initialise default colors
-    mt->layer[MATERIAL_CHANNEL_DIFFUSE].map.color = vec4(0.5,0.5,0.5,1.0);
+    // mt->layer[MATERIAL_CHANNEL_DIFFUSE].map.color = vec4(0.5,0.5,0.5,1.0);
     mt->layer[MATERIAL_CHANNEL_NORMALS].map.color = vec4(0,0,0,0);
     mt->layer[MATERIAL_CHANNEL_SPECULAR].map.color = vec4(0,0,0,0);
     mt->layer[MATERIAL_CHANNEL_SPECULAR].value = 1.0f; // specular_shininess
@@ -5538,7 +5569,7 @@ static inline
 void shader_colormap_model_internal(model_t *m,const char *col_name, const char *bool_name, const char *tex_name, colormap_t c, int slot ) {
     // assumes shader uses `struct { vec4 color; bool has_tex } name + sampler2D name_tex;`
     shader_vec4( col_name, c.color );
-    shader_bool( bool_name, c.texture != NULL );
+    shader_bool( bool_name, c.texture != NULL && (c.texture && c.texture->id != texture_checker().id) );
     if( c.texture ) shader_texture_unit_kind_(GL_TEXTURE_2D, shader_uniform(tex_name), c.texture->id, slot);
     else {
         glUniform1i(shader_uniform(tex_name), slot);

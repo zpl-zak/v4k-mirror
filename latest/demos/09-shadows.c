@@ -1,12 +1,16 @@
 #include "v4k.h"
 
 
-int SKY_DIR = 0;
-const char *SKY_DIRS[] = {
-    "cubemaps/bridge3/",
-    "cubemaps/colors/",
-    "cubemaps/colors2/",
-    "hdr/Tokyo_BigSight_1k.hdr",
+const char *skyboxes[][2] = { // reflection, env, metadata
+    {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
+    {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Env.hdr"},
+    {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
+    {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
+    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
+    {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Env.hdr"},
+    {"hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_Env.hdr"},
+    {"hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_Env.hdr"},
+    {"hdr/mesto.hdr","hdr/mesto_Env.hdr"},
 };
 
 int OBJ_MDL = 0;
@@ -104,7 +108,7 @@ int main(int argc, char** argv) {
         }
         if( !initialized ) {
             initialized = 1;
-            sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
+            sky = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);
             sm = shadowmap(512, 4096);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
             model_skybox(&mdl, sky);
@@ -214,12 +218,23 @@ int main(int argc, char** argv) {
         }
 
         if( ui_panel("Scene", 0)) {
-            if( ui_list("Skybox", SKY_DIRS, countof(SKY_DIRS), &SKY_DIR) ) {
-                must_reload = 1;
-            }
+            // if( ui_list("Skybox", SKY_DIRS, countof(SKY_DIRS), &SKY_DIR) ) {
+            //     must_reload = 1;
+            // }
             if( ui_list("Model", OBJ_MDLS, countof(OBJ_MDLS), &OBJ_MDL) ) {
                 must_reload = 1;
             }
+            ui_separator();
+            for( int i = 0; i < countof(skyboxes); i++ ) {
+                const char *filename = skyboxes[i][0];
+                bool selected = false;
+                if( ui_bool( filename, &selected ) ) {
+                    sky = skybox_pbr(skyboxes[i][0], skyboxes[i][0], skyboxes[i][1]);
+                    model_skybox(&mdl, sky);
+                }
+            }
+            ui_separator();
+            ui_materials(&mdl);
             ui_separator();
             ui_lights(array_count(lights), lights);
             ui_separator();

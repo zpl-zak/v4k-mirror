@@ -74,12 +74,16 @@ surface_t surface() {
     else if( map_roughness.has_tex ) {
         s.metallic = sample_colormap( map_roughness, v_texcoord ).b;
         s.roughness = sample_colormap( map_roughness, v_texcoord ).g;
+    } else {
+        // rely on color specifically
+        s.metallic = sample_colormap( map_metallic, v_texcoord ).x;
+        s.roughness = sample_colormap( map_roughness, v_texcoord ).x;
     }
 
-    if ( map_ao.has_tex )
-        s.ao = sample_colormap( map_ao, v_texcoord ).x;
-    else if ( map_ambient.has_tex )
-        s.ao = sample_colormap( map_ambient, v_texcoord ).x;
+    // if ( map_ao.has_tex )
+    s.ao = sample_colormap( map_ao, v_texcoord ).x;
+    // if ( map_ambient.has_tex )
+    //     s.ao = sample_colormap( map_ambient, v_texcoord ).x;
 
     s.emissive = sample_colormap( map_emissive, v_texcoord ).rgb;
 
@@ -126,6 +130,7 @@ surface_t surface() {
     pbr_mat.alpha = s.alpha;
 
     Lo += lighting(pbr_mat);
+    s.light_direct = Lo;
 
     if ( map_ambient.has_tex )
         s.light_indirect = sample_colormap( map_ambient, v_texcoord ).xyz;
@@ -196,8 +201,6 @@ surface_t surface() {
 #endif
 
     s.albedo *= v_color;
-
-    // s.light_direct *= shadowing().xyz;
 
     s.fragcolor = s.albedo;
     s.fragcolor.rgb *= s.light_direct + s.light_indirect;
