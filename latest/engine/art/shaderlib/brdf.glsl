@@ -7,8 +7,8 @@ struct ColorMap
     vec4 color;
 };
 
-uniform ColorMap map_albedo;    uniform sampler2D map_albedo_tex;
 uniform ColorMap map_diffuse;   uniform sampler2D map_diffuse_tex;
+uniform ColorMap map_albedo;    uniform sampler2D map_albedo_tex;
 uniform ColorMap map_specular;  uniform sampler2D map_specular_tex; // not used
 uniform ColorMap map_normals;   uniform sampler2D map_normals_tex;
 uniform ColorMap map_roughness; uniform sampler2D map_roughness_tex;

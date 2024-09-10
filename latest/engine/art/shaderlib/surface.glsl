@@ -127,7 +127,9 @@ surface_t surface() {
 
     Lo += lighting(pbr_mat);
 
-    s.light_indirect = sample_colormap( map_ambient, v_texcoord ).xyz;
+    if ( map_ambient.has_tex )
+        s.light_indirect = sample_colormap( map_ambient, v_texcoord ).xyz;
+
     vec3 diffuse_ambient;
     vec3 specular_ambient;
 
@@ -200,7 +202,6 @@ surface_t surface() {
     s.fragcolor = s.albedo;
     s.fragcolor.rgb *= s.light_direct + s.light_indirect;
     s.fragcolor.rgb += s.emissive;
-    // s.fragcolor *= shadowing();
     s.fragcolor.rgb += get_rimlight();
     s.fragcolor.a *= u_global_alpha;
     s.fragcolor *= vec4(u_global_opacity);
@@ -219,7 +220,7 @@ surface_t surface() {
         // gamma correction
 
         // s.fragcolor.rgb = pow( color, vec3(1.0/2.2) );
-        s.fragcolor.rgb = pow(s.fragcolor.rgb, vec3(1.0/2.2) );
+        // s.fragcolor.rgb = pow(s.fragcolor.rgb, vec3(1.0/2.2) );
     }
 #endif
     

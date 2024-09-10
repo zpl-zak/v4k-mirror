@@ -489,15 +489,17 @@ void scene_render(int flags) {
 
             if (obj->skip_draw) continue;
 
-            int do_retexturing = model->iqm && model->shading != SHADING_PBR && array_count(obj->textures) > 0;
+            int do_retexturing = model->iqm && array_count(obj->textures) > 0;
             if( do_retexturing ) {
                 for(int i = 0; i < model->iqm->nummeshes; ++i) {
                     array_push(obj->old_texture_ids, model->iqm->textures[i]);
                     model->iqm->textures[i] = (*array_back(obj->textures)).id;
-                    if (model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture) {
-                        array_push(obj->old_textures, *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture);
-                        *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = (*array_back(obj->textures));
+                    if (!model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture) {
+                        model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
+                        *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = texture_checker();
                     }
+                    array_push(obj->old_textures, *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture);
+                    *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = (*array_back(obj->textures));
                 }
             }
 

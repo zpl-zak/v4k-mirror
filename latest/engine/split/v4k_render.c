@@ -4347,8 +4347,10 @@ void model_set_texture(model_t *m, texture_t t) {
 
     for( int i = 0; i < q->nummeshes; ++i) { // assume 1 texture per mesh
         q->textures[i] = t.id;
-        if (m->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture)
-            *m->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = t;
+        if (!m->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture) {
+            m->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
+        }
+        *m->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = t;
     }
 }
 
@@ -4584,7 +4586,10 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             }
 
             bool was_csm_pushed = 0;
+            int shadow_lights_pushed = 0;
             for (int i = 0; i < MAX_LIGHTS; i++) {
+                if (shadow_lights_pushed >= MAX_SHADOW_LIGHTS) break;
+                shadow_lights_pushed++;
                 if (i < m.lights.count) {
                     light_t *light = &m.lights.base[i];
 
@@ -4628,7 +4633,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
                     glUniform1i(loc, MODEL_TEXTURE_SHADOW_MAP_2D + j);
                 }
             }
-            for (int i = 0; i < MAX_LIGHTS; i++) {
+            for (int i = 0; i < MAX_SHADOW_LIGHTS; i++) {
                 if ((loc = q->uniforms[slot][MODEL_UNIFORM_SHADOW_MAP_CUBEMAP + i]) >= 0) {
                     glUniform1i(loc, MODEL_TEXTURE_SHADOW_MAP_CUBEMAP + i);
                 }
@@ -4652,9 +4657,13 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
             float mipCount = floor( log2( max(m.sky_refl.w, m.sky_refl.h) ) );
             shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], m.sky_refl.id, MODEL_TEXTURE_SKYSPHERE);
             glUniform1f(q->uniforms[slot][MODEL_UNIFORM_SKYSPHERE_MIP_COUNT], mipCount);
+        } else {
+            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYSPHERE], 0);
         }
         if( has_tex_skyenv ) {
             shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], m.sky_env.id, MODEL_TEXTURE_SKYENV);
+        } else {
+            glUniform1i(q->uniforms[slot][MODEL_UNIFORM_TEX_SKYENV], 0);
         }
         shader_texture_unit_kind_(GL_TEXTURE_2D, q->uniforms[slot][MODEL_UNIFORM_TEX_BRDF_LUT], brdf_lut().id, MODEL_TEXTURE_BRDF_LUT);
     }
@@ -4983,7 +4992,10 @@ void model_load_pbr_layer(material_layer_t *layer, const char *texname, bool loa
 }
 
 static
-void model_load_pbr(material_t *mt) {
+void model_load_pbr(model_t *m, material_t *mt, int mesh) {
+    if (!m->iqm) return;
+    struct iqm_t *q = m->iqm;
+
     // initialise default colors
     mt->layer[MATERIAL_CHANNEL_DIFFUSE].map.color = vec4(0.5,0.5,0.5,1.0);
     mt->layer[MATERIAL_CHANNEL_NORMALS].map.color = vec4(0,0,0,0);
@@ -5000,18 +5012,16 @@ void model_load_pbr(material_t *mt) {
     array(char*) tokens = strsplit(mt->name, "+");
     for( int j = 0, end = array_count(tokens); j < end; ++j ) {
         char *t = tokens[j];
-        if( strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )    model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_DIFFUSE], t, 1);
-        if( strstri(t, "_N.") || strstri(t, "Normal") )     model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_NORMALS], t, 0);
-        if( strstri(t, "_S.") || strstri(t, "Specular") )   model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_SPECULAR], t, 0);
-        if( strstri(t, "_A.") || strstri(t, "Albedo") )     model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); // 0?
-        if( strstri(t, "Roughness") )  model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0);
-        if( strstri(t, "_MR.")|| strstri(t, "MetallicRoughness") || strstri(t, "OcclusionRoughnessMetallic") )  model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0);
+        if( strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )    { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_DIFFUSE], t, 1); continue; }
+        if( strstri(t, "_N.") || strstri(t, "Normal") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_NORMALS], t, 0); continue; }
+        if( strstri(t, "_S.") || strstri(t, "Specular") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_SPECULAR], t, 0); continue; }
+        if( strstri(t, "_A.") || strstri(t, "Albedo") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); continue; }
+        if( strstri(t, "Roughness") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
+        if( strstri(t, "_MR.")|| strstri(t, "MetallicRoughness") || strstri(t, "OcclusionRoughnessMetallic") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
         else
-        if( strstri(t, "_M.") || strstri(t, "Metallic") )   model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_METALLIC], t, 0);
-      //if( strstri(t, "_S.") || strstri(t, "Shininess") )  model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0);
-      //if( strstri(t, "_A.") || strstri(t, "Ambient") )    model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_AMBIENT], t, 0);
-        if( strstri(t, "_E.") || strstri(t, "Emissive") )   model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_EMISSIVE], t, 1);
-        if( strstri(t, "_AO.") || strstri(t, "AO") || strstri(t, "Occlusion") ) model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_AO], t, 0);
+        if( strstri(t, "_M.") || strstri(t, "Metallic") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_METALLIC], t, 0); continue; }
+        if( strstri(t, "_E.") || strstri(t, "Emissive") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_EMISSIVE], t, 1); continue; }
+        if( strstri(t, "_AO.") || strstri(t, "AO") || strstri(t, "Occlusion") ) { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_AO], t, 0); continue; }
     }
 }
 
@@ -5131,6 +5141,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.color = material_color_hex ? material_color : vec4(1,1,1,1);
             mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
             *mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = tex;
+            printf("texture_id: %d\n", mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id);
             out++;
 
             array_push(model->materials, mt);
@@ -5173,9 +5184,9 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
     if( array_count(model->materials) == 0 ) {
         material_t mt = {0};
         mt.name = "placeholder";
-        mt.layer[0].map.color = vec4(1,1,1,1);
-        mt.layer[0].map.texture = CALLOC(1, sizeof(texture_t));
-        mt.layer[0].map.texture->id = texture_checker().id;
+        mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.color = vec4(1,1,1,1);
+        mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
+        mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id = texture_checker().id;
 
         array_push(model->materials, mt);
     }
@@ -5245,7 +5256,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     model_t m = {0};
 
     m.stored_flags = flags;
-    m.shading = SHADING_PHONG;
+    m.shading = !(flags & MODEL_NO_PBR) ? SHADING_PBR : SHADING_PHONG;
     model_set_renderstates(&m);
 
     const char *ptr = (const char *)mem;
@@ -5299,6 +5310,8 @@ model_t model_from_mem(const void *mem, int len, int flags) {
 
         //m.num_textures = q->nummeshes; // assume 1 texture only per mesh
         m.textures = (q->textures);
+        m.sky_env.id = texture_checker().id;
+        m.sky_refl.id = texture_checker().id;
 
         m.flags = flags;
 
@@ -5309,7 +5322,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
 
         glGenBuffers(1, &m.vao_instanced);
         model_set_state(m);
-        model_shading(&m, (flags & MODEL_PBR) ? SHADING_PBR : SHADING_PHONG);
+        model_shading(&m, !(flags & MODEL_NO_PBR) ? SHADING_PBR : SHADING_PHONG);
     }
     return m;
 }
@@ -5521,13 +5534,15 @@ float model_animate(model_t m, float curframe) {
     return model_animate_clip(m, curframe, 0, q->numframes-1, true);
 }
 
-// @fixme: store uniform handles into model_t/colormap_t and rely on those directly
 static inline
 void shader_colormap_model_internal(model_t *m,const char *col_name, const char *bool_name, const char *tex_name, colormap_t c, int slot ) {
     // assumes shader uses `struct { vec4 color; bool has_tex } name + sampler2D name_tex;`
     shader_vec4( col_name, c.color );
     shader_bool( bool_name, c.texture != NULL );
     if( c.texture ) shader_texture_unit_kind_(GL_TEXTURE_2D, shader_uniform(tex_name), c.texture->id, slot);
+    else {
+        glUniform1i(shader_uniform(tex_name), slot);
+    }
 }
 
 
@@ -5869,7 +5884,7 @@ void model_shading_custom(model_t *m, int shading, const char *vs, const char *f
     // load pbr material if SHADING_PBR was selected
     if (shading == SHADING_PBR) {
         for (int i = 0; i < array_count(m->materials); ++i) {
-            model_load_pbr(&m->materials[i]);
+            model_load_pbr(m, &m->materials[i], i);
         }
     }
 

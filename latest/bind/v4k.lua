@@ -1442,13 +1442,14 @@ typedef struct model_uniform_t {
  bool model_compareuniform(const model_uniform_t *a, const model_uniform_t *b);
  bool model_compareuniforms(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b);
 enum MODEL_FLAGS {
+    MODEL_PBR = 0,
     MODEL_NO_ANIMATIONS = 1,
     MODEL_NO_MESHES = 2,
     MODEL_NO_TEXTURES = 4,
     MODEL_NO_FILTERING = 8,
-    MODEL_MATCAPS = 16,
-    MODEL_RIMLIGHT = 32,
-    MODEL_PBR = 64,
+    MODEL_NO_PBR = 16,
+    MODEL_MATCAPS = 32,
+    MODEL_RIMLIGHT = 64,
     MODEL_TRANSPARENT = 128,
 };
 enum SHADING_MODE {
