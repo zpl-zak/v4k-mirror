@@ -189,7 +189,15 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel )
 
     float mip = 0.9 * skysphere_mip_count * pow(roughness, 0.25 * BOOST_SPECULAR);
 
-    vec3 prefiltered = textureLod( tex_skysphere, polar, mip ).rgb * exposure;
+    vec3 prefiltered = vec3(0.0);
+    if (has_tex_skysphere)
+    {
+        prefiltered = textureLod( tex_skysphere, polar, mip ).rgb * exposure;
+    }
+    else
+    {
+        prefiltered = textureLod( tex_skycube, R, mip ).rgb * exposure;
+    }
 
     float NdotV = dot( N, V );
 

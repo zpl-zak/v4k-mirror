@@ -1215,7 +1215,7 @@ typedef struct shadowmap_t {
         handle texture;
         handle texture_2d[4];
         float cascade_distances[4];
-    } maps[MAX_LIGHTS];
+    } maps[MAX_SHADOW_LIGHTS];
     handle saved_fb;
     handle saved_pass;
     int saved_vp[4];
@@ -1601,8 +1601,8 @@ enum BILLBOARD_MODE {
  aabb model_aabb(model_t, mat44 transform);
  sphere model_bsphere(model_t, mat44 transform);
  void model_lod(model_t*, float lo_detail, float hi_detail, float morph);
- void model_shading(model_t*, int shading);
- void model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);
+ void model_setstyle(model_t*, int shading);
+ void model_setshader(model_t*, int shading, const char *vs, const char *fs, const char *defines);
  void model_adduniform(model_t*, model_uniform_t uniform);
  void model_adduniforms(model_t*, unsigned count, model_uniform_t *uniforms);
  void model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);

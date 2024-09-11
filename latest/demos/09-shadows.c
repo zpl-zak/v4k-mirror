@@ -26,6 +26,9 @@ int main(int argc, char** argv) {
     window_title(__FILE__);
     // window_fps_unlock();
 
+    fx_load("fx/**.fs");
+    fx_enable(fx_find("fxTonemapaACES.fs"), 1);
+
     camera_t cam = camera(); {
         cam.position = vec3(0, 7.5, 15);
         cam.pitch = -15;
@@ -109,8 +112,8 @@ int main(int argc, char** argv) {
         if( !initialized ) {
             initialized = 1;
             sky = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);
-            // sky = skybox(skyboxes[0][0], 0);//, skyboxes[0][0], skyboxes[0][1]);
-            // sky = skybox(0, 0);//, skyboxes[0][0], skyboxes[0][1]);
+            // sky = skybox(skyboxes[0][0], 0);
+            // sky = skybox(0, 0);
             sm = shadowmap(512, 4096);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
             model_skybox(&mdl, sky);
@@ -211,6 +214,7 @@ int main(int argc, char** argv) {
 
         // render
         mat44 mvp; multiply44x2(mvp, cam.proj, cam.view);
+        fx_begin();
         {
             skybox_render(&sky, cam.proj, cam.view);
 
@@ -218,6 +222,7 @@ int main(int argc, char** argv) {
             model_light(&mdl, array_count(lights), lights);
             model_render(mdl, cam.proj, cam.view, mdl.pivot);
         }
+        fx_end();
 
         if( ui_panel("Scene", 0)) {
             // if( ui_list("Skybox", SKY_DIRS, countof(SKY_DIRS), &SKY_DIR) ) {

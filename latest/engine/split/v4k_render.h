@@ -388,7 +388,7 @@ typedef struct shadowmap_t {
         handle texture;
         handle texture_2d[NUM_SHADOW_CASCADES];
         float cascade_distances[NUM_SHADOW_CASCADES];
-    } maps[MAX_LIGHTS];
+    } maps[MAX_SHADOW_LIGHTS];
 
     handle saved_fb;
     handle saved_pass;
@@ -958,8 +958,8 @@ API int      model_texture_unit(model_t *m);
 API aabb     model_aabb(model_t, mat44 transform);
 API sphere   model_bsphere(model_t, mat44 transform);
 API void     model_lod(model_t*, float lo_detail, float hi_detail, float morph);
-API void     model_shading(model_t*, int shading);
-API void     model_shading_custom(model_t*, int shading, const char *vs, const char *fs, const char *defines);
+API void     model_setstyle(model_t*, int shading);
+API void     model_setshader(model_t*, int shading, const char *vs, const char *fs, const char *defines);
 API void     model_adduniform(model_t*, model_uniform_t uniform);
 API void     model_adduniforms(model_t*, unsigned count, model_uniform_t *uniforms);
 API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);

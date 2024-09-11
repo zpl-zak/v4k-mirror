@@ -102,11 +102,10 @@ float shadow_vsm(float distance, vec3 dir, int light_index, float min_variance, 
 }
 
 float shadowmap_cascade_sample(vec2 sc, int cascade_index, float blend_factor, out float alpha) {
-    vec2 s1 = texture(shadowMap2D[cascade_index], sc).rg;
+    float s1 = texture(shadowMap2D[cascade_index], sc).r;
     // float s2 = texture(shadowMap2D[cascade_index + 1], sc).r;
-    // return mix(s1, s2, blend_factor);
-    alpha = 1.0;//s1.g;
-    return s1.r;
+    alpha = 1.0;
+    return s1;//mix(s1, s2, blend_factor);
 }
 
 float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bias, float normal_bias, float shadow_softness) {
@@ -132,14 +131,6 @@ float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bi
     if (matrix_index < NUM_SHADOW_CASCADES - 1) {
         blend_factor = 0.5;
     }
-    //     float cascade_start = u_cascade_distances[cascade_index];
-    //     float cascade_end = u_cascade_distances[cascade_index + 1];
-    //     float blend_start = cascade_end - blend_region;
-        
-    //     if (distance > blend_start) {
-    //         blend_factor = smoothstep(blend_start, cascade_end, distance);
-    //     }
-    // }
 
     light_t light = lightBuffer.lights[light_index];
 

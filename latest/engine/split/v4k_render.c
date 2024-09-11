@@ -1521,12 +1521,12 @@ light_t light() {
     l.outerCone = 0.9f; // 25 deg
     l.cast_shadows = true;
     l.processed_shadows = false;
-    l.shadow_distance = 400.0f;
+    l.shadow_distance = 800.0f;
     l.shadow_near_clip = 0.01f;
     l.shadow_bias = 0.15f;
     l.normal_bias = 0.05f;
     l.shadow_softness = 7.0f;
-    l.penumbra_size = 3.0f;
+    l.penumbra_size = 2.0f;
     l.min_variance = 0.00002f;
     l.variance_transition = 0.2f;
     return l;
@@ -1592,7 +1592,7 @@ void light_cone(light_t* l, float innerCone, float outerCone) {
 
 static inline
 char *light_fieldname(const char *fmt, ...) {
-    static char buf[1024];
+    static char buf[32];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buf, sizeof(buf), fmt, args);
@@ -1661,20 +1661,23 @@ void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
     ASSERT(ubo);
 
     if (*ubo == NULL /* buffer not created */) {
-        *ubo = ubo_create(&lights[0], sizeof(light_object_t) * MAX_LIGHTS, DYNAMIC_DRAW);
+        *ubo = ubo_create(&lights[0], sizeof(light_object_t) * MAX_LIGHTS, STREAM_DRAW);
     } else {
-        ubo_update(*ubo, 0, &lights[0], sizeof(light_object_t) * MAX_LIGHTS);
+        ubo_update(*ubo, 0, &lights[0], sizeof(light_object_t) * num_lights);
     }
 
     ubo_bind(*ubo, 0);
 
     for (unsigned i=0; i < num_lights; ++i) {
         lv[i].cached = 1;
+        bool processed = false;
         if (lv[i].processed_shadows && lv[i].shadow_technique == SHADOW_CSM) {
+            processed = true;
             for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
                 shader_mat44(light_fieldname("light_shadow_matrix_csm[%d]", j), lv[i].shadow_matrix[j]);
             }
         }
+        if (processed) break;
     }
 }
 
@@ -1708,7 +1711,6 @@ void ui_lights(unsigned num_lights, light_t *lights) {
         }
     }
 }
-
 
 // -----------------------------------------------------------------------------
 // shadowmaps
@@ -1787,12 +1789,6 @@ shadowmap_init_caster_csm(shadowmap_t *s, int light_index, int texture_width) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-static inline void
-shadowmap_init_caster(shadowmap_t *s, int light_index) {
-    shadowmap_init_caster_vsm(s, light_index, s->vsm_texture_width);
-    shadowmap_init_caster_csm(s, light_index, s->csm_texture_width);
-}
-
 shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 4096
     shadowmap_t s = {0};
     s.vsm_texture_width = vsm_texture_width;
@@ -1800,35 +1796,21 @@ shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 
     s.saved_fb = 0;
     s.filter_size = 6;
     s.window_size = 10;
-#if 0
-    s.cascade_splits[0] = 0.1f;
-    s.cascade_splits[1] = 0.3f;
-    s.cascade_splits[2] = 0.7f;
-    s.cascade_splits[3] = 1.0f;
-    s.cascade_splits[4] = 1.0f;
-    s.cascade_splits[5] = 1.0f; /* sticks to camera far plane */
-#else
+
     s.cascade_splits[0] = 0.1f;
     s.cascade_splits[1] = 0.5f;
     s.cascade_splits[2] = 1.0f;
     s.cascade_splits[3] = 1.0f;  /* sticks to camera far plane */
-#endif
-    glGenFramebuffers(1, &s.fbo);
 
+    glGenFramebuffers(1, &s.fbo);
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &s.saved_fb);
 
-#if 0
-    for (int i = 0; i < MAX_LIGHTS; i++) {
-        shadowmap_init_caster(&s, i);
-    }
-#else
-    for (int i = 0; i < MAX_LIGHTS; i++) {
+    for (int i = 0; i < MAX_SHADOW_LIGHTS; i++) {
         s.maps[i].shadow_technique = 0xFFFF;
         for (int j = 0; j < NUM_SHADOW_CASCADES; j++) {
             s.maps[i].cascade_distances[j] = 0.0f;
         }
     }
-#endif
 
     shadowmap_init_common_resources(&s, vsm_texture_width, csm_texture_width);
 
@@ -1866,6 +1848,11 @@ float *shadowmap_offsets_build_data(int filter_size, int window_size) {
 }
 
 void shadowmap_offsets_build(shadowmap_t *s, int filter_size, int window_size) {
+    if (s->offsets_texture) {
+        glDeleteTextures(1, &s->offsets_texture);
+        s->offsets_texture = 0;
+    }
+
     s->filter_size = filter_size;
     s->window_size = window_size;
     int num_samples = filter_size * filter_size;
@@ -1903,10 +1890,9 @@ void shadowmap_destroy_light(shadowmap_t *s, int light_index) {
 }
 
 void shadowmap_destroy(shadowmap_t *s) {
-    for (int i = 0; i < MAX_LIGHTS; i++) {
+    for (int i = 0; i < MAX_SHADOW_LIGHTS; i++) {
         shadowmap_destroy_light(s, i);
     }
-
 
     if (s->depth_texture) {
         glDeleteTextures(1, &s->depth_texture);
@@ -1928,7 +1914,7 @@ void shadowmap_begin(shadowmap_t *s) {
     glGetIntegerv(GL_VIEWPORT, s->saved_vp);
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &s->saved_fb);
 
-    for (int i = 0; i < MAX_LIGHTS; i++) {
+    for (int i = 0; i < MAX_SHADOW_LIGHTS; i++) {
         if (s->maps[i].gen != s->gen) {
             shadowmap_destroy_light(s, i);
         }
@@ -2014,7 +2000,10 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
         far_plane = cam_far;
     }
 
-    mat44 proj; perspective44(proj, cam_fov, window_width() / (float)window_height(), near_plane, far_plane);
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    mat44 proj; perspective44(proj, cam_fov, viewport[2] / (float)viewport[3], near_plane, far_plane);
     shadowmap_light_directional_calc_frustum_corners(proj, cam_view);
 
     vec3 center = {0,0,0};
@@ -2097,11 +2086,7 @@ bool shadowmap_step_finish(shadowmap_t *s) {
 bool shadowmap_step(shadowmap_t *s) {
     int max_steps = s->shadow_technique == 0xffff ? 1 : s->shadow_technique == SHADOW_CSM ? 1 : 6;
     if (s->step >= max_steps) {
-        if (shadowmap_step_finish(s)) {
-            return false;
-        } else {
-            return true;
-        }
+        return !shadowmap_step_finish(s);
     }
 
     if (s->light_step >= MAX_SHADOW_LIGHTS) {
@@ -2196,7 +2181,7 @@ void shadowmap_end(shadowmap_t *s) {
         s->vram_usage += s->csm_texture_width * s->csm_texture_width * 2; // CSM depth texture (GL_DEPTH_COMPONENT16)
 
         // Per-light resources
-        for (int i = 0; i < MAX_LIGHTS; i++) {
+        for (int i = 0; i < MAX_SHADOW_LIGHTS; i++) {
             if (s->maps[i].shadow_technique == SHADOW_VSM) {
                 // VSM cubemap texture (GL_RGB32F)
                 s->vram_usage_vsm += 6 * s->vsm_texture_width * s->vsm_texture_width * 8;
@@ -2239,25 +2224,11 @@ shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 
     s.saved_fb = 0;
     s.filter_size = 8;
     s.window_size = 10;
-#if 0
-    s.cascade_splits[0] = 0.1f;
-    s.cascade_splits[1] = 0.3f;
-    s.cascade_splits[2] = 0.7f;
-    s.cascade_splits[3] = 1.0f;
-    s.cascade_splits[4] = 1.0f;
-    s.cascade_splits[5] = 1.0f; /* sticks to camera far plane */
-#else
     s.cascade_splits[0] = 0.1f;
     s.cascade_splits[1] = 0.5f;
     s.cascade_splits[2] = 1.0f;
     s.cascade_splits[3] = 1.0f;  /* sticks to camera far plane */
-#endif
-    // glGenFramebuffers(1, &s.fbo);
-
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &s.saved_fb);
-
-    // shadowmap_init_common_resources(&s, vsm_texture_width, csm_texture_width);
-
     glBindFramebuffer(GL_FRAMEBUFFER, s.saved_fb);
     return s;
 }
@@ -2266,36 +2237,12 @@ static inline
 void shadowmap_destroy_light(shadowmap_t *s, int light_index) {
     s->maps[light_index].gen = 0;
     s->maps[light_index].shadow_technique = 0xFFFF;
-
-    // if (s->maps[light_index].texture) {
-    //     glDeleteTextures(1, &s->maps[light_index].texture);
-    //     s->maps[light_index].texture = 0;
-    // }
-    
-    // for (int i = 0; i < NUM_SHADOW_CASCADES; i++) {
-    //     if (s->maps[light_index].texture_2d[i]) {
-    //         glDeleteTextures(1, &s->maps[light_index].texture_2d[i]);
-    //         s->maps[light_index].texture_2d[i] = 0;
-    //     }
-    // }
 }
 
 void shadowmap_destroy(shadowmap_t *s) {
     for (int i = 0; i < MAX_LIGHTS; i++) {
         shadowmap_destroy_light(s, i);
     }
-
-
-    // if (s->depth_texture) {
-    //     glDeleteTextures(1, &s->depth_texture);
-    //     s->depth_texture = 0;
-    // }
-
-    // if (s->depth_texture_2d) {
-    //     glDeleteTextures(1, &s->depth_texture_2d);
-    //     s->depth_texture_2d = 0;
-    // }
-
     shadowmap_t z = {0};
     *s = z;
 }
@@ -2306,7 +2253,7 @@ void shadowmap_begin(shadowmap_t *s) {
     glGetIntegerv(GL_VIEWPORT, s->saved_vp);
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &s->saved_fb);
 
-    for (int i = 0; i < MAX_LIGHTS; i++) {
+    for (int i = 0; i < MAX_SHADOW_LIGHTS; i++) {
         if (s->maps[i].gen != s->gen) {
             shadowmap_destroy_light(s, i);
         }
@@ -5366,7 +5313,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
 
         glGenBuffers(1, &m.vao_instanced);
         model_set_state(m);
-        model_shading(&m, !(flags & MODEL_NO_PBR) ? SHADING_PBR : SHADING_PHONG);
+        model_setstyle(&m, !(flags & MODEL_NO_PBR) ? SHADING_PBR : SHADING_PHONG);
     }
     return m;
 }
@@ -5918,7 +5865,7 @@ void model_render(model_t m, mat44 proj, mat44 view, mat44 model) {
     model_render_pass(m, proj, view, model, -1);
 }
 
-void model_shading_custom(model_t *m, int shading, const char *vs, const char *fs, const char *defines) {
+void model_setshader(model_t *m, int shading, const char *vs, const char *fs, const char *defines) {
     if (!m->iqm) return;
     iqm_t *q = m->iqm;
 
@@ -5977,8 +5924,8 @@ void model_shading_custom(model_t *m, int shading, const char *vs, const char *f
     glUniformBlockBinding(q->program, block_index, 0);
 }
 
-void model_shading(model_t *m, int shading) {
-    model_shading_custom(m, shading, NULL, NULL, NULL);
+void model_setstyle(model_t *m, int shading) {
+    model_setshader(m, shading, NULL, NULL, NULL);
 }
 
 void model_skybox(model_t *mdl, skybox_t sky) {
