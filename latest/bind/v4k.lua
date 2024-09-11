@@ -1126,11 +1126,11 @@ typedef struct cubemap_t {
  cubemap_t cubemap6( const image_t images[6], int flags );
  void cubemap_destroy(cubemap_t *c);
  cubemap_t* cubemap_get_active();
- void cubemap_bake_begin(cubemap_t *c, vec3 pos, unsigned width, unsigned height);
- bool cubemap_bake_step(cubemap_t *c, mat44 proj , mat44 view );
- void cubemap_bake_end(cubemap_t *c, int step , float sky_intensity );
+ void cubemap_beginbake(cubemap_t *c, vec3 pos, unsigned width, unsigned height);
+ bool cubemap_stepbake(cubemap_t *c, mat44 proj , mat44 view );
+ void cubemap_endbake(cubemap_t *c, int step , float sky_intensity );
  void cubemap_sh_reset(cubemap_t *c);
- void cubemap_sh_add_light(cubemap_t *c, vec3 light, vec3 dir, float strength);
+ void cubemap_sh_addlight(cubemap_t *c, vec3 light, vec3 dir, float strength);
  void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 *out_sh );
  unsigned fbo( unsigned texture_color, unsigned texture_depth, int wr_flags );
  void fbo_bind(unsigned id);

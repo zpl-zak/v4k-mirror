@@ -236,6 +236,8 @@ API unsigned query_test_point(mat44 proj, mat44 view, vec3 pos, float size);
 // -----------------------------------------------------------------------------
 // fullscreen quads
 
+API void fullscreen_quad_rgb_gamma( texture_t texture_rgb, float gamma );
+API void fullscreen_quad_rgb_flipped_gamma( texture_t texture_rgb, float gamma );
 API void fullscreen_quad_rgb( texture_t texture_rgb );
 API void fullscreen_quad_rgb_flipped( texture_t texture );
 API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3] );
@@ -262,11 +264,11 @@ API cubemap_t  cubemap( const image_t image, int flags ); // 1 equirectangular p
 API cubemap_t  cubemap6( const image_t images[6], int flags ); // 6 cubemap faces
 API void       cubemap_destroy(cubemap_t *c);
 API cubemap_t* cubemap_get_active();
-API void       cubemap_bake_begin(cubemap_t *c, vec3 pos, unsigned width, unsigned height);
-API bool       cubemap_bake_step(cubemap_t *c, mat44 proj /* out */, mat44 view /* out */);
-API void       cubemap_bake_end(cubemap_t *c, int step /* = 16 */, float sky_intensity /* = 1.0f */);
+API void       cubemap_beginbake(cubemap_t *c, vec3 pos, unsigned width, unsigned height);
+API bool       cubemap_stepbake(cubemap_t *c, mat44 proj /* out */, mat44 view /* out */);
+API void       cubemap_endbake(cubemap_t *c, int step /* = 16 */, float sky_intensity /* = 1.0f */);
 API void       cubemap_sh_reset(cubemap_t *c);
-API void       cubemap_sh_add_light(cubemap_t *c, vec3 light, vec3 dir, float strength);
+API void       cubemap_sh_addlight(cubemap_t *c, vec3 light, vec3 dir, float strength);
 
 // lighting probe blending
 API void       cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 *out_sh /* expects 9 vec3 coefficients */);

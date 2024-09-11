@@ -2365,7 +2365,7 @@ void fullscreen_quad_rs_init() {
     }
 }
 
-void fullscreen_quad_rgb( texture_t texture ) {
+void fullscreen_quad_rgb_gamma( texture_t texture, float gamma ) {
     fullscreen_quad_rs_init();
     static int program = -1, vao = -1, u_inv_gamma = -1;
     if( program < 0 ) {
@@ -2380,8 +2380,8 @@ void fullscreen_quad_rgb( texture_t texture ) {
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     renderstate_apply(&fullscreen_quad_rs);
     glUseProgram( program );
-    float gamma = 1;
-    glUniform1f( u_inv_gamma, gamma );
+    float inv_gamma = 1.0f / gamma;
+    glUniform1f( u_inv_gamma, inv_gamma );
 
     glBindVertexArray( vao );
 
@@ -2395,10 +2395,9 @@ void fullscreen_quad_rgb( texture_t texture ) {
     glBindTexture( texture_type, 0 );
     glBindVertexArray( 0 );
     glUseProgram( 0 );
-//    glDisable( GL_BLEND );
 }
 
-void fullscreen_quad_rgb_flipped( texture_t texture ) {
+void fullscreen_quad_rgb_flipped_gamma( texture_t texture, float gamma ) {
     fullscreen_quad_rs_init();
     static int program = -1, vao = -1, u_inv_gamma = -1;
     if( program < 0 ) {
@@ -2413,8 +2412,8 @@ void fullscreen_quad_rgb_flipped( texture_t texture ) {
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     renderstate_apply(&fullscreen_quad_rs);
     glUseProgram( program );
-    float gamma = 1;
-    glUniform1f( u_inv_gamma, gamma );
+    float inv_gamma = 1.0f / gamma;
+    glUniform1f( u_inv_gamma, inv_gamma );
 
     glBindVertexArray( vao );
 
@@ -2428,7 +2427,14 @@ void fullscreen_quad_rgb_flipped( texture_t texture ) {
     glBindTexture( texture_type, 0 );
     glBindVertexArray( 0 );
     glUseProgram( 0 );
-//    glDisable( GL_BLEND );
+}
+
+void fullscreen_quad_rgb( texture_t texture_rgb ) {
+    fullscreen_quad_rgb_gamma(texture_rgb, 1.0f);
+}
+
+void fullscreen_quad_rgb_flipped( texture_t texture ) {
+    fullscreen_quad_rgb_flipped_gamma(texture, 1.0f);
 }
 
 void fullscreen_quad_ycbcr( texture_t textureYCbCr[3] ) {
@@ -2687,7 +2693,7 @@ cubemap_t* cubemap_get_active() {
 
 static int sky_last_fb;
 static int sky_last_vp[4];
-void cubemap_bake_begin(cubemap_t *c, vec3 pos, unsigned width, unsigned height) {
+void cubemap_beginbake(cubemap_t *c, vec3 pos, unsigned width, unsigned height) {
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &sky_last_fb);
     glGetIntegerv(GL_VIEWPORT, sky_last_vp);
     c->step = 0;
@@ -2733,7 +2739,7 @@ void cubemap_bake_begin(cubemap_t *c, vec3 pos, unsigned width, unsigned height)
     }
 }
 
-bool cubemap_bake_step(cubemap_t *c, mat44 proj /* out */, mat44 view /* out */) {
+bool cubemap_stepbake(cubemap_t *c, mat44 proj /* out */, mat44 view /* out */) {
     if (c->step >= 6) return false;
 
     static vec3 directions[6] = {{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1}};
@@ -2753,7 +2759,7 @@ bool cubemap_bake_step(cubemap_t *c, mat44 proj /* out */, mat44 view /* out */)
     return true;
 }
 
-void cubemap_bake_end(cubemap_t *c, int step, float sky_intensity) {
+void cubemap_endbake(cubemap_t *c, int step, float sky_intensity) {
     if (!sky_intensity) {
         sky_intensity = 1.0f;
     }
@@ -2899,13 +2905,6 @@ void cubemap_bake_end(cubemap_t *c, int step, float sky_intensity) {
         c->sh[s] = scale3(c->sh[s], 32.f / samples);
     }
     
-    // Copy each face of the cubemap to the cubemap texture
-    // for (int i = 0; i < 6; ++i) {
-    //     glCopyImageSubData(c->textures[i], GL_TEXTURE_2D, 0, 0, 0, 0,
-    //                        c->id, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0,
-    //                        c->width, c->height, 1);
-    // }
-
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -2924,7 +2923,7 @@ void cubemap_sh_reset(cubemap_t *c) {
     }
 }
 
-void cubemap_sh_add_light(cubemap_t *c, vec3 light, vec3 dir, float strength) {
+void cubemap_sh_addlight(cubemap_t *c, vec3 light, vec3 dir, float strength) {
     // Normalize the direction
     vec3 norm_dir = norm3(dir);
 
@@ -3113,16 +3112,16 @@ void skybox_render_rayleigh(skybox_t *sky, mat44 proj, mat44 view) {
 }
 
 void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
-    cubemap_bake_begin(&sky->cubemap, vec3(0, 0, 0), 1024, 1024);
+    cubemap_beginbake(&sky->cubemap, vec3(0, 0, 0), 1024, 1024);
     mat44 proj, view;
-    while (cubemap_bake_step(&sky->cubemap, proj, view)) {
+    while (cubemap_stepbake(&sky->cubemap, proj, view)) {
         skybox_render_rayleigh(sky, proj, view);
     }
-    cubemap_bake_end(&sky->cubemap, 0, sky_intensity);
+    cubemap_endbake(&sky->cubemap, 0, sky_intensity);
 }
 
 void skybox_sh_add_light(skybox_t *sky, vec3 light, vec3 dir, float strength) {
-    cubemap_sh_add_light(&sky->cubemap, light, dir, strength);
+    cubemap_sh_addlight(&sky->cubemap, light, dir, strength);
 }
 
 int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {

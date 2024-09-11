@@ -88,13 +88,13 @@ int main(int argc, char** argv) {
                 probe_pos = cam.position;
             }
             unsigned tex_size = 128;
-            cubemap_bake_begin(&env_probe.cubemap, probe_pos, tex_size, tex_size);
-            while (cubemap_bake_step(&env_probe.cubemap, probe_proj, probe_view)) {
+            cubemap_beginbake(&env_probe.cubemap, probe_pos, tex_size, tex_size);
+            while (cubemap_stepbake(&env_probe.cubemap, probe_proj, probe_view)) {
                 skybox_render(&sky, probe_proj, probe_view);
                 model_cubemap(&mdl, 0);
                 model_render(mdl, probe_proj, probe_view, mdl.pivot);
             }
-            cubemap_bake_end(&env_probe.cubemap, 4, 1.0f);
+            cubemap_endbake(&env_probe.cubemap, 4, 1.0f);
         }
 
         ddraw_sphere(probe_pos, 0.1f);
