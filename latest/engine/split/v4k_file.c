@@ -572,7 +572,7 @@ static archive_dir *dir_mount;
 static archive_dir *dir_cache;
 
 #ifndef MAX_CACHED_FILES    // @todo: should this be MAX_CACHED_SIZE (in MiB) instead?
-#define MAX_CACHED_FILES 32 // @todo: should we cache the cooked contents instead? ie, stbi() result instead of file.png?
+#define MAX_CACHED_FILES 256 // @todo: should we cache the cooked contents instead? ie, stbi() result instead of file.png?
 #endif
 
 struct vfs_entry {

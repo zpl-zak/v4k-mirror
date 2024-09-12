@@ -22,6 +22,16 @@
 - Scene: Integrated shadowmap support
 - Scene: Implemented renderbuckets (WIP!)
 - Scene/Render: Moved light to render module
+- Render: removed access to the model shader program
+- Render: introduced `model_uniform_t` a new approach to shader uniform management
+- Render: switched to PBR workflow as the default
+- Render: model shader now uses fixed uniform sampler slots. For user bound slots, use: `model_texture_unit(model_t-)` to generate a new ID on a rolling counter
+- Render: model uniforms are now cached
+- Render: shadow filter size raised to 6, maximum shadow lights raised to 16, max total lights raised to 96
+- Render: UBO creation/binding api
+- Render: model shader now stores lights in an UBO resource
+- Render: improved fallback to non-PBR textures in PBR workflow
+- Render: model shader BRDF can now sample a cubemap for irradiance in IBL path (WIP!)
 
 *Past releases*
 See git history stored at [misc/past_releases.txt](https://github.com/zpl-zak/v4k-mirror/blob/releases/latest/misc/past_releases.txt) for previous ancient releases.
