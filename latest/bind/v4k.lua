@@ -1107,6 +1107,8 @@ typedef struct colormap_t {
 } colormap_t;
  bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb );
  unsigned query_test_point(mat44 proj, mat44 view, vec3 pos, float size);
+ void fullscreen_quad_rgb_gamma( texture_t texture_rgb, float gamma );
+ void fullscreen_quad_rgb_flipped_gamma( texture_t texture_rgb, float gamma );
  void fullscreen_quad_rgb( texture_t texture_rgb );
  void fullscreen_quad_rgb_flipped( texture_t texture );
  void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3] );

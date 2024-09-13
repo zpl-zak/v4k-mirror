@@ -187,7 +187,7 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
     // Map roughness from range [0, 1] into a mip LOD [0, skysphere_mip_count].
     // The magic numbers were chosen empirically.
 
-    float mip = 0.9 * skysphere_mip_count * pow(roughness, 0.25 * BOOST_SPECULAR);
+    float mip = 0.9 * skysphere_mip_count * pow(roughness, BOOST_SPECULAR);
 
     vec3 prefiltered = vec3(0.0);
     if (has_tex_skysphere)
