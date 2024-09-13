@@ -4979,7 +4979,7 @@ static char* strcpy_safe(char *d, const char *s) {
 static
 void model_load_pbr_layer(material_layer_t *layer, const char *texname, bool load_as_srgb) {
     strcpy_safe(layer->texname, texname);
-    colormap(&layer->map, texname, 0);
+    colormap(&layer->map, texname, load_as_srgb);
 }
 
 static

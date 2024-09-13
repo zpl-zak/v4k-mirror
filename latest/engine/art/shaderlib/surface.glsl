@@ -69,7 +69,10 @@ surface_t surface() {
     else
         baseColor_alpha = sample_colormap( map_diffuse, v_texcoord );
     s.albedo = baseColor_alpha;
-    s.albedo.rgb = pow(s.albedo.rgb, vec3(2.2));
+
+    if (!map_albedo.has_tex && !map_diffuse.has_tex) {
+        s.albedo.rgb = pow(s.albedo.rgb, vec3(2.2));
+    }
 
     if( map_metallic.has_tex && map_roughness.has_tex ) {
         s.metallic = sample_colormap( map_metallic, v_texcoord ).x;
@@ -90,12 +93,14 @@ surface_t surface() {
     //     s.ao = sample_colormap( map_ambient, v_texcoord ).x;
 
     s.emissive = sample_colormap( map_emissive, v_texcoord ).rgb;
-    s.emissive.rgb = pow(s.emissive.rgb, vec3(2.2));
+    if (!map_emissive.has_tex) {
+        s.emissive.rgb = pow(s.emissive.rgb, vec3(2.2));
+    }
 
     vec3 normalmap = texture( map_normals_tex, v_texcoord ).xyz * vec3(2.0) - vec3(1.0);
-    float normalmap_mip = textureQueryLod( map_normals_tex, v_texcoord ).x;
-    float normalmap_length = length(normalmap);
-    normalmap /= normalmap_length;
+    // float normalmap_mip = textureQueryLod( map_normals_tex, v_texcoord ).x;
+    // float normalmap_length = length(normalmap);
+    // normalmap /= normalmap_length;
 
     s.normal = v_normal_ws;
 
@@ -109,13 +114,13 @@ surface_t surface() {
 
     s.normal = normalize( s.normal );
 
-    if (USE_NORMAL_VARIATION_TO_ROUGHNESS)
-    {
-        // Try to reduce specular aliasing by increasing roughness when minified normal maps have high variation.
-        float variation = 1. - pow( normalmap_length, 8. );
-        float minification = clamp( normalmap_mip - 2., 0., 1. );
-        s.roughness = mix( s.roughness, 1.0, variation * minification );
-    }
+    // if (USE_NORMAL_VARIATION_TO_ROUGHNESS)
+    // {
+    //     // Try to reduce specular aliasing by increasing roughness when minified normal maps have high variation.
+    //     float variation = 1. - pow( normalmap_length, 8. );
+    //     float minification = clamp( normalmap_mip - 2., 0., 1. );
+    //     s.roughness = mix( s.roughness, 1.0, variation * minification );
+    // }
 
     vec3 N = s.normal;
     vec3 V = normalize( v_to_camera );

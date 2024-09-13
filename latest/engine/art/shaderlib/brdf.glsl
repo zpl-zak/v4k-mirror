@@ -29,7 +29,7 @@ uniform ColorMap map_emissive;  uniform sampler2D map_emissive_tex;
 #define USE_WRAPAROUND_SPECULAR true            // Makes silhouettes more reflective to avoid black pixels.
 #define USE_SPECULAR_AO_ATTENUATION true        // Dampens IBL specular ambient with AO if enabled.
 #define USE_NORMAL_VARIATION_TO_ROUGHNESS false  // Increases roughness if normal map has variation and was minified.
-#define BOOST_SPECULAR  1.00f
+#define BOOST_SPECULAR  2.50f
 
 uniform float skysphere_rotation; /// set:0
 uniform float skysphere_mip_count;
@@ -187,7 +187,7 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
     // Map roughness from range [0, 1] into a mip LOD [0, skysphere_mip_count].
     // The magic numbers were chosen empirically.
 
-    float mip = 0.9 * skysphere_mip_count * pow(roughness, BOOST_SPECULAR);
+    float mip = 0.9 * skysphere_mip_count * pow(roughness, 0.25 * BOOST_SPECULAR);
 
     vec3 prefiltered = vec3(0.0);
     if (has_tex_skysphere)
