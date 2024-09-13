@@ -98,9 +98,9 @@ surface_t surface() {
     }
 
     vec3 normalmap = texture( map_normals_tex, v_texcoord ).xyz * vec3(2.0) - vec3(1.0);
-    // float normalmap_mip = textureQueryLod( map_normals_tex, v_texcoord ).x;
-    // float normalmap_length = length(normalmap);
-    // normalmap /= normalmap_length;
+    float normalmap_mip = textureQueryLod( map_normals_tex, v_texcoord ).x;
+    float normalmap_length = length(normalmap);
+    normalmap /= normalmap_length;
 
     s.normal = v_normal_ws;
 
@@ -114,13 +114,13 @@ surface_t surface() {
 
     s.normal = normalize( s.normal );
 
-    // if (USE_NORMAL_VARIATION_TO_ROUGHNESS)
-    // {
-    //     // Try to reduce specular aliasing by increasing roughness when minified normal maps have high variation.
-    //     float variation = 1. - pow( normalmap_length, 8. );
-    //     float minification = clamp( normalmap_mip - 2., 0., 1. );
-    //     s.roughness = mix( s.roughness, 1.0, variation * minification );
-    // }
+    if (USE_NORMAL_VARIATION_TO_ROUGHNESS)
+    {
+        // Try to reduce specular aliasing by increasing roughness when minified normal maps have high variation.
+        float variation = 1. - pow( normalmap_length, 8. );
+        float minification = clamp( normalmap_mip - 2., 0., 1. );
+        s.roughness = mix( s.roughness, 1.0, variation * minification );
+    }
 
     vec3 N = s.normal;
     vec3 V = normalize( v_to_camera );

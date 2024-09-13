@@ -3142,7 +3142,10 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     // skybox_rs.clear_color[2] = bgcolor.b;
     // skybox_rs.clear_color[3] = 1; // @transparent
 
-    mat44 mvp; multiply44x2(mvp, proj, view);
+
+
+    mat44 mvp;
+    multiply44x2(mvp, proj, view);
 
     //glDepthMask(GL_FALSE);
     shader_bind(sky->program);

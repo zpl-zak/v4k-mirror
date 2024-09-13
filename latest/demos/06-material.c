@@ -81,12 +81,12 @@ int main() {
     object_t* obj4 = scene_spawn();
     object_model(obj4, m3);
     object_scale(obj4, vec3(3,3,3));
-    object_move(obj4, vec3(-10+6*3,0,-10));
+    object_move(obj4, vec3(-10+6*3,0,-30));
     object_pivot(obj4, vec3(0,180,180));
 
     // spawn object5 (shadertoy)
     object_t* obj5 = scene_spawn();
-    object_model(obj5, m4);
+    object_model(obj5, m4); 
     object_diffuse(obj5, sh.tx); 
     object_scale(obj5, vec3(3,3,3));
     object_move(obj5, vec3(-10+8*3,0,-10));

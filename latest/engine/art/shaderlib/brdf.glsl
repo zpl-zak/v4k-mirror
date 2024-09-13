@@ -28,8 +28,8 @@ uniform ColorMap map_emissive;  uniform sampler2D map_emissive_tex;
 #define USE_BRUTEFORCE_IRRADIANCE false         // Samples irradiance from tex_skysphere when enabled.
 #define USE_WRAPAROUND_SPECULAR true            // Makes silhouettes more reflective to avoid black pixels.
 #define USE_SPECULAR_AO_ATTENUATION true        // Dampens IBL specular ambient with AO if enabled.
-#define USE_NORMAL_VARIATION_TO_ROUGHNESS false  // Increases roughness if normal map has variation and was minified.
-#define BOOST_SPECULAR  2.50f
+#define USE_NORMAL_VARIATION_TO_ROUGHNESS true  // Increases roughness if normal map has variation and was minified.
+#define BOOST_SPECULAR  1.00f
 #define BOOST_LIGHTING  1.00f
 
 uniform float skysphere_rotation; /// set:0

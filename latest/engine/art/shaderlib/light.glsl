@@ -105,7 +105,7 @@ vec3 shading_light(light_t l, material_t m) {
     float G = geometry_smith( N, V, L, m.roughness );
 
     vec3 num = D * F * G;
-    float denom = 4. * max( 0., dot( N, V ) ) * max( 0., dot( N, L ) );
+    float denom = 4. * max( 0., dot( N, V ) ) * max( 0., dot( N, L ) ) + 0.0001;
 
     vec3 specular = kS * (num / max( 0.001, denom ));
 
