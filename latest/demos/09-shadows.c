@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
             case DIR: lights = directional_lights; break;
             case ALL: lights = all_lights; break;
         }
-
+ 
         // Animate light
         if (mode == POINT) {
             lights[0].pos = vec3(0, 5.5, 1);
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
             lights[1].pos.y += cosf(window_time()*4)*1.0;
             lights[1].pos.z += cosf(window_time()*4)*6.0;
         }
-
+ 
         static bool camera_spot = true;
         if (input_down(KEY_SPACE)) camera_spot = !camera_spot;
         if (mode == SPOT && camera_spot) {

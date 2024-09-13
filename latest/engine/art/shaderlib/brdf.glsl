@@ -28,13 +28,12 @@ uniform ColorMap map_emissive;  uniform sampler2D map_emissive_tex;
 #define USE_BRUTEFORCE_IRRADIANCE false         // Samples irradiance from tex_skysphere when enabled.
 #define USE_WRAPAROUND_SPECULAR true            // Makes silhouettes more reflective to avoid black pixels.
 #define USE_SPECULAR_AO_ATTENUATION true        // Dampens IBL specular ambient with AO if enabled.
-#define USE_NORMAL_VARIATION_TO_ROUGHNESS true  // Increases roughness if normal map has variation and was minified.
-#define BOOST_LIGHTING  2.00f                   // Multiplies analytic light's color with this constant because otherwise they look really pathetic.
-#define BOOST_SPECULAR  1.50f
+#define USE_NORMAL_VARIATION_TO_ROUGHNESS false  // Increases roughness if normal map has variation and was minified.
+#define BOOST_SPECULAR  1.00f
 
 uniform float skysphere_rotation; /// set:0
 uniform float skysphere_mip_count;
-uniform float exposure; /// set:1
+uniform float exposure; /// set:2.0
 uniform float specular_shininess;
 
 uniform samplerCube tex_skycube;
@@ -57,7 +56,7 @@ vec3 fresnel_schlick( vec3 H, vec3 V, vec3 F0 )
 vec3 fresnel_schlick_roughness( vec3 H, vec3 V, vec3 F0, float roughness )
 {
     float cosTheta = clamp( dot( H, V ), 0., 1. );
-    return F0 + ( max( vec3( 1.0 - roughness ), F0 ) - F0 ) * pow( 1. - cosTheta, 5.0 );
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float distribution_ggx( vec3 N, vec3 H, float roughness )
@@ -165,7 +164,7 @@ vec3 sample_irradiance_fast( vec3 normal, vec3 vertex_tangent )
     }
 }
 
-vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel )
+vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic )
 {
     // What we'd like to do here is take a LOT of skybox samples around the reflection
     // vector R according to the BRDF lobe.
@@ -181,6 +180,7 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel )
     // For details, see Brian Karis, "Real Shading in Unreal Engine 4", 2013.
 
     vec3 R = 2. * dot( V, N ) * N - V;
+    // vec3 R = reflect(-V, N);
 
     vec2 polar = sphere_to_polar( R );
 
@@ -198,6 +198,8 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel )
     {
         prefiltered = textureLod( tex_skycube, R, mip ).rgb * exposure;
     }
+
+    // prefiltered = pow(prefiltered, vec3(1.2));
 
     float NdotV = dot( N, V );
 

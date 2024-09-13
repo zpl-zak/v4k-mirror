@@ -69,6 +69,7 @@ surface_t surface() {
     else
         baseColor_alpha = sample_colormap( map_diffuse, v_texcoord );
     s.albedo = baseColor_alpha;
+    s.albedo.rgb = pow(s.albedo.rgb, vec3(2.2));
 
     if( map_metallic.has_tex && map_roughness.has_tex ) {
         s.metallic = sample_colormap( map_metallic, v_texcoord ).x;
@@ -89,6 +90,7 @@ surface_t surface() {
     //     s.ao = sample_colormap( map_ambient, v_texcoord ).x;
 
     s.emissive = sample_colormap( map_emissive, v_texcoord ).rgb;
+    s.emissive.rgb = pow(s.emissive.rgb, vec3(2.2));
 
     vec3 normalmap = texture( map_normals_tex, v_texcoord ).xyz * vec3(2.0) - vec3(1.0);
     float normalmap_mip = textureQueryLod( map_normals_tex, v_texcoord ).x;
@@ -170,17 +172,20 @@ surface_t surface() {
         diffuse_ambient = irradiance * s.albedo.rgb;
 
         // Ambient light also has a specular part.
-        specular_ambient = specular_ibl( V, N, s.roughness, F );
+        specular_ambient = specular_ibl( V, N, s.roughness, F, s.metallic );
+
+        // s.light_indirect *= 0.5;
+        // s.light_indirect *= 1.0 - s.metallic;
 
         // Ambient occlusion tells us the fraction of sky light that reaches this point.
         if (USE_SPECULAR_AO_ATTENUATION)
         {
-            s.light_indirect += s.ao * (kD * diffuse_ambient + specular_ambient);
+            s.light_indirect = s.ao * (kD * diffuse_ambient + specular_ambient);
         }
         else
         {
             // We don't attenuate specular_ambient ambient here with AO which might cause flickering in dark cavities.
-            s.light_indirect += s.ao * (kD * diffuse_ambient) + specular_ambient;
+            s.light_indirect = s.ao * (kD * diffuse_ambient) + specular_ambient;
         }
     }
 #else
@@ -212,11 +217,17 @@ surface_t surface() {
         // float c = 2.43f;
         // float d = 0.59f;
         // float e = 0.14f;
-        // vec3 color = clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
-        // vec3 color = x / ( vec3(1.) + x );
+        // vec3 adjusted_color = clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
         // gamma correction
 
-        // s.fragcolor.rgb = pow( color, vec3(1.0/2.2) );
+        vec3 color = s.fragcolor.rgb;
+        // color = color / ( vec3(1.) + color );
+        color = pow( color, vec3(1. / 2.2) );
+        // color = pow( color, vec3(1. / 2.2) );
+        // float dither = random( uvec3( floatBitsToUint( gl_FragCoord.xy ), frame_count ) );
+        // color += vec3( (-1.0/256.) + (2./256.) * dither );
+        s.fragcolor.rgb = color;
+        // s.fragcolor.rgb = adjusted_color;
         // s.fragcolor.rgb = pow(s.fragcolor.rgb, vec3(1.0/2.2) );
     }
 #endif

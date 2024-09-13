@@ -7,12 +7,12 @@
 
 
 const char *skyboxes[][2] = { // reflection, env, metadata
+    {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Env.hdr"},
     {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
     {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Env.hdr"},
     {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
     {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
     {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
-    {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Env.hdr"},
     {"hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_Env.hdr"},
     {"hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_Env.hdr"},
     {"hdr/mesto.hdr","hdr/mesto_Env.hdr"},
@@ -20,28 +20,29 @@ const char *skyboxes[][2] = { // reflection, env, metadata
 
 int main() {
     // create the window
-    window_create( 0.75f, 0 );
+    window_create( 0.75f, WINDOW_MSAA8 );
     window_color( GRAY );
 
     // create camera
     camera_t cam = camera();
 
     // fx: load all post fx files in all subdirs.
-    fx_load("fx**.fs");
-    fx_enable(fx_find("fxTonemapACES.fs"), 1);
-
+    fx_load("**/fxTonemap*.fs");
+    fx_load("**/fxGamma.fs");
+      //fx_enable(fx_find("fxTonemapUncharted.fs"), 1); 
+ 
     // load video, RGB texture, no audio
     video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO | VIDEO_LOOP ); video_seek(v, 30);
     // load texture
-    texture_t t1 = texture("kgirl/g01_texture.png", 0);
-    texture_t t2 = texture("matcaps/material3", 0);
-    // load model
+    texture_t t1 = texture("kgirl/g01_texture.png", 0); 
+    texture_t t2 = texture("matcaps/material3", 0); 
+    // load model 
     model_t m1 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_NO_PBR);
     model_t m5 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_NO_PBR);
     model_t m2 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_NO_PBR|MODEL_MATCAPS);
     model_t m3 = model("damagedhelmet.gltf", MODEL_NO_ANIMATIONS);
-    // model_t m3 = model("Scutum_low.fbx", MODEL_NO_ANIMATIONS|MODEL_PBR);
-    model_t m4 = model("cube.obj", MODEL_NO_ANIMATIONS|MODEL_NO_PBR);
+    // model_t m3 = model("Scutum_low.fbx", MODEL_NO_ANIMATIONS|MODEL_PBR); 
+    model_t m4 = model("cube.obj", MODEL_NO_ANIMATIONS|MODEL_NO_PBR); 
     // model_t m4 = model("avp/scene.gltf", MODEL_NO_ANIMATIONS|MODEL_PBR);
     // model_t m3 = model("Cerberus_LP.FBX", MODEL_NO_ANIMATIONS|MODEL_PBR); 
 
@@ -89,21 +90,19 @@ int main() {
     object_diffuse(obj5, sh.tx);
     object_scale(obj5, vec3(3,3,3));
     object_move(obj5, vec3(-10+8*3,0,-10));
-
-    // create point light
+ 
     // scene_spawn_light(); // sun
-    light_t* l = scene_spawn_light();
+    light_t* l = scene_spawn_light(); 
     light_type(l, LIGHT_POINT);
     // l->diffuse = vec3(0,0,0);
-
+ 
     // load skybox
     scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]));
+ 
 
-
-    while(window_swap() && !input(KEY_ESC)) {
-        // draw environment
-        // ddraw_grid(0);
-
+    while(window_swap() && !input(KEY_ESC)) { 
+        // draw environment 
+ 
         // update video
         video_decode( v );
 
@@ -136,7 +135,7 @@ int main() {
             for( int i = 0; i < countof(skyboxes); i++ ) {
                 const char *filename = skyboxes[i][0];
                 // bool selected = !strcmp(g_skybox.reflection->filename, file_name(filename));
-                bool selected = false;
+                bool selected = false; 
                 if( ui_bool( filename, &selected ) ) {
                     scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][0], skyboxes[i][1]));
                 }

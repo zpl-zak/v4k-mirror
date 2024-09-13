@@ -1054,7 +1054,7 @@ if( flags & TEXTURE_MIPMAPS ) {
         GLfloat max_aniso = 0;
 //        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_aniso);
 max_aniso = 4;
-//        glTexParameterf(texture_type, GL_TEXTURE_MAX_ANISOTROPY, max_aniso);
+       glTexParameterf(texture_type, GL_TEXTURE_MAX_ANISOTROPY, max_aniso);
 }
 
     // glBindTexture(texture_type, 0); // do not unbind. current code expects texture to be bound at function exit
@@ -2992,7 +2992,7 @@ skybox_t skybox(const char *asset, int flags) {
     if( asset ) {
         int is_panorama = vfs_size( asset );
         if( is_panorama ) { // is file
-            stbi_hdr_to_ldr_gamma(1.0f);
+            stbi_hdr_to_ldr_gamma(2.2f);
             image_t panorama = image( asset, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
             image_destroy(&panorama);
@@ -3028,6 +3028,7 @@ skybox_t skybox(const char *asset, int flags) {
 
 static inline
 texture_t load_env_tex( const char *pathfile, unsigned flags ) {
+    stbi_hdr_to_ldr_gamma(2.2f);
     int flags_hdr = strendi(pathfile, ".hdr") ? TEXTURE_FLOAT | TEXTURE_RGBA : 0;
     texture_t t = texture(pathfile, flags | TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | flags_hdr);
     glBindTexture( GL_TEXTURE_2D, t.id );
@@ -3054,7 +3055,7 @@ skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_m
     if( sky_map ) {
         int is_panorama = vfs_size( sky_map );
         if( is_panorama ) { // is file
-            stbi_hdr_to_ldr_gamma(1.0f);
+            stbi_hdr_to_ldr_gamma(2.2f);
             image_t panorama = image( sky_map, IMAGE_RGBA );
             sky.cubemap = cubemap( panorama, 0 ); // RGBA required
             image_destroy(&panorama);
@@ -4978,7 +4979,7 @@ static char* strcpy_safe(char *d, const char *s) {
 static
 void model_load_pbr_layer(material_layer_t *layer, const char *texname, bool load_as_srgb) {
     strcpy_safe(layer->texname, texname);
-    colormap(&layer->map, texname, load_as_srgb);
+    colormap(&layer->map, texname, 0);
 }
 
 static
@@ -4994,7 +4995,7 @@ void model_load_pbr(model_t *m, material_t *mt, int mesh) {
     mt->layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(0.5,0.5,0.5,1.0);
     mt->layer[MATERIAL_CHANNEL_ROUGHNESS].map.color = vec4(1,1,1,1);
     mt->layer[MATERIAL_CHANNEL_METALLIC].map.color = vec4(0,0,0,0);
-    mt->layer[MATERIAL_CHANNEL_AO].map.color = vec4(0,0,0,0);
+    mt->layer[MATERIAL_CHANNEL_AO].map.color = vec4(1,1,1,0);
     mt->layer[MATERIAL_CHANNEL_AMBIENT].map.color = vec4(0,0,0,1);
     mt->layer[MATERIAL_CHANNEL_EMISSIVE].map.color = vec4(0,0,0,0);
 
