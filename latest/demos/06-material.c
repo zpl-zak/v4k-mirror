@@ -87,14 +87,14 @@ int main() {
     // spawn object5 (shadertoy)
     object_t* obj5 = scene_spawn();
     object_model(obj5, m4);
-    object_diffuse(obj5, sh.tx);
+    object_diffuse(obj5, sh.tx); 
     object_scale(obj5, vec3(3,3,3));
     object_move(obj5, vec3(-10+8*3,0,-10));
  
     // scene_spawn_light(); // sun
     light_t* l = scene_spawn_light(); 
     light_type(l, LIGHT_POINT);
-    // l->diffuse = vec3(0,0,0);
+    l->diffuse = scale3(vec3(1,1,1), 2.5f);
  
     // load skybox
     scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]));

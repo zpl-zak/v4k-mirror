@@ -87,7 +87,7 @@ vec3 shading_light(light_t l, material_t m) {
     }
 
 #ifdef SHADING_PBR
-    vec3 radiance = l.diffuse.rgb;
+    vec3 radiance = l.diffuse.rgb * BOOST_LIGHTING;
     vec3 V = normalize( v_to_camera );
     vec3 N = m.normal;
     vec3 L = normalize( lightDir );

@@ -30,6 +30,7 @@ uniform ColorMap map_emissive;  uniform sampler2D map_emissive_tex;
 #define USE_SPECULAR_AO_ATTENUATION true        // Dampens IBL specular ambient with AO if enabled.
 #define USE_NORMAL_VARIATION_TO_ROUGHNESS false  // Increases roughness if normal map has variation and was minified.
 #define BOOST_SPECULAR  2.50f
+#define BOOST_LIGHTING  1.00f
 
 uniform float skysphere_rotation; /// set:0
 uniform float skysphere_mip_count;
