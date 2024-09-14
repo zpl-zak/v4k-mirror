@@ -6,16 +6,16 @@
 #include "v4k.h"
 
 
-const char *skyboxes[][2] = { // reflection, env, metadata
-    {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Env.hdr"},
-    {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
-    {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Env.hdr"},
-    {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
-    {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
-    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
-    {"hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_Env.hdr"},
-    {"hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_Env.hdr"},
-    {"hdr/mesto.hdr","hdr/mesto_Env.hdr"},
+const char *skyboxes[][3] = { // reflection, env, metadata
+    {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Rad.hdr","hdr/Factory_Catwalk_Env.hdr"},
+    {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Rad.hdr","hdr/graffiti_shelter_Env.hdr"},
+    {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
+    {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
+    {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
+    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
+    {"hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_Env.hdr"},
+    {"hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_Env.hdr"},
+    {"hdr/mesto.hdr","hdr/mesto.hdr","hdr/mesto_Env.hdr"},
 };
 
 int main() {
@@ -97,7 +97,7 @@ int main() {
     l->diffuse = scale3(vec3(1,1,1), 2.5f);
  
     // load skybox
-    scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]));
+    scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]));
  
 
     while(window_swap() && !input(KEY_ESC)) { 
@@ -137,7 +137,7 @@ int main() {
                 // bool selected = !strcmp(g_skybox.reflection->filename, file_name(filename));
                 bool selected = false; 
                 if( ui_bool( filename, &selected ) ) {
-                    scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][0], skyboxes[i][1]));
+                    scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]));
                 }
             }
             ui_panel_end();

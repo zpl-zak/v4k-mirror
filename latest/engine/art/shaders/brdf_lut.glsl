@@ -95,5 +95,6 @@ vec2 GenerateBRDF(float NdotV, float roughness) {
 }
 
 void main() {
-    fragcolor = GenerateBRDF(uv.x, uv.y);
+    fragcolor = GenerateBRDF(uv.x, 1.0-uv.y);
+    fragcolor = pow(fragcolor, vec2(1.0/2.2));
 }

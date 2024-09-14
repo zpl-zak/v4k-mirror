@@ -34,7 +34,7 @@ uniform ColorMap map_emissive;  uniform sampler2D map_emissive_tex;
 
 uniform float skysphere_rotation; /// set:0
 uniform float skysphere_mip_count;
-uniform float exposure; /// set:2.0
+uniform float exposure; /// set:1.0
 uniform float specular_shininess;
 
 uniform samplerCube tex_skycube;
@@ -180,8 +180,10 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
     //
     // For details, see Brian Karis, "Real Shading in Unreal Engine 4", 2013.
 
-    vec3 R = 2. * dot( V, N ) * N - V;
-    // vec3 R = reflect(-V, N);
+    // vec3 R = 2. * dot( V, N ) * N - V;
+    vec3 R = reflect(-V, N);
+
+    R.x = -R.x;
 
     vec2 polar = sphere_to_polar( R );
 
@@ -189,6 +191,7 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
     // The magic numbers were chosen empirically.
 
     float mip = 0.9 * skysphere_mip_count * pow(roughness, 0.25 * BOOST_SPECULAR);
+    // float mip = skysphere_mip_count * roughness;
 
     vec3 prefiltered = vec3(0.0);
     if (has_tex_skysphere)
@@ -215,7 +218,8 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
 
     // A precomputed lookup table contains a scale and a bias term for specular intensity (called "fresnel" here).
     // See equation (8) in Karis' course notes mentioned above.
-    vec2 envBRDF = texture( tex_brdf_lut, vec2(NdotV, 1.0-roughness) ).xy; // (NdotV,1-roughtness) for green top-left (NdotV,roughness) for green bottom-left
+    vec2 envBRDF = texture( tex_brdf_lut, vec2(NdotV, roughness) ).xy; // (NdotV,1-roughtness) for green top-left (NdotV,roughness) for green bottom-left
+    envBRDF = pow(envBRDF, vec2(2.2));
     vec3 specular = prefiltered * (fresnel * envBRDF.x + vec3(envBRDF.y));
 
     return specular;
