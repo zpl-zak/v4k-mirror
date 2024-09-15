@@ -56,7 +56,7 @@ API double   window_delta();
 
 API void     window_focus(); // window attribute api using haz catz language for now
 API int      window_has_focus();
-API void     window_fullscreen(int enabled);
+API void     window_fullscreen(int mode); // 0 = windowed, 1 = borderless, 2 = exclusive
 API int      window_has_fullscreen();
 API void     window_cursor(int visible);
 API int      window_has_cursor();

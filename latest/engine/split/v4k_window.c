@@ -108,7 +108,7 @@ void window_unhook(void (*func)()) {
 #endif
 
 static GLFWwindow *window;
-static int w, h, xpos, ypos, paused;
+static int w, h, xpos, ypos, paused, win_flags;
 static int fullscreen, xprev, yprev, wprev, hprev;
 static uint64_t frame_count;
 static double t, dt, fps, hz = 0.00;
@@ -312,6 +312,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     }
 
     window_hints(flags);
+    win_flags = flags;
 
     GLFWmonitor* monitor = NULL;
     #ifndef __EMSCRIPTEN__
@@ -974,8 +975,8 @@ int window_has_fullscreen() {
 #endif /* __EMSCRIPTEN__ */
 }
 
-void window_fullscreen(int enabled) {
-    if( window_has_fullscreen() == !!enabled ) return;
+void window_fullscreen(int mode) {
+    if( window_has_fullscreen() == !!mode ) return;
 
 #if is(ems)
 
@@ -998,7 +999,7 @@ void window_fullscreen(int enabled) {
         emscripten_exit_fullscreen();
     }
 #else
-    if( enabled )
+    if( !!mode == 1 )
     EM_ASM(Module.requestFullscreen(1, 1));
     else
     EM_ASM(Module.exitFullscreen());
@@ -1015,18 +1016,28 @@ void window_fullscreen(int enabled) {
         glfwSetWindowMonitor(g->window, NULL, 0, 0, g->width, g->height, GLFW_DONT_CARE);
     }
 #else
-    if( enabled ) {
-        int wx = 0, wy = 0; glfwGetWindowPos(window, &wx, &wy);
-        GLFWmonitor *monitor = window_find_monitor(wx, wy);
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
+    int mwidth = vidmode->width, mheight = vidmode->height;
 
-        wprev = w, hprev = h, xprev = wx, yprev = wy; // save window context for further restoring
-
-        int width, height;
-        glfwGetMonitorWorkarea(monitor, NULL, NULL, &width, &height);
-        glfwSetWindowMonitor(window, monitor, 0, 0, width, height, GLFW_DONT_CARE);
-    } else {
-        glfwSetWindowMonitor(window, NULL, xpos, ypos, wprev, hprev, GLFW_DONT_CARE);
-        glfwSetWindowPos(window, xprev, yprev);
+    if (mode == 0) {
+        // Windowed mode (75% of monitor resolution)
+        int wwidth = mwidth * 0.75;
+        int wheight = mheight * 0.75;
+        glfwWindowHint(GLFW_DECORATED, !(win_flags & WINDOW_BORDERLESS));
+        glfwSetWindowMonitor(window, NULL, (mwidth - wwidth) / 2, (mheight - wheight) / 2, wwidth, wheight, GLFW_DONT_CARE);
+    } else if (mode == 1) {
+        // Borderless fullscreen
+        // glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+        glfwSetWindowAttrib(window, GLFW_FLOATING, GLFW_TRUE);
+        
+        // Move window to cover the entire monitor
+        glfwSetWindowPos(window, 0, 0);
+        glfwSetWindowSize(window, mwidth, mheight);
+    } else if (mode == 2) {
+        // Exclusive fullscreen
+        glfwSetWindowMonitor(window, monitor, 0, 0, mwidth, mheight, vidmode->refreshRate);
     }
 #endif
 
