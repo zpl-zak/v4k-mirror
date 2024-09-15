@@ -6,13 +6,13 @@
 #include "v4k.h"
 
 
-const char *skyboxes[][3] = { // reflection, env, metadata
+const char *skyboxes[][3] = { // reflection, rad, env
+    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
     {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Rad.hdr","hdr/Factory_Catwalk_Env.hdr"},
     {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Rad.hdr","hdr/graffiti_shelter_Env.hdr"},
     {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
     {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
     {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
-    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
     {"hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_Env.hdr"},
     {"hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_1k.hdr","hdr/Shiodome_Stairs_Env.hdr"},
     {"hdr/mesto.hdr","hdr/mesto.hdr","hdr/mesto_Env.hdr"},
@@ -20,15 +20,16 @@ const char *skyboxes[][3] = { // reflection, env, metadata
 
 int main() {
     // create the window
-    window_create( 0.75f, WINDOW_MSAA8 );
+    window_create( 0.75f, 0 );
     window_color( GRAY );
 
     // create camera
     camera_t cam = camera();
 
     // fx: load all post fx files in all subdirs.
-    fx_load("**/fxTonemap*.fs");
-    fx_load("**/fxGamma.fs");
+    fx_load("fx/**.fs");
+    // fx_load("**/fxTonemap*.fs");
+    // fx_load("**/fxGamma.fs");
       //fx_enable(fx_find("fxTonemapUncharted.fs"), 1); 
  
     // load video, RGB texture, no audio
@@ -94,7 +95,7 @@ int main() {
     // scene_spawn_light(); // sun
     light_t* l = scene_spawn_light(); 
     light_type(l, LIGHT_POINT);
-    l->diffuse = scale3(vec3(1,1,1), 2.5f);
+    l->diffuse = vec3(1,1,1);
  
     // load skybox
     scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]));

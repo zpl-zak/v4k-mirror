@@ -130,11 +130,13 @@ vec3 lighting(material_t m) {
     for (int i=0; i<u_num_lights; i++) {
         vec3 lit_contrib = shading_light(lightBuffer.lights[i], m);
 
-#ifdef FS_PASS
-        if (lit_contrib.xyz != vec3(0,0,0)) {
-            lit += lit_contrib * shadowing(i).xyz;
+        vec3 result = lit_contrib;
+// #ifdef FS_PASS
+//         result *= shadowing(i).xyz;
+// #endif
+        if (result.xyz != vec3(0,0,0)) {
+            lit += result;
         }
-#endif
     }
 #endif
     return lit;
