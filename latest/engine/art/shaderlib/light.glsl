@@ -131,9 +131,9 @@ vec3 lighting(material_t m) {
         vec3 lit_contrib = shading_light(lightBuffer.lights[i], m);
 
         vec3 result = lit_contrib;
-// #ifdef FS_PASS
-//         result *= shadowing(i).xyz;
-// #endif
+#ifdef FS_PASS
+        result *= shadowing(i).xyz;
+#endif
         if (result.xyz != vec3(0,0,0)) {
             lit += result;
         }

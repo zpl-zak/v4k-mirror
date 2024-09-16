@@ -57,7 +57,7 @@ vec3 fresnel_schlick( vec3 H, vec3 V, vec3 F0 )
 vec3 fresnel_schlick_roughness( vec3 H, vec3 V, vec3 F0, float roughness )
 {
     float cosTheta = clamp( dot( H, V ), 0., 1. );
-    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return F0 + ( max( vec3( 1.0 - roughness ), F0 ) - F0 ) * pow( 1. - cosTheta, 5.0 );
 }
 
 float distribution_ggx( vec3 N, vec3 H, float roughness )
