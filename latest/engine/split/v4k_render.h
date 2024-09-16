@@ -303,6 +303,7 @@ enum SHADOW_TECHNIQUE {
 #define NUM_SHADOW_CASCADES 4
 
 typedef struct light_t {
+    char *name;
     unsigned type;
     vec3 diffuse, specular, ambient;
     vec3 pos, dir;

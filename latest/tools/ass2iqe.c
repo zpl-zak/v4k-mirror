@@ -38,6 +38,7 @@ int doflipUV = 0; // export flipped UVs
 int doanimlist = 0; // generate list of animations with properties
 int dolights = 0; // export lights only
 int dofixaxis = 0; // fix axis from Y up to Z up
+int noaxis = 0; // don't apply axis conversion (usually used for fbx)
 
 int doaxis = 0; // flip bone axis from X to Y to match blender
 int dounscale = 0; // remove scaling from bind pose
@@ -1331,29 +1332,118 @@ void get_node_xform(const struct aiNode* node, struct aiMatrix4x4* transform) {
     }
 }
 
+static inline
+void aiMatrix4x4_Decompose(const struct aiMatrix4x4* transform, struct aiVector3D* scaling, struct aiQuaternion* rotation, struct aiVector3D* position) {
+    // Extract scaling
+    scaling->x = sqrtf(transform->a1 * transform->a1 + transform->b1 * transform->b1 + transform->c1 * transform->c1);
+    scaling->y = sqrtf(transform->a2 * transform->a2 + transform->b2 * transform->b2 + transform->c2 * transform->c2);
+    scaling->z = sqrtf(transform->a3 * transform->a3 + transform->b3 * transform->b3 + transform->c3 * transform->c3);
+
+    // Create rotation matrix (remove scaling)
+    struct aiMatrix3x3 rotMat;
+    rotMat.a1 = transform->a1 / scaling->x; rotMat.a2 = transform->a2 / scaling->y; rotMat.a3 = transform->a3 / scaling->z;
+    rotMat.b1 = transform->b1 / scaling->x; rotMat.b2 = transform->b2 / scaling->y; rotMat.b3 = transform->b3 / scaling->z;
+    rotMat.c1 = transform->c1 / scaling->x; rotMat.c2 = transform->c2 / scaling->y; rotMat.c3 = transform->c3 / scaling->z;
+
+    // Convert rotation matrix to quaternion
+    float trace = rotMat.a1 + rotMat.b2 + rotMat.c3;
+    
+    if (trace > 0) {
+        float s = 0.5f / sqrtf(trace + 1.0f);
+        rotation->w = 0.25f / s;
+        rotation->x = (rotMat.c2 - rotMat.b3) * s;
+        rotation->y = (rotMat.a3 - rotMat.c1) * s;
+        rotation->z = (rotMat.b1 - rotMat.a2) * s;
+    } else {
+        if (rotMat.a1 > rotMat.b2 && rotMat.a1 > rotMat.c3) {
+            float s = 2.0f * sqrtf(1.0f + rotMat.a1 - rotMat.b2 - rotMat.c3);
+            rotation->w = (rotMat.c2 - rotMat.b3) / s;
+            rotation->x = 0.25f * s;
+            rotation->y = (rotMat.a2 + rotMat.b1) / s;
+            rotation->z = (rotMat.a3 + rotMat.c1) / s;
+        } else if (rotMat.b2 > rotMat.c3) {
+            float s = 2.0f * sqrtf(1.0f + rotMat.b2 - rotMat.a1 - rotMat.c3);
+            rotation->w = (rotMat.a3 - rotMat.c1) / s;
+            rotation->x = (rotMat.a2 + rotMat.b1) / s;
+            rotation->y = 0.25f * s;
+            rotation->z = (rotMat.b3 + rotMat.c2) / s;
+        } else {
+            float s = 2.0f * sqrtf(1.0f + rotMat.c3 - rotMat.a1 - rotMat.b2);
+            rotation->w = (rotMat.b1 - rotMat.a2) / s;
+            rotation->x = (rotMat.a3 + rotMat.c1) / s;
+            rotation->y = (rotMat.b3 + rotMat.c2) / s;
+            rotation->z = 0.25f * s;
+        }
+    }
+
+    // Extract position
+    position->x = transform->a4;
+    position->y = transform->b4;
+    position->z = transform->c4;
+}
+
+static inline
+void aiQuaternion_Rotate(const struct aiQuaternion* q, const struct aiVector3D* v, struct aiVector3D* result) {
+    // Rotate vector v by quaternion q
+    float x = q->x, y = q->y, z = q->z, w = q->w;
+    float vx = v->x, vy = v->y, vz = v->z;
+
+    // Calculate quaternion * vector
+    float qvx = w*vx + y*vz - z*vy;
+    float qvy = w*vy + z*vx - x*vz;
+    float qvz = w*vz + x*vy - y*vx;
+    float qvw = -x*vx - y*vy - z*vz;
+
+    // Calculate result = quaternion * vector * conjugate(quaternion)
+    result->x = qvx*w + qvw*-x + qvy*-z - qvz*-y;
+    result->y = qvy*w + qvw*-y + qvz*-x - qvx*-z;
+    result->z = qvz*w + qvw*-z + qvx*-y - qvy*-x;
+}
+
 void export_lights(FILE *out, const struct aiScene *scene)
 {
     for (int i = 0; i < scene->mNumLights; i++) {
         const struct aiLight* light = scene->mLights[i];
-        // const struct aiNode* lightNode = FindNodeForLight(scene->mRootNode, light->mName.data);
-        // struct aiMatrix4x4 transform;
-        // struct aiVector3D position, scaling;
-        // struct aiQuaternion rotation;
+        const struct aiNode* lightNode = light_find_node(scene->mRootNode, light->mName.data);
+        struct aiMatrix4x4 transform;
+        struct aiVector3D position, scaling;
+        struct aiQuaternion rotation;
+        struct aiVector3D direction;
+        struct aiVector3D color;
+        int type = 0;
 
-        // printf("Light %u:\n", i);
-        // printf("  Name: %s\n", light->mName.data);
-        // printf("  Type: %d\n", light->mType);
+        switch (light->mType) {
+            case aiLightSource_DIRECTIONAL:
+                type = 0;
+                break;
+            case aiLightSource_POINT:
+                type = 1;
+                break;
+            case aiLightSource_SPOT:
+                type = 2;
+                break;
+            default: continue;
+        }
 
-        // if (lightNode) {
-        //     GetNodeTransform(lightNode, &transform);
-        //     aiMatrix4x4_Decompose(&transform, &scaling, &rotation, &position);
-        //     printf("  Position (in scene): %f, %f, %f\n", position.x, position.y, position.z);
-        // } else {
-        //     printf("  Position (local): %f, %f, %f\n", light->mPosition.x, light->mPosition.y, light->mPosition.z);
-        // }
+        if (lightNode) {
+            get_node_xform(lightNode, &transform);
+            aiMatrix4x4_Decompose(&transform, &scaling, &rotation, &position);
+            aiQuaternion_Rotate(&rotation, &light->mDirection, &direction);
+        } else {
+            position = light->mPosition;
+            direction = light->mDirection;
+        }
 
-        // printf("  Direction: %f, %f, %f\n", light->mDirection.x, light->mDirection.y, light->mDirection.z);
-        // printf("  Color: %f, %f, %f\n", light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b);
+        // float attenuation_constant = light->mAttenuationConstant;
+        // float attenuation_linear = light->mAttenuationLinear;
+        // float attenuation_quadratic = light->mAttenuationQuadratic;
+
+        float power = sqrtf(light->mColorDiffuse.r * light->mColorDiffuse.r + light->mColorDiffuse.g * light->mColorDiffuse.g + light->mColorDiffuse.b * light->mColorDiffuse.b);
+        color.x = light->mColorDiffuse.r/power;
+        color.y = light->mColorDiffuse.g/power;
+        color.z = light->mColorDiffuse.b/power;
+
+        fprintf(out, "light: %d %f %f %f %f %f %f %f %f %f %f %s\n", type, position.x, position.y, position.z, direction.x, direction.y, direction.z, color.x, color.y, color.z, power, light->mName.data);
     }
 
 }
@@ -1381,6 +1471,7 @@ void usage()
     fprintf(stderr, "\t-s -- remove scaling from bind pose\n");
     fprintf(stderr, "\t-u -- unmark bone (force it to be excluded)\n");
     fprintf(stderr, "\t-X -- flip axis from Y up to Z up\n");
+    fprintf(stderr, "\t-Z -- no axis conversion\n");
     fprintf(stderr, "\t-o filename -- save output to file\n");
     exit(1);
 }
@@ -1424,7 +1515,7 @@ int main(int argc, char **argv)
     int onlyanim = 0;
     int onlymesh = 0;
 
-    while ((c = getopt(argc, argv, "AHLMPSUabflmn:o:rvxsu:")) != -1) {
+    while ((c = getopt(argc, argv, "AHLMPSUZIXabflmn:o:rvxsu:")) != -1) {
         switch (c) {
         case 'A': save_all_bones++; break;
         case 'H': dohips = 1; break;
@@ -1445,6 +1536,7 @@ case 'U': doflipUV = 1; puts("using flipUV"); break;
         case 'v': verbose++; break;
         case 'x': doaxis = 1; break;
         case 'X': dofixaxis = 1; break;
+        case 'Z': noaxis = 1; break;
         case 's': dounscale = 1; break;
         case 'u': untaglist[numuntags++] = optarg++; break;
         default: usage(); break;
@@ -1591,12 +1683,15 @@ flags |= (doflipUV ? aiProcess_FlipUVs : 0);
 
     if (getenv("DOANIM")) doanim = 1;
 
-    if (dofixaxis) {
-        // Convert to Z-UP coordinate system
-        aiMultiplyMatrix4(&scene->mRootNode->mTransformation, &yup_to_zup);
-    } else {
-        // Convert to the engine's coordinate system
-        aiMultiplyMatrix4(&scene->mRootNode->mTransformation, &flip_z_forward);
+    if (!noaxis) {
+        fprintf(stderr, "fixing root node axis\n");
+        if (dofixaxis) {
+            // Convert to Z-UP coordinate system
+            aiMultiplyMatrix4(&scene->mRootNode->mTransformation, &yup_to_zup);
+        } else {
+            // Convert to the engine's coordinate system
+            aiMultiplyMatrix4(&scene->mRootNode->mTransformation, &flip_z_forward);
+        }
     }
 
     // Build a list of bones and compute the bind pose matrices.

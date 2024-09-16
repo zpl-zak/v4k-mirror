@@ -1590,6 +1590,43 @@ void light_cone(light_t* l, float innerCone, float outerCone) {
     l->outerCone = acos(outerCone);
 }
 
+array(light_t) lightlist(const char *pathfile) {
+    light_t *lightlist = 0;
+    char *light_file = vfs_read(strendi(pathfile,".txt") ? pathfile : va("%s@lightlist.txt", pathfile));
+    if( light_file ) {
+        // deserialize light
+        for each_substring(light_file, "\r\n", light_line) {
+            light_t l = light();
+            int type;
+            vec3 position, direction, color;
+            float power;
+            char name[128] = {0};
+
+            if (sscanf(light_line, "light: %d %f %f %f %f %f %f %f %f %f %f %127[^\n]",
+                       &type, &position.x, &position.y, &position.z,
+                       &direction.x, &direction.y, &direction.z,
+                       &color.x, &color.y, &color.z,
+                       &power, name) != 12) continue;
+
+            l.type = type;
+            l.pos = position;
+            l.dir = direction;
+            // l.diffuse = scale3(color, power);
+            l.diffuse = color;
+            l.radius = power;
+            float falloff = power*0.005f;
+            // recalculate attenuation based on radius
+            l.falloff.constant = 1.0f/power;
+            l.falloff.linear = 0.0f;
+            l.falloff.quadratic = 1.0f/falloff/power;
+            l.name = STRDUP(name); //@leak
+
+            array_push(lightlist, l);
+        }
+    }
+    return lightlist;
+}
+
 static inline
 char *light_fieldname(const char *fmt, ...) {
     static char buf[32];

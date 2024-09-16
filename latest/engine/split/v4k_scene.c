@@ -424,6 +424,15 @@ light_t* scene_spawn_light() {
     return array_back(last_scene->lights);
 }
 
+void scene_merge_lights(const char *source) {
+    light_t *lights = lightlist(source);
+    for (unsigned i = 0; i < array_count(lights); ++i) {
+        light_t *l = &lights[i];
+        array_push(last_scene->lights, *l);
+    }
+    array_free(lights);
+}
+
 unsigned scene_count_light() {
     return array_count(last_scene->lights);
 }
@@ -539,7 +548,7 @@ void scene_render(int flags) {
                     for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
                         object_t *obj = scene_index(j);
                         model_t *model = &obj->model;
-                        if (obj->cast_shadows) {
+                        if (obj->model.iqm && obj->cast_shadows) {
                             model_render(*model, cam->proj, cam->view, obj->transform);
                         }
                     }
@@ -554,6 +563,7 @@ void scene_render(int flags) {
             object_t *obj = scene_index(j);
             model_t *model = &obj->model;
 
+            if (!model->iqm) continue;
             if (obj->skip_draw) continue;
 
             if (model_has_transparency(*model)) {
@@ -568,6 +578,7 @@ void scene_render(int flags) {
         for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
             object_t *obj = scene_index(j);
             model_t *model = &obj->model;
+            if (!model->iqm) continue;
             if (obj->skip_draw) continue;
 
             model_shadow(model, sm);
@@ -579,6 +590,7 @@ void scene_render(int flags) {
         for (unsigned j = 0; j < array_count(transparent_objects); ++j) {
             object_t *obj = transparent_objects[j];
             model_t *model = &obj->model;
+            if (!model->iqm) continue;
             if (obj->skip_draw) continue;
 
             model_shadow(model, sm);
