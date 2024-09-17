@@ -75,6 +75,7 @@ typedef struct renderstate_t {
 
 API renderstate_t renderstate();
 API bool            renderstate_compare(const renderstate_t *stateA, const renderstate_t *stateB);
+API uint32_t        renderstate_checksum(const renderstate_t *state);
 API void            renderstate_apply(const renderstate_t *state);
 
 // -----------------------------------------------------------------------------
@@ -665,6 +666,7 @@ typedef struct material_t {
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
 } material_t;
 
+API uint32_t material_checksum(material_t *m);
 API void ui_material(material_t *m);
 
 // -----------------------------------------------------------------------------
@@ -756,7 +758,8 @@ typedef struct model_uniform_t {
 #define model_uniform(name, kind, ...) (model_uniform_t){ name, kind, __VA_ARGS__ }
 
 API bool model_compareuniform(const model_uniform_t *a, const model_uniform_t *b);
-API bool model_compareuniforms(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b);
+API bool model_compareuniforms(unsigned s1, const model_uniform_t *a, unsigned s2, const model_uniform_t *b);
+API uint32_t model_uniforms_checksum(unsigned count, model_uniform_t *uniforms);
 
 // -----------------------------------------------------------------------------
 // models
@@ -918,7 +921,6 @@ typedef struct model_t {
     void *verts;
     int num_verts;
     void *tris;
-    bool *mesh_visible;
     int num_tris;
     handle vao, ibo, vbo, vao_instanced;
 
@@ -965,6 +967,7 @@ API void     model_setstyle(model_t*, int shading);
 API void     model_setshader(model_t*, int shading, const char *vs, const char *fs, const char *defines);
 API void     model_adduniform(model_t*, model_uniform_t uniform);
 API void     model_adduniforms(model_t*, unsigned count, model_uniform_t *uniforms);
+API uint32_t model_uniforms_checksum(unsigned count, model_uniform_t *uniforms);
 API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
 API void     model_skybox(model_t*, skybox_t sky);
 API void     model_cubemap(model_t*, cubemap_t *c);

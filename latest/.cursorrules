@@ -1,0 +1,18 @@
+* be concise and thorough
+* try not to suggest third party libraries from the outside of the project
+* shaders are always written in glsl
+* always use C99
+* closely follow the coding style depicted below:
+
+/// ## Markdown comments when documenting (3 slashes)
+// C++ comments allowed /*C comments too*/
+// Order matters: includes -> defines -> enums -> structs -> functions
+#define puts(x) my_printf("%s", x)   // lowercase defines allowed for syntax sugars
+#define VERSION "1.0.0"              // uppercase defines otherwise
+enum { ZERO = 0 };                   // uppercase enums. also, one-line brackets allowed
+void assert_positive(int my_int) { // lowercase snake_case everywhere
+    int *x = &my_int;                // no spacing between pointers and variables
+    if (*x < ZERO) {                 // no outer padding space after if,do,while,for,switch
+        puts( "Negative" );          // inner padding space around operators and parenthesis
+    }                                // 4-spaces indents, 1TBS brackets
+}                                    // when in doubt, dont worry & mimic style from codebase

@@ -133,6 +133,10 @@ bool renderstate_compare(const renderstate_t *stateA, const renderstate_t *state
     return memcmp(stateA, stateB, sizeof(renderstate_t)) == 0;
 }
 
+uint32_t renderstate_checksum(const renderstate_t *state) {
+    return 0;//hash_bin(state, sizeof(renderstate_t));
+}
+
 static renderstate_t last_rs;
 
 void renderstate_apply(const renderstate_t *state) {
@@ -1523,8 +1527,8 @@ light_t light() {
     l.processed_shadows = false;
     l.shadow_distance = 800.0f;
     l.shadow_near_clip = 0.01f;
-    l.shadow_bias = 0.15f;
-    l.normal_bias = 0.05f;
+    l.shadow_bias = 0.30f;
+    l.normal_bias = 0.075f;
     l.shadow_softness = 7.0f;
     l.penumbra_size = 2.0f;
     l.min_variance = 0.00002f;
@@ -4318,14 +4322,52 @@ bool model_compareuniform(const model_uniform_t *a, const model_uniform_t *b) {
     return true;
 }
 
-bool model_compareuniforms(unsigned s1, const model_uniform_t **a, unsigned s2, const model_uniform_t **b) {
+bool model_compareuniforms(unsigned s1, const model_uniform_t *a, unsigned s2, const model_uniform_t *b) {
     if (s1 != s2) return false;
     
     for (unsigned i = 0; i < s1; ++i) {
-        if (!model_compareuniform(a[i], b[i])) return false;
+        if (!model_compareuniform(&a[i], &b[i])) return false;
     }
     
     return true;
+}
+
+uint32_t model_uniforms_checksum(unsigned count, model_uniform_t *uniforms) {
+    uint32_t checksum = 0;
+    for (unsigned i = 0; i < count; ++i) {
+        checksum ^= hh_str(uniforms[i].name);
+        checksum ^= uniforms[i].kind;
+        
+        switch (uniforms[i].kind) {
+            case UNIFORM_FLOAT:
+                checksum ^= hh_float(uniforms[i].f);
+                break;
+            case UNIFORM_INT:
+            case UNIFORM_UINT:
+            case UNIFORM_BOOL:
+            case UNIFORM_SAMPLER2D:
+            case UNIFORM_SAMPLER3D:
+            case UNIFORM_SAMPLERCUBE:
+                checksum ^= hh_int(uniforms[i].i);
+                break;
+            case UNIFORM_VEC2:
+                checksum ^= hh_vec2(uniforms[i].v2);
+                break;
+            case UNIFORM_VEC3:
+                checksum ^= hh_vec3(uniforms[i].v3);
+                break;
+            case UNIFORM_VEC4:
+                checksum ^= hh_vec4(uniforms[i].v4);
+                break;
+            case UNIFORM_MAT3:
+                checksum ^= hh_mat33(uniforms[i].m33);
+                break;
+            case UNIFORM_MAT4:
+                checksum ^= hh_mat44(uniforms[i].m44);
+                break;
+        }
+    }
+    return checksum;
 }
 
 void model_set_texture(model_t *m, texture_t t) {
@@ -4901,7 +4943,6 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
 
     q->textures = CALLOC(hdr->num_meshes * 8, sizeof(GLuint));
     q->colormaps = CALLOC(hdr->num_meshes * 8, sizeof(vec4));
-    m->mesh_visible = CALLOC(hdr->num_meshes, sizeof(bool));
 
     const char *str = hdr->ofs_text ? (char *)&q->buf[hdr->ofs_text] : "";
     for(int i = 0; i < (int)hdr->num_meshes; i++) {
@@ -5363,6 +5404,50 @@ model_t model(const char *filename, int flags) {
     return model_from_mem( ptr, len, flags );
 }
 
+uint32_t material_checksum(material_t *m) {
+    uint32_t checksum = 0;
+    for (int i = 0; i < MAX_CHANNELS_PER_MATERIAL; i++) {
+        checksum ^= hh_float(m->layer[i].value);
+        checksum ^= (m->layer[i].map.texture) ? m->layer[i].map.texture->id : 0;
+        checksum ^= hh_vec4(m->layer[i].map.color);
+    }
+    return checksum;
+}
+
+uint32_t model_checksum(model_t *m) {
+    uint32_t checksum = 0;
+    
+    // Basic properties
+    checksum ^= m->num_meshes ^ m->num_triangles ^ m->num_joints ^ m->num_anims ^ m->num_frames;
+    checksum ^= m->flags ^ (m->shadow_receiver << 1) ^ (m->billboard << 2);
+    
+    // VAO, IBO, VBO
+    checksum ^= m->vao ^ m->ibo ^ m->vbo;
+    
+    // Textures
+    for (int i = 0; i < m->num_textures; i++) {
+        checksum ^= (uint32_t)(uintptr_t)m->textures[i];
+    }
+    
+    // LOD
+    checksum ^= (uint32_t)(uintptr_t)m->lod_collapse_map ^ m->lod_num_verts ^ m->lod_num_tris;
+    
+    // Renderstates
+    checksum ^= renderstate_checksum(&m->rs[RENDER_PASS_OPAQUE]);
+    checksum ^= renderstate_checksum(&m->rs[RENDER_PASS_TRANSPARENT]);
+    checksum ^= renderstate_checksum(&m->rs[RENDER_PASS_CUSTOM]);
+    
+    // Materials
+    for (int i = 0; i < array_count(m->materials); i++) {
+        checksum ^= material_checksum(&m->materials[i]);
+    }
+    
+    // Shader uniforms
+    checksum ^= model_uniforms_checksum(array_count(m->uniforms), m->uniforms);
+    
+    return checksum;
+}
+
 bool model_get_bone_pose(model_t m, unsigned joint, mat34 *out) {
     if(!m.iqm) return false;
     iqm_t *q = m.iqm;
@@ -5639,7 +5724,7 @@ static mat44 global_frustum_stored_mat_proj;
 static mat44 global_frustum_stored_mat_view;
 
 static inline
-bool model_is_visible(model_t m, int mesh, mat44 model_mat, mat44 proj, mat44 view) {
+bool model_is_visible(model_t m, mat44 model_mat, mat44 proj, mat44 view) {
     if(!m.iqm) return false;
 
     bool is_enabled = m.frustum_enabled;
@@ -5755,14 +5840,11 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
 
     if (rs_idx > RENDER_PASS_OVERRIDES_BEGIN) {
         for(int i = 0; i < q->nummeshes; i++) {
-            if (!m.mesh_visible[i]) continue;
             array_push(drawcalls, (drawcall_t){i, -1});
         }
     } else {
         if(pass == -1 || pass == RENDER_PASS_OPAQUE) {
             for(int i = 0; i < q->nummeshes; i++) {
-                if (!m.mesh_visible[i]) continue;
-                
                 // collect opaque drawcalls
                 if (required_rs[i] == RENDER_PASS_OPAQUE) {
                     drawcall_t call;
@@ -5778,8 +5860,6 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
         
         if(pass == -1 || pass == RENDER_PASS_TRANSPARENT) {
             for(int i = 0; i < q->nummeshes; i++) {
-                if (!m.mesh_visible[i]) continue;
-                
                 // collect transparent drawcalls
                 if (required_rs[i] == RENDER_PASS_TRANSPARENT) {
                     drawcall_t call;
@@ -5841,16 +5921,10 @@ void model_render_instanced_pass(model_t mdl, mat44 proj, mat44 view, mat44* mod
 
     pass_model_matrices = array_resize(pass_model_matrices, count); //@leak
     memcpy(pass_model_matrices, models, count * sizeof(mat44));
-    memset(mdl.mesh_visible, 0, q->nummeshes * sizeof(bool));
 
     for (int i = 0; i < count; i++) {
-        bool any_visible = false;
-        for (int m = 0; m < q->nummeshes; m++) {
-            bool visible = model_is_visible(mdl, m, pass_model_matrices[i], proj, view);
-            mdl.mesh_visible[m] |= visible;
-            any_visible |= visible;
-        }
-        if (!any_visible) {
+        bool visible = model_is_visible(mdl, pass_model_matrices[i], proj, view);
+        if (!visible) {
             array_erase_fast(pass_model_matrices, i);
             i--;
             count--;
@@ -6301,7 +6375,6 @@ void model_destroy(model_t m) {
         FREE(m.texture_names[i]);
     }
     array_free(m.texture_names);
-    FREE(m.mesh_visible);
 
     if (m.iqm->light_ubo) {
         ubo_destroy(m.iqm->light_ubo);

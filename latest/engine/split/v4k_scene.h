@@ -54,6 +54,7 @@ typedef struct object_t {
     bool disable_frustum_check;
     bool cast_shadows;
     bool fullbright;
+    bool batchable;
 
     // internal states
     array(handle) old_texture_ids;
@@ -61,15 +62,21 @@ typedef struct object_t {
     float distance;
     bool skip_draw;
     bool light_cached; //< used by scene to update light data
+    bool was_batched;
+    array(mat44) instances;
+    array(unsigned) pair_instance;
+    uint32_t checksum;
 } object_t;
 
 API object_t object();
+API bool object_compare(object_t *obj1, object_t *obj2);
 API void object_rotate(object_t *obj, vec3 euler);
 API void object_pivot(object_t *obj, vec3 euler);
 API void object_teleport(object_t *obj, vec3 pos);
 API void object_move(object_t *obj, vec3 inc);
 API vec3 object_position(object_t *obj);
 API void object_scale(object_t *obj, vec3 sca);
+API void object_batchable(object_t *obj, bool batchable);
 //
 API void object_model(object_t *obj, model_t model);
 API void object_anim(object_t *obj, anim_t anim, float speed);
@@ -89,6 +96,7 @@ enum SCENE_FLAGS {
     SCENE_FOREGROUND = 8,
     SCENE_UPDATE_SH_COEF = 16,
     SCENE_CAST_SHADOWS = 32,
+    // SCENE_DISABLE_BATCHING = 64,
 };
 
 typedef struct scene_t {

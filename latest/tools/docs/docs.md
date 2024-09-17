@@ -21,9 +21,9 @@
 #define puts(x) my_printf("%s", x)   // lowercase defines allowed for syntax sugars
 #define VERSION "1.0.0"              // uppercase defines otherwise
 enum { ZERO = 0 };                   // uppercase enums. also, one-line brackets allowed
-void assert_positive( int my_int ) { // lowercase snake_case everywhere
+void assert_positive(int my_int) { // lowercase snake_case everywhere
     int *x = &my_int;                // no spacing between pointers and variables
-    if( *x < ZERO ) {                // no outer padding space after if,do,while,for,switch
+    if (*x < ZERO) {                 // no outer padding space after if,do,while,for,switch
         puts( "Negative" );          // inner padding space around operators and parenthesis
     }                                // 4-spaces indents, 1TBS brackets
 }                                    // when in doubt, dont worry & mimic style from codebase

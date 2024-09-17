@@ -101,6 +101,7 @@ extern "C" {
 #include "split/v4k_config.h"
 #include "split/v4k_ds.h"
 #include "split/v4k_math.h"
+#include "split/v4k_hash.h"
 #include "split/v4k_obj.h"
 
 #include "split/v4k_ai.h"

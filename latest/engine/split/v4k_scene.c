@@ -251,7 +251,25 @@ object_t object() {
     object_rotate(&obj, vec3(0,0,0));
     //array_init(obj.textures);
     obj.cast_shadows = true;
+    obj.batchable = true;
     return obj;
+}
+
+bool object_compare(object_t *obj1, object_t *obj2) {
+    // if (obj1->renderbucket != obj2->renderbucket) return false;
+    // if (memcmp(obj1->transform, obj2->transform, sizeof(mat44))) return false;
+    // if (memcmp(&obj1->rot, &obj2->rot, sizeof(quat))) return false;
+    // if (memcmp(&obj1->sca, &obj2->sca, sizeof(vec3))) return false;
+    // if (memcmp(&obj1->pos, &obj2->pos, sizeof(vec3))) return false;
+    // if (memcmp(&obj1->euler, &obj2->euler, sizeof(vec3))) return false;
+    // if (memcmp(&obj1->pivot, &obj2->pivot, sizeof(vec3))) return false;
+    // if (memcmp(&obj1->bounds, &obj2->bounds, sizeof(aabb))) return false;
+    if (memcmp(&obj1->anim, &obj2->anim, sizeof(anim_t))) return false;
+    // if (obj1->anim_speed != obj2->anim_speed) return false;
+    if (obj1->billboard != obj2->billboard) return false;
+    if (obj1->fullbright != obj2->fullbright) return false;
+    if (obj1->checksum != obj2->checksum) return false;
+    return true;
 }
 
 void object_pivot(object_t *obj, vec3 euler) {
@@ -280,6 +298,10 @@ void object_move(object_t *obj, vec3 inc) {
 void object_scale(object_t *obj, vec3 sca) {
     obj->sca = vec3(sca.x, sca.y, sca.z);
     object_update(obj);
+}
+
+void object_batchable(object_t *obj, bool batchable) {
+    obj->batchable = batchable;
 }
 
 vec3 object_position(object_t *obj) {
@@ -491,12 +513,53 @@ void scene_render(int flags) {
         for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
             object_t *obj = scene_index(j);
             model_t *model = &obj->model;
+            obj->was_batched = false;
+            array_resize(obj->pair_instance, 0);
+
+            model->billboard = obj->billboard;
+            for (int p = 0; p < RENDER_PASS_OVERRIDES_BEGIN; ++p) {
+                model->rs[p].cull_face_enabled = flags&SCENE_CULLFACE ? 1 : 0;
+                model->rs[p].polygon_mode_draw = flags&SCENE_WIREFRAME ? GL_LINE : GL_FILL;
+            }
+            obj->checksum = obj->model.iqm ? model_checksum(&obj->model) : 0;
+        }
+
+        for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
+            object_t *obj = scene_index(j);
+            model_t *model = &obj->model;
             anim_t *anim = &obj->anim;
             mat44 *views = (mat44*)(&cam->view);
-            
-            obj->skip_draw = !obj->disable_frustum_check && !frustum_test_aabb(frustum_state, model_aabb(*model, obj->transform));
 
             if (obj->skip_draw) continue;
+            if (obj->was_batched) continue;
+
+            if (anim) {
+                float delta = window_delta() * obj->anim_speed;
+                model->curframe = model_animate_clip(*model, model->curframe + delta, anim->from, anim->to, anim->flags & ANIM_LOOP );
+            }
+
+            if (!obj->fullbright) {
+                model_skybox(model, last_scene->skybox);
+            } else {
+                skybox_t sb = {0};
+                model_skybox(model, sb);
+            }
+
+            for (unsigned k = j+1; k < obj_count; ++k) {
+                object_t *obj2 = scene_index(k);
+                if (!obj2->batchable || obj2->skip_draw || !object_compare(obj, obj2)) {
+                    continue;
+                }
+                array_push(obj->pair_instance, k);
+                obj2->was_batched = true;
+            }
+            array_resize(obj->instances, array_count(obj->pair_instance)+1);
+            copy44(obj->instances[0], obj->transform);
+
+            for (unsigned k = 0; k < array_count(obj->pair_instance); ++k) {
+                object_t *obj2 = scene_index(obj->pair_instance[k]);
+                copy44(obj->instances[k+1], obj2->transform);
+            }
 
             int do_retexturing = model->iqm && array_count(obj->textures) > 0;
             if( do_retexturing ) {
@@ -518,24 +581,6 @@ void scene_render(int flags) {
                 // light_update(array_count(last_scene->lights), last_scene->lights);
                 // @todo: rework light caching
             }
-
-            if (!obj->fullbright) {
-                model_skybox(model, last_scene->skybox);
-            } else {
-                skybox_t sb = {0};
-                model_skybox(model, sb);
-            }
-
-            if (anim) {
-                float delta = window_delta() * obj->anim_speed;
-                model->curframe = model_animate_clip(*model, model->curframe + delta, anim->from, anim->to, anim->flags & ANIM_LOOP );
-            }
-
-            model->billboard = obj->billboard;
-            for (int p = 0; p < RENDER_PASS_OVERRIDES_BEGIN; ++p) {
-                model->rs[p].cull_face_enabled = flags&SCENE_CULLFACE ? 1 : 0;
-                model->rs[p].polygon_mode_draw = flags&SCENE_WIREFRAME ? GL_LINE : GL_FILL;
-            }
         }
 
         /* Build shadowmaps */
@@ -548,8 +593,8 @@ void scene_render(int flags) {
                     for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
                         object_t *obj = scene_index(j);
                         model_t *model = &obj->model;
-                        if (obj->model.iqm && obj->cast_shadows) {
-                            model_render(*model, cam->proj, cam->view, obj->transform);
+                        if (obj->model.iqm && obj->cast_shadows && !obj->was_batched) {
+                            model_render_instanced(*model, cam->proj, cam->view, obj->instances, array_count(obj->instances));
                         }
                     }
                 }
@@ -565,6 +610,7 @@ void scene_render(int flags) {
 
             if (!model->iqm) continue;
             if (obj->skip_draw) continue;
+            if (obj->was_batched) continue;
 
             if (model_has_transparency(*model)) {
                 obj->distance = len3sq(sub3(cam->position, transform344(model->pivot, obj->pos)));
@@ -580,10 +626,11 @@ void scene_render(int flags) {
             model_t *model = &obj->model;
             if (!model->iqm) continue;
             if (obj->skip_draw) continue;
+            if (obj->was_batched) continue;
 
             model_shadow(model, sm);
             model_light(model, array_count(last_scene->lights), last_scene->lights);
-            model_render_pass(*model, cam->proj, cam->view, obj->transform, RENDER_PASS_OPAQUE);
+            model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, array_count(obj->instances), RENDER_PASS_OPAQUE);
         }
 
         /* Transparency pass */
@@ -592,9 +639,10 @@ void scene_render(int flags) {
             model_t *model = &obj->model;
             if (!model->iqm) continue;
             if (obj->skip_draw) continue;
+            if (obj->was_batched) continue;
 
             model_shadow(model, sm);
-            model_render_pass(*model, cam->proj, cam->view, obj->transform, RENDER_PASS_TRANSPARENT);
+            model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, array_count(obj->instances), RENDER_PASS_TRANSPARENT);
         }
 
         array_resize(transparent_objects, 0);
@@ -603,6 +651,7 @@ void scene_render(int flags) {
             object_t *obj = scene_index(j);
             model_t *model = &obj->model;
             if (obj->skip_draw) continue;
+            if (obj->was_batched) continue;
 
             int do_retexturing = model->iqm && model->shading != SHADING_PBR && array_count(obj->textures) > 0;
             if( do_retexturing ) {

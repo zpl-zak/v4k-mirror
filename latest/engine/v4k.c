@@ -115,6 +115,7 @@
 #include "split/v4k_gui.c"
 #include "split/v4k_input.c"
 #include "split/v4k_math.c"
+#include "split/v4k_hash.c"
 #include "split/v4k_memory.c"
 #include "split/v4k_network.c"
 #include "split/v4k_track.c"
