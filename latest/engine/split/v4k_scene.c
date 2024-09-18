@@ -489,8 +489,6 @@ void scene_render(int flags) {
         sm = NULL;
     }
 
-    frustum frustum_state = camera_frustum_build(cam);
-
     if(flags & SCENE_BACKGROUND) {
         if(last_scene->skybox.program) {
             skybox_push_state(&last_scene->skybox, cam->proj, cam->view);
@@ -514,7 +512,7 @@ void scene_render(int flags) {
             object_t *obj = scene_index(j);
             model_t *model = &obj->model;
             obj->was_batched = false;
-            array_resize(obj->pair_instance, 0);
+            // array_resize(obj->pair_instance, obj_count);
 
             model->billboard = obj->billboard;
             for (int p = 0; p < RENDER_PASS_OVERRIDES_BEGIN; ++p) {
@@ -544,21 +542,21 @@ void scene_render(int flags) {
                 skybox_t sb = {0};
                 model_skybox(model, sb);
             }
+            
+            array_resize(obj->instances, 64);
+            copy44(obj->instances[0], obj->transform);
 
+            int num_instances = 1;
             for (unsigned k = j+1; k < obj_count; ++k) {
                 object_t *obj2 = scene_index(k);
                 if (!obj2->batchable || obj2->skip_draw || !object_compare(obj, obj2)) {
                     continue;
                 }
-                array_push(obj->pair_instance, k);
+                if (num_instances >= array_count(obj->instances)) {
+                    array_resize(obj->instances, array_count(obj->instances) + 64);
+                }
+                copy44(obj->instances[num_instances++], obj2->transform);
                 obj2->was_batched = true;
-            }
-            array_resize(obj->instances, array_count(obj->pair_instance)+1);
-            copy44(obj->instances[0], obj->transform);
-
-            for (unsigned k = 0; k < array_count(obj->pair_instance); ++k) {
-                object_t *obj2 = scene_index(obj->pair_instance[k]);
-                copy44(obj->instances[k+1], obj2->transform);
             }
 
             int do_retexturing = model->iqm && array_count(obj->textures) > 0;
@@ -642,6 +640,7 @@ void scene_render(int flags) {
             if (obj->was_batched) continue;
 
             model_shadow(model, sm);
+            model_light(model, array_count(last_scene->lights), last_scene->lights);
             model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, array_count(obj->instances), RENDER_PASS_TRANSPARENT);
         }
 

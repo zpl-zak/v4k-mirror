@@ -1527,8 +1527,8 @@ light_t light() {
     l.processed_shadows = false;
     l.shadow_distance = 800.0f;
     l.shadow_near_clip = 0.01f;
-    l.shadow_bias = 0.30f;
-    l.normal_bias = 0.075f;
+    l.shadow_bias = 0.0005f;
+    l.normal_bias = 0.005f;
     l.shadow_softness = 7.0f;
     l.penumbra_size = 2.0f;
     l.min_variance = 0.00002f;
@@ -5299,22 +5299,18 @@ void model_set_renderstates(model_t *m) {
     // Shadow pass
     renderstate_t *csm_shadow_rs = &m->rs[RENDER_PASS_SHADOW_CSM];
     {
-        csm_shadow_rs->blend_enabled = 1;
-        csm_shadow_rs->blend_src = GL_SRC_ALPHA;
-        csm_shadow_rs->blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+        csm_shadow_rs->blend_enabled = 0;
         csm_shadow_rs->depth_test_enabled = true;
         csm_shadow_rs->depth_write_enabled = true;
-        csm_shadow_rs->cull_face_enabled = 0;
-        csm_shadow_rs->cull_face_mode = GL_BACK;
+        csm_shadow_rs->cull_face_enabled = 1;
+        csm_shadow_rs->cull_face_mode = GL_FRONT;
         csm_shadow_rs->front_face = GL_CW;
         csm_shadow_rs->depth_clamp_enabled = 1;
     }
 
     renderstate_t *vsm_shadow_rs = &m->rs[RENDER_PASS_SHADOW_VSM];
     {
-        vsm_shadow_rs->blend_enabled = 1;
-        vsm_shadow_rs->blend_src = GL_SRC_ALPHA;
-        vsm_shadow_rs->blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+        vsm_shadow_rs->blend_enabled = 0;
         vsm_shadow_rs->depth_test_enabled = true;
         vsm_shadow_rs->depth_write_enabled = true;
         vsm_shadow_rs->cull_face_enabled = 0;
@@ -5730,12 +5726,12 @@ bool model_is_visible(model_t m, mat44 model_mat, mat44 proj, mat44 view) {
     bool is_enabled = m.frustum_enabled;
     frustum fr = m.frustum_state;
 
+#if GLOBAL_FRUSTUM_ENABLED
     if (active_shadowmap) {
         is_enabled = true;
         fr = active_shadowmap->shadow_frustum;
     }
 
-#if GLOBAL_FRUSTUM_ENABLED
     if (!is_enabled) { /* custom frustum not provided, let's compute one from input call */
         if (memcmp(global_frustum_stored_mat_proj, proj, sizeof(mat44)) != 0 ||
             memcmp(global_frustum_stored_mat_view, view, sizeof(mat44)) != 0) {

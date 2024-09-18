@@ -42,31 +42,25 @@ int main() {
         camera_fps(&cam, 0, 0);
     }
     skybox_t sky = skybox("cubemaps/stardust", 0);
-    model_t  mdl = model("cube.obj", 0);
-    model_t  plane = model("plane.obj", 0);
+    model_t  mdl = model("cube.obj", MODEL_NO_PBR);
+    model_t  plane = model("plane.obj", MODEL_NO_PBR);
     scene_skybox(sky);
 
     light_t *light = scene_spawn_light();
     light->type = LIGHT_DIRECTIONAL;
-
-    light_t *light2 = scene_spawn_light();
-    light2->type = LIGHT_POINT;
-    light2->pos = vec3(0, 10, 0);
-    light2->diffuse = vec3(1, 1, 1);
 
     int NUM_INSTANCES = 1024;
     for(int z = 0, i = 0; z < 128; ++z) {
         for(int x = 0; x < 128; ++x, ++i) {
             if (i >= NUM_INSTANCES) break;
             object_t *obj = scene_spawn();
-            vec3 pos = vec3(-x*3,0,-z*3);
-            vec3 rot = vec3(0,180,0);
+            vec3 pos = vec3(-x*3,1.05,-z*3);
+            vec3 rot = vec3(0,180,0); 
             vec3 sca = vec3(1,1,1);
             object_teleport(obj, pos);
             object_rotate(obj, rot);
             object_scale(obj, sca);
             object_model(obj, mdl);
-            obj->fullbright = 1;
         }
     }
 
