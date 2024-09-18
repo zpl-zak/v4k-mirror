@@ -49,7 +49,7 @@ int main() {
     for(int z = 0, i = 0; z < 128; ++z) {
         for(int x = 0; x < 128; ++x, ++i) {
             vec3 pos = vec3(-x*3,0,-z*3);
-            vec3 rot = vec3(0,180,0); // kgirl: 0,0,0
+            vec3 rot = vec3(0,0,0); // kgirl: 0,0,0
             vec3 sca = vec3(1,1,1); // kgirl: 2,2,2
             compose44(M[i], pos, eulerq(rot), sca);
         }

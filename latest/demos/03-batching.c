@@ -42,12 +42,12 @@ int main() {
         camera_fps(&cam, 0, 0);
     }
     skybox_t sky = skybox("cubemaps/stardust", 0);
-    model_t  mdl = model("cube.obj", MODEL_NO_PBR);
-    model_t  plane = model("plane.obj", MODEL_NO_PBR);
+    model_t  mdl = model("cube.obj", 0);
+    model_t  plane = model("plane.obj", 0);
     scene_skybox(sky);
 
     light_t *light = scene_spawn_light();
-    light->type = LIGHT_DIRECTIONAL;
+    light->type = LIGHT_DIRECTIONAL; 
 
     int NUM_INSTANCES = 1024;
     for(int z = 0, i = 0; z < 128; ++z) {

@@ -1839,7 +1839,7 @@ shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 
     s.window_size = 10;
 
     s.cascade_splits[0] = 0.1f;
-    s.cascade_splits[1] = 0.5f;
+    s.cascade_splits[1] = 0.25f;
     s.cascade_splits[2] = 1.0f;
     s.cascade_splits[3] = 1.0f;  /* sticks to camera far plane */
 
@@ -2044,7 +2044,7 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
 
-    mat44 proj; perspective44(proj, cam_fov, viewport[2] / (float)viewport[3], near_plane, far_plane);
+    mat44 proj; perspective44(proj, cam_fov*2.0f, viewport[2] / (float)viewport[3], near_plane, far_plane);
     shadowmap_light_directional_calc_frustum_corners(proj, cam_view);
 
     vec3 center = {0,0,0};
@@ -2066,7 +2066,6 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
     
     lookat44(V, sub3(center, lightDir), center, up);
 
-
     for (unsigned i = 0; i < array_count(frustum_corners); i++) {
         vec3 corner = frustum_corners[i];
         corner = transform344(V, corner);
@@ -2079,9 +2078,9 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
     }
 
 #if 0
-    float tmpZ = -minZ;
-    minZ = -maxZ;
-    maxZ = tmpZ;
+    // float tmpZ = -minZ;
+    // minZ = -maxZ;
+    // maxZ = tmpZ;
 
     float mid = (maxZ + minZ) * 0.5f;
     minZ -= mid * 5.0f;
