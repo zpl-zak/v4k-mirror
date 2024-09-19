@@ -1163,6 +1163,14 @@ int window_has_maximize() {
     return ifdef(ems, 0, glfwGetWindowAttrib(window, GLFW_MAXIMIZED) == GLFW_TRUE);
 }
 
+void window_set_resolution(int width, int height) {
+    if (window) {
+        glfwSetWindowSize(window, width, height);
+        w = width;
+        h = height;
+    }
+}
+
 const char *window_clipboard() {
     return glfwGetClipboardString(window);
 }

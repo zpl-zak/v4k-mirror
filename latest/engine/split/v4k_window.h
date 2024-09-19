@@ -66,6 +66,7 @@ API void     window_visible(int visible);
 API int      window_has_visible();
 API void     window_maximize(int enabled);
 API int      window_has_maximize();
+API void     window_set_resolution(int width, int height);
 API void     window_transparent(int enabled);
 API int      window_has_transparent();
 API void     window_icon(const char *file_icon);
