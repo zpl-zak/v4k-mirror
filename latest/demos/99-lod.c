@@ -10,14 +10,11 @@ int main() {
 
     // terrain model
     model_t mdl = model("rabbit.obj", 0); {
-        model_light(mdl, 1, l);
+        model_light(&mdl, 1, l);
     }
 
     // camera
     camera_t cam = camera();
-
-    // scene light
-    model_uniform_shader(mdl);
 
     // initialise LOD
     float lo_detail=0.25f;

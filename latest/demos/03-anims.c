@@ -40,8 +40,8 @@ int main() {
 
     camera_t cam = camera();
     skybox_t sky = skybox("cubemaps/stardust", 0);
-    model_t  mdl = model("George.fbx", MODEL_RIMLIGHT|MODEL_NO_PBR); // kgirls01.fbx
-    anims_t    a = animations("George.fbx", 0); // kgirl/animlist.txt
+    model_t  mdl = model("George.fbx", 0);
+    anims_t    a = animations("George.fbx", 0);
 
     // 32*32 max instances
     int NUM_INSTANCES = 1;

@@ -5129,7 +5129,8 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
         if( reused ) continue;
 
         // decode texture+material
-        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_ANISOTROPY; // LINEAR, NEAREST
+        int load_as_srgb = _flags & MODEL_NO_PBR ? 0 : TEXTURE_SRGB;
+        int flags = TEXTURE_MIPMAPS|TEXTURE_REPEAT|TEXTURE_ANISOTROPY|load_as_srgb; // LINEAR, NEAREST
         if (!(_flags & MODEL_NO_FILTERING))
             flags |= TEXTURE_LINEAR;
         int invalid = texture_checker().id;
@@ -5377,8 +5378,8 @@ model_t model_from_mem(const void *mem, int len, int flags) {
 
         //m.num_textures = q->nummeshes; // assume 1 texture only per mesh
         m.textures = (q->textures);
-        m.sky_env.id = texture_checker().id;
-        m.sky_refl.id = texture_checker().id;
+        m.sky_env.id = 0;
+        m.sky_refl.id = 0;
 
         m.flags = flags;
 
