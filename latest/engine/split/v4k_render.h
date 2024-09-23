@@ -651,6 +651,7 @@ enum MATERIAL_ENUMS {
 	MATERIAL_CHANNEL_AO,
 	MATERIAL_CHANNEL_AMBIENT,
 	MATERIAL_CHANNEL_EMISSIVE,
+	MATERIAL_CHANNEL_PARALLAX,
     
     MAX_CHANNELS_PER_MATERIAL
 };
@@ -658,6 +659,7 @@ enum MATERIAL_ENUMS {
 typedef struct material_layer_t {
     char   texname[32];
     float  value;
+    float  value2;
     colormap_t map;
 } material_layer_t;
 
@@ -868,7 +870,8 @@ enum MODEL_TEXTURE_SLOTS {
     MODEL_TEXTURE_AO,
     MODEL_TEXTURE_AMBIENT,
     MODEL_TEXTURE_EMISSIVE,
-
+    MODEL_TEXTURE_PARALLAX,
+    
     // PBR
     MODEL_TEXTURE_ENV_CUBEMAP,
     MODEL_TEXTURE_SKYSPHERE,

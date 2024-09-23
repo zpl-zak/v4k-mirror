@@ -4553,7 +4553,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         glUniformMatrix4fv(loc, 1, GL_FALSE, vp);
     }
     if ((loc = q->uniforms[slot][MODEL_UNIFORM_CAM_POS]) >= 0) {
-        vec3 pos = vec3(view[12], view[13], view[14]);
+        vec3 pos = pos44(view);
         glUniform3fv(loc, 1, &pos.x);
     }
     if ((loc = q->uniforms[slot][MODEL_UNIFORM_CAM_DIR]) >= 0) {
@@ -5021,7 +5021,7 @@ bool model_load_anims(iqm_t *q, const struct iqmheader *hdr) {
 
 void ui_material(material_t *m) {
     static char* channel_names[] = {
-        "Diffuse", "Normals", "Specular", "Albedo", "Roughness", "Metallic", "AO", "Ambient", "Emissive"
+        "Diffuse", "Normals", "Specular", "Albedo", "Roughness", "Metallic", "AO", "Ambient", "Emissive", "Parallax"
     };
     for (int i = 0; i < MAX_CHANNELS_PER_MATERIAL; i++) {
         
@@ -5034,6 +5034,11 @@ void ui_material(material_t *m) {
             
             if (i == MATERIAL_CHANNEL_SPECULAR) {
                 ui_float("Specular Shininess", &m->layer[i].value);
+            }
+
+            if (i == MATERIAL_CHANNEL_PARALLAX) {
+                ui_float("Parallax Scale", &m->layer[i].value);
+                ui_float("Parallax Shadow Power", &m->layer[i].value2);
             }
             
             ui_collapse_end();
@@ -5078,7 +5083,10 @@ void model_load_pbr(model_t *m, material_t *mt, int mesh) {
     mt->layer[MATERIAL_CHANNEL_AO].map.color = vec4(1,1,1,0);
     mt->layer[MATERIAL_CHANNEL_AMBIENT].map.color = vec4(0,0,0,1);
     mt->layer[MATERIAL_CHANNEL_EMISSIVE].map.color = vec4(0,0,0,0);
-
+    mt->layer[MATERIAL_CHANNEL_PARALLAX].map.color = vec4(0,0,0,0);
+    mt->layer[MATERIAL_CHANNEL_PARALLAX].value = 0.1f;
+    mt->layer[MATERIAL_CHANNEL_PARALLAX].value2 = 4.0f;
+    
     // load colormaps
     array(char*) tokens = strsplit(mt->name, "+");
     for( int j = 0, end = array_count(tokens); j < end; ++j ) {
@@ -5093,6 +5101,7 @@ void model_load_pbr(model_t *m, material_t *mt, int mesh) {
         if( strstri(t, "_M.") || strstri(t, "Metallic") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_METALLIC], t, 0); continue; }
         if( strstri(t, "_E.") || strstri(t, "Emissive") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_EMISSIVE], t, 1); continue; }
         if( strstri(t, "_AO.") || strstri(t, "AO") || strstri(t, "Occlusion") ) { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_AO], t, 0); continue; }
+        if( strstri(t, "_P.") || strstri(t, "Parallax") || strstri(t, "disp.") ) { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_PARALLAX], t, 0); continue; }
     }
 }
 
@@ -5799,6 +5808,9 @@ void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
             shader_colormap_model_internal(&m, "map_ao.color", "map_ao.has_tex", "map_ao_tex", material->layer[MATERIAL_CHANNEL_AO].map, MODEL_TEXTURE_AO);
             shader_colormap_model_internal(&m, "map_ambient.color", "map_ambient.has_tex", "map_ambient_tex", material->layer[MATERIAL_CHANNEL_AMBIENT].map, MODEL_TEXTURE_AMBIENT);
             shader_colormap_model_internal(&m, "map_emissive.color", "map_emissive.has_tex", "map_emissive_tex", material->layer[MATERIAL_CHANNEL_EMISSIVE].map, MODEL_TEXTURE_EMISSIVE);
+            shader_colormap_model_internal(&m, "map_parallax.color", "map_parallax.has_tex", "map_parallax_tex", material->layer[MATERIAL_CHANNEL_PARALLAX].map, MODEL_TEXTURE_PARALLAX);
+            shader_float("parallax_scale", material->layer[MATERIAL_CHANNEL_PARALLAX].value);
+            shader_float("parallax_shadow_power", material->layer[MATERIAL_CHANNEL_PARALLAX].value2);
         }
     }
 }

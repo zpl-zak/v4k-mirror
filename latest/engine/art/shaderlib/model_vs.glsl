@@ -11,6 +11,7 @@ uniform bool u_instanced; /// set:0
 uniform mat4 M; // RIM
 uniform mat4 VP;
 uniform mat4 P;
+uniform vec3 u_cam_pos;
 uniform vec3 u_cam_dir;
 uniform float frame_time;
 uniform int u_billboard;
@@ -68,13 +69,14 @@ out vec4 v_color;
 out vec3 v_position, v_position_ws;
 out vec3 v_normal, v_normal_ws;
 out vec2 v_texcoord, v_texcoord2;
-out vec3 v_tangent;
+out vec3 v_tangent, v_tangent_ws;
+out vec3 v_tangent_view, v_tangent_world;
 out vec3 v_binormal;
 out vec3 v_viewpos;
 out vec3 v_to_camera;
 out vec3 v_vertcolor;
 out float v_depth;
-
+out mat3 v_tbn;
 // shadow
 uniform mat4 model, view, inv_view;
 uniform mat4 cameraToShadowProjector;

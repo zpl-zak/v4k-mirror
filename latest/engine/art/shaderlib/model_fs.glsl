@@ -31,11 +31,13 @@ uniform bool u_rimambient; /// set:1
 in vec3 v_normal, v_normal_ws;
 in vec2 v_texcoord, v_texcoord2;
 in vec4 v_color;
-in vec3 v_tangent;
+in vec3 v_tangent, v_tangent_ws;
+in vec3 v_tangent_view, v_tangent_world;
 in vec3 v_binormal;
 in vec3 v_to_camera;
 in vec3 v_vertcolor;
 in float v_depth;
+in mat3 v_tbn;
 out vec4 fragcolor;
 
 uniform float u_global_alpha; /// set:1.0

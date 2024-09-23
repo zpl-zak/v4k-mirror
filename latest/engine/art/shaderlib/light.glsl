@@ -6,6 +6,7 @@
 #define NUM_SHADOW_CASCADES 4
 
 #include "brdf.glsl"
+#include "parallax.glsl"
 
 struct light_t {
     vec4 diffuse;
@@ -51,6 +52,8 @@ struct material_t {
     float roughness;
     float metallic;
     float alpha;
+    vec3 tangent_view_dir;
+    vec2 texcoords;
 };
 
 vec3 shading_light(light_t l, material_t m) {
@@ -111,7 +114,13 @@ vec3 shading_light(light_t l, material_t m) {
 
     float NdotL = max( 0., dot( N, L ) );
 
-    return ( kD * ( m.albedo / PI ) + specular ) * radiance * NdotL * attenuation;
+    float self_shadow = 0.0;
+    if (map_parallax.has_tex) {
+        vec3 ldir = normalize(v_tbn * lightDir);
+        self_shadow = parallax_shadowing(N, ldir, m.texcoords);
+    }
+
+    return ( pow((1.0 - self_shadow), parallax_shadow_power) * kD * ( m.albedo / PI ) + specular ) * radiance * NdotL * attenuation;
 #else
     vec3 n = normalize(v_normal_ws);
 
@@ -120,7 +129,7 @@ vec3 shading_light(light_t l, material_t m) {
     vec3 halfVec = normalize(lightDir + u_cam_dir);
     float specular = pow(max(dot(n, halfVec), 0.0), l.power);
 
-    return (attenuation*l.ambient.rgb + diffuse*attenuation*l.diffuse.rgb + specular*attenuation*l.specular.rgb);
+    return (attenuation*l.ambient.rgb + (diffuse*attenuation*l.diffuse.rgb + specular*attenuation*l.specular.rgb));
 #endif
 }
 

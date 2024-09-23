@@ -32,6 +32,7 @@ API void camera_fps2(camera_t *cam, float yaw, float pitch, float roll);
 API void camera_orbit(camera_t *cam, float yaw, float pitch, float inc_distance);
 API void camera_lookat(camera_t *cam, vec3 target);
 API void camera_enable(camera_t *cam);
+API void camera_freefly(camera_t *cam);
 API frustum camera_frustum_build(camera_t *cam);
 API camera_t *camera_get_active();
 

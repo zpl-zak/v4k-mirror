@@ -16,6 +16,7 @@ uniform ColorMap map_metallic;  uniform sampler2D map_metallic_tex;
 uniform ColorMap map_ao;        uniform sampler2D map_ao_tex;
 uniform ColorMap map_ambient;   uniform sampler2D map_ambient_tex;
 uniform ColorMap map_emissive;  uniform sampler2D map_emissive_tex;
+uniform ColorMap map_parallax;  uniform sampler2D map_parallax_tex;
 
 #define sample_colormap(ColorMap_, uv_) \
     (ColorMap_.has_tex ? texture( ColorMap_##_tex, uv_ ) : ColorMap_.color)

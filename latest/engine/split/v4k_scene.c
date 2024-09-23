@@ -106,6 +106,17 @@ void camera_enable(camera_t *cam) {
     camera_fps(cam, 0, 0);
 }
 
+void camera_freefly(camera_t *cam) {
+    bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
+    window_cursor( !active );
+
+    if( active ) cam->speed = clampf(cam->speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
+    vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
+    vec3 wasdecq = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-(input(KEY_C)||input(KEY_Q)),input(KEY_W)-input(KEY_S)), cam->speed);
+    camera_moveby(cam, scale3(wasdecq, window_delta() * 60));
+    camera_fps(cam, mouse.x,mouse.y);
+}
+
 frustum camera_frustum_build(camera_t *cam) {
     float aspect = window_width() / ((float)window_height()+!window_height());
     float fov = cam->fov * cam->frustum_fov_multiplier;

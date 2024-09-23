@@ -29,10 +29,23 @@ void main() {
         billboard_t bb = setup_billboard(modelView, l_model);
         modelView = bb.modelView;
         l_model = bb.l_model;
-    
-        v_position_ws = (l_model * vec4( objPos, 1.0 )).xyz;
-        v_tangent = normalize(mat3(model_mat) * att_tangent.xyz);
     }
+
+    v_position_ws = (l_model * vec4( objPos, 1.0 )).xyz;
+
+
+    vec3 T = normalize(mat3(l_model) * att_tangent.xyz);
+    vec3 B = normalize(mat3(l_model) * binormal);
+    vec3 N = normalize(mat3(l_model) * att_normal);
+    mat3 TBN = transpose(mat3(T, B, N));
+
+    v_tangent = normalize(mat3(l_model) * att_tangent.xyz);
+    v_tangent_ws = normalize(mat3(modelView) * att_tangent.xyz);
+    v_tangent_view = TBN * u_cam_pos;
+    v_tangent_view.y = -v_tangent_view.y;
+    v_tangent_world = TBN * v_position_ws;
+    v_tangent_world.y = -v_tangent_world.y;
+    v_tbn = TBN;
 
     // Compute lighting (vertex-lit models)
     material_t dummy_mat;
