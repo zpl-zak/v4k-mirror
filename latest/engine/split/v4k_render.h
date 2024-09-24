@@ -777,6 +777,10 @@ enum MODEL_FLAGS {
     MODEL_MATCAPS = 32,
     MODEL_RIMLIGHT = 64,
     MODEL_TRANSPARENT = 128,
+    MODEL_STREAM = 256, // useful with model_sync()
+
+    // internal
+    MODEL_PROCEDURAL = 512,
 };
 
 enum SHADING_MODE {
@@ -948,6 +952,18 @@ typedef struct model_t {
     model_uniform_t *uniforms; //< array
 } model_t;
 
+typedef struct model_vertex_t {
+    vec3 position;
+    vec2 texcoord;
+    vec3 normal;
+    vec4 tangent;
+    uint8_t blend_indices[4];
+    uint8_t blend_weights[4];
+    float blend_vertex_index;
+    vec4 color;
+    vec2 texcoord2;
+} model_vertex_t;
+
 enum BILLBOARD_MODE {
     BILLBOARD_X = 0x1,
     BILLBOARD_Y = 0x2,
@@ -957,8 +973,9 @@ enum BILLBOARD_MODE {
     BILLBOARD_SPHERICAL = BILLBOARD_X|BILLBOARD_Y|BILLBOARD_Z
 };
 
-API model_t  model(const char *filename, int flags);
-API model_t  model_from_mem(const void *mem, int sz, int flags);
+API model_t  model(const char *filename, int flags); //< filename == 0 for procedural models
+API model_t  model_from_mem(const void *mem, int sz, int flags); //< mem == 0 for procedural models
+API void     model_sync(model_t m, int num_vertices, model_vertex_t *vertices, int num_indices, uint32_t *indices); //< MODEL_PROCEDURAL models only
 API float    model_animate(model_t, float curframe);
 API float    model_animate_clip(model_t, float curframe, int minframe, int maxframe, bool loop);
 API float    model_animate_blends(model_t m, anim_t *primary, anim_t *secondary, float delta);

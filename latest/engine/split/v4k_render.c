@@ -1525,10 +1525,10 @@ light_t light() {
     l.outerCone = 0.9f; // 25 deg
     l.cast_shadows = true;
     l.processed_shadows = false;
-    l.shadow_distance = 800.0f;
+    l.shadow_distance = 400.0f;
     l.shadow_near_clip = 0.01f;
-    l.shadow_bias = 0.0005f;
-    l.normal_bias = 0.005f;
+    l.shadow_bias = 0.005f;
+    l.normal_bias = 0.05f;
     l.shadow_softness = 7.0f;
     l.penumbra_size = 2.0f;
     l.min_variance = 0.00002f;
@@ -1840,7 +1840,7 @@ shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 
 
     s.cascade_splits[0] = 0.1f;
     s.cascade_splits[1] = 0.25f;
-    s.cascade_splits[2] = 1.0f;
+    s.cascade_splits[2] = 0.75f;
     s.cascade_splits[3] = 1.0f;  /* sticks to camera far plane */
 
     glGenFramebuffers(1, &s.fbo);
@@ -2041,10 +2041,7 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
         far_plane = cam_far;
     }
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
-    mat44 proj; perspective44(proj, cam_fov*2.0f, viewport[2] / (float)viewport[3], near_plane, far_plane);
+    mat44 proj; perspective44(proj, cam_fov*2.0f, s->saved_vp[2] / (float)s->saved_vp[3], near_plane, far_plane);
     shadowmap_light_directional_calc_frustum_corners(proj, cam_view);
 
     vec3 center = {0,0,0};
@@ -4259,6 +4256,8 @@ typedef struct iqm_vertex {
     GLfloat texcoord2[2];
 } iqm_vertex;
 
+STATIC_ASSERT((sizeof(iqm_vertex) == sizeof(model_vertex_t)));
+
 typedef struct iqm_t {
     int nummeshes, numtris, numverts, numjoints, numframes, numanims;
     GLuint vao, ibo, vbo;
@@ -4802,6 +4801,46 @@ void model_set_state(model_t m) {
     glBindVertexArray( 0 );
 }
 
+void model_sync(model_t m, int num_vertices, model_vertex_t *vertices, int num_indices, uint32_t *indices) {
+    if (!m.iqm) return;
+    iqm_t *q = m.iqm;
+
+    if (!(m.flags & MODEL_PROCEDURAL)) {
+        PANIC("model_sync() cannot be used with non-procedural models");
+    }
+
+    if (!q->vao) glGenVertexArrays(1, &q->vao);
+    glBindVertexArray(q->vao);
+   
+    if (num_vertices > 0) { 
+        if(!q->vbo) glGenBuffers(1, &q->vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, q->vbo);
+        glBufferData(GL_ARRAY_BUFFER, num_vertices * sizeof(model_vertex_t), vertices, m.flags & MODEL_STREAM ? GL_STREAM_DRAW : GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    if (num_indices > 0) {
+        if (!q->ibo) glGenBuffers(1, &q->ibo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, q->ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_indices * sizeof(uint32_t), indices, m.flags & MODEL_STREAM ? GL_STREAM_DRAW : GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    q->nummeshes = 1;
+    q->numtris = num_indices/3;
+    q->numverts = num_vertices;
+
+    if (!q->meshes) q->meshes = CALLOC(q->nummeshes, sizeof(struct iqmmesh));
+    struct iqmmesh *mesh = &q->meshes[0];
+    mesh->first_vertex = 0;
+    mesh->num_vertexes = num_vertices;
+    mesh->first_triangle = 0;
+    mesh->num_triangles = num_indices/3;
+
+    model_set_state(m);
+    glBindVertexArray(0);
+}
+
 static
 bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
     if(q->meshdata) return false;
@@ -5311,8 +5350,8 @@ void model_set_renderstates(model_t *m) {
         csm_shadow_rs->blend_enabled = 0;
         csm_shadow_rs->depth_test_enabled = true;
         csm_shadow_rs->depth_write_enabled = true;
-        csm_shadow_rs->cull_face_enabled = 1;
-        csm_shadow_rs->cull_face_mode = GL_FRONT;
+        csm_shadow_rs->cull_face_enabled = 0;
+        csm_shadow_rs->cull_face_mode = GL_BACK;
         csm_shadow_rs->front_face = GL_CW;
         csm_shadow_rs->depth_clamp_enabled = 1;
     }
@@ -5366,7 +5405,25 @@ model_t model_from_mem(const void *mem, int len, int flags) {
         }
     }
 
-    if( error ) {
+    if (flags & MODEL_PROCEDURAL) {
+        error = 0;
+
+        material_t mt = {0};
+        mt.name = "base";
+        mt.layer[0].map.color = vec4(1,1,1,1);
+        mt.layer[0].map.texture = CALLOC(1, sizeof(texture_t));
+        mt.layer[0].map.texture->id = texture_checker().id;
+
+        q->nummeshes = 1;
+        if (!q->textures) q->textures = CALLOC(1 * 8, sizeof(GLuint));
+        if (!q->colormaps) q->colormaps = CALLOC(1 * 8, sizeof(vec4));
+
+        q->textures[0] = mt.layer[0].map.texture->id;
+
+        array_push(m.materials, mt);
+    }
+
+    if(error) {
         PRINTF("Error: cannot load %s", "model");
         FREE(q), q = 0;
     } else {
@@ -5404,6 +5461,9 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     return m;
 }
 model_t model(const char *filename, int flags) {
+    if (!filename) {
+        return model_from_mem( NULL, 0, flags|MODEL_PROCEDURAL );
+    }
     int len;  // vfs_pushd(filedir(filename))
     char *ptr = vfs_load(filename, &len); // + vfs_popd
     return model_from_mem( ptr, len, flags );
@@ -5922,6 +5982,10 @@ static mat44 *pass_model_matrices = NULL;
 void model_render_instanced_pass(model_t mdl, mat44 proj, mat44 view, mat44* models, unsigned count, int pass) {
     if(!mdl.iqm) return;
     iqm_t *q = mdl.iqm;
+
+    if (q->vbo == 0 || q->ibo == 0) {
+        return;
+    }
 
     if (active_shadowmap && active_shadowmap->skip_render) {
         return;

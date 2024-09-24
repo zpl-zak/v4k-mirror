@@ -15,7 +15,7 @@ uniform int shadow_window_size;
 uniform mat4 light_shadow_matrix_csm[NUM_SHADOW_CASCADES];
 
 // const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](0.95, 0.35, 0.20, 0.1, 0.1, 0.1);
-const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](1.0, 6.0, 9.0, 16.0);
+const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](1.0, 2.0, 6.0, 9.0);
 // const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](0.95, 0.35, 0.20, 0.15);
 
 vec2 shadow_vsm_variance(vec3 dir, int light_index, float distance, float min_variance, float variance_transition, out float alpha) {
@@ -150,7 +150,7 @@ float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bi
     }
 
     // Calculate bias
-    vec3 normal = normalize(vneye.xyz);
+    vec3 normal = normalize(v_normal);
     float bias = max(normal_bias * (1.0 - dot(normal, lightDir)), shadow_bias) * bias_modifier[cascade_index];
     bias *= 1 / (u_cascade_distances[cascade_index]);
  

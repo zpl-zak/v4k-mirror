@@ -79,6 +79,11 @@ int main(int argc, char** argv) {
         // lit4.shadow_distance = 2000.0f;
         lit6.diffuse = scale3(vec3(0, 1, 0), 1.0f);
     }
+    light_t lit7 = light(); {
+        lit7.type = LIGHT_POINT;
+        lit7.cast_shadows = true;
+        lit7.radius = 0.1f;
+    }
 
     array(light_t) point_lights = 0;
     array_push(point_lights, lit);
@@ -113,8 +118,6 @@ int main(int argc, char** argv) {
         if( !initialized ) {
             initialized = 1;
             sky = skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]);
-            // sky = skybox(skyboxes[0][0], 0);
-            // sky = skybox(0, 0);
             sm = shadowmap(512, 4096);
             mdl = model(OBJ_MDLS[OBJ_MDL], 0);
             model_skybox(&mdl, sky);
@@ -173,8 +176,6 @@ int main(int argc, char** argv) {
         }
 
         if (mode == DIR) {
-            lights[0].pos = cam.position;
-
             lights[0].dir = vec3(1,-1,-1);
         }
 
