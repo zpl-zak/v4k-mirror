@@ -245,6 +245,12 @@ API void fullscreen_quad_ycbcr( texture_t texture_YCbCr[3] );
 API void fullscreen_quad_ycbcr_flipped( texture_t texture_YCbCr[3] );
 
 // -----------------------------------------------------------------------------
+// 2D quad drawing
+
+API void quad_render_id( int texture_type, int texture_id, vec2 dims, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end );
+API void quad_render( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, vec2 start, vec2 end );
+
+// -----------------------------------------------------------------------------
 // cubemaps
 
 typedef struct cubemap_t {

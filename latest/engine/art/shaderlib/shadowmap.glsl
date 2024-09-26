@@ -89,16 +89,7 @@ float shadow_vsm(float distance, vec3 dir, int light_index, float min_variance, 
         shadow_sum = ofs_sum / (samples_div2 * 2.0);
     }
 
-    // vec3 sampleDir = dir + (rand(vec2(v_position_ws.x, v_position_ws.y))*0.25f);
-    // float shadow = 0.0;
-    // vec2 moments = ;
-
-    // // Calculate the variance
-    // float variance = max(moments.y - (moments.x * moments.x), min_variance);
-    // float d = distance - moments.x;
-    // float p_max = linstep(variance_transition, 1.0, variance / (variance + d * d));
-
-    return shadow_sum;//min(max(step(distance, moments.x), shadow_sum), 1.0);
+    return shadow_sum;
 }
 
 float shadowmap_cascade_sample(vec2 sc, int cascade_index, float blend_factor, out float alpha) {

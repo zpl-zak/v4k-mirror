@@ -9,6 +9,7 @@ camera_t camera() {
     static camera_t cam = {0};
     do_once {
         cam.speed = 0.50f;
+        cam.accel = 0.5f;
         cam.position = vec3(10,10,10);
         cam.updir = vec3(0,1,0);
         cam.rightdir = vec3(1,0,0);
@@ -109,11 +110,16 @@ void camera_enable(camera_t *cam) {
 void camera_freefly(camera_t *cam) {
     bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
     window_cursor( !active );
+    int mult_speed = input(KEY_LSHIFT) || input(KEY_LALT);
 
+    static float speed_buildup = 1.0f;
     if( active ) cam->speed = clampf(cam->speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
     vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
     vec3 wasdecq = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-(input(KEY_C)||input(KEY_Q)),input(KEY_W)-input(KEY_S)), cam->speed);
-    camera_moveby(cam, scale3(wasdecq, window_delta() * 60));
+    if ( len3sq(wasdecq) ) speed_buildup += (cam->speed * cam->accel * (2.0f * mult_speed + 1.0f) * window_delta());
+    // if (!active) speed_buildup = 1.0f;
+    else speed_buildup = 1.0f;
+    camera_moveby(cam, scale3(wasdecq, window_delta() * 60 * speed_buildup * (2.0f * mult_speed + 1.0f)));
     camera_fps(cam, mouse.x,mouse.y);
 }
 

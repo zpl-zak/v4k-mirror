@@ -127,16 +127,12 @@ int main(int argc, char** argv) {
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
         window_cursor( !active );
 
-        if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
-        vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
-        vec3 wasdec = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-input(KEY_C),input(KEY_W)-input(KEY_S)), cam.speed);
-        camera_moveby(&cam, scale3(wasdec, window_delta() * 60));
-        camera_fps(&cam, mouse.x,mouse.y);
+        camera_freefly(&cam);
 
         enum {
             POINT, SPOT, DIR, ALL
         };
-        static unsigned mode = ALL;
+        static unsigned mode = DIR;
 
         if (!ui_active()) {
             if (input_down(KEY_1)) mode = POINT;
@@ -225,6 +221,10 @@ int main(int argc, char** argv) {
             model_render(mdl, cam.proj, cam.view, mdl.pivot);
         }
         fx_end();
+
+        // {
+        //     quad_render_id(GL_TEXTURE_2D, sm.maps[0].texture_2d[0], vec2(sm.csm_texture_width, sm.csm_texture_width), vec2(0,0), vec2(4096,4096), 0xFFFFFFFF, vec2(0,0), vec2(512,512));
+        // }
 
         if( ui_panel("Scene", 0)) {
             // if( ui_list("Skybox", SKY_DIRS, countof(SKY_DIRS), &SKY_DIR) ) {

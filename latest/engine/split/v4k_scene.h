@@ -8,7 +8,7 @@ typedef struct camera_t {
     mat44 view, proj;
     vec3 position, updir, lookdir, rightdir;
     float yaw, pitch, roll; // mirror of (x,y) lookdir in deg;
-    float speed, fov; // fov in deg(45)
+    float speed, accel, fov; // fov in deg(45)
     float near_clip, far_clip;
     float frustum_fov_multiplier;
 

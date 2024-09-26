@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
         if( !initialized ) {
             initialized = 1;
             sky = skybox(flag("--mie") ? 0 : SKY_DIRS[SKY_DIR], 0);
-            mdl = model(OBJ_MDLS[OBJ_MDL], 0);
+            mdl = model(OBJ_MDLS[OBJ_MDL], MODEL_NO_PBR);
             // sky.rayleigh_immediate = 1;
             rotation44(mdl.pivot, 0, 1,0,0); // @fixme: -90,1,0,0 -> should we rotate SHMs as well? compensate rotation in shader?
         }
@@ -46,11 +46,7 @@ int main(int argc, char** argv) {
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
         window_cursor( !active );
 
-        if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
-        vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
-        vec3 wasdec = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-input(KEY_C),input(KEY_W)-input(KEY_S)), cam.speed);
-        camera_moveby(&cam, scale3(wasdec, window_delta() * 60));
-        camera_fps(&cam, mouse.x,mouse.y);
+        camera_freefly(&cam);
 
         // render
         mat44 mvp; multiply44x2(mvp, cam.proj, cam.view);
