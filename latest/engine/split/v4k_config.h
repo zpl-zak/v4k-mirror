@@ -42,7 +42,7 @@
 #endif
 
 #ifndef GLOBAL_FRUSTUM_ENABLED
-#define GLOBAL_FRUSTUM_ENABLED 0 ///+
+#define GLOBAL_FRUSTUM_ENABLED 1 ///+
 #endif
 
 #ifndef GLOBAL_FRUSTUM_DEBUG_DRAW
