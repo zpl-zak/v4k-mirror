@@ -141,9 +141,10 @@ float shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bi
     }
 
     // Calculate bias
-    vec3 normal = normalize(v_normal);
-    float bias = max(normal_bias * (1.0 - dot(normal, lightDir)), shadow_bias) * bias_modifier[cascade_index];
-    bias *= 1 / (u_cascade_distances[cascade_index]);
+    vec3 normal = normalize(v_normal_ws);
+    // float bias = mix(0.001, 0.0, dot(normal, -lightDir));
+    float bias = max(normal_bias * (dot(normal, -lightDir)), shadow_bias);// * bias_modifier[cascade_index];
+    // bias *= 1 / (u_cascade_distances[cascade_index]);
  
     // CSM
     float shadow = 0.0;

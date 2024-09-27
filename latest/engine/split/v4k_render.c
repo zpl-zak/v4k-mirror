@@ -1527,8 +1527,8 @@ light_t light() {
     l.processed_shadows = false;
     l.shadow_distance = 400.0f;
     l.shadow_near_clip = 0.01f;
-    l.shadow_bias = 0.005f;
-    l.normal_bias = 0.05f;
+    l.shadow_bias = 0.003f;
+    l.normal_bias = 0.0025f;
     l.shadow_softness = 7.0f;
     l.penumbra_size = 2.0f;
     l.min_variance = 0.00002f;

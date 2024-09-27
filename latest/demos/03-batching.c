@@ -86,6 +86,12 @@ int main() {
         ddraw_ground(0);
         ddraw_flush();
         scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_CAST_SHADOWS);
+
+        if (ui_panel("Scene", 0)) {
+            ui_separator();
+            ui_light(light);
+            ui_panel_end();
+        }
     }
 }
 

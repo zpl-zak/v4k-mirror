@@ -143,9 +143,7 @@ vec3 lighting(material_t m) {
 #ifdef FS_PASS
         result *= shadowing(i).xyz;
 #endif
-        if (result.xyz != vec3(0,0,0)) {
-            lit += result;
-        }
+        lit += result;
     }
 #endif
     return lit;
