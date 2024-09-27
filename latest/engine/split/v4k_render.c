@@ -284,7 +284,7 @@ GLuint shader_compile( GLenum type, const char *source ) {
 
         // dump log with line numbers
         shader_print( source );
-        PANIC("!ERROR: shader_compile(): %s\n%s\n", type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", buf);
+        PANIC("!ERROR: shader_compile():\nDevice: %s\nDriver: %s\nShader/program link: %s\n", glGetString(GL_RENDERER), glGetString(GL_VERSION), buf);
         return 0;
     }
 
@@ -349,8 +349,24 @@ char *shader_preprocess(const char *src, const char *defines) {
         #endif
     }
 
+    // char *preamble = vfs_read("shaderlib/compat.glsl");
+    const char *preamble = ""
+        "#ifndef HAS_TEXTURE_QUERY_LOD\n"
+        "#define textureQueryLod(t,c) vec2(0.0,0.0)\n"
+        "#else\n"
+        "#extension GL_EXT_texture_query_lod : enable\n"
+        "#endif\n";
 
-    return va("%s\n%s\n%s", glsl_version, defines ? defines : "", processed_src);
+    ASSERT(preamble);
+    char *extensions = "";
+    {
+        // Check if GL_ARB_texture_query_lod extension is available
+        if (GLAD_GL_ARB_texture_query_lod) {
+            extensions = va("%s", "#define HAS_TEXTURE_QUERY_LOD 1\n");
+        }
+    }
+
+    return va("%s\n%s\n%s\n%s\n%s", glsl_version, extensions, preamble, defines ? defines : "", processed_src);
 }
 
 unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines) {
@@ -416,7 +432,8 @@ unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char 
                 puts("--- gs:");
                 shader_print(gs);
             }
-            PANIC("ERROR: shader(): Shader/program link: %s\n", buf);
+
+            PANIC("ERROR: shader():\nDevice: %s\nDriver: %s\nShader/program link: %s\n", glGetString(GL_RENDERER), glGetString(GL_VERSION), buf);
         }
 
         glDeleteShader(vert);
