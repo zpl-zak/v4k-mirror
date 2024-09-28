@@ -293,7 +293,7 @@ API void     fbo_destroy(unsigned id);
 
 enum {
     MAX_LIGHTS = 96,
-    MAX_SHADOW_LIGHTS = 16,
+    MAX_SHADOW_LIGHTS = 4,
 };
 
 enum LIGHT_TYPE {

@@ -2,7 +2,7 @@
 #define LIGHT_GLSL
 
 #define MAX_LIGHTS 96
-#define MAX_SHADOW_LIGHTS 16
+#define MAX_SHADOW_LIGHTS 4
 #define NUM_SHADOW_CASCADES 4
 
 #include "brdf.glsl"
