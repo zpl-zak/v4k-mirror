@@ -122,10 +122,19 @@ if "%1"=="docs" (
 
     rem ...and generate docs
     @REM cl   tools\docs\docs.c engine\v4k.c -Iengine /Od /DNDEBUG %2
-    tools\docs engine\v4k.h --excluded=3rd_glad.h,v4k.h,v4k_compat.h, > v4k.html
+
+    rem Concatenate all eng_*.h files into v4k_header_temp
+    type nul > v4k_header_temp
+    for %%f in (engine\split\eng_*.h) do (
+        echo #line 1 "%%~nf" >> v4k_header_temp
+        type "%%f" >> v4k_header_temp
+    )
+
+    tools\docs v4k_header_temp --excluded=3rd_glad.h,v4k.h,eng_compat.h, > v4k.html
     move /y v4k.html engine\
     del changelog.txt
     del info.obj
+    del v4k_header_temp
 
     exit /b
 )

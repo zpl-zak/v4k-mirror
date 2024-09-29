@@ -824,7 +824,7 @@ int main(int argc, char **argv) {
             // remove extension if present
             char *found = strrchr(section, '.'); if(found) *found = 0;
             // print section in Uppercase form
-            char *name = section + (strbegi(section, "v4k_") ? 4 : 0);
+            char *name = section + (strbegi(section, "eng_") ? 4 : 0);
             //name[0] = toupper(name[0]);
             printf("## %s\n\n", name);
             // reset

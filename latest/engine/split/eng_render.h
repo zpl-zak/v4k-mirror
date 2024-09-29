@@ -909,7 +909,6 @@ typedef struct model_t {
 
     int shading; // based on SHADING_MODE
     unsigned num_textures;
-    handle *textures;
     char **texture_names;
     array(material_t) materials;
     

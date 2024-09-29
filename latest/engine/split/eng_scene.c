@@ -579,8 +579,6 @@ void scene_render(int flags) {
             int do_retexturing = model->iqm && array_count(obj->textures) > 0;
             if( do_retexturing ) {
                 for(int i = 0; i < model->iqm->nummeshes; ++i) {
-                    array_push(obj->old_texture_ids, model->iqm->textures[i]);
-                    model->iqm->textures[i] = (*array_back(obj->textures)).id;
                     if (!model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture) {
                         model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
                         *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = texture_checker();
@@ -672,7 +670,6 @@ void scene_render(int flags) {
             int do_retexturing = model->iqm && model->shading != SHADING_PBR && array_count(obj->textures) > 0;
             if( do_retexturing ) {
                 for(int i = 0; i < model->iqm->nummeshes; ++i) {
-                    model->iqm->textures[i] = obj->old_texture_ids[i];
                     if (i < array_count(obj->old_textures)) {
                         if (model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture)
                             *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = obj->old_textures[i];

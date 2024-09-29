@@ -31,4 +31,7 @@ cl sfxr2wav.c /EHsc /O2 /Oy /DNDEBUG /MT
 REM Build xlsx2ini
 cl xlsx2ini.cc /MD /Ox /Oy /DNDEBUG /EHsc
 
+REM Build docs
+cl   docs\docs.c ..\engine\v4k.c -I..\engine /Od /DNDEBUG
+
 cd ..

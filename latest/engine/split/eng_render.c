@@ -4112,7 +4112,7 @@ texture_t brdf_lut() {
 bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
     if( !texture_name ) return false;
 
-    if( cm->texture ) {
+    if( cm->texture && cm->texture->id != texture_checker().id ) {
         texture_destroy(cm->texture);
         FREE(cm->texture), cm->texture = NULL;
     }
@@ -4372,8 +4372,8 @@ STATIC_ASSERT((sizeof(iqm_vertex) == sizeof(model_vertex_t)));
 typedef struct iqm_t {
     int nummeshes, numtris, numverts, numjoints, numframes, numanims;
     GLuint vao, ibo, vbo;
-    GLuint *textures;
     uint8_t *buf, *meshdata, *animdata;
+    unsigned *mesh_materials;
     struct iqmmesh *meshes;
     struct iqmjoint *joints;
     struct iqmpose *poses;
@@ -4381,7 +4381,6 @@ typedef struct iqm_t {
     struct iqmbounds *bounds;
     mat34 *baseframe, *inversebaseframe, *outframe, *frames;
     GLint bonematsoffset;
-    vec4 *colormaps;
     uint32_t instancing_checksum;
     int uniforms[2][NUM_MODEL_UNIFORMS];
     handle program;
@@ -4484,7 +4483,6 @@ void model_set_texture(model_t *m, texture_t t) {
     iqm_t *q = m->iqm;
 
     for( int i = 0; i < q->nummeshes; ++i) { // assume 1 texture per mesh
-        q->textures[i] = t.id;
         if (!m->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture) {
             m->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
         }
@@ -5090,8 +5088,7 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
     m->verts = verts;
     /*m->verts = 0; FREE(verts);*/
 
-    q->textures = CALLOC(hdr->num_meshes * 8, sizeof(GLuint));
-    q->colormaps = CALLOC(hdr->num_meshes * 8, sizeof(vec4));
+    q->mesh_materials = CALLOC(hdr->num_meshes, sizeof(unsigned));
 
     const char *str = hdr->ofs_text ? (char *)&q->buf[hdr->ofs_text] : "";
     for(int i = 0; i < (int)hdr->num_meshes; i++) {
@@ -5214,12 +5211,11 @@ void model_load_pbr_layer(material_layer_t *layer, const char *texname, bool loa
 }
 
 static
-void model_load_pbr(model_t *m, material_t *mt, int mesh) {
+void model_load_pbr(model_t *m, material_t *mt) {
     if (!m->iqm) return;
     struct iqm_t *q = m->iqm;
 
     // initialise default colors
-    mt->layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(0.5,0.5,0.5,1.0);
     mt->layer[MATERIAL_CHANNEL_NORMALS].map.color = vec4(0,0,0,0);
     mt->layer[MATERIAL_CHANNEL_ROUGHNESS].map.color = vec4(1,1,1,1);
     mt->layer[MATERIAL_CHANNEL_METALLIC].map.color = vec4(0,0,0,0);
@@ -5235,24 +5231,29 @@ void model_load_pbr(model_t *m, material_t *mt, int mesh) {
     for( int j = 0, end = array_count(tokens); j < end; ++j ) {
         char *t = tokens[j];
         if( strstri(t, "_A.") || strstri(t, "Albedo") || strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); continue; }
+        else
         if( strstri(t, "_N.") || strstri(t, "Normal") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_NORMALS], t, 0); continue; }
+        else
         if( strstri(t, "Roughness") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
+        else
         if( strstri(t, "_MR.")|| strstri(t, "MetallicRoughness") || strstri(t, "OcclusionRoughnessMetallic") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
         else
         if( strstri(t, "_M.") || strstri(t, "Metallic") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_METALLIC], t, 0); continue; }
+        else
         if( strstri(t, "_E.") || strstri(t, "Emissive") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_EMISSIVE], t, 1); continue; }
+        else
         if( strstri(t, "_AO.") || strstri(t, "AO") || strstri(t, "Occlusion") ) { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_AO], t, 0); continue; }
+        else
         if( strstri(t, "_P.") || strstri(t, "Parallax") || strstri(t, "disp.") ) { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_PARALLAX], t, 0); continue; }
+        // else
+        //     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); continue; }
     }
 }
 
 static
 bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, int _flags) {
-    q->textures = q->textures ? q->textures : CALLOC(hdr->num_meshes * 8, sizeof(GLuint)); // up to 8 textures per mesh
-    q->colormaps = q->colormaps ? q->colormaps : CALLOC(hdr->num_meshes * 8, sizeof(vec4)); // up to 8 colormaps per mesh
-
     texture_t tex = {0};
-    GLuint *out = q->textures;
+    GLuint out = 0;
 
     const char *str = hdr->ofs_text ? (char *)&q->buf[hdr->ofs_text] : "";
     for(int i = 0; i < (int)hdr->num_meshes; i++) {
@@ -5262,18 +5263,9 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
         bool reused = 0;
         for( int j = 0; !reused && j < model->num_textures; ++j ) {
             if( !strcmpi(model->texture_names[j], &str[m->material])) {
-
-                *out++ = model->materials[j].layer[0].map.texture->id;
-
-                {
-                    model->num_textures++;
-                    array_push(model->texture_names, STRDUP(&str[m->material]));
-
-                    array_push(model->materials, model->materials[j]);
-                    array_back(model->materials)->name = STRDUP(&str[m->material]);
-                }
-
+                q->mesh_materials[i] = j;
                 reused = true;
+                break;
             }
         }
         if( reused ) continue;
@@ -5285,7 +5277,6 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             flags |= TEXTURE_LINEAR;
         int invalid = texture_checker().id;
 
-#if 1
         char *material_embedded_texture = strstr(&str[m->material], "+b64:");
         if( material_embedded_texture ) {
             *material_embedded_texture = '\0';
@@ -5294,7 +5285,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             //printf("%s %d\n", material_embedded_texture, array_count(embedded_texture));
             //hexdump(embedded_texture, array_count(embedded_texture));
             tex = texture_compressed_from_mem( embedded_texture, array_count(embedded_texture), flags );
-            *out = tex.id;
+            out = tex.id;
             array_free(embedded_texture);
         }
 
@@ -5323,32 +5314,30 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
                 char* plus = strrchr(material_name, '+');
                 if (plus) { strcpy_safe(plus, file_ext(material_name)); }
                 tex = texture_compressed(material_name, flags);
-                *out = tex.id;
+                out = tex.id;
             }
             // else try right token
-            if (*out == invalid) {
+            if (out == invalid) {
                 material_name = file_normalize( va("%s", &str[m->material]) );
                 char* plus = strrchr(material_name, '+'), *slash = strrchr(material_name, '/');
                 if (plus) {
                     strcpy_safe(slash ? slash + 1 : material_name, plus + 1);
                     tex = texture_compressed(material_name, flags);
-                    *out = tex.id;
+                    out = tex.id;
                 }
             }
             // else last resort
-            if (*out == invalid) {
+            if (out == invalid) {
                 tex = texture_compressed(material_name, flags);
-                *out = tex.id; // needed?
             }
         }
 
-        if( *out != invalid) {
+        if( out != invalid) {
             PRINTF("loaded material[%d]: %s\n", i, &str[m->material]);
         } else {
             PRINTF("warn: material[%d] not found: %s\n", i, &str[m->material]);
             PRINTF("warn: using placeholder material[%d]=texture_checker\n", i);
             tex = texture_checker();
-            *out = tex.id; // placeholder
         }
 
         inscribe_tex:;
@@ -5358,48 +5347,15 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
 
             material_t mt = {0};
             mt.name = STRDUP(&str[m->material]);
+            q->mesh_materials[i] = model->num_textures - 1;
 
             // initialise basic texture layer
             mt.layer[MATERIAL_CHANNEL_ALBEDO].map.color = material_color_hex ? material_color : vec4(1,1,1,1);
             mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
             *mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = tex;
-            printf("texture_id: %d\n", mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id);
-            out++;
 
             array_push(model->materials, mt);
         }
-
-#else
-        material_t mt = {0};
-        mt.name = STRDUP(&str[m->material]);
-
-        array(char*) tokens = strsplit(&str[m->material], "+");
-        for each_array(tokens, char*, it) {
-            *out = texture(it, flags).id;
-
-            if( *out == invalid ) {
-                PRINTF("warn: material[%d] not found: %s\n", i, it);
-            } else {
-                PRINTF("loaded material[%d]: %s\n", i, it);
-
-                mt.layer[mt.count++].texture = *out;
-
-                ++out;
-            }
-        }
-
-        // if no materials were loaded, try to signal a checkered placeholder
-        if( out == textures ) {
-            PRINTF("warn: using placeholder material[%d]=texture_checker\n", i);
-            *out++ = invalid;
-        }
-
-        int count = (int)(intptr_t)(out - textures);
-        model->num_textures += count;
-        array_push(model->texture_names, STRDUP(&str[m->material]));
-
-        array_push(model->materials, mt);
-#endif
 
     }
 
@@ -5425,13 +5381,7 @@ void model_set_renderstates(model_t *m) {
     // Opaque pass
     renderstate_t *opaque_rs = &m->rs[RENDER_PASS_OPAQUE];
     {
-#if 1 // @todo: we should keep blend_enabled=0, however our transparency detection still needs work
         opaque_rs->blend_enabled = 0;
-#else
-        opaque_rs->blend_enabled = 1;
-        opaque_rs->blend_src = GL_SRC_ALPHA;
-        opaque_rs->blend_dst = GL_ONE_MINUS_SRC_ALPHA;
-#endif
         opaque_rs->cull_face_mode = GL_BACK;
         opaque_rs->front_face = GL_CW;
     }
@@ -5517,10 +5467,7 @@ model_t model_from_mem(const void *mem, int len, int flags) {
         mt.layer[0].map.texture->id = texture_checker().id;
 
         q->nummeshes = 1;
-        if (!q->textures) q->textures = CALLOC(1 * 8, sizeof(GLuint));
-        if (!q->colormaps) q->colormaps = CALLOC(1 * 8, sizeof(vec4));
-
-        q->textures[0] = mt.layer[0].map.texture->id;
+        if (!q->mesh_materials) q->mesh_materials = CALLOC(1, sizeof(unsigned));
 
         array_push(m.materials, mt);
     }
@@ -5545,7 +5492,6 @@ model_t model_from_mem(const void *mem, int len, int flags) {
         m.curframe = model_animate(m, 0);
 
         //m.num_textures = q->nummeshes; // assume 1 texture only per mesh
-        m.textures = (q->textures);
         m.sky_env.id = 0;
         m.sky_refl.id = 0;
 
@@ -5590,11 +5536,6 @@ uint32_t model_checksum(model_t *m) {
     
     // VAO, IBO, VBO
     checksum ^= m->vao ^ m->ibo ^ m->vbo;
-    
-    // Textures
-    for (int i = 0; i < m->num_textures; i++) {
-        checksum ^= (uint32_t)(uintptr_t)m->textures[i];
-    }
     
     // LOD
     checksum ^= (uint32_t)(uintptr_t)m->lod_collapse_map ^ m->lod_num_verts ^ m->lod_num_tris;
@@ -5849,11 +5790,12 @@ int drawcall_compare(const void *a, const void *b) {
 bool model_has_transparency_mesh(model_t m, int mesh) {
     if(!m.iqm) return false;
     iqm_t *q = m.iqm;
+    ASSERT(mesh < q->nummeshes);
 
     if (m.flags & MODEL_TRANSPARENT) {
         return true;
     }
-    if (m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.color.a < 1 || (m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.texture && m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->transparent)) {
+    if (m.materials[q->mesh_materials[mesh]].layer[MATERIAL_CHANNEL_ALBEDO].map.color.a < 1 || (m.materials[q->mesh_materials[mesh]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture && m.materials[q->mesh_materials[mesh]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->transparent)) {
         return true;
     }
 
@@ -5939,10 +5881,8 @@ bool model_is_visible(model_t m, mat44 model_mat, mat44 proj, mat44 view) {
 
 static inline
 void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
-    const material_t *material = &m.materials[mesh];
     iqm_t *q = m.iqm;
-    int loc = -1;
-    int i = mesh;
+    const material_t *material = &m.materials[q->mesh_materials[mesh]];
     shader_colormap_model_internal(&m, "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map, MODEL_TEXTURE_ALBEDO);
 
     if (m.shading == SHADING_PBR) {
@@ -6002,10 +5942,8 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
                 if (required_rs[i] == RENDER_PASS_OPAQUE) {
                     drawcall_t call;
                     call.mesh = i;
-                    call.tex = m.textures[i];
                     call.distance = -1;
-                    if (m.shading == SHADING_PBR)
-                        call.tex = m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : texture_checker().id;
+                    call.tex = m.materials[q->mesh_materials[i]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[q->mesh_materials[i]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[q->mesh_materials[i]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[q->mesh_materials[i]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : texture_checker().id;
                     array_push(drawcalls, call);
                 }
             }
@@ -6017,7 +5955,7 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
                 if (required_rs[i] == RENDER_PASS_TRANSPARENT) {
                     drawcall_t call;
                     call.mesh = i;
-                    call.tex = m.textures[i];
+                    call.tex = m.materials[q->mesh_materials[i]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[q->mesh_materials[i]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[q->mesh_materials[i]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[q->mesh_materials[i]].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : texture_checker().id;
                     struct iqmmesh *im = &q->meshes[i];
                     
                     // calculate distance from camera
@@ -6025,9 +5963,6 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
                         vec3 pos = ptr3(((struct iqm_vertex*)m.verts)[im->first_vertex].position);
                         call.distance = len3sq(sub3(cam_pos, transform344(model_mat, pos)));
                     }
-
-                    if (m.shading == SHADING_PBR)
-                        call.tex = m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : texture_checker().id;
                     array_push(drawcalls, call);
                 }
             }
@@ -6146,7 +6081,7 @@ void model_setshader(model_t *m, int shading, const char *vs, const char *fs, co
     // load pbr material if SHADING_PBR was selected
     if (shading == SHADING_PBR) {
         for (int i = 0; i < array_count(m->materials); ++i) {
-            model_load_pbr(m, &m->materials[i], i);
+            model_load_pbr(m, &m->materials[i]);
         }
     }
 
@@ -6540,8 +6475,7 @@ void model_destroy(model_t m) {
     iqm_t *q = m.iqm;
 //    if(m.mesh) mesh_destroy(m.mesh);
     FREE(q->outframe);
-    FREE(q->colormaps);
-    FREE(q->textures);
+    FREE(q->mesh_materials);
     FREE(q->baseframe);
     FREE(q->inversebaseframe);
     if(q->animdata != q->meshdata) FREE(q->animdata);
