@@ -55,7 +55,7 @@ int main() {
             if (i >= NUM_INSTANCES) break;
             object_t *obj = scene_spawn();
             vec3 pos = vec3(-x*3,1.05,-z*3);
-            vec3 rot = vec3(0,180,0); 
+            vec3 rot = vec3(0,180,0);
             vec3 sca = vec3(1,1,1);
             object_teleport(obj, pos);
             object_rotate(obj, rot);

@@ -330,7 +330,6 @@ char *shader_preprocess(const char *src, const char *defines) {
     if (!src) return NULL;
 
     const char *gles = "#version 300 es\n"
-                       "#define textureQueryLod(t,uv) vec2(0.,0.)\n" // "#extension GL_EXT_texture_query_lod : enable\n"
                        "#define MEDIUMP mediump\n"
                        "precision MEDIUMP float;\n";
     
@@ -361,7 +360,7 @@ char *shader_preprocess(const char *src, const char *defines) {
     char *extensions = "";
     {
         // Check if GL_ARB_texture_query_lod extension is available
-        if (GLAD_GL_ARB_texture_query_lod) {
+        if (ifdef(ems, 0, GLAD_GL_ARB_texture_query_lod)) {
             extensions = va("%s", "#define HAS_TEXTURE_QUERY_LOD 1\n");
         }
     }
@@ -1718,7 +1717,7 @@ void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
     shader_int("u_num_lights", num_lights);
     ASSERT(ubo);
 
-    if (*ubo == NULL /* buffer not created */) {
+    if (*ubo == 0 /* buffer not created */) {
         *ubo = ubo_create(&lights[0], sizeof(light_object_t) * MAX_LIGHTS, STREAM_DRAW);
     } else {
         ubo_update(*ubo, 0, &lights[0], sizeof(light_object_t) * num_lights);
@@ -4412,7 +4411,7 @@ bool model_compareuniform(const model_uniform_t *a, const model_uniform_t *b) {
             if (a->i != b->i) return false;
             break;
         case UNIFORM_VEC2:
-            if (!memcmp(&a->v2.x, &b->v2.x, sizeof(vec2)) != 0) return false;
+            if (memcmp(&a->v2.x, &b->v2.x, sizeof(vec2)) != 0) return false;
             break;
         case UNIFORM_VEC3:
             if (memcmp(&a->v3.x, &b->v3.x, sizeof(vec3)) != 0) return false;
@@ -4486,10 +4485,10 @@ void model_set_texture(model_t *m, texture_t t) {
 
     for( int i = 0; i < q->nummeshes; ++i) { // assume 1 texture per mesh
         q->textures[i] = t.id;
-        if (!m->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture) {
-            m->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
+        if (!m->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture) {
+            m->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
         }
-        *m->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = t;
+        *m->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = t;
     }
 }
 
@@ -5172,7 +5171,7 @@ bool model_load_anims(iqm_t *q, const struct iqmheader *hdr) {
 
 void ui_material(material_t *m) {
     static char* channel_names[] = {
-        "Diffuse", "Normals", "Specular", "Albedo", "Roughness", "Metallic", "AO", "Ambient", "Emissive", "Parallax"
+        "Diffuse", "Normals", "Albedo", "Roughness", "Metallic", "AO", "Ambient", "Emissive", "Parallax"
     };
     for (int i = 0; i < MAX_CHANNELS_PER_MATERIAL; i++) {
         
@@ -5183,10 +5182,6 @@ void ui_material(material_t *m) {
                 ui_texture(va("%s Texture", channel_names[i]), *m->layer[i].map.texture);
             }
             
-            if (i == MATERIAL_CHANNEL_SPECULAR) {
-                ui_float("Specular Shininess", &m->layer[i].value);
-            }
-
             if (i == MATERIAL_CHANNEL_PARALLAX) {
                 ui_float("Parallax Scale", &m->layer[i].value);
                 ui_float("Parallax Shadow Power", &m->layer[i].value2);
@@ -5224,11 +5219,8 @@ void model_load_pbr(model_t *m, material_t *mt, int mesh) {
     struct iqm_t *q = m->iqm;
 
     // initialise default colors
-    // mt->layer[MATERIAL_CHANNEL_DIFFUSE].map.color = vec4(0.5,0.5,0.5,1.0);
-    mt->layer[MATERIAL_CHANNEL_NORMALS].map.color = vec4(0,0,0,0);
-    mt->layer[MATERIAL_CHANNEL_SPECULAR].map.color = vec4(0,0,0,0);
-    mt->layer[MATERIAL_CHANNEL_SPECULAR].value = 1.0f; // specular_shininess
     mt->layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(0.5,0.5,0.5,1.0);
+    mt->layer[MATERIAL_CHANNEL_NORMALS].map.color = vec4(0,0,0,0);
     mt->layer[MATERIAL_CHANNEL_ROUGHNESS].map.color = vec4(1,1,1,1);
     mt->layer[MATERIAL_CHANNEL_METALLIC].map.color = vec4(0,0,0,0);
     mt->layer[MATERIAL_CHANNEL_AO].map.color = vec4(1,1,1,0);
@@ -5242,10 +5234,8 @@ void model_load_pbr(model_t *m, material_t *mt, int mesh) {
     array(char*) tokens = strsplit(mt->name, "+");
     for( int j = 0, end = array_count(tokens); j < end; ++j ) {
         char *t = tokens[j];
-        if( strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )    { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_DIFFUSE], t, 1); continue; }
+        if( strstri(t, "_A.") || strstri(t, "Albedo") || strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); continue; }
         if( strstri(t, "_N.") || strstri(t, "Normal") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_NORMALS], t, 0); continue; }
-        if( strstri(t, "_S.") || strstri(t, "Specular") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_SPECULAR], t, 0); continue; }
-        if( strstri(t, "_A.") || strstri(t, "Albedo") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); continue; }
         if( strstri(t, "Roughness") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
         if( strstri(t, "_MR.")|| strstri(t, "MetallicRoughness") || strstri(t, "OcclusionRoughnessMetallic") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
         else
@@ -5370,10 +5360,10 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             mt.name = STRDUP(&str[m->material]);
 
             // initialise basic texture layer
-            mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.color = material_color_hex ? material_color : vec4(1,1,1,1);
-            mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
-            *mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = tex;
-            printf("texture_id: %d\n", mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id);
+            mt.layer[MATERIAL_CHANNEL_ALBEDO].map.color = material_color_hex ? material_color : vec4(1,1,1,1);
+            mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
+            *mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = tex;
+            printf("texture_id: %d\n", mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id);
             out++;
 
             array_push(model->materials, mt);
@@ -5416,9 +5406,9 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
     if( array_count(model->materials) == 0 ) {
         material_t mt = {0};
         mt.name = "placeholder";
-        mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.color = vec4(1,1,1,1);
-        mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
-        mt.layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id = texture_checker().id;
+        mt.layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(1,1,1,1);
+        mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
+        mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id = texture_checker().id;
 
         array_push(model->materials, mt);
     }
@@ -5863,10 +5853,7 @@ bool model_has_transparency_mesh(model_t m, int mesh) {
     if (m.flags & MODEL_TRANSPARENT) {
         return true;
     }
-    if (m.materials[mesh].layer[MATERIAL_CHANNEL_DIFFUSE].map.color.a < 1 || (m.materials[mesh].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture && m.materials[mesh].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->transparent)) {
-        return true;
-    }
-    if (m.shading == SHADING_PBR && (m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.color.a < 1 || (m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.texture && m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->transparent))){
+    if (m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.color.a < 1 || (m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.texture && m.materials[mesh].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->transparent)) {
         return true;
     }
 
@@ -5952,29 +5939,15 @@ bool model_is_visible(model_t m, mat44 model_mat, mat44 proj, mat44 view) {
 
 static inline
 void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
+    const material_t *material = &m.materials[mesh];
     iqm_t *q = m.iqm;
     int loc = -1;
     int i = mesh;
+    shader_colormap_model_internal(&m, "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map, MODEL_TEXTURE_ALBEDO);
 
-    if (m.shading != SHADING_PBR) {
-        int loc = glGetUniformLocation(shader, "u_texture2d");
-        shader_texture_unit_kind_(GL_TEXTURE_2D, loc, q->textures[i], MODEL_TEXTURE_DIFFUSE);
-
-        if ((loc = glGetUniformLocation(shader, "u_textured")) >= 0) {
-            bool textured = !!q->textures[i] && q->textures[i] != texture_checker().id; // m.materials[i].layer[0].texture != texture_checker().id;
-            glUniform1i(loc, textured ? GL_TRUE : GL_FALSE);
-            if ((loc = glGetUniformLocation(shader, "u_diffuse")) >= 0) {
-                glUniform4f(loc, m.materials[i].layer[0].map.color.r, m.materials[i].layer[0].map.color.g, m.materials[i].layer[0].map.color.b, m.materials[i].layer[0].map.color.a);
-            }
-        }
-
-    } else {
-        const material_t *material = &m.materials[i];
-        shader_colormap_model_internal(&m, "map_diffuse.color", "map_diffuse.has_tex", "map_diffuse_tex", material->layer[MATERIAL_CHANNEL_DIFFUSE].map, MODEL_TEXTURE_DIFFUSE);
-        shader_colormap_model_internal(&m, "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map, MODEL_TEXTURE_ALBEDO);
+    if (m.shading == SHADING_PBR) {
         if (rs_idx < RENDER_PASS_SHADOW_BEGIN || rs_idx > RENDER_PASS_SHADOW_END) {
             shader_colormap_model_internal(&m, "map_normals.color", "map_normals.has_tex", "map_normals_tex", material->layer[MATERIAL_CHANNEL_NORMALS].map, MODEL_TEXTURE_NORMALS);
-            shader_colormap_model_internal(&m, "map_specular.color", "map_specular.has_tex", "map_specular_tex", material->layer[MATERIAL_CHANNEL_SPECULAR].map, MODEL_TEXTURE_SPECULAR);
             shader_colormap_model_internal(&m, "map_roughness.color", "map_roughness.has_tex", "map_roughness_tex", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map, MODEL_TEXTURE_ROUGHNESS);
             shader_colormap_model_internal(&m, "map_metallic.color", "map_metallic.has_tex", "map_metallic_tex", material->layer[MATERIAL_CHANNEL_METALLIC].map, MODEL_TEXTURE_METALLIC);
             shader_colormap_model_internal(&m, "map_ao.color", "map_ao.has_tex", "map_ao_tex", material->layer[MATERIAL_CHANNEL_AO].map, MODEL_TEXTURE_AO);
@@ -6032,7 +6005,7 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
                     call.tex = m.textures[i];
                     call.distance = -1;
                     if (m.shading == SHADING_PBR)
-                        call.tex = m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id : texture_checker().id;
+                        call.tex = m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : texture_checker().id;
                     array_push(drawcalls, call);
                 }
             }
@@ -6054,7 +6027,7 @@ void model_draw_call(model_t m, int shader, int pass, vec3 cam_pos, mat44 model_
                     }
 
                     if (m.shading == SHADING_PBR)
-                        call.tex = m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture->id : texture_checker().id;
+                        call.tex = m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture ? m.materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id : texture_checker().id;
                     array_push(drawcalls, call);
                 }
             }

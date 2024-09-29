@@ -8,7 +8,7 @@ REM Build ase2ini
 cl ase2ini.c -I ..\engine\split -I ..\engine\3rd /DNDEBUG /O2 /Ox /MT
 
 REM Build ASSIMP
-MAKE_assimp.bat
+call MAKE_assimp.bat
 
 REM Build cook
 cl cook.c -I..\engine /Os /Ox /O2 /Oy /MT /DNDEBUG /GL /GF /Gw /arch:AVX2 /link /OPT:ICF /LTCG

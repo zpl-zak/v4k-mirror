@@ -581,12 +581,12 @@ void scene_render(int flags) {
                 for(int i = 0; i < model->iqm->nummeshes; ++i) {
                     array_push(obj->old_texture_ids, model->iqm->textures[i]);
                     model->iqm->textures[i] = (*array_back(obj->textures)).id;
-                    if (!model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture) {
-                        model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = CALLOC(1, sizeof(texture_t));
-                        *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = texture_checker();
+                    if (!model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture) {
+                        model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
+                        *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = texture_checker();
                     }
-                    array_push(obj->old_textures, *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture);
-                    *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = (*array_back(obj->textures));
+                    array_push(obj->old_textures, *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture);
+                    *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = (*array_back(obj->textures));
                 }
             }
 
@@ -674,8 +674,8 @@ void scene_render(int flags) {
                 for(int i = 0; i < model->iqm->nummeshes; ++i) {
                     model->iqm->textures[i] = obj->old_texture_ids[i];
                     if (i < array_count(obj->old_textures)) {
-                        if (model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture)
-                            *model->materials[i].layer[MATERIAL_CHANNEL_DIFFUSE].map.texture = obj->old_textures[i];
+                        if (model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture)
+                            *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = obj->old_textures[i];
                     }
                 }
                 array_resize(obj->old_texture_ids, 0);

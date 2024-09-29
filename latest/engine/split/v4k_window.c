@@ -413,14 +413,17 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     #if !is(ems)
     PRINTF("GPU OpenGL: %d.%d\n", GLAD_VERSION_MAJOR(gl_version), GLAD_VERSION_MINOR(gl_version));
 
-    int max_blocks[2] = {0}, max_size = 0;
+    int max_blocks[2] = {0}, max_size = 0, max_image_texture_units = 0;
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_BLOCKS, &max_blocks[0]);
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS, &max_blocks[1]);
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &max_size);
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_image_texture_units);
 
     PRINTF("UBO max_blocks[vs]: %d\n", max_blocks[0]);
     PRINTF("UBO max_blocks[fs]: %d\n", max_blocks[1]);
     PRINTF("UBO max_size_kb: %d\n", max_size / 1024);
+    PRINTF("max_image_texture_units: %d\n", max_image_texture_units);
+
 
     if( FLAGS_TRANSPARENT ) { // @transparent
         glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE); // @todo: is decorated an attrib or a hint?

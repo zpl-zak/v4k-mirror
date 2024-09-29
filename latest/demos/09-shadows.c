@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
         enum {
             POINT, SPOT, DIR, ALL
         };
-        static unsigned mode = DIR;
+        static unsigned mode = ALL;
 
         if (!ui_active()) {
             if (input_down(KEY_1)) mode = POINT;
