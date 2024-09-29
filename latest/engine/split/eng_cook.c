@@ -635,7 +635,8 @@ bool cook_start( const char *cook_ini, const char *masks, int flags ) {
     char *rules_ = file_read(cook_ini);
     if(!rules_ || rules_[0] == 0) return false;
 
-    static char *rules; do_once rules = STRDUP(rules_);
+    // 
+    static char *rules; do_once rules = file_preprocess(rules_, file_path(cook_ini), file_read, "cook_start()");
 
     do_once {
     #if 0

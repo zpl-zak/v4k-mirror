@@ -401,6 +401,7 @@ int scene_merge(const char *source) {
             bool opt_swap_zy = json_int("/[%d]/swapzy",i);
             bool opt_flip_uv = json_int("/[%d]/flipuv",i);
             bool opt_fullbright = json_int("/[%d]/fullbright",i);
+            bool enable_pbr = json_int("/[%d]/pbr",i);
             PRINTF("Scene %d/%d Loading: %s\n", i, e, mesh_file);
             PRINTF("Scene %d/%d Texture: %s\n", i, e, texture_file);
             PRINTF("Scene %d/%d Animation: %s\n", i, e, animation_file);
@@ -409,7 +410,7 @@ int scene_merge(const char *source) {
             PRINTF("Scene %d/%d Scale: (%f,%f,%f)\n", i, e, scale.x, scale.y, scale.z);
             PRINTF("Scene %d/%d Swap_ZY: %d\n", i, e, opt_swap_zy );
             PRINTF("Scene %d/%d Flip_UV: %d\n", i, e, opt_flip_uv );
-            model_t m = model_from_mem(vfs_read(mesh_file), vfs_size(mesh_file), 0/*opt_swap_zy*/);
+            model_t m = model_from_mem(vfs_read(mesh_file), vfs_size(mesh_file), enable_pbr ? 0 : MODEL_NO_PBR);
             //char *a = archive_read(animation_file);
             object_t *o = scene_spawn();
             object_model(o, m);
@@ -579,12 +580,13 @@ void scene_render(int flags) {
             int do_retexturing = model->iqm && array_count(obj->textures) > 0;
             if( do_retexturing ) {
                 for(int i = 0; i < model->iqm->nummeshes; ++i) {
-                    if (!model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture) {
-                        model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
-                        *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = texture_checker();
+                    material_t *material = &model->materials[model->iqm->mesh_materials[i]];
+                    if (!material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture) {
+                        material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
+                        *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = texture_checker();
                     }
-                    array_push(obj->old_textures, *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture);
-                    *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = (*array_back(obj->textures));
+                    array_push(obj->old_textures, *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture);
+                    *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = (*array_back(obj->textures));
                 }
             }
 
@@ -670,9 +672,10 @@ void scene_render(int flags) {
             int do_retexturing = model->iqm && model->shading != SHADING_PBR && array_count(obj->textures) > 0;
             if( do_retexturing ) {
                 for(int i = 0; i < model->iqm->nummeshes; ++i) {
+                    material_t *material = &model->materials[model->iqm->mesh_materials[i]];
                     if (i < array_count(obj->old_textures)) {
-                        if (model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture)
-                            *model->materials[i].layer[MATERIAL_CHANNEL_ALBEDO].map.texture = obj->old_textures[i];
+                        if (material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture)
+                            *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = obj->old_textures[i];
                     }
                 }
                 array_resize(obj->old_texture_ids, 0);

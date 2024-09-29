@@ -296,36 +296,6 @@ unsigned shader(const char *vs, const char *fs, const char *attribs, const char 
 }
 
 static inline
-char *shader_process_includes(const char *src) {
-    if (!src) return NULL;
-
-    char *includes = NULL;
-    for each_substring(src, "\n", line) {
-        if (line[0] == '#' && strstri(line, "#include")) {
-            const char *start = strstri(line, "\"");
-            const char *end = strstri(start+1, "\"");
-            if (start && end) {
-                char *filename = va("%.*s", (int)(end-start-1), start+1);
-                char *included = vfs_read(filename);
-                if (included) {
-                    char *nested_includes = shader_process_includes(included);
-                    includes = strcatf(&includes, "%s\n", nested_includes ? nested_includes : ""); //@leak
-                } else {
-                    PANIC("!ERROR: shader(): Include file not found: %s\n", filename);
-                }
-            } else {
-                PANIC("!ERROR: shader(): Invalid #include directive: %s\n", line);
-            }
-        } else 
-        {
-            includes = strcatf(&includes, "\n%s", line); //@leak
-        }
-    }
-
-    return includes;
-}
-
-static inline
 char *shader_preprocess(const char *src, const char *defines) {
     if (!src) return NULL;
 
@@ -333,7 +303,7 @@ char *shader_preprocess(const char *src, const char *defines) {
                        "#define MEDIUMP mediump\n"
                        "precision MEDIUMP float;\n";
     
-    char *processed_src = shader_process_includes(src);
+    char *processed_src = file_preprocess(src, NULL, vfs_read, "shader()");
     const char *desktop = strstr(processed_src, "textureQueryLod") ? "#version 400\n#define MEDIUMP\n" : "#version 330\n#define MEDIUMP\n";
     const char *glsl_version = ifdef(ems, gles, desktop);
 

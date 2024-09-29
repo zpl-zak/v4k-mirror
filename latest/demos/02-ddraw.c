@@ -63,11 +63,11 @@ int main() {
             do_once sw = swarm();
             do_once array_push(sw.steering_targets, vec3(0,0,0));
             do_once for(int i = 0; i < 100; ++i)
-                array_push(sw.boids, boid(scale3(rnd3(),10), rnd3())); // pos,vel
+                array_push(sw.boids, boid(scale3(rnd3(),10), scale3(rnd3(),.10))); // pos,vel
 
             // move
             sw.steering_targets[0] = cam.position;
-            swarm_update(&sw, window_delta()*60);
+            swarm_update(&sw, window_delta()/60);
 
             // draw
             for (int j = 0, end = array_count(sw.boids); j < end; ++j) {
@@ -101,4 +101,4 @@ int main() {
 }
 
 // this demo supersedes following old sources:
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-collide.c
+// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-collide.c

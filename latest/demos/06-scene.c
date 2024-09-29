@@ -30,6 +30,7 @@ int main() {
             texture:'models/witch/witch_diffuse.tga.png',
             flipuv:false,
             fullbright:true,
+            pbr:false,
         },
         {
             position:[-5.0,-2.0,2.0],
@@ -39,6 +40,7 @@ int main() {
             texture:'models/witch/witch_object_diffuse.tga.png',
             flipuv:false,
             fullbright:true,
+            pbr:false,
         },
     ]);
     int num_spawned = scene_merge(my_scene);
@@ -46,7 +48,7 @@ int main() {
     object_t *obj2 = scene_index(1);
 
     // manual spawn & loading
-    model_t m1 = model("kgirl/kgirls01.fbx", 0); //MODEL_NO_ANIMS);
+    model_t m1 = model("kgirl/kgirls01.fbx", MODEL_NO_PBR); //MODEL_NO_ANIMS);
     texture_t t1 = texture("kgirl/g01_texture.png", 0);
     object_t* obj3 = scene_spawn();
     obj3->fullbright = true;
@@ -54,7 +56,7 @@ int main() {
     object_diffuse(obj3, t1);
     object_scale(obj3, vec3(3,3,3));
     object_move(obj3, vec3(-10,0,-10));
-    object_pivot(obj3, vec3(90,-90,0));
+    object_pivot(obj3, vec3(0,90,-90));
 
     // camera
     camera_t cam = camera();
@@ -117,7 +119,7 @@ int main() {
             float delta = window_delta() * 30 ; // 30fps anim
             obj3->model.curframe = model_animate(obj3->model, obj3->model.curframe + delta);
 
-            ddraw_text(vec3(-10,5,-10), 0.05, va("Frame: %.1f", m1.curframe));
+            ddraw_text(vec3(-10,5,-10), 0.05, va("Frame: %.1f", obj3->model.curframe));
         }
 
         // post-fxs end here
@@ -207,7 +209,7 @@ while(window_swap() && !input(KEY_ESC)) {
     // model_render(sponza, cam.proj, cam.view, sponza.pivot, 0);
 
 // this demo supersedes following old sources:
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-material.c
-// https://github.com/r-lyeh/V4K/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-shadertoy.c
+// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-material.c
+// https://github.com/r-lyeh/FWK/blob/45e34d7890b2b8fe1f4994f4b76e496280d83cb6/demos/00-shadertoy.c
 
 #endif
