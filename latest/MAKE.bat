@@ -180,36 +180,36 @@ if "%1"=="test" (
 
 rem check memory api calls
 if "%1"=="checkmem" (
-    findstr /RNC:"[^_xv]realloc[(]"  engine\split\v4k*
-    findstr /RNC:"[^_xv]REALLOC[(]"  engine\split\v4k*
-    findstr /RNC:"[^_xv]MALLOC[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]xrealloc[(]" engine\split\v4k*
-    findstr /RNC:"[^_xv]malloc[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]free[(]"     engine\split\v4k*
-    findstr /RNC:"[^_xv]calloc[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]strdup[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]array_init[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]array_resize[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]array_reserve[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]array_push[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]array_push_front[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]array_free[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]array_free[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]set_init[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]set_insert[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]map_init[(]"   engine\split\v4k*
-    findstr /RNC:"[^_xv]map_insert[(]"   engine\split\v4k*
+    findstr /RNC:"[^_xv]realloc[(]"  engine\split\eng*
+    findstr /RNC:"[^_xv]REALLOC[(]"  engine\split\eng*
+    findstr /RNC:"[^_xv]MALLOC[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]xrealloc[(]" engine\split\eng*
+    findstr /RNC:"[^_xv]malloc[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]free[(]"     engine\split\eng*
+    findstr /RNC:"[^_xv]calloc[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]strdup[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]array_init[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]array_resize[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]array_reserve[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]array_push[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]array_push_front[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]array_free[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]array_free[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]set_init[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]set_insert[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]map_init[(]"   engine\split\eng*
+    findstr /RNC:"[^_xv]map_insert[(]"   engine\split\eng*
     exit /b
 )
 
 if "%1"=="todo" (
-    findstr /RNC:"[^_xv]@todo"  engine\split\v4k*
-    findstr /RNC:"[^_xv]@fixme"  engine\split\v4k*
+    findstr /RNC:"[^_xv]@todo"  engine\split\eng*
+    findstr /RNC:"[^_xv]@fixme"  engine\split\eng*
     exit /b
 )
 
 if "%1"=="leak" (
-    findstr /RNC:"[^_xv]@leak"  engine\split\v4k*
+    findstr /RNC:"[^_xv]@leak"  engine\split\eng*
     exit /b
 )
 

@@ -237,9 +237,7 @@ void ModelRender( Model *G, const mat44 _worldRootMatrix ) {
                 continue;
 
             const material_t *material = &G->m.materials[ mesh->material_idx ];
-            shader_colormap( "map_diffuse", material->layer[MATERIAL_CHANNEL_DIFFUSE].map );
             shader_colormap( "map_normals", material->layer[MATERIAL_CHANNEL_NORMALS].map );
-            shader_colormap( "map_specular", material->layer[MATERIAL_CHANNEL_SPECULAR].map );
             shader_colormap( "map_albedo", material->layer[MATERIAL_CHANNEL_ALBEDO].map );
             shader_colormap( "map_roughness", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map );
             shader_colormap( "map_metallic", material->layer[MATERIAL_CHANNEL_METALLIC].map );
