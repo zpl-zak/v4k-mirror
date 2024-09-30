@@ -819,6 +819,10 @@ const char *vfs_resolve(const char *pathfile) {
 }
 
 char* vfs_load(const char *pathfile, int *size_out) { // @todo: fix leaks, vfs_unpack()
+    if (!dir_mount) {
+        return file_load(pathfile, size_out);
+    }
+
     // @fixme: handle \\?\ absolute path (win)
     if (!pathfile[0]) return file_load(pathfile, size_out);
     while( pathfile[0] == '.' && (pathfile[1] == '/' || pathfile[1] == '\\') ) pathfile += 2;

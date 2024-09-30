@@ -304,38 +304,16 @@ char *shader_preprocess(const char *src, const char *defines) {
                        "precision MEDIUMP float;\n";
     
     char *processed_src = file_preprocess(src, NULL, vfs_read, "shader()");
-    const char *desktop = strstr(processed_src, "textureQueryLod") ? "#version 400\n#define MEDIUMP\n" : "#version 330\n#define MEDIUMP\n";
+    const char *desktop = "#version 330\n#define MEDIUMP\n";
     const char *glsl_version = ifdef(ems, gles, desktop);
 
     // detect GLSL version if set
     if (processed_src[0] == '#' && processed_src[1] == 'v') {
-        #if 0
-        const char *end = strstri(src, "\n");
-        glsl_version = va("%.*s", (int)(end-src), src);
-        src = end+1;
-        #else
         PANIC("!ERROR: shader with #version specified on it. we do not support this anymore.");
-        #endif
     }
 
-    // char *preamble = vfs_read("shaderlib/compat.glsl");
-    const char *preamble = ""
-        "#ifndef HAS_TEXTURE_QUERY_LOD\n"
-        "#define textureQueryLod(t,c) vec2(0.0,0.0)\n"
-        "#else\n"
-        "#extension GL_EXT_texture_query_lod : enable\n"
-        "#endif\n";
-
-    ASSERT(preamble);
-    char *extensions = "";
-    {
-        // Check if GL_ARB_texture_query_lod extension is available
-        if (ifdef(ems, 0, GLAD_GL_ARB_texture_query_lod)) {
-            extensions = va("%s", "#define HAS_TEXTURE_QUERY_LOD 1\n");
-        }
-    }
-
-    return va("%s\n%s\n%s\n%s\n%s", glsl_version, extensions, preamble, defines ? defines : "", processed_src);
+    char *preamble = vfs_read("shaderlib/compat.glsl");
+    return va("%s\n%s\n%s\n%s", glsl_version, preamble ? preamble : "", defines ? defines : "", processed_src);
 }
 
 unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines) {

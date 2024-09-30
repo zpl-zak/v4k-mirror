@@ -86,8 +86,6 @@ API void object_diffuse_push(object_t *obj, texture_t tex);
 API void object_diffuse_pop(object_t *obj);
 API void object_billboard(object_t *obj, unsigned mode);
 
-// object_pose(transform); // @todo
-
 // scene
 
 enum SCENE_FLAGS {
