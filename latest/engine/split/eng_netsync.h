@@ -70,11 +70,11 @@ API void   server_send_bin(int64_t handle, const void *ptr, int len);
 API void   server_drop(int64_t handle);
 
 API int64_t  client_join(const char *ip, int port);
-#define      client_send_flags(msg,flags) server_broadcast(msg, flags)
-#define      client_send(msg) server_broadcast(msg)
-#define      client_send_bin_flags(ptr,len,flags) server_broadcast_bin(ptr, len, flags)
-#define      client_send_bin(ptr,len) server_broadcast_bin(ptr, len)
-#define      client_terminate() server_terminate()
+API void     client_send_flags(const char *msg, uint64_t flags);
+API void     client_send(const char *msg);
+API void     client_send_bin_flags(const void *ptr, int len, uint64_t flags);
+API void     client_send_bin(const void *ptr, int len);
+API void     client_terminate();
 
 #define ANYHOST_IPV4 "0.0.0.0"
 #define ANYHOST_IPV6 "::0"

@@ -683,3 +683,23 @@ void network_rpc_send(unsigned id, const char *cmdline) {
     *(uint32_t*)&msg[4] = id;
     server_broadcast_bin(msg, sz);
 }
+
+void client_send_flags(const char *msg, uint64_t flags) {
+    server_broadcast_flags(msg, flags);
+}
+
+void client_send(const char *msg) {
+    server_broadcast(msg);
+}
+
+void client_send_bin_flags(const void *ptr, int len, uint64_t flags) {
+    server_broadcast_bin_flags(ptr, len, flags);
+}
+
+void client_send_bin(const void *ptr, int len) {
+    server_broadcast_bin(ptr, len);
+}
+
+void client_terminate() {
+    server_terminate();
+}
