@@ -23,9 +23,9 @@
     #extension GL_OES_standard_derivatives        : enable
     #extension GL_OES_texture_3D                  : enable
 #else
-    #extension GL_AMD_conservative_depth          : enable
-    #extension GL_AMD_gpu_shader_half_float       : enable
-    #extension GL_AMD_shader_trinary_minmax       : enable
+    // #extension GL_AMD_conservative_depth          : enable
+    // #extension GL_AMD_gpu_shader_half_float       : enable
+    // #extension GL_AMD_shader_trinary_minmax       : enable
     #extension GL_ARB_conservative_depth          : enable
     #extension GL_ARB_enhanced_layouts            : enable
     #extension GL_ARB_gpu_shader5                 : enable
@@ -39,10 +39,10 @@
     #extension GL_EXT_demote_to_helper_invocation : enable
     #extension GL_EXT_gpu_shader4                 : enable
     #extension GL_EXT_shader_image_load_store     : enable
-    #extension GL_NV_gpu_shader5                  : enable
+    // #extension GL_NV_gpu_shader5                  : enable
 #endif
-#pragma optimize(on)
-#pragma debug(off)
+// #pragma optimize(on)
+// #pragma debug(off)
 
 // feature helpers
 #if defined(GL_ES)
@@ -89,15 +89,15 @@
 // precision qualifiers
 #if defined(GL_ES)
     #if defined(_CORE_FRAGMENT_SHADER_)
-        precision mediump float;
+        precision MEDIUMP float;
     #endif
     #if !defined(GL_FRAGMENT_PRECISION_HIGH)
-        #define highp mediump   // in all shaders
+        #define HIGHP MEDIUMP   // in all shaders
     #endif
 #else
-    #define highp
-    #define mediump
-    #define lowp
+    #define HIGHP
+    #define MEDIUMP
+    #define LOWP
 #endif
 
 // layout qualifiers
@@ -126,8 +126,8 @@
     #endif
 #endif
 #if defined(GL_EXT_shader_texture_lod)
-    #define texture2DLod(t,v,l)     (texture2DLodEXT    (t, v, l))
-    #define texture2DProjLod(t,v,l) (texture2DProjLodEXT(t, v, l))
+    // #define texture2DLod(t,v,l)     (texture2DLod    (t, v, l))
+    // #define texture2DProjLod(t,v,l) (texture2DProjLod(t, v, l))
     #define shadow2DProjLod(t,v,l)  (shadow2DProj       (t, v))
 #elif !defined(GL_ARB_shader_texture_lod)
     #define texture2DLod(t,v,l)     (texture2D          (t, v))
