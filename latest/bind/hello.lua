@@ -15,7 +15,7 @@ v4k.window_title("hello luajit")
 local girl = v4k.model('kgirl/kgirls01.fbx', 0)
 local girl_frame = 0
 local girl_pivot = v4k.mat44()
-v4k.rotationq44(girl_pivot, v4k.eulerq(v4k.vec3(0,0,0)))
+v4k.rotationq44(girl_pivot, v4k.eulerq(v4k.vec3(0,90,-90)))
 v4k.scale44(girl_pivot, 2,2,2)
 
 -- config & play music
@@ -47,7 +47,7 @@ while v4k.window_swap() == 1 and v4k.input(v4k.KEY_ESC) == 0 do
    girl_frame = v4k.model_animate(girl, girl_frame + delta)
 
    -- draw girl
-   v4k.model_render(girl, cam.proj, cam.view, girl_pivot, 0)
+   v4k.model_render(girl, cam.proj, cam.view, girl_pivot)
 
    -- showcase ui
    if v4k.ui_panel("luajit", 0) == 1 then

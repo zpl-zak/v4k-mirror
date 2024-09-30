@@ -53,6 +53,13 @@
 #define GLOBAL_FRUSTUM_FOV_MULTIPLIER 1.0f ///+
 #endif
 
+#ifndef DEFAULT_VSYNC
+#define DEFAULT_VSYNC 0 // 0, WINDOW_VSYNC, WINDOW_VSYNC_ADAPTIVE
+#endif
+
+#ifndef DEFAULT_COOK_ON_DEMAND
+#define DEFAULT_COOK_ON_DEMAND ifdef(tcc,1,0) // 0 // 1
+#endif
 
 // -----------------------------------------------------------------------------
 // if/n/def hell

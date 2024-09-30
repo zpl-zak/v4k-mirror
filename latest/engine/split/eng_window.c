@@ -397,7 +397,7 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     //glEnable(GL_TEXTURE_2D);
 
     // 0:disable vsync, 1:enable vsync, <0:adaptive (allow vsync when framerate is higher than syncrate and disable vsync when framerate drops below syncrate)
-    flags |= optioni("--vsync", 0) || flag("--vsync") ? WINDOW_VSYNC : WINDOW_VSYNC_DISABLED;
+    flags |= optioni("--vsync", DEFAULT_VSYNC) || flag("--vsync") ? WINDOW_VSYNC : WINDOW_VSYNC_DISABLED;
     flags |= optioni("--vsync-adaptive", 0) || flag("--vsync-adaptive") ? WINDOW_VSYNC_ADAPTIVE : 0;
     int has_adaptive_vsync = glfwExtensionSupported("WGL_EXT_swap_control_tear") || glfwExtensionSupported("GLX_EXT_swap_control_tear") || glfwExtensionSupported("EXT_swap_control_tear");
     int wants_adaptive_vsync = (flags & WINDOW_VSYNC_ADAPTIVE);

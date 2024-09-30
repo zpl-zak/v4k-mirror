@@ -53,3 +53,4 @@ tools/*.obj
 !tools/steamcmd/steamcmd.exe
 !tools/*.exe
 !tools/assimp-vc*-mt.dll
+!tools/tcc

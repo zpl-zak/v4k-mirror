@@ -1,7 +1,7 @@
 #include <stdarg.h>
 
 #ifndef STACK_ALLOC_SIZE
-#define STACK_ALLOC_SIZE (512*1024)
+#define STACK_ALLOC_SIZE (2048*1024)
 #endif
 
 char* tempvl(const char *fmt, va_list vl) {
