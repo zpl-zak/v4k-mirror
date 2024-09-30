@@ -299,12 +299,10 @@ static inline
 char *shader_preprocess(const char *src, const char *defines) {
     if (!src) return NULL;
 
-    const char *gles = "#version 300 es\n"
-                       "#define MEDIUMP mediump\n"
-                       "precision MEDIUMP float;\n";
+    const char *gles = "#version 300 es\n";
     
     char *processed_src = file_preprocess(src, NULL, vfs_read, "shader()");
-    const char *desktop = "#version 330\n#define MEDIUMP\n";
+    const char *desktop = "#version 330\n";
     const char *glsl_version = ifdef(ems, gles, desktop);
 
     // detect GLSL version if set
