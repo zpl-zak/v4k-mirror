@@ -1,11 +1,8 @@
-///////////////////////////////////////////////////////////
-//*-----------------------------------------------------*//
-//| Part of the Core Engine (https://www.maus-games.at) |//
-//*-----------------------------------------------------*//
-//| Copyright (c) 2013 Martin Mauersics                 |//
-//| Released under the zlib License                     |//
-//*-----------------------------------------------------*//
-///////////////////////////////////////////////////////////
+// Copyright (c) 2013 Martin Mauersics
+// Released under the zlib License
+
+#ifndef COMPAT_GLSL
+#define COMPAT_GLSL
 
 // compiler configuration
 #if defined(GL_ES)
@@ -23,9 +20,9 @@
     #extension GL_OES_standard_derivatives        : enable
     #extension GL_OES_texture_3D                  : enable
 #else
-    // #extension GL_AMD_conservative_depth          : enable
-    // #extension GL_AMD_gpu_shader_half_float       : enable
-    // #extension GL_AMD_shader_trinary_minmax       : enable
+    #extension GL_AMD_conservative_depth          : enable
+    #extension GL_AMD_gpu_shader_half_float       : enable
+    #extension GL_AMD_shader_trinary_minmax       : enable
     #extension GL_ARB_conservative_depth          : enable
     #extension GL_ARB_enhanced_layouts            : enable
     #extension GL_ARB_gpu_shader5                 : enable
@@ -39,7 +36,7 @@
     #extension GL_EXT_demote_to_helper_invocation : enable
     #extension GL_EXT_gpu_shader4                 : enable
     #extension GL_EXT_shader_image_load_store     : enable
-    // #extension GL_NV_gpu_shader5                  : enable
+    #extension GL_NV_gpu_shader5                  : enable
 #endif
 // #pragma optimize(on)
 // #pragma debug(off)
@@ -187,4 +184,6 @@
     #define hvec2 vec2
     #define hvec3 vec3
     #define hvec4 vec4
+#endif
+
 #endif

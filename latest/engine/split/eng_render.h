@@ -994,7 +994,7 @@ API void     model_setshader(model_t*, int shading, const char *vs, const char *
 API void     model_adduniform(model_t*, model_uniform_t uniform);
 API void     model_adduniforms(model_t*, unsigned count, model_uniform_t *uniforms);
 API void     model_addswitch(model_t*, const char *name);
-API void     model_remswitch(model_t*, const char *name);
+API void     model_delswitch(model_t*, const char *name);
 API uint32_t model_uniforms_checksum(unsigned count, model_uniform_t *uniforms);
 API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
 API void     model_skybox(model_t*, skybox_t sky);

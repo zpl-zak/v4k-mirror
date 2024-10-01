@@ -6256,7 +6256,7 @@ void model_addswitch(model_t *m, const char *name) {
     model_rebuild_shader(m);
 }
 
-void model_remswitch(model_t *m, const char *name) {
+void model_delswitch(model_t *m, const char *name) {
     for (unsigned i = 0; i < array_count(m->shaderinfo.switches); i++) {
         if (strcmp(m->shaderinfo.switches[i], name) == 0) {
             FREE(m->shaderinfo.switches[i]);
