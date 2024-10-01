@@ -53,6 +53,18 @@
 #define GLOBAL_FRUSTUM_FOV_MULTIPLIER 1.0f ///+
 #endif
 
+#ifndef MAX_LIGHTS
+#define MAX_LIGHTS 96
+#endif
+
+#ifndef MAX_SHADOW_LIGHTS
+#define MAX_SHADOW_LIGHTS 8
+#endif
+
+#ifndef NUM_SHADOW_CASCADES
+#define NUM_SHADOW_CASCADES 4
+#endif
+
 #ifndef DEFAULT_VSYNC
 #define DEFAULT_VSYNC 0 // 0, WINDOW_VSYNC, WINDOW_VSYNC_ADAPTIVE
 #endif

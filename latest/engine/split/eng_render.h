@@ -290,12 +290,6 @@ API void     fbo_destroy(unsigned id);
 
 // -----------------------------------------------------------------------------
 // lights
-
-enum {
-    MAX_LIGHTS = 96,
-    MAX_SHADOW_LIGHTS = 8,
-};
-
 enum LIGHT_TYPE {
     LIGHT_DIRECTIONAL,
     LIGHT_POINT,
@@ -306,8 +300,6 @@ enum SHADOW_TECHNIQUE {
     SHADOW_VSM,
     SHADOW_CSM,
 };
-
-#define NUM_SHADOW_CASCADES 4
 
 typedef struct light_t {
     char *name;
@@ -324,6 +316,7 @@ typedef struct light_t {
 
     // Shadowmapping
     bool cast_shadows;
+    bool hard_shadows;
     unsigned shadow_technique;
     float shadow_distance;
     float shadow_near_clip;
@@ -670,6 +663,9 @@ typedef struct material_layer_t {
 typedef struct material_t {
     char *name;
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
+
+    // internal
+    bool _loaded;
 } material_t;
 
 API uint32_t material_checksum(material_t *m);
@@ -904,6 +900,14 @@ typedef struct lightarray_t {
     unsigned count;
 } lightarray_t;
 
+typedef struct model_shaderinfo_t {
+    int shading;
+    char *vs;
+    char *fs;
+    char *defines;
+    array(char*) switches;
+} model_shaderinfo_t;
+
 typedef struct model_t {
     struct iqm_t *iqm; // private
 
@@ -950,7 +954,8 @@ typedef struct model_t {
     bool frustum_enabled;
     frustum frustum_state;
 
-    model_uniform_t *uniforms; //< array
+    array(model_uniform_t) uniforms;
+    model_shaderinfo_t shaderinfo;
 } model_t;
 
 typedef struct model_vertex_t {
@@ -988,6 +993,8 @@ API void     model_setstyle(model_t*, int shading);
 API void     model_setshader(model_t*, int shading, const char *vs, const char *fs, const char *defines);
 API void     model_adduniform(model_t*, model_uniform_t uniform);
 API void     model_adduniforms(model_t*, unsigned count, model_uniform_t *uniforms);
+API void     model_addswitch(model_t*, const char *name);
+API void     model_remswitch(model_t*, const char *name);
 API uint32_t model_uniforms_checksum(unsigned count, model_uniform_t *uniforms);
 API void     model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
 API void     model_skybox(model_t*, skybox_t sky);

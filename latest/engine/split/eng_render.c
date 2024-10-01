@@ -310,8 +310,14 @@ char *shader_preprocess(const char *src, const char *defines) {
         PANIC("!ERROR: shader with #version specified on it. we do not support this anymore.");
     }
 
+    // add defines for configs
+    char *configs = NULL;
+    { // @todo: make this more elegant
+        configs = va("#define MAX_LIGHTS %d\n#define MAX_SHADOW_LIGHTS %d\n#define NUM_SHADOW_CASCADES %d\n", MAX_LIGHTS, MAX_SHADOW_LIGHTS, NUM_SHADOW_CASCADES);
+    }
+
     char *preamble = vfs_read("shaderlib/compat.glsl");
-    return va("%s\n%s\n%s\n%s", glsl_version, preamble ? preamble : "", defines ? defines : "", processed_src);
+    return va("%s\n%s\n%s\n%s\n%s", glsl_version, preamble ? preamble : "", configs ? configs : "", defines ? defines : "", processed_src);
 }
 
 unsigned shader_geom(const char *gs, const char *vs, const char *fs, const char *attribs, const char *fragcolor, const char *defines) {
@@ -1487,6 +1493,7 @@ light_t light() {
     l.outerCone = 0.9f; // 25 deg
     l.cast_shadows = true;
     l.processed_shadows = false;
+    l.hard_shadows = false;
     l.shadow_distance = 400.0f;
     l.shadow_near_clip = 0.01f;
     l.shadow_bias = 0.003f;
@@ -1624,7 +1631,7 @@ typedef struct light_object_t {
     float penumbra_size;
     int type;
     int processed_shadows;
-    int _padding;
+    int hard_shadows;
 } light_object_t;
 
 static inline
@@ -1648,6 +1655,7 @@ void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
             light->innerCone = lv[i].innerCone;
             light->outerCone = lv[i].outerCone;
             light->processed_shadows = lv[i].processed_shadows;
+            light->hard_shadows = lv[i].hard_shadows;
             light->constant = lv[i].falloff.constant;
             light->linear = lv[i].falloff.linear;
             light->quadratic = lv[i].falloff.quadratic;
@@ -1698,6 +1706,8 @@ void ui_light(light_t *l) {
     ui_clampf_("Quadratic Falloff", &l->falloff.quadratic, 0.0, FLT_MAX, 0.005);
     ui_float("Inner Cone", &l->innerCone);
     ui_float("Outer Cone", &l->outerCone);
+    ui_bool("Cast Shadows", &l->cast_shadows);
+    ui_bool("Hard Shadows", &l->hard_shadows);
     ui_float_("Shadow Bias", &l->shadow_bias, 0.00005);
     ui_float_("Normal Bias", &l->normal_bias, 0.00005);
     ui_float_("Shadow Softness", &l->shadow_softness, 0.5);
@@ -5161,6 +5171,9 @@ void model_load_pbr(model_t *m, material_t *mt) {
     if (!m->iqm) return;
     struct iqm_t *q = m->iqm;
 
+    if (mt->_loaded) return;
+    mt->_loaded = true;
+
     // initialise default colors
     mt->layer[MATERIAL_CHANNEL_NORMALS].map.color = vec4(0,0,0,0);
     mt->layer[MATERIAL_CHANNEL_ROUGHNESS].map.color = vec4(1,1,1,1);
@@ -6050,23 +6063,37 @@ void model_setshader(model_t *m, int shading, const char *vs, const char *fs, co
     ASSERT(shading < countof(shading_defines));
     const char *shading_define = shading_defines[shading];
 
+    char *switches = m->shaderinfo.switches ? strjoin(m->shaderinfo.switches, ",") : "";
+    char *final_defines = (char *)defines;
+
+    if (!defines) {
+        final_defines = va("%s", "NO_CUSTOM_DEFINES");
+    }
+    if (switches[0]) {
+        final_defines = va("%s,%s", final_defines, switches);
+    }
+    
+
     // rebind shader
     glUseProgram(0);
     if (q->program) {
         glDeleteProgram(q->program);
     }
-    
+    if (q->shadow_program) {
+        glDeleteProgram(q->shadow_program);
+    }
+
     {
         int shaderprog = shader(vs, fs,
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragColor",
-            va("%s,%s,%s", (flags & MODEL_RIMLIGHT) ? "RIM" : "NORIM", defines ? defines : "NO_CUSTOM_DEFINES", shading_define));
+            va("%s,%s,%s", (flags & MODEL_RIMLIGHT) ? "RIM" : "NORIM", final_defines, shading_define));
         q->program = shaderprog;
     }
 
     {
         int shaderprog = shader(vs, vfs_read("shaders/fs_shadow_pass.glsl"),
             "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2","fragcolor",
-            va("SHADOW_CAST,%s", defines ? defines : "NO_CUSTOM_DEFINES"));
+            va("SHADOW_CAST,%s", final_defines));
         q->shadow_program = shaderprog;
     }
     model_init_uniforms(q, 0, q->program);
@@ -6074,6 +6101,21 @@ void model_setshader(model_t *m, int shading, const char *vs, const char *fs, co
 
     unsigned block_index = glGetUniformBlockIndex(q->program, "LightBuffer");
     glUniformBlockBinding(q->program, block_index, 0);
+
+    if (m->shaderinfo.vs) {
+        FREE(m->shaderinfo.vs);
+    }
+    if (m->shaderinfo.fs) {
+        FREE(m->shaderinfo.fs);
+    }
+    if (m->shaderinfo.defines) {
+        FREE(m->shaderinfo.defines);
+    }
+
+    m->shaderinfo.shading = shading;
+    m->shaderinfo.vs = vs ? STRDUP(vs) : NULL;
+    m->shaderinfo.fs = fs ? STRDUP(fs) : NULL;
+    m->shaderinfo.defines = defines ? STRDUP(defines) : NULL;
 }
 
 void model_setstyle(model_t *m, int shading) {
@@ -6196,6 +6238,32 @@ void model_adduniform(model_t* m, model_uniform_t uniform) {
 void model_adduniforms(model_t* m, unsigned count, model_uniform_t* uniforms) {
     for (unsigned i = 0; i < count; i++) {
         model_adduniform(m, uniforms[i]);
+    }
+}
+
+static inline
+void model_rebuild_shader(model_t *m) {
+    model_setshader(m, m->shaderinfo.shading, m->shaderinfo.vs, m->shaderinfo.fs, m->shaderinfo.defines);
+}
+
+void model_addswitch(model_t *m, const char *name) {
+    for (unsigned i = 0; i < array_count(m->shaderinfo.switches); i++) {
+        if (strcmp(m->shaderinfo.switches[i], name) == 0) {
+            return;
+        }
+    }
+    array_push(m->shaderinfo.switches, STRDUP(name));
+    model_rebuild_shader(m);
+}
+
+void model_remswitch(model_t *m, const char *name) {
+    for (unsigned i = 0; i < array_count(m->shaderinfo.switches); i++) {
+        if (strcmp(m->shaderinfo.switches[i], name) == 0) {
+            FREE(m->shaderinfo.switches[i]);
+            array_erase_slow(m->shaderinfo.switches, i);
+            model_rebuild_shader(m);
+            return;
+        }
     }
 }
 

@@ -1,10 +1,6 @@
 #ifndef LIGHT_GLSL
 #define LIGHT_GLSL
 
-#define MAX_LIGHTS 96
-#define MAX_SHADOW_LIGHTS 8
-#define NUM_SHADOW_CASCADES 4
-
 #ifdef FS_PASS
 #include "brdf.glsl"
 #include "parallax.glsl"
@@ -31,7 +27,8 @@ struct light_t {
     float penumbra_size;
     int type;
     bool processed_shadows;
-} lights;
+    bool hard_shadows;
+};
 
 layout(std140) uniform LightBuffer {
     light_t lights[MAX_LIGHTS];
