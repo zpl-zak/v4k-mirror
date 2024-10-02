@@ -14,6 +14,7 @@ camera_t camera() {
         cam.updir = vec3(0,1,0);
         cam.rightdir = vec3(1,0,0);
         cam.fov = 45;
+        cam.aspect = 0.0f;
         cam.frustum_fov_multiplier = 1.0f;
         cam.orthographic = false;
         cam.distance = 3; // len3(cam.position);
@@ -41,8 +42,9 @@ camera_t camera() {
         }
     }
 
+    if (!last_camera)
+        *camera_get_active() = cam;
     last_camera = old;
-    *camera_get_active() = cam;
     return cam;
 }
 
@@ -124,7 +126,7 @@ void camera_freefly(camera_t *cam) {
 }
 
 frustum camera_frustum_build(camera_t *cam) {
-    float aspect = window_width() / ((float)window_height()+!window_height());
+    float aspect = cam->aspect ? cam->aspect : window_width() / ((float)window_height()+!window_height());
     float fov = cam->fov * cam->frustum_fov_multiplier;
     mat44 proj;
     if( cam->orthographic ) {
@@ -139,7 +141,7 @@ frustum camera_frustum_build(camera_t *cam) {
 void camera_fov(camera_t *cam, float fov) {
     last_camera = cam;
 
-    float aspect = window_width() / ((float)window_height()+!window_height());
+    float aspect = cam->aspect ? cam->aspect : window_width() / ((float)window_height()+!window_height());
 
     cam->fov = fov;
 
