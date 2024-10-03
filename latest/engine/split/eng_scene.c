@@ -110,6 +110,9 @@ void camera_enable(camera_t *cam) {
 }
 
 void camera_freefly(camera_t *cam) {
+    // static bool is_active = true;
+    // if (input_down(KEY_HOME)) is_active = !is_active;
+    // if (!is_active) return;
     bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
     window_cursor( !active );
     int mult_speed = input(KEY_LSHIFT) || input(KEY_LALT);

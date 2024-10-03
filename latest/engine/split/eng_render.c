@@ -3631,7 +3631,8 @@ enum {
     u_time,
     u_frame,
     u_width, u_height,
-    u_mousex, u_mousey,
+    u_mousex, u_mousey, 
+    u_mousez, u_mousew,
     u_channelres0x, u_channelres0y,
     u_channelres1x, u_channelres1y,
 };
@@ -3720,6 +3721,8 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
 
     if( p->uniforms[u_mousex] == -1 ) p->uniforms[u_mousex] = glGetUniformLocation(p->program, "iMousex");
     if( p->uniforms[u_mousey] == -1 ) p->uniforms[u_mousey] = glGetUniformLocation(p->program, "iMousey");
+    if( p->uniforms[u_mousez] == -1 ) p->uniforms[u_mousez] = glGetUniformLocation(p->program, "iMousez");
+    if( p->uniforms[u_mousew] == -1 ) p->uniforms[u_mousew] = glGetUniformLocation(p->program, "iMousew");
 
     if( p->uniforms[u_color] == -1 ) p->uniforms[u_color] = glGetUniformLocation(p->program, "tex");
     if( p->uniforms[u_color] == -1 ) p->uniforms[u_color] = glGetUniformLocation(p->program, "tex0");
@@ -3870,8 +3873,6 @@ bool postfx_end(postfx *fx) {
     float t = time_ms() / 1000.f;
     float w = fx->diffuse[0].w;
     float h = fx->diffuse[0].h;
-    float mx = input(MOUSE_X);
-    float my = input(MOUSE_Y);
 
     for(int i = 0, e = array_count(fx->pass); i < e; ++i) {
         passfx *pass = &fx->pass[i];
@@ -3899,8 +3900,15 @@ bool postfx_end(postfx *fx) {
             glUniform1f(pass->uniforms[u_width], w);
             glUniform1f(pass->uniforms[u_height], h);
 
-            glUniform1f(pass->uniforms[u_mousex], mx);
-            glUniform1f(pass->uniforms[u_mousey], my);
+            static vec4 smouse;
+            if(input_down(MOUSE_L) || input_down(MOUSE_R) ) smouse.z = input(MOUSE_X), smouse.w = (window_height() - input(MOUSE_Y));
+            if(input(MOUSE_L) || input(MOUSE_R)) smouse.x = input(MOUSE_X), smouse.y = (window_height() - input(MOUSE_Y));
+            vec4 m = mul4(smouse, vec4(1,1,1-2*(!input(MOUSE_L) && !input(MOUSE_R)),1-2*(input_down(MOUSE_L) || input_down(MOUSE_R))));
+
+            glUniform1f(pass->uniforms[u_mousex], m.x);
+            glUniform1f(pass->uniforms[u_mousey], m.y);
+            glUniform1f(pass->uniforms[u_mousez], m.z);
+            glUniform1f(pass->uniforms[u_mousew], m.w);
 
             // bind the vao
             int bound = --num_active_passes;
