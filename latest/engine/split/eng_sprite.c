@@ -306,10 +306,12 @@ static renderstate_t sprite_rs;
 void sprite_flush() {
     do_once {
         sprite_rs = renderstate();
+        sprite_rs.reverse_z = 0;
         sprite_rs.depth_test_enabled = 1;
         sprite_rs.blend_enabled = 1;
         sprite_rs.cull_face_enabled = 0;
         sprite_rs.front_face = GL_CCW;
+        sprite_rs.depth_func = GL_LEQUAL;
     }
     
     profile("Sprite.rebuild_time") {

@@ -20,6 +20,7 @@
     #extension GL_OES_standard_derivatives        : enable
     #extension GL_OES_texture_3D                  : enable
 #else
+    #extension GL_ARB_clip_control                : enable
     #extension GL_AMD_conservative_depth          : enable
     #extension GL_AMD_gpu_shader_half_float       : enable
     #extension GL_AMD_shader_trinary_minmax       : enable

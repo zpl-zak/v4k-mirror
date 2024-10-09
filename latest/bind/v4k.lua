@@ -1810,7 +1810,7 @@ enum SCENE_FLAGS {
     SCENE_BACKGROUND = 4,
     SCENE_FOREGROUND = 8,
     SCENE_UPDATE_SH_COEF = 16,
-    SCENE_CAST_SHADOWS = 32,
+    SCENE_SHADOWS = 32,
 };
 typedef struct scene_t {
     object_t* objs;

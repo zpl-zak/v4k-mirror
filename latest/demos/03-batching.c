@@ -10,19 +10,6 @@
 
 #include "v4k.h"
 
-typedef struct anims_t {
-    int   inuse; // animation number in use
-    float speed; // x1.00
-    array(anim_t) anims; // [begin,end,flags] frames of every animation in set
-} anims_t;
-
-anims_t animations(const char *pathfile, int flags) {
-    anims_t a = {0};
-    a.anims = animlist(pathfile);
-    if(a.anims) a.speed = 1.0;
-    return a;
-}
-
 int main() {
     bool do_showaabb = 0;
     bool do_showbones = 0;
@@ -84,8 +71,11 @@ int main() {
 
         // ground
         ddraw_ground(0);
-        ddraw_flush();
-        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_CAST_SHADOWS);
+        // ddraw_flush();
+        
+        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_SHADOWS|SCENE_POSTFX);
+
+        // fullscreen_quad_rgb_flipped(fb_tex);
 
         if (ui_panel("Scene", 0)) {
             ui_separator();

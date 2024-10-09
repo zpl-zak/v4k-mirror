@@ -7,3 +7,5 @@
 
 static inline
 char *file_preprocess(const char *src, const char *path, char* (*)(const char *), const char *parent_function);
+
+static bool postfx_debug_tool_enabled = false;

@@ -700,7 +700,7 @@ int ui_hover() {
     return ui_is_hover;
 }
 int ui_active() {
-    return ui_is_active; //window_has_cursor() && nk_window_is_any_hovered(ui_ctx) && nk_item_is_any_active(ui_ctx);
+    return ui_is_active || postfx_debug_tool_enabled; //window_has_cursor() && nk_window_is_any_hovered(ui_ctx) && nk_item_is_any_active(ui_ctx);
 }
 
 static

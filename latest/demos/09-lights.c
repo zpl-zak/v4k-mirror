@@ -14,6 +14,8 @@ int main(int argc, char** argv) {
     window_title(__FILE__);
     // window_fps_unlock();
 
+    fx_load("demos/art/fx/**.fs");
+
     camera_t cam = camera(); {
         cam.position = vec3(0, 500, 0);
         cam.pitch = -90;

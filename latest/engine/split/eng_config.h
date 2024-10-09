@@ -53,6 +53,14 @@
 #define GLOBAL_FRUSTUM_FOV_MULTIPLIER 1.0f ///+
 #endif
 
+#ifndef GLOBAL_FX_PASS_ENABLED
+#define GLOBAL_FX_PASS_ENABLED 0 ///+
+#endif
+
+#ifndef ENABLE_REVERSE_Z
+#define ENABLE_REVERSE_Z 0 //ifdef(ems, 0, 1) ///+
+#endif
+
 #ifndef MAX_LIGHTS
 #define MAX_LIGHTS 96
 #endif
@@ -72,6 +80,7 @@
 #ifndef DEFAULT_COOK_ON_DEMAND
 #define DEFAULT_COOK_ON_DEMAND ifdef(tcc,1,0) // 0 // 1
 #endif
+
 
 // -----------------------------------------------------------------------------
 // if/n/def hell
@@ -165,6 +174,12 @@
 #else
 #define ifdef_cook                     ifdef_false
 #define ifdef_nocook                   ifdef_true
+#endif
+
+#if ENABLE_REVERSE_Z
+#define ifdef_reversez                 ifdef_true
+#else
+#define ifdef_reversez                 ifdef_false
 #endif
 
 #if   defined NDEBUG && NDEBUG >= 3 // we use NDEBUG=[0,1,2,3] to signal the compiler optimization flags O0,O1,O2,O3

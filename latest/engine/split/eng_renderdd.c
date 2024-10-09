@@ -84,6 +84,8 @@ void ddraw_flush_projview(mat44 proj, mat44 view) {
     do_once dd_rs = renderstate();
     dd_rs.depth_test_enabled = dd_ontop;
     dd_rs.cull_face_enabled = 0;
+    dd_rs.reverse_z = 0;
+    dd_rs.depth_func = GL_LEQUAL;
 
     glActiveTexture(GL_TEXTURE0);
 

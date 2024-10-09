@@ -334,6 +334,10 @@ void object_model(object_t *obj, model_t model) {
     obj->model = model;
 }
 
+void object_model_shadow(object_t *obj, model_t model) {
+    obj->model_shadow = model;
+}
+
 void object_anim(object_t *obj, anim_t anim, float speed) {
     obj->anim = anim;
     obj->anim_speed = speed;
@@ -504,7 +508,11 @@ void scene_render(int flags) {
 
     shadowmap_t *sm = &last_scene->shadowmap;
 
-    if (flags & SCENE_CAST_SHADOWS) {
+    if (flags & SCENE_POSTFX) {
+        fx_begin();
+    }
+
+    if (flags & SCENE_SHADOWS) {
         if (sm->vsm_texture_width == 0) {
             *sm = shadowmap(512, 4096);
         }
@@ -604,7 +612,7 @@ void scene_render(int flags) {
         }
 
         /* Build shadowmaps */
-        if (flags & SCENE_CAST_SHADOWS) { 
+        if (flags & SCENE_SHADOWS) { 
             shadowmap_begin(sm);
             for (unsigned j = 0; j < array_count(last_scene->lights); ++j) {
                 light_t *l = &last_scene->lights[j];
@@ -612,7 +620,7 @@ void scene_render(int flags) {
                     shadowmap_light(sm, l, cam->proj, cam->view);
                     for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
                         object_t *obj = scene_index(j);
-                        model_t *model = &obj->model;
+                        model_t *model = obj->model_shadow.iqm ? &obj->model_shadow : &obj->model;
                         if (obj->model.iqm && obj->cast_shadows && !obj->was_batched) {
                             model_render_instanced(*model, cam->proj, cam->view, obj->instances, array_count(obj->instances));
                         }
@@ -688,5 +696,9 @@ void scene_render(int flags) {
             }
         }
         glBindVertexArray(0);
+    }
+
+    if (flags & SCENE_POSTFX) {
+        fx_end();
     }
 }

@@ -505,11 +505,21 @@ void multiply44(mat44 m, const mat44 a) {
     multiply44x2(m, b, a);
 }
 // ---
+extern bool gl_reversez;
 void ortho44(mat44 m, float l, float r, float b, float t, float n, float f) {
+// #if ENABLE_REVERSE_Z
+//     if (gl_reversez == 1) {
+//         m[ 0] = 2/(r-l);      m[ 1] = 0;            m[ 2] = 0;            m[ 3] = 0;
+//         m[ 4] = 0;            m[ 5] = 2/(t-b);      m[ 6] = 0;            m[ 7] = 0;
+//         m[ 8] = 0;            m[ 9] = 0;            m[10] = -1.0f/(f-n);  m[11] = 0;
+//         m[12] = -(r+l)/(r-l); m[13] = -(t+b)/(t-b); m[14] = -(f+n)/(f-n);     m[15] = 1;
+//         return;
+//     }
+// #endif
     m[ 0] = 2/(r-l);      m[ 1] = 0;            m[ 2] = 0;            m[ 3] = 0;
     m[ 4] = 0;            m[ 5] = 2/(t-b);      m[ 6] = 0;            m[ 7] = 0;
     m[ 8] = 0;            m[ 9] = 0;            m[10] = -2/(f-n);     m[11] = 0;
-    m[12] = -(r+l)/(r-l); m[13] = -(t+b)/(t-b); m[14] = -(f+n)/(f-n); m[15] = 1;
+    m[12] = -(r+l)/(r-l); m[13] = -(t+b)/(t-b); m[14] = -(f+n)/(f-n); m[15] = 1;    
 }
 void frustum44(mat44 m, float l, float r, float b, float t, float n, float f) {
     m[ 0] = 2*n/(r-l);   m[ 1] = 0;           m[ 2] = 0;               m[ 3] = 0;
@@ -518,6 +528,18 @@ void frustum44(mat44 m, float l, float r, float b, float t, float n, float f) {
     m[12] = 0;           m[13] = 0;           m[14] = -2*(f*n)/(f-n);  m[15] = 0;
 }
 void perspective44(mat44 m, float fovy_degrees, float aspect, float nearp, float farp) {
+#if ENABLE_REVERSE_Z
+    if (gl_reversez == 1) {
+        float e = 1.0f / tanf(fovy_degrees * 0.5f);
+        float n = nearp, f = farp;
+        float fn = n / (f-n);
+        m[ 0] = e / aspect; m[ 1] = 0;  m[ 2] = 0;           m[ 3] = 0;
+        m[ 4] = 0;          m[ 5] = e;  m[ 6] = 0;           m[ 7] = 0;
+        m[ 8] = 0;          m[ 9] = 0;  m[10] = fn;          m[11] = -1;
+        m[12] = 0;          m[13] = 0;  m[14] = f * fn;      m[15] = 0;
+        return;
+    }
+#endif
     float y = tanf(fovy_degrees * C_PI / 360) * nearp, x = y * aspect;
     frustum44(m, -x, x, -y, y, nearp, farp);
 }

@@ -24,6 +24,7 @@ typedef struct renderstate_t {
     bool depth_test_enabled;
     bool depth_write_enabled;
     unsigned depth_func;
+    bool reverse_z;
     
     // Polygon offset
     bool polygon_offset_enabled;

@@ -75,7 +75,14 @@ renderstate_t renderstate() {
     // Enable depth test by default with less or equal function
     state.depth_test_enabled = GL_TRUE;
     state.depth_write_enabled = GL_TRUE;
+
+#if ENABLE_REVERSE_Z
+    state.depth_func = GL_GREATER;
+    state.reverse_z = gl_reversez ? 1 : 0;
+#else
     state.depth_func = GL_LEQUAL;
+    state.reverse_z = 0;
+#endif
     
     // Disable polygon offset by default
     state.polygon_offset_enabled = GL_FALSE;
@@ -155,8 +162,25 @@ void renderstate_apply(const renderstate_t *state) {
         // Apply color mask
         glColorMask(state->color_mask[0], state->color_mask[1], state->color_mask[2], state->color_mask[3]);
 
-        // Apply clear depth
+        // Apply clear depth (reverse z)
+#if ENABLE_REVERSE_Z
+        if (gl_reversez == 1) {
+            if (state->reverse_z) {
+                glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+            } else {
+                glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
+            }
+            if (state->reverse_z) {
+                glClearDepth(1.0f - state->clear_depth);
+            } else {
+                glClearDepth(state->clear_depth);
+            }
+        } else {
+            glClearDepth(state->clear_depth);
+        }
+#else
         glClearDepth(state->clear_depth);
+#endif
 
         // Apply depth test
         if (state->depth_test_enabled) {
@@ -2114,7 +2138,7 @@ bool shadowmap_step(shadowmap_t *s) {
 static inline
 void shadowmap_clear_fbo() {
     glClearColor(1, 1, 1, 1);
-    glClearDepth(1.0f);
+    glClearDepth(gl_reversez ? 0.0f : 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -2851,7 +2875,7 @@ bool cubemap_stepbake(cubemap_t *c, mat44 proj /* out */, mat44 view /* out */) 
 
     glBindFramebuffer(GL_FRAMEBUFFER, c->framebuffers[c->step]);
     glClearColor(0, 0, 0, 1);
-    glClearDepth(1.0f);
+    glClearDepth(gl_reversez ? 0.0f : 1.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
     glViewport(0, 0, c->width, c->height);
@@ -3237,6 +3261,8 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
         skybox_rs.depth_test_enabled = 1;
         skybox_rs.cull_face_enabled = 0;
         skybox_rs.front_face = GL_CCW;
+        skybox_rs.depth_func = GL_LEQUAL;
+        skybox_rs.reverse_z = 0;
     }
 
     // we have to reset clear color here, because of wrong alpha compositing issues on native transparent windows otherwise
@@ -3261,8 +3287,8 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
 }
 int skybox_pop_state() {
     //vec4 bgcolor = window_getcolor_(); glClearColor(bgcolor.r, bgcolor.g, bgcolor.b, window_has_transparent() ? 0 : bgcolor.a); // @transparent
-    //glDepthMask(GL_TRUE);
-    //glClear(GL_DEPTH_BUFFER_BIT);
+    // glClearDepth(skybox_rs.reverse_z ? 0.0f : 1.0f);
+    // glClear(GL_DEPTH_BUFFER_BIT);
     return 0;
 }
 int skybox_render(skybox_t *sky, mat44 proj, mat44 view) {
@@ -3494,7 +3520,7 @@ void viewport_color(unsigned color) {
 }
 
 void viewport_clear(bool color, bool depth) {
-    glClearDepthf(1);
+    glClearDepthf(gl_reversez ? 0.0f : 1.0f);
     glClearStencil(0);
     glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
 }
@@ -3520,13 +3546,19 @@ unsigned fbo(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
 
     if( color_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture_id, 0);
     if( depth_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture_id, 0);
-#if 0 // this is working; it's just not enabled for now
+#if 1 // this is working; it's just not enabled for now
     else {
+        // Extract texture dimensions from color_texture_id
+        GLint color_width = 0, color_height = 0;
+        glBindTexture(GL_TEXTURE_2D, color_texture_id);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &color_width);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &color_height);
+        glBindTexture(GL_TEXTURE_2D, 0);
         // create a non-sampleable renderbuffer object for depth and stencil attachments
         unsigned int rbo;
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, color.width, color.height); // use a single renderbuffer object for both a depth AND stencil buffer.
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, color_width, color_height); // use a single renderbuffer object for both a depth AND stencil buffer.
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
     }
 #endif
@@ -3799,12 +3831,21 @@ int postfx_active_passes(postfx *fx) {
     return num_passes;
 }
 
+static bool postfx_backbuffer_draw = false;
+
 bool postfx_begin(postfx *fx, int width, int height) {
     // reset clear color: needed in case transparent window is being used (alpha != 0)
     glClearColor(0,0,0,0); // @transparent
 
     width += !width;
     height += !height;
+
+    #if GLOBAL_FX_PASS_ENABLED
+        if (array_count(fbos) <= 1) {
+            postfx_backbuffer_draw = true;
+            return false;
+        }
+    #endif
 
     // resize if needed
     if( fx->diffuse[0].w != width || fx->diffuse[0].h != height ) {
@@ -3869,6 +3910,9 @@ bool postfx_end(postfx *fx) {
 
     renderstate_apply(&postfx_rs);
 
+    int old_input_state = input_blocked();
+    input_block(false);
+
     int frame = 0;
     float t = time_ms() / 1000.f;
     float w = fx->diffuse[0].w;
@@ -3928,6 +3972,8 @@ bool postfx_end(postfx *fx) {
 
     // restore clear color: needed in case transparent window is being used (alpha != 0)
     glClearColor(0,0,0,1); // @transparent
+
+    input_block(old_input_state);
 
     return true;
 }

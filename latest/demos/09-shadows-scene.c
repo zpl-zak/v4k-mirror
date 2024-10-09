@@ -127,7 +127,7 @@ int main() {
 
         // draw scene
         fx_begin();
-        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF|SCENE_CAST_SHADOWS);
+        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF|SCENE_SHADOWS);
         fx_end();
 
         // fps camera

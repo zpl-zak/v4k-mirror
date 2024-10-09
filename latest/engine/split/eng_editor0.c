@@ -110,6 +110,8 @@ char **engine_gets(const char *key) {
     return &found->s;
 }
 
+static bool _postfx_debug_tool_prev_blocked = false;
+
 int engine_send(const char *cmd, const char *optional_value) {
     unsigned *gamepads = engine_geti("gamepads"); // 0 off, mask gamepad1(1), gamepad2(2), gamepad3(4), gamepad4(8)...
     unsigned *renders = engine_geti("renders"); // 0 off, mask: 1=lit, 2=ddraw, 3=whiteboxes
@@ -133,6 +135,13 @@ int engine_send(const char *cmd, const char *optional_value) {
     else if( !strcmp(cmd, "key_gamepad" ))    *gamepads = (*gamepads & ~1u) | ((*gamepads & 1) ^ 1);
     else if( !strcmp(cmd, "key_lit" ))        *renders = (*renders & ~1u) | ((*renders & 1) ^ 1);
     else if( !strcmp(cmd, "key_ddraw" ))      *renders = (*renders & ~2u) | ((*renders & 2) ^ 2);
+    else if( !strcmp(cmd, "key_pixdebug" )) {
+        do_once {
+            fx_load("engine/art/fx/fxDebugTool.fs");
+            fx_order(fx_find("fxDebugTool.fs"), 1000);
+        }
+        postfx_debug_tool_enabled = !postfx_debug_tool_enabled;
+    }
     else alert(va("editor could not handle `%s` command.", cmd));
 
     return 0;
@@ -151,6 +160,26 @@ int engine_tick() {
     } else if( old_hz && old_hz != window_fps_target() ) {
         window_fps_lock( old_hz );
         old_hz = 0.0;
+    }
+
+    // @todo: move this elsewhere
+    int old_input_state = input_blocked();
+    input_block(false);
+    if (ifdef(retail, 0, 1) && input(KEY_ALT) && input_down(KEY_T)) {
+        engine_send("key_pixdebug", 0);
+    }
+    input_block(old_input_state);
+
+    static int debug_tool_pass = -1;
+    if (debug_tool_pass == -1) {
+        debug_tool_pass = fx_find("fxDebugTool.fs");
+    }
+    if (postfx_debug_tool_enabled) {
+        input_block(true);
+        fx_enable(debug_tool_pass, true);
+    } else {
+        input_block(false);
+        fx_enable(debug_tool_pass, false);
     }
 
     return 0;
@@ -293,16 +322,18 @@ int ui_engine() {
     }
     EDITOR_UI_COLLAPSE(ICON_MD_MONITOR " Display", "Debug.Display") {
         // @todo: fps lock, fps target, aspect ratio, fullscreen
-        char *text = va("%s;%s;%s",
+        char *text = va("%s;%s;%s;%s",
             window_has_fullscreen() ? ICON_MD_FULLSCREEN_EXIT : ICON_MD_FULLSCREEN,
             ICON_MD_PHOTO_CAMERA,
-            record_active() ? ICON_MD_VIDEOCAM_OFF : ICON_MD_VIDEOCAM
+            record_active() ? ICON_MD_VIDEOCAM_OFF : ICON_MD_VIDEOCAM,
+            ICON_MD_FACE
         );
 
         int choice = ui_toolbar(text);
         if( choice == 1 ) engine_send("key_fullscreen",0);
         if( choice == 2 ) engine_send("key_screenshot",0);
         if( choice == 3 ) engine_send("key_record",0);
+        if( choice == 4 ) engine_send("key_pixdebug",0);
     }
     EDITOR_UI_COLLAPSE(ICON_MD_KEYBOARD " Keyboard", "Debug.Keyboard") {
         ui_keyboard();

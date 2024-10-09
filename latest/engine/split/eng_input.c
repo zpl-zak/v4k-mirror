@@ -363,7 +363,20 @@ int input_use(int id) {
     return controller_id >= 0 && controller_id <= 3 ? controller_id = id, 1 : 0;
 }
 
+static bool input_blocked_state = false;
+
+static inline
+bool input_blocked() {
+    return input_blocked_state;
+}
+
+static inline
+void input_block(bool block) {
+    input_blocked_state = block;
+}
+
 float input_frame( int vk, int frame ) {
+    if (input_blocked()) return 0;
     if( controller_id > 0 ) return 0; // @fixme
     struct controller_t *c = input_logger(frame, +0);
     if(vk < GAMEPAD_LPADX) return c->bits[vk]; // if in bits...

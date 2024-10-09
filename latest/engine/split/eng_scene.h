@@ -47,7 +47,7 @@ typedef struct object_t {
     quat rot;
     vec3 sca, pos, euler, pivot;
     array(texture_t) textures;
-    model_t model;
+    model_t model, model_shadow;
     anim_t anim;
     float anim_speed;
     aabb bounds;
@@ -80,6 +80,7 @@ API void object_scale(object_t *obj, vec3 sca);
 API void object_batchable(object_t *obj, bool batchable);
 //
 API void object_model(object_t *obj, model_t model);
+API void object_model_shadow(object_t *obj, model_t model);
 API void object_anim(object_t *obj, anim_t anim, float speed);
 API void object_diffuse(object_t *obj, texture_t tex);
 API void object_diffuse_push(object_t *obj, texture_t tex);
@@ -94,7 +95,8 @@ enum SCENE_FLAGS {
     SCENE_BACKGROUND = 4,
     SCENE_FOREGROUND = 8,
     SCENE_UPDATE_SH_COEF = 16,
-    SCENE_CAST_SHADOWS = 32,
+    SCENE_SHADOWS = 32,
+    SCENE_POSTFX = 64,
     // SCENE_DISABLE_BATCHING = 64,
 };
 

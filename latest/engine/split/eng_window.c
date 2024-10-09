@@ -113,6 +113,7 @@ static int fullscreen, xprev, yprev, wprev, hprev;
 static uint64_t frame_count;
 static double t, dt, fps, hz = 0.00;
 static char msaa = 0;
+static bool gl_reversez = 0;
 static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
@@ -196,7 +197,7 @@ void window_hints(unsigned flags) {
     #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); //osx
     #endif
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //osx+ems
+    glfwWindowHint(GLFW_OPENGL_PROFILE, 0); //osx+ems
     glfwWindowHint(GLFW_STENCIL_BITS, 8); //osx
 #if DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
@@ -206,7 +207,7 @@ void window_hints(unsigned flags) {
     //glfwWindowHint( GLFW_GREEN_BITS, 8 );
     //glfwWindowHint( GLFW_BLUE_BITS, 8 );
     //glfwWindowHint( GLFW_ALPHA_BITS, 8 );
-    //glfwWindowHint( GLFW_DEPTH_BITS, 24 );
+    glfwWindowHint( GLFW_DEPTH_BITS, 32 );
 
     //glfwWindowHint(GLFW_AUX_BUFFERS, Nth);
     //glfwWindowHint(GLFW_STEREO, GL_TRUE);
@@ -270,6 +271,7 @@ void glNewFrame() {
     renderstate_apply(&window_rs);
     // glEnable(GL_FRAMEBUFFER_SRGB);
 
+    glClearDepth(gl_reversez ? 0.0f : 1.0f);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 
@@ -507,6 +509,13 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
     if(cook_cancelling) cook_stop(), exit(-1);
     cook_done = true;
 
+#if ENABLE_REVERSE_Z
+    if (GLAD_GL_ARB_clip_control || (GLAD_VERSION_MAJOR(gl_version) >= 4 && GLAD_VERSION_MINOR(gl_version) >= 5)) {
+        glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+        gl_reversez = 1;
+    }
+#endif
+
     v4k_post_init(mode->refreshRate);
     return true;
 }
@@ -545,11 +554,12 @@ char* window_stats() {
 
     // @todo: print %used/%avail kib mem, %used/%avail objs as well
     static char buf[256];
-    snprintf(buf, 256, "%s%s%s%s | boot %.2fs | %5.2ffps (%.2fms)%s%s",
+    snprintf(buf, 256, "%s%s%s%s | boot %.2fs | %5.2ffps (%.2fms)%s%s %s",
         title, BUILD_VERSION[0] ? " (":"", BUILD_VERSION[0] ? BUILD_VERSION:"", BUILD_VERSION[0] ? ")":"",
         !boot_time ? now : boot_time,
         fps, (now - prev_frame) * 1000.f,
-        cmdline[0] ? " | ":"", cmdline[0] ? cmdline:"");
+        cmdline[0] ? " | ":"", cmdline[0] ? cmdline:"",
+        postfx_debug_tool_enabled ? "(pixel dbg)" : "");
 
     prev_frame = now;
     ++num_frames;
@@ -705,9 +715,11 @@ void window_shutdown() {
 }
 
 int window_swap() {
-
     // end frame
     if( frame_count > 0 ) {
+        if (GLOBAL_FX_PASS_ENABLED && !postfx_backbuffer_draw) {
+            postfx_end(&fx);
+        }
         window_frame_end();
         window_frame_swap();
     }
@@ -715,6 +727,11 @@ int window_swap() {
     ++frame_count;
 
     // begin frame
+    if (GLOBAL_FX_PASS_ENABLED && !postfx_backbuffer_draw) {
+        if (!postfx_begin(&fx, window_width(), window_height())) {
+            fbo_unbind();
+        }
+    }
     int ready = window_frame_begin();
     if( !ready ) {
         window_shutdown();
@@ -734,6 +751,8 @@ int window_swap() {
         }
         return 0;
     }
+
+    postfx_backbuffer_draw = false;
 
     return 1;
 }
