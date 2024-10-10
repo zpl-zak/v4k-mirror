@@ -15,12 +15,13 @@ const char *skyboxes[][3] = { // reflection, rad, env
 };
 
 int main() {
-    window_create(80, WINDOW_MSAA8);
+    window_create(80, 0);
     window_title(__FILE__);
     window_fps_unlock();
 
     // load all fx files
     fx_load("fx**.fs");
+    fx_enable(fx_find("fx/fxFXAA3.fs"), 1);
 
     // load skybox
     // skybox_t sky = skybox(flag("--mie") ? 0 : "hdr/Tokyo_BigSight_1k.hdr", 0); // --mie for rayleigh/mie scattering
@@ -29,7 +30,7 @@ int main() {
     // load static scene
     model_t street, street_shadow;
     street = model(option("--model","Highway_Interchange.obj"), 0); // MODEL_NO_TEXTURES);
-    street_shadow = model(option("--model","Highway_Interchange_shadow.obj"), 0); // MODEL_NO_TEXTURES);
+    // street_shadow = model(option("--model","Highway_Interchange_shadow.obj"), 0); // MODEL_NO_TEXTURES);
     // translation44(street.pivot, 0,-1,0);
     // rotate44(street.pivot, -90,1,0,0);
     scale44(street.pivot, 0.1,0.1,0.1);
@@ -39,7 +40,7 @@ int main() {
 
     object_t *obj = scene_spawn();
     object_model(obj, street);
-    object_model_shadow(obj, street_shadow);
+    // object_model_shadow(obj, street_shadow);
     // object_scale(obj, vec3(0.1,0.1,0.1));
 
     double sky_update_until = 0.0;
@@ -61,7 +62,7 @@ int main() {
         // fps camera
         camera_freefly(&cam);
 
-        scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS);
+        scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_POSTFX);
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {
@@ -72,6 +73,7 @@ int main() {
                     scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]));
                 }
             }
+            ui_light(sun);
             ui_panel_end();
         }
     }

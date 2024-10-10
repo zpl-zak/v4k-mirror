@@ -65,6 +65,7 @@ typedef struct object_t {
     bool light_cached; //< used by scene to update light data
     bool was_batched;
     array(mat44) instances;
+    unsigned num_instances;
     array(unsigned) pair_instance;
     uint32_t checksum;
 } object_t;

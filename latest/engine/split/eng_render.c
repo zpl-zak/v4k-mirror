@@ -1836,7 +1836,7 @@ shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 
 
     s.cascade_splits[0] = 0.1f;
     s.cascade_splits[1] = 0.25f;
-    s.cascade_splits[2] = 0.75f;
+    s.cascade_splits[2] = 0.5f;
     s.cascade_splits[3] = 1.0f;  /* sticks to camera far plane */
 
     glGenFramebuffers(1, &s.fbo);

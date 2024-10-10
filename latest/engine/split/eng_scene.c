@@ -584,11 +584,12 @@ void scene_render(int flags) {
                     continue;
                 }
                 if (num_instances >= array_count(obj->instances)) {
-                    array_resize(obj->instances, array_count(obj->instances) + 64);
+                    array_reserve(obj->instances, array_count(obj->instances) + 64);
                 }
                 copy44(obj->instances[num_instances++], obj2->transform);
                 obj2->was_batched = true;
             }
+            obj->num_instances = num_instances;
 
             int do_retexturing = model->iqm && array_count(obj->textures) > 0;
             if( do_retexturing ) {
@@ -622,7 +623,7 @@ void scene_render(int flags) {
                         object_t *obj = scene_index(j);
                         model_t *model = obj->model_shadow.iqm ? &obj->model_shadow : &obj->model;
                         if (obj->model.iqm && obj->cast_shadows && !obj->was_batched) {
-                            model_render_instanced(*model, cam->proj, cam->view, obj->instances, array_count(obj->instances));
+                            model_render_instanced(*model, cam->proj, cam->view, obj->instances, obj->num_instances);
                         }
                     }
                 }
@@ -658,7 +659,7 @@ void scene_render(int flags) {
 
             model_shadow(model, sm);
             model_light(model, array_count(last_scene->lights), last_scene->lights);
-            model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, array_count(obj->instances), RENDER_PASS_OPAQUE);
+            model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, obj->num_instances, RENDER_PASS_OPAQUE);
         }
 
         /* Transparency pass */
@@ -671,7 +672,7 @@ void scene_render(int flags) {
 
             model_shadow(model, sm);
             model_light(model, array_count(last_scene->lights), last_scene->lights);
-            model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, array_count(obj->instances), RENDER_PASS_TRANSPARENT);
+            model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, obj->num_instances, RENDER_PASS_TRANSPARENT);
         }
 
         array_resize(transparent_objects, 0);
