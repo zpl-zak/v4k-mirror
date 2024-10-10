@@ -226,6 +226,7 @@ API texture_t brdf_lut();
 typedef struct colormap_t {
     vec4 color;
     texture_t *texture;
+    bool no_mipmaps;
 } colormap_t;
 
 API bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb );

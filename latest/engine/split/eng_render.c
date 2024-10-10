@@ -4136,9 +4136,10 @@ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
     }
 
     int srgb = load_as_srgb ? TEXTURE_SRGB : 0;
+    int mipmapped = !cm->no_mipmaps ? TEXTURE_MIPMAPS|TEXTURE_ANISOTROPY : 0;
     // int srgb = 0;
     int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT|TEXTURE_RGBA : 0;
-    texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_ANISOTROPY | TEXTURE_MIPMAPS | TEXTURE_REPEAT | hdr | srgb);
+    texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_REPEAT | mipmapped | hdr | srgb);
 
     if( t.id == texture_checker().id ) {
         cm->texture = NULL;
@@ -5257,6 +5258,11 @@ void model_load_pbr(model_t *m, material_t *mt) {
     array(char*) tokens = strsplit(mt->name, "+");
     for( int j = 0, end = array_count(tokens); j < end; ++j ) {
         char *t = tokens[j];
+        if (strstri(t, "_C.") || strstri(t, "Cutout") ) {
+            mt->cutout_alpha = 0.75f;
+            mt->layer[MATERIAL_CHANNEL_ALBEDO].map.no_mipmaps = true;
+        }
+
         if( strstri(t, "_A.") || strstri(t, "Albedo") || strstri(t, "_D.") || strstri(t, "Diffuse") || strstri(t, "BaseColor") || strstri(t, "Base_Color") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); continue; }
         else
         if( strstri(t, "_N.") || strstri(t, "Normal") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_NORMALS], t, 0); continue; }
@@ -5275,9 +5281,6 @@ void model_load_pbr(model_t *m, material_t *mt) {
         // else
         //     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); continue; }
 
-        if (strstri(t, "_C.") || strstri(t, "Cutout") ) {
-            mt->cutout_alpha = 0.75f;
-        }
     }
 }
 
