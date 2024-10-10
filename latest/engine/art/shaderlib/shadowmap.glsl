@@ -111,38 +111,36 @@ vec3 shadow_vsm(float distance, vec3 dir, int light_index, float min_variance, f
 vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bias, float normal_bias, float shadow_softness, bool hard_shadows) {
     // Determine which cascade to use
     int cascade_index = -1;
-    int min_cascades_range = 0;
-    int max_cascades_range = NUM_SHADOW_CASCADES;
-    for (int i = min_cascades_range; i < max_cascades_range; i++) {
+    for (int i = 0; i < NUM_SHADOW_CASCADES; i++) {
         if (distance < u_cascade_distances[i]) {
             cascade_index = i;
             break;
         }
     }
     if (cascade_index == -1) {
-        cascade_index = max_cascades_range - 1;
+        cascade_index = NUM_SHADOW_CASCADES - 1;
     }
     
     // Blend cascades using a blend region value
     float blend_factor = 0.0;
-    int matrix_offset2 = 0;
+    int matrix_offset = 0;
     {
         float cascade_distance = u_cascade_distances[cascade_index];
         if (distance > cascade_distance - u_blend_region) {
             blend_factor = (distance - (cascade_distance - u_blend_region)) / u_blend_region;
             blend_factor = clamp(blend_factor, 0.0, 1.0);
-            matrix_offset2 = 1;
+            matrix_offset = 1;
         }
     }
 
 #ifdef CSM_DEBUG
-    return mix(cascade_debug_colors[cascade_index], cascade_debug_colors[cascade_index + matrix_offset2], blend_factor);
+    return mix(cascade_debug_colors[cascade_index], cascade_debug_colors[cascade_index + matrix_offset], blend_factor);
 #endif
 
     light_t light = lightBuffer.lights[light_index];
 
     vec4 fragPosLightSpace = light_shadow_matrix_csm[cascade_index] * vec4(v_position_ws, 1.0);
-    vec4 fragPosLightSpace2 = light_shadow_matrix_csm[cascade_index+matrix_offset2] * vec4(v_position_ws, 1.0);
+    vec4 fragPosLightSpace2 = light_shadow_matrix_csm[cascade_index+matrix_offset] * vec4(v_position_ws, 1.0);
 
     // Perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -163,21 +161,19 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
 
     // Calculate bias
     vec3 normal = normalize(v_normal_ws);
-    // float bias = mix(0.001, 0.0, dot(normal, -lightDir));
-    float bias = max(normal_bias * (dot(normal, -lightDir)), shadow_bias);// * bias_modifier[cascade_index];
-    // bias *= 1 / (u_cascade_distances[cascade_index]);
+    float bias = max(normal_bias * (dot(normal, -lightDir)), shadow_bias);
  
     // CSM
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap2D[cascade_index], 0);
     vec2 texelSize2 = vec2(1,1);
     if (cascade_index < NUM_SHADOW_CASCADES - 1) {
-        texelSize2 = 1.0 / textureSize(shadowMap2D[cascade_index + matrix_offset2], 0);
+        texelSize2 = 1.0 / textureSize(shadowMap2D[cascade_index + matrix_offset], 0);
     }
 
     if (hard_shadows) {
         float csmDepth = texture(shadowMap2D[cascade_index], projCoords.xy).r;
-        float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], projCoords2.xy).r;
+        float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset], projCoords2.xy).r;
         if (cascade_index == NUM_SHADOW_CASCADES - 1) {
             csmDepth2 = 1;
         }
@@ -198,7 +194,7 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
         sc2.xy = projCoords2.xy + offsets.rg * texelSize2;
         float alpha=1.0;
         float csmDepth = texture(shadowMap2D[cascade_index], sc.xy).r;
-        float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], sc2.xy).r;
+        float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset], sc2.xy).r;
         if (cascade_index == NUM_SHADOW_CASCADES - 1) {
             csmDepth2 = 1;
         }
@@ -207,7 +203,7 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
         sc.xy = projCoords.xy + offsets.ba * texelSize;
         sc2.xy = projCoords2.xy + offsets.ba * texelSize2;
         csmDepth = texture(shadowMap2D[cascade_index], sc.xy).r;
-        csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], sc2.xy).r;
+        csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset], sc2.xy).r;
         if (cascade_index == NUM_SHADOW_CASCADES - 1) {
             csmDepth2 = 1;
         }
@@ -224,7 +220,7 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
             sc2.xy = projCoords2.xy + offsets.rg * texelSize2;
             float alpha=1.0;
             float csmDepth = texture(shadowMap2D[cascade_index], sc.xy).r;
-            float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], sc2.xy).r;
+            float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset], sc2.xy).r;
             if (cascade_index == NUM_SHADOW_CASCADES - 1) {
                 csmDepth2 = 1;
             }
@@ -233,7 +229,7 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
             sc.xy = projCoords.xy + offsets.ba * texelSize;
             sc2.xy = projCoords2.xy + offsets.ba * texelSize2;
             csmDepth = texture(shadowMap2D[cascade_index], sc.xy).r;
-            csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], sc2.xy).r;
+            csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset], sc2.xy).r;
             if (cascade_index == NUM_SHADOW_CASCADES - 1) {
                 csmDepth2 = 1;
             }
