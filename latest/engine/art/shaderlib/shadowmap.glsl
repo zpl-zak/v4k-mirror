@@ -126,7 +126,7 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
     // Blend cascades using a blend region value
     float blend_factor = 0.0;
     int matrix_offset2 = 0;
-    if (cascade_index < NUM_SHADOW_CASCADES - 1) {
+    {
         float cascade_distance = u_cascade_distances[cascade_index];
         if (distance > cascade_distance - u_blend_region) {
             blend_factor = (distance - (cascade_distance - u_blend_region)) / u_blend_region;
@@ -178,6 +178,9 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
     if (hard_shadows) {
         float csmDepth = texture(shadowMap2D[cascade_index], projCoords.xy).r;
         float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], projCoords2.xy).r;
+        if (cascade_index == NUM_SHADOW_CASCADES - 1) {
+            csmDepth2 = 1;
+        }
         return vec3(mix(currentDepth - bias > csmDepth ? 0.0 : 1.0, currentDepth2 - bias > csmDepth2 ? 0.0 : 1.0, blend_factor));
     }
 
@@ -196,12 +199,18 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
         float alpha=1.0;
         float csmDepth = texture(shadowMap2D[cascade_index], sc.xy).r;
         float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], sc2.xy).r;
+        if (cascade_index == NUM_SHADOW_CASCADES - 1) {
+            csmDepth2 = 1;
+        }
         ofs_sum += mix(currentDepth - bias > csmDepth ? alpha : 0.0, currentDepth2 - bias > csmDepth2 ? alpha : 0.0, blend_factor);
 
         sc.xy = projCoords.xy + offsets.ba * texelSize;
         sc2.xy = projCoords2.xy + offsets.ba * texelSize2;
         csmDepth = texture(shadowMap2D[cascade_index], sc.xy).r;
         csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], sc2.xy).r;
+        if (cascade_index == NUM_SHADOW_CASCADES - 1) {
+            csmDepth2 = 1;
+        }
         ofs_sum += mix(currentDepth - bias > csmDepth ? alpha : 0.0, currentDepth2 - bias > csmDepth2 ? alpha : 0.0, blend_factor);
     }
 
@@ -216,12 +225,18 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
             float alpha=1.0;
             float csmDepth = texture(shadowMap2D[cascade_index], sc.xy).r;
             float csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], sc2.xy).r;
+            if (cascade_index == NUM_SHADOW_CASCADES - 1) {
+                csmDepth2 = 1;
+            }
             ofs_sum += mix(currentDepth - bias > csmDepth ? alpha : 0.0, currentDepth2 - bias > csmDepth2 ? alpha : 0.0, blend_factor);
 
             sc.xy = projCoords.xy + offsets.ba * texelSize;
             sc2.xy = projCoords2.xy + offsets.ba * texelSize2;
             csmDepth = texture(shadowMap2D[cascade_index], sc.xy).r;
             csmDepth2 = texture(shadowMap2D[cascade_index + matrix_offset2], sc2.xy).r;
+            if (cascade_index == NUM_SHADOW_CASCADES - 1) {
+                csmDepth2 = 1;
+            }
             ofs_sum += mix(currentDepth - bias > csmDepth ? alpha : 0.0, currentDepth2 - bias > csmDepth2 ? alpha : 0.0, blend_factor);
         }
 

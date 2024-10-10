@@ -2028,8 +2028,6 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
     float far_plane = 0.0f;
     float near_plane = 0.0f;
 
-    #define SHADOW_CASCADE_BLEND_REGION 0.8f
-
     if (s->cascade_index == 0) {
         near_plane = l->shadow_near_clip;
         far_plane = l->shadow_distance * s->cascade_splits[0];
