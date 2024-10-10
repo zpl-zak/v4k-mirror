@@ -1678,7 +1678,7 @@ void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
             light->radius = lv[i].radius;
             light->innerCone = lv[i].innerCone;
             light->outerCone = lv[i].outerCone;
-            light->processed_shadows = lv[i].processed_shadows;
+            light->processed_shadows = !lv[i].cast_shadows ? false : lv[i].processed_shadows;
             light->hard_shadows = lv[i].hard_shadows;
             light->constant = lv[i].falloff.constant;
             light->linear = lv[i].falloff.linear;
