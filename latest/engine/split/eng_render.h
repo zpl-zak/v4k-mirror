@@ -667,6 +667,7 @@ typedef struct material_layer_t {
 typedef struct material_t {
     char *name;
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
+    float cutout_alpha;
 
     // internal
     bool _loaded;

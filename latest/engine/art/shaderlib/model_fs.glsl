@@ -26,6 +26,7 @@ uniform mat4 model, view, inv_view;
 uniform vec3 u_coefficients_sh[9];
 uniform bool u_lit; /// set:0
 uniform bool u_matcaps; /// set:0
+uniform float u_cutout_alpha; /// set:0.75
 
 // lightmapping
 uniform sampler2D u_lightmap;

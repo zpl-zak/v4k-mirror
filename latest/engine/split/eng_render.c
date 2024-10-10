@@ -472,7 +472,7 @@ void shader_apply_param(unsigned shader, unsigned param_no) {
     if( param_no < num_properties ) {
         char *buf = *shader_property(shader, param_no);
 
-        char type[32], name[32], line[128]; snprintf(line, 127, "%s", buf);
+        char type[32], name[32], line[256]; snprintf(line, 255, "%s", buf);
         if( sscanf(line, "%*s %s %[^ =;/]", type, name) != 2 ) return;
 
         char *mins = strstr(line, "min:");
@@ -536,7 +536,7 @@ int ui_shader(unsigned shader) {
     for( unsigned i = 0; i < num_properties; ++i ) {
         char **ptr = shader_property(shader,i);
 
-        char line[128]; snprintf(line, 127, "%s", *ptr); // debug: ui_label(line);
+        char line[256]; snprintf(line, 255, "%s", *ptr); // debug: ui_label(line);
 
         char uniform[32], type[32], name[32], early_exit = '\0';
         if( sscanf(line, "%s %s %[^ =;/]", uniform, type, name) != 3 ) continue; // @todo optimize: move to shader()
@@ -5274,6 +5274,10 @@ void model_load_pbr(model_t *m, material_t *mt) {
         if( strstri(t, "_P.") || strstri(t, "Parallax") || strstri(t, "disp.") ) { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_PARALLAX], t, 0); continue; }
         // else
         //     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ALBEDO], t, 1); continue; }
+
+        if (strstri(t, "_C.") || strstri(t, "Cutout") ) {
+            mt->cutout_alpha = 0.75f;
+        }
     }
 }
 
@@ -5911,6 +5915,8 @@ void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
     iqm_t *q = m.iqm;
     const material_t *material = &m.materials[q->mesh_materials[mesh]];
     shader_colormap_model_internal(&m, "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map, MODEL_TEXTURE_ALBEDO);
+
+    shader_float("u_cutout_alpha", material->cutout_alpha);
 
     if (m.shading == SHADING_PBR) {
         if (rs_idx < RENDER_PASS_SHADOW_BEGIN || rs_idx > RENDER_PASS_SHADOW_END) {

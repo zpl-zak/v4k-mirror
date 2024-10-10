@@ -1,11 +1,8 @@
 // based on code by arkano22. See: http://www.gamedev.net/forums/topic/550699-ssao-no-halo-artifacts/
 // - rlyeh, public domain
 
-uniform float camerarange_x; /// set:150 min:0.1 max:1000
-uniform float camerarange_y; /// set:850 min:500 max:10000
+uniform vec2 camerarange; /// set:150,850 min:0.1,500 max:1000,10000
 uniform float strength; /// set:16 min:1 max:64
-
-// uniform sampler2D som; // Depth texture (iChannel1)
 
 #if 0
 
@@ -55,7 +52,6 @@ float pw = 1.0/iResolution.x*0.5;
 float ph = 1.0/iResolution.y*0.5;
 
 float readDepth(in vec2 coord) {
-    vec2 camerarange = vec2(camerarange_x, camerarange_y);
     if (coord.x<0||coord.y<0) return 1.0;
     float nearZ = camerarange.x;
     float farZ =camerarange.y;
@@ -100,7 +96,6 @@ float calcAO(float depth, vec2 uv, float dw, float dh) {
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    vec2 camerarange = vec2(camerarange_x, camerarange_y);
     //randomization texture:
     vec2 uv = fragCoord.xy / iResolution.xy;
     vec2 random = getRandom( uv + vec2(iTime) );

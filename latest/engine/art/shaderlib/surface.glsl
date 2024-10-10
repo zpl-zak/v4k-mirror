@@ -70,10 +70,6 @@ surface_t surface() {
         s.albedo.rgb = pow(s.albedo.rgb, vec3(2.2));
     }
 
-    if (map_albedo.has_tex && s.albedo.a < 0.1) { 
-        discard;
-    }
-
     if( map_metallic.has_tex && map_roughness.has_tex ) {
         s.metallic = sample_colormap( map_metallic, uvs ).x;
         s.roughness = sample_colormap( map_roughness, uvs ).x;
