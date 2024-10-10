@@ -36,6 +36,7 @@
     #extension GL_ARB_uniform_buffer_object       : enable
     #extension GL_EXT_demote_to_helper_invocation : enable
     #extension GL_EXT_gpu_shader4                 : enable
+    #extension GL_EXT_gpu_shader5                 : enable
     #extension GL_EXT_shader_image_load_store     : enable
     #extension GL_NV_gpu_shader5                  : enable
 #endif
@@ -112,7 +113,9 @@
 #else
     #define layoutEx(x)
 #endif
-
+#if !defined(GL_ARB_texture_query_lod)
+    #define textureQueryLod(t,p) (vec2(0.0))
+#endif
 // compatibility adjustments
 #if defined(GL_ES) && (CORE_GL_ES_VERSION < 300)
     #if defined(GL_EXT_shadow_samplers)

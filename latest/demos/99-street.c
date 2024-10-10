@@ -15,7 +15,7 @@ const char *skyboxes[][3] = { // reflection, rad, env
 };
 
 int main() {
-    window_create(101, WINDOW_VSYNC);
+    window_create(80, WINDOW_VSYNC);
     window_title(__FILE__);
     // window_fps_unlock();
 
