@@ -15,6 +15,7 @@ uniform sampler3D shadow_offsets;
 uniform int shadow_filter_size;
 uniform int shadow_window_size;
 uniform mat4 light_shadow_matrix_csm[NUM_SHADOW_CASCADES];
+uniform float u_blend_region; /// set:15.0
 
 // const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](0.95, 0.35, 0.20, 0.1, 0.1, 0.1);
 const float bias_modifier[NUM_SHADOW_CASCADES] = float[NUM_SHADOW_CASCADES](1.0, 2.0, 6.0, 9.0);
@@ -123,13 +124,12 @@ vec3 shadow_csm(float distance, vec3 lightDir, int light_index, float shadow_bia
     }
     
     // Blend cascades using a blend region value
-    float blend_region = 5.0;
     float blend_factor = 0.0;
     int matrix_offset2 = 0;
     if (cascade_index < NUM_SHADOW_CASCADES - 1) {
         float cascade_distance = u_cascade_distances[cascade_index];
-        if (distance > cascade_distance - blend_region) {
-            blend_factor = (distance - (cascade_distance - blend_region)) / blend_region;
+        if (distance > cascade_distance - u_blend_region) {
+            blend_factor = (distance - (cascade_distance - u_blend_region)) / u_blend_region;
             blend_factor = clamp(blend_factor, 0.0, 1.0);
             matrix_offset2 = 1;
         }

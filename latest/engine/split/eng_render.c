@@ -1834,6 +1834,7 @@ shadowmap_t shadowmap(int vsm_texture_width, int csm_texture_width) { // = 512, 
     s.saved_fb = 0;
     s.filter_size = 6;
     s.window_size = 10;
+    s.blend_region = 15.0f;
 
     s.cascade_splits[0] = 0.1f;
     s.cascade_splits[1] = 0.25f;
@@ -2245,6 +2246,7 @@ void ui_shadowmap(shadowmap_t *s) {
     int csm_width = s->csm_texture_width;
     ui_int("Texture Width (VSM)", &vsm_width);
     ui_int("Texture Width (CSM)", &csm_width);
+    ui_float("Blend Region", &s->blend_region);
 
     if (ui_collapse("Shadowmap Offsets", "shadowmap_offsets")) {
         ui_int("Filter Size", &s->filter_size);
@@ -4595,6 +4597,9 @@ void model_init_uniforms(iqm_t *q, int slot, int program) {
     if ((loc = glGetUniformLocation(shader, "u_shadow_receiver")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_U_SHADOW_RECEIVER] = loc;
 
+    if ((loc = glGetUniformLocation(shader, "u_blend_region")) >= 0)
+        q->uniforms[slot][MODEL_UNIFORM_U_BLEND_REGION] = loc;
+
     if ((loc = glGetUniformLocation(shader, "shadow_offsets")) >= 0)
         q->uniforms[slot][MODEL_UNIFORM_SHADOW_OFFSETS] = loc;
 
@@ -4743,6 +4748,9 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
         if (m.shadow_map && m.shadow_receiver) {
             if ((loc = q->uniforms[slot][MODEL_UNIFORM_U_SHADOW_RECEIVER]) >= 0) {
                 glUniform1i(loc, GL_TRUE);
+            }
+            if ((loc = q->uniforms[slot][MODEL_UNIFORM_U_BLEND_REGION]) >= 0) {
+                glUniform1f(loc, m.shadow_map->blend_region);
             }
 
             bool was_csm_pushed = 0;

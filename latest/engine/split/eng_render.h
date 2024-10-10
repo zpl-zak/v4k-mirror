@@ -382,6 +382,9 @@ typedef struct shadowmap_t {
     handle depth_texture;
     handle depth_texture_2d;
 
+    // cascaded shadowmap blending
+    float blend_region;
+
     // shadowmap offsets texture;
     int filter_size, window_size;
     handle offsets_texture;
@@ -837,6 +840,7 @@ enum MODEL_UNIFORMS {
     MODEL_UNIFORM_SHADOW_CAMERA_TO_SHADOW_PROJECTOR,
     MODEL_UNIFORM_SHADOW_TECHNIQUE,
     MODEL_UNIFORM_U_SHADOW_RECEIVER,
+    MODEL_UNIFORM_U_BLEND_REGION,
     MODEL_UNIFORM_SHADOW_OFFSETS,
     MODEL_UNIFORM_SHADOW_FILTER_SIZE,
     MODEL_UNIFORM_SHADOW_WINDOW_SIZE,

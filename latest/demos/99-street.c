@@ -73,6 +73,7 @@ int main() {
                     scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]));
                 }
             }
+            ui_float("Blend Region", &scene_get_active()->shadowmap.blend_region);
             ui_section("sunlight");
             ui_light(sun);
             ui_panel_end();
