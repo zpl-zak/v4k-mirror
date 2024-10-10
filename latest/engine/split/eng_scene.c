@@ -619,6 +619,7 @@ void scene_render(int flags) {
                 light_t *l = &last_scene->lights[j];
                 while (shadowmap_step(sm)) {
                     shadowmap_light(sm, l, cam->proj, cam->view);
+                    if (!l->processed_shadows) continue;
                     for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
                         object_t *obj = scene_index(j);
                         model_t *model = obj->model_shadow.iqm ? &obj->model_shadow : &obj->model;
