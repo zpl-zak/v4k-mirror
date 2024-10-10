@@ -1522,7 +1522,7 @@ light_t light() {
     l.shadow_near_clip = 0.01f;
     l.shadow_bias = 0.003f;
     l.normal_bias = 0.0025f;
-    l.shadow_softness = 7.0f;
+    l.shadow_softness = 3.0f;
     l.penumbra_size = 2.0f;
     l.min_variance = 0.00002f;
     l.variance_transition = 0.2f;
@@ -1813,9 +1813,10 @@ shadowmap_init_caster_csm(shadowmap_t *s, int light_index, int texture_width) {
 
     // Initialise shadow map 2D
     for (int i = 0; i < NUM_SHADOW_CASCADES; i++) {
+        int tw = texture_width>>i;
         glGenTextures(1, &s->maps[light_index].texture_2d[i]);
         glBindTexture(GL_TEXTURE_2D, s->maps[light_index].texture_2d[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, texture_width, texture_width, 0, GL_RED, GL_HALF_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, tw, tw, 0, GL_RED, GL_HALF_FLOAT, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -2026,18 +2027,22 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
     float far_plane = 0.0f;
     float near_plane = 0.0f;
 
+    #define SHADOW_CASCADE_BLEND_REGION 0.8f
+
     if (s->cascade_index == 0) {
         near_plane = l->shadow_near_clip;
         far_plane = l->shadow_distance * s->cascade_splits[0];
     } else if (s->cascade_index < NUM_SHADOW_CASCADES - 1) {
-        near_plane = l->shadow_distance * s->cascade_splits[s->cascade_index-1];
+        near_plane = l->shadow_distance * s->cascade_splits[s->cascade_index-1]*SHADOW_CASCADE_BLEND_REGION;
         far_plane = l->shadow_distance * s->cascade_splits[s->cascade_index];
     } else {
-        near_plane = l->shadow_distance * s->cascade_splits[NUM_SHADOW_CASCADES-1];
+        near_plane = l->shadow_distance * s->cascade_splits[NUM_SHADOW_CASCADES-1]*SHADOW_CASCADE_BLEND_REGION;
         far_plane = cam_far;
     }
 
-    mat44 proj; perspective44(proj, 75, 1.0f, near_plane, far_plane);
+    mat44 proj; 
+    // perspective44(proj, 75, 1.0f, near_plane, far_plane);
+    perspective44(proj, cam_fov, window_width()/(float)window_height(), near_plane, far_plane);
     shadowmap_light_directional_calc_frustum_corners(proj, cam_view);
     vec3 center = {0,0,0};
     float sphere_radius = 0.0f;
@@ -2195,6 +2200,9 @@ void shadowmap_light(shadowmap_t *s, light_t *l, mat44 cam_proj, mat44 cam_view)
         }
     
         unsigned texture_width = s->shadow_technique == SHADOW_VSM ? s->vsm_texture_width : s->csm_texture_width;
+        if (s->shadow_technique == SHADOW_CSM) {
+            texture_width >>= s->cascade_index;
+        }
         glViewport(0, 0, texture_width, texture_width);
 
         s->shadow_frustum = frustum_build(s->PV);

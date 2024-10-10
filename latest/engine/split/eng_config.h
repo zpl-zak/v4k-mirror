@@ -81,6 +81,14 @@
 #define DEFAULT_COOK_ON_DEMAND ifdef(tcc,1,0) // 0 // 1
 #endif
 
+#ifndef DEFAULT_SHADOW_VSM_RESOLUTION
+#define DEFAULT_SHADOW_VSM_RESOLUTION 512
+#endif
+
+#ifndef DEFAULT_SHADOW_CSM_RESOLUTION
+#define DEFAULT_SHADOW_CSM_RESOLUTION 4096
+#endif
+
 
 // -----------------------------------------------------------------------------
 // if/n/def hell

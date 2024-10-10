@@ -514,7 +514,7 @@ void scene_render(int flags) {
 
     if (flags & SCENE_SHADOWS) {
         if (sm->vsm_texture_width == 0) {
-            *sm = shadowmap(512, 4096);
+            *sm = shadowmap(DEFAULT_SHADOW_VSM_RESOLUTION, DEFAULT_SHADOW_CSM_RESOLUTION);
         }
     } else {
         sm = NULL;

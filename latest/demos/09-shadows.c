@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
         fx_end();
 
         // {
-            // quad_render_id(GL_TEXTURE_2D, sm.maps[0].texture_2d[0], vec2(sm.csm_texture_width, sm.csm_texture_width), vec2(0,0), vec2(4096,4096), 0xFFFFFFFF, vec2(0,0), vec2(512,512));
+            quad_render_id(GL_TEXTURE_2D, sm.maps[0].texture_2d[0], vec2(sm.csm_texture_width, sm.csm_texture_width), vec2(0,0), vec2(4096,4096), 0xFFFFFFFF, vec2(0,0), vec2(512,512));
         // }
 
         if( ui_panel("Scene", 0)) {
