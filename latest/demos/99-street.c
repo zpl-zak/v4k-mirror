@@ -15,9 +15,9 @@ const char *skyboxes[][3] = { // reflection, rad, env
 };
 
 int main() {
-    window_create(80, 0);
+    window_create(101, WINDOW_VSYNC);
     window_title(__FILE__);
-    window_fps_unlock();
+    // window_fps_unlock();
 
     // load all fx files
     fx_load("fx**.fs");
