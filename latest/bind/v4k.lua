@@ -1012,6 +1012,7 @@ typedef struct renderstate_t {
     bool depth_test_enabled;
     bool depth_write_enabled;
     unsigned depth_func;
+    bool reverse_z;
     bool polygon_offset_enabled;
     float polygon_offset;
     float polygon_offset_factor;
@@ -1155,10 +1156,6 @@ typedef struct cubemap_t {
  void fbo_bind(unsigned id);
  void fbo_unbind();
  void fbo_destroy(unsigned id);
-enum {
-    MAX_LIGHTS = 96,
-    MAX_SHADOW_LIGHTS = 8,
-};
 enum LIGHT_TYPE {
     LIGHT_DIRECTIONAL,
     LIGHT_POINT,
@@ -1180,6 +1177,7 @@ typedef struct light_t {
     float specularPower;
     float innerCone, outerCone;
     bool cast_shadows;
+    bool hard_shadows;
     unsigned shadow_technique;
     float shadow_distance;
     float shadow_near_clip;
@@ -1235,7 +1233,7 @@ typedef struct shadowmap_t {
         handle texture;
         handle texture_2d[4];
         float cascade_distances[4];
-    } maps[MAX_SHADOW_LIGHTS];
+    } maps[8];
     handle saved_fb;
     handle saved_pass;
     int saved_vp[4];
@@ -1391,6 +1389,7 @@ typedef struct material_layer_t {
 typedef struct material_t {
     char *name;
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
+    bool _loaded;
 } material_t;
  uint32_t material_checksum(material_t *m);
  void ui_material(material_t *m);
@@ -1540,7 +1539,7 @@ enum MODEL_UNIFORMS {
     MODEL_UNIFORM_SHADOW_MAP_2D,
     MODEL_UNIFORM_SHADOW_MAP_2D_COUNT = MODEL_UNIFORM_SHADOW_MAP_2D+4,
     MODEL_UNIFORM_SHADOW_MAP_CUBEMAP,
-    MODEL_UNIFORM_SHADOW_MAP_CUBEMAP_COUNT = MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+MAX_LIGHTS,
+    MODEL_UNIFORM_SHADOW_MAP_CUBEMAP_COUNT = MODEL_UNIFORM_SHADOW_MAP_CUBEMAP+96,
     NUM_MODEL_UNIFORMS
 };
 enum MODEL_TEXTURE_SLOTS {
@@ -1560,7 +1559,7 @@ enum MODEL_TEXTURE_SLOTS {
     MODEL_TEXTURE_SHADOW_MAP_2D,
     MODEL_TEXTURE_SHADOW_MAP_2D_COUNT = MODEL_TEXTURE_SHADOW_MAP_2D+4,
     MODEL_TEXTURE_SHADOW_MAP_CUBEMAP,
-    MODEL_TEXTURE_SHADOW_MAP_CUBEMAP_COUNT = MODEL_TEXTURE_SHADOW_MAP_CUBEMAP+MAX_SHADOW_LIGHTS,
+    MODEL_TEXTURE_SHADOW_MAP_CUBEMAP_COUNT = MODEL_TEXTURE_SHADOW_MAP_CUBEMAP+8,
     MODEL_TEXTURE_USER_DEFINED,
     NUM_MODEL_TEXTURE_SLOTS
 };
@@ -1568,6 +1567,13 @@ typedef struct lightarray_t {
     light_t *base;
     unsigned count;
 } lightarray_t;
+typedef struct model_shaderinfo_t {
+    int shading;
+    char *vs;
+    char *fs;
+    char *defines;
+    char** switches;
+} model_shaderinfo_t;
 typedef struct model_t {
     struct iqm_t *iqm;
     int shading;
@@ -1604,7 +1610,8 @@ typedef struct model_t {
     renderstate_t rs[NUM_RENDER_PASSES];
     bool frustum_enabled;
     frustum frustum_state;
-    model_uniform_t *uniforms;
+    model_uniform_t* uniforms;
+    model_shaderinfo_t shaderinfo;
 } model_t;
 typedef struct model_vertex_t {
     vec3 position;
@@ -1638,6 +1645,8 @@ enum BILLBOARD_MODE {
  void model_setshader(model_t*, int shading, const char *vs, const char *fs, const char *defines);
  void model_adduniform(model_t*, model_uniform_t uniform);
  void model_adduniforms(model_t*, unsigned count, model_uniform_t *uniforms);
+ void model_addswitch(model_t*, const char *name);
+ void model_delswitch(model_t*, const char *name);
  uint32_t model_uniforms_checksum(unsigned count, model_uniform_t *uniforms);
  void model_fog(model_t*, unsigned mode, vec3 color, float start, float end, float density);
  void model_skybox(model_t*, skybox_t sky);
@@ -1740,7 +1749,7 @@ typedef struct camera_t {
     mat44 view, proj;
     vec3 position, updir, lookdir, rightdir;
     float yaw, pitch, roll;
-    float speed, accel, fov;
+    float speed, accel, fov, aspect;
     float near_clip, far_clip;
     float frustum_fov_multiplier;
     float move_friction, move_damping;
@@ -1770,7 +1779,7 @@ typedef struct object_t {
     quat rot;
     vec3 sca, pos, euler, pivot;
     texture_t* textures;
-    model_t model;
+    model_t model, model_shadow;
     anim_t anim;
     float anim_speed;
     aabb bounds;
@@ -1786,6 +1795,7 @@ typedef struct object_t {
     bool light_cached;
     bool was_batched;
     mat44* instances;
+    unsigned num_instances;
     unsigned* pair_instance;
     uint32_t checksum;
 } object_t;
@@ -1799,6 +1809,7 @@ typedef struct object_t {
  void object_scale(object_t *obj, vec3 sca);
  void object_batchable(object_t *obj, bool batchable);
  void object_model(object_t *obj, model_t model);
+ void object_model_shadow(object_t *obj, model_t model);
  void object_anim(object_t *obj, anim_t anim, float speed);
  void object_diffuse(object_t *obj, texture_t tex);
  void object_diffuse_push(object_t *obj, texture_t tex);
@@ -1811,6 +1822,7 @@ enum SCENE_FLAGS {
     SCENE_FOREGROUND = 8,
     SCENE_UPDATE_SH_COEF = 16,
     SCENE_SHADOWS = 32,
+    SCENE_POSTFX = 64,
 };
 typedef struct scene_t {
     object_t* objs;

@@ -584,7 +584,7 @@ void scene_render(int flags) {
                     continue;
                 }
                 if (num_instances >= array_count(obj->instances)) {
-                    array_reserve(obj->instances, array_count(obj->instances) + 64);
+                    array_resize(obj->instances, array_count(obj->instances) + 64);
                 }
                 copy44(obj->instances[num_instances++], obj2->transform);
                 obj2->was_batched = true;
