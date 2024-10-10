@@ -21,7 +21,10 @@ int main() {
 
     // load all fx files
     fx_load("fx**.fs");
+    fx_enable(fx_find("fx/fxSSAO.fs"), 1);
     fx_enable(fx_find("fx/fxFXAA3.fs"), 1);
+    fx_order(fx_find("fx/fxSSAO.fs"), 0);
+    fx_order(fx_find("fx/fxFXAA3.fs"), 99);
 
     // load skybox
     // skybox_t sky = skybox(flag("--mie") ? 0 : "hdr/Tokyo_BigSight_1k.hdr", 0); // --mie for rayleigh/mie scattering
