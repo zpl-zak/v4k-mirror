@@ -3982,8 +3982,12 @@ bool postfx_end(postfx *fx) {
 }
 
 static postfx fx;
+int fx_load_from_mem(const char *nameid, const char *content) {
+    do_once if (!fx.vao) postfx_create(&fx, 0);
+    return postfx_load_from_mem(&fx, nameid, content);
+}
 int fx_load(const char *filemask) {
-    do_once postfx_create(&fx, 0);
+    do_once if (!fx.vao) postfx_create(&fx, 0);
     static set(char*) added = 0; do_once set_init_str(added);
     for each_array( vfs_list(filemask), char*, list ) {
         if( set_find(added, list) ) continue;
