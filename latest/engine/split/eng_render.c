@@ -1141,7 +1141,7 @@ static array(texture_t) texture_cache = {0};
 
 texture_t texture(const char *pathfile, int flags) {
     for (int i = 0; i < array_count(texture_cache); i++) {
-        if (strcmp(texture_cache[i].filename, pathfile) == 0) {
+        if (texture_cache[i].flags == flags && strcmp(texture_cache[i].filename, pathfile) == 0) {
             return texture_cache[i];
         }
     }
@@ -1503,7 +1503,7 @@ texture_t texture_compressed_from_mem(const void *data, int len, unsigned flags)
 
 texture_t texture_compressed(const char *pathfile, unsigned flags) {
     for (int i = 0; i < array_count(texture_cache); i++) {
-        if (strcmp(texture_cache[i].filename, pathfile) == 0) {
+        if (texture_cache[i].flags == flags && strcmp(texture_cache[i].filename, pathfile) == 0) {
             return texture_cache[i];
         }
     }
@@ -4191,7 +4191,6 @@ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
 
     int srgb = load_as_srgb ? TEXTURE_SRGB : 0;
     int mipmapped = !cm->no_mipmaps ? TEXTURE_MIPMAPS|TEXTURE_ANISOTROPY : 0;
-    // int srgb = 0;
     int hdr = strendi(texture_name, ".hdr") ? TEXTURE_FLOAT|TEXTURE_RGBA : 0;
     texture_t t = texture_compressed(texture_name, TEXTURE_LINEAR | TEXTURE_REPEAT | mipmapped | hdr | srgb);
 
