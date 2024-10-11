@@ -142,7 +142,7 @@ if "%1"=="docs" (
 if "%1"=="push" (
     call make.bat bind
     call make.bat vps
-    call make.bat tidy
+    @REM call make.bat tidy
 
     if exist ".ark" (
         call tools\ark.exe commit -ws_cl 1
