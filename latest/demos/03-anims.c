@@ -40,7 +40,7 @@ int main() {
 
     camera_t cam = camera();
     skybox_t sky = skybox("cubemaps/stardust", 0);
-    model_t  mdl = model("George.fbx", 0);
+    model_t  mdl = model("George.fbx", MODEL_NO_PBR);
     anims_t    a = animations("George.fbx", 0);
 
     // 32*32 max instances

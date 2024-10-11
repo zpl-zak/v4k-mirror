@@ -12,7 +12,7 @@ int main() {
 
     // load static scene
     model_t map;
-    map = model(option("--model","sorting_test.obj"), 0); // MODEL_NO_TEXTURES);
+    map = model(option("--model","sorting_test.obj"), MODEL_NO_PBR); // MODEL_NO_TEXTURES);
     model_skybox(&map, sky);
 
     // camera
