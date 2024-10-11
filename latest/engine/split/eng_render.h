@@ -294,10 +294,16 @@ typedef struct fbo_t {
     unsigned id;
     texture_t texture_color;
     texture_t texture_depth;
+
+    // internal
+    unsigned width, height;
+    int flags;
+    int texture_flags;
 } fbo_t;
 
 API fbo_t fbo(unsigned width, unsigned height, int flags, int texture_flags);
 API unsigned fbo_id(unsigned texture_color, unsigned texture_depth, int flags);
+API void     fbo_resize(fbo_t *f, unsigned width, unsigned height);
 API void     fbo_bind(unsigned id);
 API void     fbo_unbind();
 API void     fbo_destroy(fbo_t f);
@@ -1057,11 +1063,13 @@ API void     fx_begin();
 API void     fx_begin_res(int w, int h);
 API void     fx_end();
 API void     fx_enable(int pass, int enabled);
+API void     fx_enable_ordered(int pass);
 API int      fx_enabled(int pass);
 API void     fx_enable_all(int enabled);
 API char *   fx_name(int pass);
 API int      fx_find(const char *name);
 API void     fx_setparam(int pass, const char *name, float value);
+API void     fx_setparami(int pass, const char *name, int value);
 API void     fx_order(int pass, unsigned priority);
 API unsigned fx_program(int pass);
 
@@ -1087,6 +1095,8 @@ typedef struct postfx {
     array(passfx) pass;
     // global enable flag
     bool enabled;
+    // rolling pass id
+    unsigned rolling_id;
 } postfx;
 
 API void postfx_create(postfx *fx, int flags);
@@ -1096,11 +1106,17 @@ API bool postfx_begin(postfx *fx, int width, int height);
 API bool postfx_end(postfx *fx);
 API bool postfx_enabled(postfx *fx, int pass_number);
 API bool postfx_enable(postfx *fx, int pass_number, bool enabled);
+API void postfx_enable_ordered(postfx *fx, int pass);
+API void postfx_enable_all(postfx *fx, bool enabled);
 API void postfx_clear(postfx *fx);
 API void postfx_order(postfx *fx, int pass, unsigned priority);
+API unsigned postfx_program(postfx *fx, int pass);
+API void postfx_setparam(postfx *fx, int pass, const char *name, float value);
+API void postfx_setparami(postfx *fx, int pass, const char *name, int value);
 API char* postfx_name(postfx *fx, int slot);
 
 API int   ui_postfx(postfx *fx, int slot);
+API int   ui_postfxs(postfx *fx);
 
 // -----------------------------------------------------------------------------
 // utils

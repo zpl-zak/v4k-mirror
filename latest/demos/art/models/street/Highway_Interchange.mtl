@@ -194,8 +194,7 @@ illum 2
 map_Kd textures/OFFICIAL_MARKINGS._baseColor.png
 map_d textures/OFFICIAL_MARKINGS._baseColor.png
 
-newmtl Old_Bricks
-Ns 0.000000
+newmtl Old_Bricks+Old_Bricks_AO.png
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
@@ -203,6 +202,8 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/Old_Bricks_baseColor.png
+map_Ns textures/Old_Bricks_Roughness.png
+map_Bump -bm 1.000000 textures/Old_Bricks_normal.png
 
 newmtl Old_Grass
 Ns 0.000000

@@ -21,30 +21,21 @@ int main() {
 
     // load all fx files
     fx_load("fx**.fs");
-    fx_enable(fx_find("fx/fxSSAO.fs"), 1);
-    fx_enable(fx_find("fx/fxFXAA3.fs"), 1);
-    fx_order(fx_find("fx/fxSSAO.fs"), 0);
-    fx_order(fx_find("fx/fxFXAA3.fs"), 99);
+    fx_enable_ordered(fx_find("fx/fxSSAO.fs"));
+    fx_enable_ordered(fx_find("fx/fxFXAA3.fs"));
 
     // load skybox
-    // skybox_t sky = skybox(flag("--mie") ? 0 : "hdr/Tokyo_BigSight_1k.hdr", 0); // --mie for rayleigh/mie scattering
     skybox_t sky = skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]);
 
     // load static scene
     model_t street, street_shadow;
     street = model(option("--model","Highway_Interchange.obj"), 0);
-    // street_shadow = model(option("--model","Highway_Interchange_shadow.obj"), 0); // MODEL_NO_TEXTURES);
-    // translation44(street.pivot, 0,-1,0);
-    // rotate44(street.pivot, -90,1,0,0);
-    scale44(street.pivot, 0.1,0.1,0.1);
 
     // camera
     camera_t cam = camera();
 
     object_t *obj = scene_spawn();
     object_model(obj, street);
-    // object_model_shadow(obj, street_shadow);
-    // object_scale(obj, vec3(0.1,0.1,0.1));
 
     double sky_update_until = 0.0;
 
@@ -52,9 +43,19 @@ int main() {
 
     scene_skybox(sky);
 
+    fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
+
+    // texture_t bloom_fb = fxs_bloom(main_fb.texture_color, 1.2f /** threshold */, 1.0f /** intensity */);
+
+    // fx_begin();
+    //     fullscreen_quad_rgb(main_fb.texture_color);
+    //     fullscreen_quad_rgb(bloom_fb);
+    // fx_end();
+
     // demo loop
     while (window_swap())
     {
+        fbo_resize(&main_fb, window_width(), window_height());
         // input
         if( input_down(KEY_ESC) ) break;
         if( input_down(KEY_F5) ) window_reload();
@@ -65,12 +66,19 @@ int main() {
         // fps camera
         camera_freefly(&cam);
 
-        scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_POSTFX);
+        fbo_bind(main_fb.id);
+            viewport_clear(true, true);
+            viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
+            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS);
+        fbo_unbind();
+
+        fx_begin();
+            fullscreen_quad_rgb_flipped(main_fb.texture_color);
+        fx_end();
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {
                 const char *filename = skyboxes[i][0];
-                // bool selected = !strcmp(g_skybox.reflection->filename, file_name(filename));
                 bool selected = false; 
                 if( ui_bool( filename, &selected ) ) {
                     scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]));

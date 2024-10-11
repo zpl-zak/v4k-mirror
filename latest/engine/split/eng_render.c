@@ -3570,6 +3570,10 @@ fbo_t fbo( unsigned width, unsigned height, int flags, int texture_flags ) {
     f.id = fbo_id(color_tex.id, depth_tex.id, flags);
     f.texture_color = color_tex;
     f.texture_depth = depth_tex;
+    f.width = width;
+    f.height = height;
+    f.flags = flags;
+    f.texture_flags = texture_flags;
     return f;
 }
 
@@ -3634,6 +3638,17 @@ unsigned fbo_id(unsigned color_texture_id, unsigned depth_texture_id, int flags)
     glBindFramebuffer (GL_FRAMEBUFFER, last_fb);
     return fbo;
 }
+
+void fbo_resize(fbo_t *f, unsigned width, unsigned height) {
+    ASSERT(f);
+    if (f->width == width && f->height == height) return;
+    f->width = width;
+    f->height = height;
+
+    fbo_destroy(*f);
+    *f = fbo(width, height, f->flags, f->texture_flags);
+}
+
 static __thread array(handle) fbos;
 void fbo_bind(unsigned id) {
     glBindFramebuffer(GL_FRAMEBUFFER, id);
@@ -3787,6 +3802,18 @@ bool postfx_enable(postfx *fx, int pass, bool enabled) {
     return fx->enabled;
 }
 
+void postfx_enable_ordered(postfx *fx, int pass) {
+    postfx_enable(fx, pass, 1);
+    postfx_order(fx, pass, fx->rolling_id++);
+}
+
+void postfx_enable_all(postfx *fx, bool enabled) {
+    if (!enabled) fx->rolling_id = 0;
+    for (int i = 0; i < array_count(fx->pass); i++) {
+        fx->pass[i].enabled = enabled;
+    }
+}
+
 bool postfx_enabled(postfx *fx, int pass) {
     if( pass < 0 || pass >= array_count(fx->pass) ) return false;
     return fx->pass[pass].enabled;
@@ -3807,7 +3834,20 @@ unsigned postfx_program(postfx *fx, int pass) {
     if( pass < 0 || pass >= array_count(fx->pass) ) return 0;
     return fx->pass[pass].program;
 }
-
+void postfx_setparam(postfx *fx, int pass, const char *name, float value) {
+    unsigned program = postfx_program(fx, pass);
+    if( !program ) return;
+    unsigned oldprogram = shader_bind(program);
+    shader_float(name, value);
+    shader_bind(oldprogram);
+}
+void postfx_setparami(postfx *fx, int pass, const char *name, int value) {
+    unsigned program = postfx_program(fx, pass);
+    if( !program ) return;
+    unsigned oldprogram = shader_bind(program);
+    shader_int(name, value);
+    shader_bind(oldprogram);
+}
 int ui_postfx(postfx *fx, int pass) {
     if (pass < 0 || pass >= array_count(fx->pass)) return 0;
     int on = ui_enabled();
@@ -3824,7 +3864,34 @@ int ui_postfx(postfx *fx, int pass) {
     ( on ? ui_enable : ui_disable )();
     return rc;
 }
+int ui_postfxs(postfx *fx) {
+    if(!array_count(fx->pass)) return ui_label(ICON_MD_WARNING " No Post FXs with annotations loaded."), 0;
 
+    if (ui_button("Active to top")) {
+        // Reorder passes so active ones are on top
+        int active_count = 0;
+        for (int i = 0; i < array_count(fx->pass); ++i) {
+            if (fx->pass[i].enabled) {
+                if (i != active_count) {
+                    passfx temp = fx->pass[i];
+                    fx->pass[i] = fx->pass[active_count];
+                    fx->pass[active_count] = temp;
+                }
+                ++active_count;
+            }
+        }
+    }
+
+    int changed = 0;
+    for( int i = 0; i < array_count(fx->pass); ++i ) {
+        char *name = postfx_name(fx, i); if( !name ) break;
+        bool b = postfx_enabled(fx, i);
+        if( ui_bool(name, &b) ) postfx_enable(fx, i, postfx_enabled(fx, i) ^ 1);
+        ui_postfx(fx, i);
+        ui_separator();
+    }
+    return changed;
+}
 static
 int postfx_active_passes(postfx *fx) {
     int num_passes = 0;
@@ -4019,8 +4086,11 @@ int fx_enabled(int pass) {
 void fx_enable(int pass, int enabled) {
     postfx_enable(&fx, pass, enabled);
 }
+void fx_enable_ordered(int pass) {
+    postfx_enable_ordered(&fx, pass);
+}
 void fx_enable_all(int enabled) {
-    for( int i = 0; i < array_count(fx.pass); ++i ) fx_enable(i, enabled);
+    postfx_enable_all(&fx, enabled);
 }
 char *fx_name(int pass) {
     return postfx_name(&fx, pass);
@@ -4035,27 +4105,16 @@ unsigned fx_program(int pass) {
     return postfx_program(&fx, pass);
 }
 void fx_setparam(int pass, const char *name, float value) {
-    unsigned program = fx_program(pass);
-    if( !program ) return;
-    unsigned oldprogram = shader_bind(program);
-    shader_float(name, value);
-    shader_bind(oldprogram);
+    postfx_setparam(&fx, pass, name, value);
+}
+void fx_setparami(int pass, const char *name, int value) {
+    postfx_setparami(&fx, pass, name, value);
 }
 int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
 }
 int ui_fxs() {
-    if(!array_count(fx.pass)) return ui_label(ICON_MD_WARNING " No Post FXs with annotations loaded."), 0;
-
-    int changed = 0;
-    for( int i = 0; i < array_count(fx.pass); ++i ) {
-        char *name = fx_name(i); if( !name ) break;
-        bool b = fx_enabled(i);
-        if( ui_bool(name, &b) ) fx_enable(i, fx_enabled(i) ^ 1);
-        ui_fx(i);
-        ui_separator();
-    }
-    return changed;
+    return ui_postfxs(&fx);
 }
 
 // -----------------------------------------------------------------------------
@@ -5262,7 +5321,7 @@ void model_load_pbr(model_t *m, material_t *mt) {
         else
         if( strstri(t, "_N.") || strstri(t, "Normal") )     { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_NORMALS], t, 0); continue; }
         else
-        if( strstri(t, "Roughness") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
+        if( strstri(t, "_R.") || strstri(t, "Roughness") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
         else
         if( strstri(t, "_MR.")|| strstri(t, "MetallicRoughness") || strstri(t, "OcclusionRoughnessMetallic") )  { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_ROUGHNESS], t, 0); continue; }
         else
