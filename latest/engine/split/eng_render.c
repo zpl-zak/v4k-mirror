@@ -3660,45 +3660,6 @@ void fbo_destroy_id(unsigned id) {
 // -----------------------------------------------------------------------------
 // post-fxs swapchain
 
-typedef struct passfx passfx;
-typedef struct postfx postfx;
-
-void postfx_create(postfx *fx, int flags);
-void postfx_destroy(postfx *fx);
-
-bool postfx_load(postfx *fx, const char *name, const char *fragment);
-bool postfx_begin(postfx *fx, int width, int height);
-bool postfx_end(postfx *fx);
-
-bool postfx_enabled(postfx *fx, int pass_number);
-bool postfx_enable(postfx *fx, int pass_number, bool enabled);
-// bool postfx_toggle(postfx *fx, int pass_number);
-void postfx_clear(postfx *fx);
-void postfx_order(postfx *fx, int pass, unsigned priority);
-
-char* postfx_name(postfx *fx, int slot);
-
-int   ui_postfx(postfx *fx, int slot);
-
-struct passfx {
-    mesh_t m;
-    char *name;
-    unsigned program;
-    int uniforms[16];
-    unsigned priority;
-    bool enabled;
-};
-
-struct postfx {
-    // renderbuffers: color & depth textures
-    unsigned fb[2];
-    texture_t diffuse[2], depth[2];
-    // shader passes
-    array(passfx) pass;
-    // global enable flag
-    bool enabled;
-};
-
 enum {
     u_color,
     u_depth,
@@ -3715,6 +3676,7 @@ void postfx_create(postfx *fx, int flags) {
     postfx z = {0};
     *fx = z;
     fx->enabled = 1;
+    glGenVertexArrays(1, &fx->vao);
     (void)flags;
 }
 
@@ -3722,6 +3684,7 @@ void postfx_destroy( postfx *fx ) {
     for( int i = 0; i < array_count(fx->pass); ++i ) {
         FREE(fx->pass[i].name);
     }
+    glDeleteVertexArrays(1, &fx->vao);
     array_free(fx->pass);
     texture_destroy(&fx->diffuse[0]);
     texture_destroy(&fx->diffuse[1]);
@@ -3814,8 +3777,6 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     if( p->uniforms[u_channelres1x] == -1 ) p->uniforms[u_channelres1x] = glGetUniformLocation(p->program, "iChannelRes1x");
     if( p->uniforms[u_channelres1y] == -1 ) p->uniforms[u_channelres1y] = glGetUniformLocation(p->program, "iChannelRes1y");
     
-    // set quad
-    glGenVertexArrays(1, &p->m.vao);
     return array_count(fx->pass)-1;
 }
 
@@ -3960,6 +3921,8 @@ bool postfx_end(postfx *fx) {
     float w = fx->diffuse[0].w;
     float h = fx->diffuse[0].h;
 
+    glBindVertexArray(fx->vao);
+
     for(int i = 0, e = array_count(fx->pass); i < e; ++i) {
         passfx *pass = &fx->pass[i];
         if( pass->enabled ) {
@@ -3996,20 +3959,18 @@ bool postfx_end(postfx *fx) {
             glUniform1f(pass->uniforms[u_mousez], m.z);
             glUniform1f(pass->uniforms[u_mousew], m.w);
 
-            // bind the vao
             int bound = --num_active_passes;
             if (bound) fbo_bind(fx->fb[frame ^= 1]);
 
                 // fullscreen quad
-                glBindVertexArray(pass->m.vao);
                 glDrawArrays(GL_TRIANGLES, 0, 6);
                 profile_incstat("Render.num_drawcalls", +1);
                 profile_incstat("Render.num_triangles", +2);
-                glBindVertexArray(0);
 
             if (bound) fbo_unbind();
         }
     }
+    glBindVertexArray(0);
     glUseProgram(0);
 
     // restore clear color: needed in case transparent window is being used (alpha != 0)
@@ -4021,11 +3982,8 @@ bool postfx_end(postfx *fx) {
 }
 
 static postfx fx;
-int fx_load_from_mem(const char *nameid, const char *content) {
-    do_once postfx_create(&fx, 0);
-    return postfx_load_from_mem(&fx, nameid, content);
-}
 int fx_load(const char *filemask) {
+    do_once postfx_create(&fx, 0);
     static set(char*) added = 0; do_once set_init_str(added);
     for each_array( vfs_list(filemask), char*, list ) {
         if( set_find(added, list) ) continue;

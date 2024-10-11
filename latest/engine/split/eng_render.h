@@ -296,8 +296,8 @@ typedef struct fbo_t {
     texture_t texture_depth;
 } fbo_t;
 
-API fbo_t fbo( unsigned width, unsigned height, int flags, int texture_flags );
-API unsigned fbo_id( unsigned texture_color, unsigned texture_depth, int flags );
+API fbo_t fbo(unsigned width, unsigned height, int flags, int texture_flags);
+API unsigned fbo_id(unsigned texture_color, unsigned texture_depth, int flags);
 API void     fbo_bind(unsigned id);
 API void     fbo_unbind();
 API void     fbo_destroy(fbo_t f);
@@ -1067,6 +1067,40 @@ API unsigned fx_program(int pass);
 
 API int      ui_fx(int pass);
 API int      ui_fxs();
+
+// low-level API
+
+typedef struct passfx {
+    char *name;
+    unsigned program;
+    int uniforms[16];
+    unsigned priority;
+    bool enabled;
+} passfx;
+
+typedef struct postfx {
+    unsigned vao;
+    // renderbuffers: color & depth textures
+    unsigned fb[2];
+    texture_t diffuse[2], depth[2];
+    // shader passes
+    array(passfx) pass;
+    // global enable flag
+    bool enabled;
+} postfx;
+
+API void postfx_create(postfx *fx, int flags);
+API void postfx_destroy(postfx *fx);
+API bool postfx_load(postfx *fx, const char *name, const char *fragment);
+API bool postfx_begin(postfx *fx, int width, int height);
+API bool postfx_end(postfx *fx);
+API bool postfx_enabled(postfx *fx, int pass_number);
+API bool postfx_enable(postfx *fx, int pass_number, bool enabled);
+API void postfx_clear(postfx *fx);
+API void postfx_order(postfx *fx, int pass, unsigned priority);
+API char* postfx_name(postfx *fx, int slot);
+
+API int   ui_postfx(postfx *fx, int slot);
 
 // -----------------------------------------------------------------------------
 // utils
