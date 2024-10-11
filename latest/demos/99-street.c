@@ -32,7 +32,7 @@ int main() {
 
     // load static scene
     model_t street, street_shadow;
-    street = model(option("--model","Highway_Interchange.obj"), 0); // MODEL_NO_TEXTURES);
+    street = model(option("--model","Highway_Interchange.obj"), 0);
     // street_shadow = model(option("--model","Highway_Interchange_shadow.obj"), 0); // MODEL_NO_TEXTURES);
     // translation44(street.pivot, 0,-1,0);
     // rotate44(street.pivot, -90,1,0,0);
