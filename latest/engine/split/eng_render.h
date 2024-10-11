@@ -285,10 +285,23 @@ API void       cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubema
 // -----------------------------------------------------------------------------
 // fbos
 
-API unsigned fbo( unsigned texture_color, unsigned texture_depth, int wr_flags );
+enum FBO_FLAGS {
+    FBO_NO_DEPTH = 1,
+    FBO_NO_COLOR = 2,
+};
+
+typedef struct fbo_t {
+    unsigned id;
+    texture_t texture_color;
+    texture_t texture_depth;
+} fbo_t;
+
+API fbo_t fbo( unsigned width, unsigned height, int flags, int texture_flags );
+API unsigned fbo_id( unsigned texture_color, unsigned texture_depth, int flags );
 API void     fbo_bind(unsigned id);
 API void     fbo_unbind();
-API void     fbo_destroy(unsigned id);
+API void     fbo_destroy(fbo_t f);
+API void     fbo_destroy_id(unsigned id);
 
 // -----------------------------------------------------------------------------
 // lights

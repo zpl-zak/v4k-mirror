@@ -1137,13 +1137,20 @@ texture_t texture_from_mem(const void *ptr, int len, int flags) {
     return texture_checker();
 }
 
+static array(texture_t) texture_cache = {0};
+
 texture_t texture(const char *pathfile, int flags) {
-    // PRINTF("Loading file %s\n", pathfile);
-    image_t img = image(pathfile, flags);
-    if( img.pixels ) {
-        texture_t t = texture_create(img.x, img.y, img.n, img.pixels, flags);
-        t.filename = STRDUP(file_name(pathfile));
-        image_destroy(&img);
+    for (int i = 0; i < array_count(texture_cache); i++) {
+        if (strcmp(texture_cache[i].filename, pathfile) == 0) {
+            return texture_cache[i];
+        }
+    }
+    int filesize = 0;
+    void *ptr = vfs_load(pathfile, &filesize);
+    if (ptr) {
+        texture_t t = texture_from_mem(ptr, filesize, flags);
+        t.filename = STRDUP(pathfile);
+        array_push(texture_cache, t);
         return t;
     }
     return texture_checker();
@@ -1151,7 +1158,7 @@ texture_t texture(const char *pathfile, int flags) {
 
 void texture_destroy( texture_t *t ) {
     if(t->filename && t->filename[0]) FREE(t->filename), t->filename = 0;
-    if(t->fbo) fbo_destroy(t->fbo), t->fbo = 0;
+    if(t->fbo) fbo_destroy_id(t->fbo), t->fbo = 0;
     if(t->id) glDeleteTextures(1, &t->id), t->id = 0;
     *t = (texture_t){0};
 }
@@ -1162,7 +1169,7 @@ bool texture_rec_begin(texture_t *t, unsigned tw, unsigned th) {
         if( t->w != w || t->h != h ) {
             // re-create texture, set texture parameters and content
             texture_update(t, w, h, 4, NULL, TEXTURE_RGBA);
-            if(!t->fbo) t->fbo = fbo(t->id, 0, 0);
+            if(!t->fbo) t->fbo = fbo_id(t->id, 0, 0);
         }
         // bind fbo to texture
         fbo_bind(t->fbo);
@@ -1495,11 +1502,17 @@ texture_t texture_compressed_from_mem(const void *data, int len, unsigned flags)
 }
 
 texture_t texture_compressed(const char *pathfile, unsigned flags) {
-    //const char *fname = vfs_remap(pathfile);
-
+    for (int i = 0; i < array_count(texture_cache); i++) {
+        if (strcmp(texture_cache[i].filename, pathfile) == 0) {
+            return texture_cache[i];
+        }
+    }
     int size = 0;
     char *data = vfs_load(pathfile, &size);
-    return texture_compressed_from_mem(data, size, flags);
+    texture_t t = texture_compressed_from_mem(data, size, flags);
+    t.filename = STRDUP(pathfile);
+    array_push(texture_cache, t);
+    return t;
 }
 
 
@@ -3544,7 +3557,23 @@ void viewport_clip(vec2 from, vec2 to) {
 // -----------------------------------------------------------------------------
 // fbos
 
-unsigned fbo(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
+fbo_t fbo( unsigned width, unsigned height, int flags, int texture_flags ) {
+    texture_t color_tex = {0}; 
+    if (!(flags&FBO_NO_COLOR)) 
+        color_tex = texture_create(width, height, 4, NULL, texture_flags);
+    
+    texture_t depth_tex = {0}; 
+    if (!(flags&FBO_NO_DEPTH)) 
+        depth_tex = texture_create(width, height, 4, NULL, TEXTURE_FLOAT|TEXTURE_DEPTH);
+
+    fbo_t f = {0};
+    f.id = fbo_id(color_tex.id, depth_tex.id, flags);
+    f.texture_color = color_tex;
+    f.texture_depth = depth_tex;
+    return f;
+}
+
+unsigned fbo_id(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
     int last_fb;
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
 
@@ -3554,7 +3583,7 @@ unsigned fbo(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
 
     if( color_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture_id, 0);
     if( depth_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture_id, 0);
-#if 1 // this is working; it's just not enabled for now
+#if 0 // this is working; it's just not enabled for now
     else {
         // Extract texture dimensions from color_texture_id
         GLint color_width = 0, color_height = 0;
@@ -3573,11 +3602,11 @@ unsigned fbo(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
 
 #if is(ems)
     GLenum nones[] = { GL_NONE };
-    if(flags) glDrawBuffers(1, nones);
-    if(flags) glReadBuffer(GL_NONE);
+    if(flags&FBO_NO_COLOR) glDrawBuffers(1, nones);
+    if(flags&FBO_NO_COLOR) glReadBuffer(GL_NONE);
 #else
-    if(flags) glDrawBuffer(GL_NONE);
-    if(flags) glReadBuffer(GL_NONE);
+    if(flags&FBO_NO_COLOR) glDrawBuffer(GL_NONE);
+    if(flags&FBO_NO_COLOR) glReadBuffer(GL_NONE);
 #endif
 
 #if 1
@@ -3618,7 +3647,12 @@ void fbo_unbind() {
     }
     glBindFramebuffer(GL_FRAMEBUFFER, id);
 }
-void fbo_destroy(unsigned id) {
+void fbo_destroy(fbo_t f) {
+    fbo_destroy_id(f.id);
+    if (f.texture_color.id) texture_destroy(&f.texture_color);
+    if (f.texture_depth.id) texture_destroy(&f.texture_depth);
+}
+void fbo_destroy_id(unsigned id) {
     // glDeleteRenderbuffers(1, &renderbuffer);
     glDeleteFramebuffers(1, &id);
 }
@@ -3693,8 +3727,8 @@ void postfx_destroy( postfx *fx ) {
     texture_destroy(&fx->diffuse[1]);
     texture_destroy(&fx->depth[0]);
     texture_destroy(&fx->depth[1]);
-    fbo_destroy(fx->fb[0]);
-    fbo_destroy(fx->fb[1]);
+    fbo_destroy_id(fx->fb[0]);
+    fbo_destroy_id(fx->fb[1]);
     postfx z = {0};
     *fx = z;
 }
@@ -3861,18 +3895,18 @@ bool postfx_begin(postfx *fx, int width, int height) {
         texture_destroy(&fx->diffuse[1]);
         texture_destroy(&fx->depth[0]);
         texture_destroy(&fx->depth[1]);
-        fbo_destroy(fx->fb[0]);
-        fbo_destroy(fx->fb[1]);
+        fbo_destroy_id(fx->fb[0]);
+        fbo_destroy_id(fx->fb[1]);
 
         // create texture, set texture parameters and content
         fx->diffuse[0] = texture_create(width, height, 4, NULL, TEXTURE_RGBA|TEXTURE_FLOAT);
         fx->depth[0] = texture_create(width, height, 1,  NULL, TEXTURE_DEPTH|TEXTURE_FLOAT);
-        fx->fb[0] = fbo(fx->diffuse[0].id, fx->depth[0].id, 0);
+        fx->fb[0] = fbo_id(fx->diffuse[0].id, fx->depth[0].id, 0);
 
         // create texture, set texture parameters and content
         fx->diffuse[1] = texture_create(width, height, 4, NULL, TEXTURE_RGBA|TEXTURE_FLOAT);
         fx->depth[1] = texture_create(width, height, 1, NULL, TEXTURE_DEPTH|TEXTURE_FLOAT);
-        fx->fb[1] = fbo(fx->diffuse[1].id, fx->depth[1].id, 0);
+        fx->fb[1] = fbo_id(fx->diffuse[1].id, fx->depth[1].id, 0);
     }
 
     uint64_t num_active_passes = postfx_active_passes(fx);
@@ -4084,7 +4118,7 @@ static void brdf_load() {
     brdf.h = 512;
 
     // create program and generate BRDF LUT
-    unsigned lut_fbo = fbo(tex, 0, 0), rbo=0;
+    unsigned lut_fbo = fbo_id(tex, 0, 0), rbo=0;
     fbo_bind(lut_fbo);
 
     static int program = -1, vao = -1;
@@ -4116,7 +4150,7 @@ static void brdf_load() {
     glUseProgram( last_shader );
 
     fbo_unbind();
-    fbo_destroy(lut_fbo);
+    fbo_destroy_id(lut_fbo);
 }
 
 texture_t brdf_lut() {
@@ -4131,7 +4165,6 @@ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
     if( !texture_name ) return false;
 
     if( cm->texture && cm->texture->id != texture_checker().id ) {
-        texture_destroy(cm->texture);
         FREE(cm->texture), cm->texture = NULL;
     }
 

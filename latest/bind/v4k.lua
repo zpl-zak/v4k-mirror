@@ -1120,6 +1120,7 @@ typedef struct texture_t {
 typedef struct colormap_t {
     vec4 color;
     texture_t *texture;
+    bool no_mipmaps;
 } colormap_t;
  bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb );
  unsigned query_test_point(mat44 proj, mat44 view, vec3 pos, float size);
@@ -1152,10 +1153,21 @@ typedef struct cubemap_t {
  void cubemap_sh_reset(cubemap_t *c);
  void cubemap_sh_addlight(cubemap_t *c, vec3 light, vec3 dir, float strength);
  void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 *out_sh );
- unsigned fbo( unsigned texture_color, unsigned texture_depth, int wr_flags );
+enum FBO_FLAGS {
+    FBO_NO_DEPTH = 1,
+    FBO_NO_COLOR = 2,
+};
+typedef struct fbo_t {
+    unsigned id;
+    texture_t texture_color;
+    texture_t texture_depth;
+} fbo_t;
+ fbo_t fbo( unsigned width, unsigned height, int flags, int texture_flags );
+ unsigned fbo_id( unsigned texture_color, unsigned texture_depth, int flags );
  void fbo_bind(unsigned id);
  void fbo_unbind();
- void fbo_destroy(unsigned id);
+ void fbo_destroy(fbo_t f);
+ void fbo_destroy_id(unsigned id);
 enum LIGHT_TYPE {
     LIGHT_DIRECTIONAL,
     LIGHT_POINT,
@@ -1390,6 +1402,7 @@ typedef struct material_layer_t {
 typedef struct material_t {
     char *name;
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
+    float cutout_alpha;
     bool _loaded;
 } material_t;
  uint32_t material_checksum(material_t *m);
