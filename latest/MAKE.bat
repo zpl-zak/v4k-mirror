@@ -141,7 +141,7 @@ if "%1"=="docs" (
 
 if "%1"=="push" (
     call make.bat bind
-    call make.bat vps
+    @REM call make.bat vps
     @REM call make.bat tidy
 
     if exist ".ark" (
