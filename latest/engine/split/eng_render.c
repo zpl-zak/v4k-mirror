@@ -4201,7 +4201,7 @@ bool colormap( colormap_t *cm, const char *texture_name, bool load_as_srgb ) {
     if( !texture_name ) return false;
 
     if( cm->texture && cm->texture->id != texture_checker().id ) {
-        FREE(cm->texture), cm->texture = NULL;
+        return true;
     }
 
     int srgb = load_as_srgb ? TEXTURE_SRGB : 0;
@@ -5407,7 +5407,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             #endif
         }
 
-        if( !material_embedded_texture ) {
+        if( !material_embedded_texture && model->shading != SHADING_PBR) {
             char* material_name;
             // remove any material+name from materials (.fbx)
             // try left token first
@@ -5434,7 +5434,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             }
         }
 
-        if( out != invalid) {
+        if( out != invalid && model->shading != SHADING_PBR) {
             PRINTF("loaded material[%d]: %s\n", i, &str[m->material]);
         } else {
             PRINTF("warn: material[%d] not found: %s\n", i, &str[m->material]);
@@ -5453,8 +5453,10 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
 
             // initialise basic texture layer
             mt.layer[MATERIAL_CHANNEL_ALBEDO].map.color = material_color_hex ? material_color : vec4(1,1,1,1);
-            mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
-            // *mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = tex;
+            if (model->shading != SHADING_PBR) {
+                mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
+                *mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = tex;
+            }
 
             array_push(model->materials, mt);
         }
