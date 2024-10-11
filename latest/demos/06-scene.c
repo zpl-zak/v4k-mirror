@@ -123,7 +123,7 @@ int main() {
         }
 
         // post-fxs end here
-        fx_end();
+        fx_end(0,0);
 
         // queue ui
         if( ui_panel("Scene", 0)) {

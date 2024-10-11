@@ -128,7 +128,7 @@ int main() {
         // draw scene
         fx_begin();
         scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF|SCENE_SHADOWS);
-        fx_end();
+        fx_end(0,0);
 
         // fps camera
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);

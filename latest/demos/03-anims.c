@@ -126,7 +126,7 @@ int main() {
                 }
             }
 
-        fx_end();
+        fx_end(0,0);
 
         if ( ui_panel("Rim lighting", 0) ) {
             ui_color3f("Color", &rim_color.x);

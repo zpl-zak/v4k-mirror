@@ -718,7 +718,7 @@ int window_swap() {
     // end frame
     if( frame_count > 0 ) {
         if (GLOBAL_FX_PASS_ENABLED && !postfx_backbuffer_draw) {
-            postfx_end(&fx);
+            postfx_end(&fx, 0, 0);
         }
         window_frame_end();
         window_frame_swap();

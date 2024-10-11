@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
             model_light(&mdl, array_count(lights), lights);
             model_render(mdl, cam.proj, cam.view, mdl.pivot);
         }
-        fx_end();
+        fx_end(0,0);
 
         // {
             quad_render_id(GL_TEXTURE_2D, sm.maps[0].texture_2d[0], vec2(sm.csm_texture_width, sm.csm_texture_width), vec2(0,0), vec2(4096,4096), 0xFFFFFFFF, vec2(0,0), vec2(512,512));

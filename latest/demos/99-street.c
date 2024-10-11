@@ -50,7 +50,7 @@ int main() {
     // fx_begin();
     //     fullscreen_quad_rgb(main_fb.texture_color);
     //     fullscreen_quad_rgb(bloom_fb);
-    // fx_end();
+    // fx_end(0,0);
 
     // demo loop
     while (window_swap())
@@ -72,9 +72,7 @@ int main() {
             scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS);
         fbo_unbind();
 
-        fx_begin();
-            fullscreen_quad_rgb_flipped(main_fb.texture_color);
-        fx_end();
+        fx_apply(main_fb.texture_color, main_fb.texture_depth);
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {

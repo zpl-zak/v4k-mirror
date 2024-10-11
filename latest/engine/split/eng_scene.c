@@ -701,6 +701,6 @@ void scene_render(int flags) {
     }
 
     if (flags & SCENE_POSTFX) {
-        fx_end();
+        fx_end(0,0);
     }
 }

@@ -3958,7 +3958,7 @@ bool postfx_begin(postfx *fx, int width, int height) {
 
 static renderstate_t postfx_rs;
 
-bool postfx_end(postfx *fx) {
+bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
     uint64_t num_active_passes = postfx_active_passes(fx);
     bool active = fx->enabled && num_active_passes;
     if( !active ) {
@@ -3990,6 +3990,13 @@ bool postfx_end(postfx *fx) {
 
     glBindVertexArray(fx->vao);
 
+    if (texture_id == 0) {
+        texture_id = fx->diffuse[0].id;
+    }
+    if (depth_id == 0) {
+        depth_id = fx->depth[0].id;
+    }
+
     for(int i = 0, e = array_count(fx->pass); i < e; ++i) {
         passfx *pass = &fx->pass[i];
         if( pass->enabled ) {
@@ -3998,7 +4005,7 @@ bool postfx_end(postfx *fx) {
 
             // bind texture to texture unit 0
             // shader_texture_unit(fx->diffuse[frame], 0);
- glActiveTexture(GL_TEXTURE0 + 0);            glBindTexture(GL_TEXTURE_2D, fx->diffuse[frame].id);
+ glActiveTexture(GL_TEXTURE0 + 0); if(frame > 0) glBindTexture(GL_TEXTURE_2D, fx->diffuse[frame].id); else glBindTexture(GL_TEXTURE_2D, texture_id);
             glUniform1i(pass->uniforms[u_color], 0);
 
             glUniform1f(pass->uniforms[u_channelres0x], fx->diffuse[frame].w);
@@ -4006,7 +4013,7 @@ bool postfx_end(postfx *fx) {
             
             // bind depth to texture unit 1
             // shader_texture_unit(fx->depth[frame], 1);
- glActiveTexture(GL_TEXTURE0 + 1);            glBindTexture(GL_TEXTURE_2D, fx->depth[frame].id);
+ glActiveTexture(GL_TEXTURE0 + 1); if(frame > 0) glBindTexture(GL_TEXTURE_2D, fx->depth[frame].id); else glBindTexture(GL_TEXTURE_2D, depth_id);
             glUniform1i(pass->uniforms[u_depth], 1);
 
             // bind uniforms
@@ -4048,6 +4055,11 @@ bool postfx_end(postfx *fx) {
     return true;
 }
 
+bool postfx_apply(postfx *fx, texture_t color_texture, texture_t depth_texture) {
+    if (!postfx_begin(fx, color_texture.w, color_texture.h)) return false;
+    return postfx_end(fx, color_texture.id, depth_texture.id);
+}
+
 static postfx fx;
 int fx_load_from_mem(const char *nameid, const char *content) {
     do_once if (!fx.vao) postfx_create(&fx, 0);
@@ -4077,8 +4089,11 @@ void fx_begin() {
 void fx_begin_res(int w, int h) {
     postfx_begin(&fx, w, h);
 }
-void fx_end() {
-    postfx_end(&fx);
+void fx_end(unsigned texture_id, unsigned depth_id) {
+    postfx_end(&fx, texture_id, depth_id);
+}
+void fx_apply(texture_t color_texture, texture_t depth_texture) {
+    postfx_apply(&fx, color_texture, depth_texture);
 }
 int fx_enabled(int pass) {
     return postfx_enabled(&fx, pass);
@@ -5439,7 +5454,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             // initialise basic texture layer
             mt.layer[MATERIAL_CHANNEL_ALBEDO].map.color = material_color_hex ? material_color : vec4(1,1,1,1);
             mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
-            *mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = tex;
+            // *mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = tex;
 
             array_push(model->materials, mt);
         }

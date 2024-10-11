@@ -130,7 +130,7 @@ int main() {
             );
 
         // post-fxs end here
-        fx_end();
+        fx_end(0,0);
 
         // ui
         if( ui_panel("Audio", 0)) {

@@ -671,7 +671,7 @@ void editor_frame( void (*game)(unsigned, float, double) ) {
         }
     }
     sprite_flush();
-    fx_end();
+    fx_end(0,0);
 
     // draw box selection
     if( !ui_active() && window_has_cursor() && cursorshape ) { //< check that we're not moving a window + not in fps cam

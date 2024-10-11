@@ -79,7 +79,7 @@ int main() {
             model_render(girl, cam.proj, cam.view, girl.pivot);
 
         // post-fxs end here
-        fx_end();
+        fx_end(0,0);
 
         // font demo
         font_print(va(FONT_BOTTOM FONT_RIGHT FONT_H6 "%5.2f FPS", window_fps()));
