@@ -5379,16 +5379,19 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
             flags |= TEXTURE_LINEAR;
         int invalid = texture_checker().id;
 
-        char *material_embedded_texture = strstr(&str[m->material], "+b64:");
-        if( material_embedded_texture ) {
-            *material_embedded_texture = '\0';
-            material_embedded_texture += 5;
-            array(char) embedded_texture = base64_decode(material_embedded_texture, strlen(material_embedded_texture));
-            //printf("%s %d\n", material_embedded_texture, array_count(embedded_texture));
-            //hexdump(embedded_texture, array_count(embedded_texture));
-            tex = texture_compressed_from_mem( embedded_texture, array_count(embedded_texture), flags );
-            out = tex.id;
-            array_free(embedded_texture);
+        char *material_embedded_texture = 0;
+        if (model->shading != SHADING_PBR) {
+            material_embedded_texture = strstr(&str[m->material], "+b64:");
+            if( material_embedded_texture ) {
+                *material_embedded_texture = '\0';
+                material_embedded_texture += 5;
+                array(char) embedded_texture = base64_decode(material_embedded_texture, strlen(material_embedded_texture));
+                //printf("%s %d\n", material_embedded_texture, array_count(embedded_texture));
+                //hexdump(embedded_texture, array_count(embedded_texture));
+                tex = texture_compressed_from_mem( embedded_texture, array_count(embedded_texture), flags );
+                out = tex.id;
+                array_free(embedded_texture);
+            }
         }
 
         char* material_color_hex = strstr(&str[m->material], "+$");
