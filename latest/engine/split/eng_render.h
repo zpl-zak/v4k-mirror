@@ -360,7 +360,6 @@ API void    light_type(light_t* l, char type);
 API void    light_diffuse(light_t* l, vec3 color);
 API void    light_specular(light_t* l, vec3 color);
 API void    light_ambient(light_t* l, vec3 color);
-API void    light_teleport(light_t* l, vec3 pos);
 API void    light_pos(light_t* l, vec3 pos);
 API void    light_dir(light_t* l, vec3 dir);
 API void    light_power(light_t* l, float power);

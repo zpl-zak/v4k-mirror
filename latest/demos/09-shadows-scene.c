@@ -120,7 +120,7 @@ int main() {
         video_decode( v );
 
         // update light position
-        // light_teleport(l, cam.position);
+        // light_pos(l, cam.position);
 
         // update shadertoy
         shadertoy_render(&sh, window_delta());

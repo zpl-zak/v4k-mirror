@@ -1562,11 +1562,6 @@ void light_ambient(light_t* l, vec3 color) {
     l->ambient = color;
 }
 
-void light_teleport(light_t* l, vec3 pos) {
-    l->cached = 0;
-    l->pos = pos;
-}
-
 void light_pos(light_t* l, vec3 pos) {
     l->cached = 0;
     l->pos = pos;
