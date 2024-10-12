@@ -1705,7 +1705,7 @@ enum BILLBOARD_MODE {
  void fx_end(unsigned texture_id, unsigned depth_id);
  void fx_apply(texture_t color_texture, texture_t depth_texture);
  void fx_enable(int pass, int enabled);
- void fx_enable_ordered(int pass);
+ int fx_enable_ordered(int pass);
  int fx_enabled(int pass);
  void fx_enable_all(int enabled);
  char * fx_name(int pass);
@@ -1714,7 +1714,7 @@ enum BILLBOARD_MODE {
  void fx_setparami(int pass, const char *name, int value);
  void fx_setparam3(int pass, const char *name, vec3 value);
  void fx_setparam4(int pass, const char *name, vec4 value);
- void fx_order(int pass, unsigned priority);
+ int fx_order(int pass, unsigned priority);
  unsigned fx_program(int pass);
  int ui_fx(int pass);
  int ui_fxs();
@@ -1742,10 +1742,10 @@ typedef struct postfx {
  bool postfx_apply(postfx *fx, texture_t color_texture, texture_t depth_texture);
  bool postfx_enabled(postfx *fx, int pass_number);
  bool postfx_enable(postfx *fx, int pass_number, bool enabled);
- void postfx_enable_ordered(postfx *fx, int pass);
+ int postfx_enable_ordered(postfx *fx, int pass);
  void postfx_enable_all(postfx *fx, bool enabled);
  void postfx_clear(postfx *fx);
- void postfx_order(postfx *fx, int pass, unsigned priority);
+ int postfx_order(postfx *fx, int pass, unsigned priority);
  unsigned postfx_program(postfx *fx, int pass);
  void postfx_setparam(postfx *fx, int pass, const char *name, float value);
  void postfx_setparami(postfx *fx, int pass, const char *name, int value);

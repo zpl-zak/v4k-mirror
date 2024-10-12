@@ -3746,12 +3746,21 @@ int postfx_sort_fn(const void *a, const void *b) {
     unsigned p2 = ((passfx*)b)->priority;
     return (p1 > p2) - (p1 < p2);
 }
-void postfx_order(postfx *fx, int pass, unsigned priority) {
-    if (pass < 0 || pass >= array_count(fx->pass)) return;
-    if (priority >= array_count(fx->pass)) return;
+int postfx_order(postfx *fx, int pass, unsigned priority) {
+    if (pass < 0 || pass >= array_count(fx->pass)) return -1;
+    if (priority >= array_count(fx->pass)) return -1;
     fx->pass[priority].priority = pass;
     fx->pass[pass].priority = priority;
+    int prog = fx->pass[pass].program;
     array_sort(fx->pass, postfx_sort_fn);
+    int new_pass = -1;
+    for (int i = 0; i < array_count(fx->pass); i++) {
+        if (fx->pass[i].program == prog) {
+            new_pass = i;
+            break;
+        }
+    }
+    return new_pass;
 }
 
 int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
@@ -3838,9 +3847,9 @@ bool postfx_enable(postfx *fx, int pass, bool enabled) {
     return fx->enabled;
 }
 
-void postfx_enable_ordered(postfx *fx, int pass) {
+int postfx_enable_ordered(postfx *fx, int pass) {
     postfx_enable(fx, pass, 1);
-    postfx_order(fx, pass, fx->rolling_id++);
+    return postfx_order(fx, pass, fx->rolling_id++);
 }
 
 void postfx_enable_all(postfx *fx, bool enabled) {
@@ -4144,8 +4153,8 @@ int fx_enabled(int pass) {
 void fx_enable(int pass, int enabled) {
     postfx_enable(&fx, pass, enabled);
 }
-void fx_enable_ordered(int pass) {
-    postfx_enable_ordered(&fx, pass);
+int fx_enable_ordered(int pass) {
+    return postfx_enable_ordered(&fx, pass);
 }
 void fx_enable_all(int enabled) {
     postfx_enable_all(&fx, enabled);
@@ -4156,8 +4165,8 @@ char *fx_name(int pass) {
 int fx_find(const char *name) {
     return postfx_find(&fx, name);
 }
-void fx_order(int pass, unsigned priority) {
-    postfx_order(&fx, pass, priority);
+int fx_order(int pass, unsigned priority) {
+    return postfx_order(&fx, pass, priority);
 }
 unsigned fx_program(int pass) {
     return postfx_program(&fx, pass);
@@ -4192,12 +4201,9 @@ texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur,
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
         postfx_create(&bloom, 0);
         postfx_load(&bloom, "art/fxt/bloom/fxBloom*.fs");
-        postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomSep.fs"));
-        postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomH.fs"));
-        postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomV.fs"));
-        fx_bloom_sep = postfx_find(&bloom, "fxBloomSep.fs");
-        fx_bloom_h = postfx_find(&bloom, "fxBloomH.fs");
-        fx_bloom_v = postfx_find(&bloom, "fxBloomV.fs");
+        fx_bloom_sep = postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomSep.fs"));
+        fx_bloom_h = postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomH.fs"));
+        fx_bloom_v = postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomV.fs"));
     }
 
     fbo_resize(&result_fbo, color.w, color.h);
