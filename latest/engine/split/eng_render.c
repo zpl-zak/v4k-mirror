@@ -4206,9 +4206,7 @@ texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur,
     fbo_bind(result_fbo.id);
     viewport_clear(true, true);
     viewport_clip(vec2(0,0), vec2(color.w, color.h));
-    postfx_begin(&bloom, color.w, color.h);
-    fullscreen_quad_rgb_flipped(color);
-    postfx_end(&bloom, 0, 0);
+    postfx_apply(&bloom, color, dummy);
     fbo_unbind();
 
     return result_fbo.texture_color;
