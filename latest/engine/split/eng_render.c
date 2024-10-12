@@ -4187,6 +4187,7 @@ texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur,
     static postfx bloom;
     static texture_t dummy;
     static fbo_t result_fbo;
+    static int fx_bloom_sep = -1, fx_bloom_h = -1, fx_bloom_v = -1;
     do_once {
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
         postfx_create(&bloom, 0);
@@ -4194,14 +4195,17 @@ texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur,
         postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomSep.fs"));
         postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomH.fs"));
         postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomV.fs"));
+        fx_bloom_sep = postfx_find(&bloom, "fxBloomSep.fs");
+        fx_bloom_h = postfx_find(&bloom, "fxBloomH.fs");
+        fx_bloom_v = postfx_find(&bloom, "fxBloomV.fs");
     }
 
     fbo_resize(&result_fbo, color.w, color.h);
-    postfx_setparam3(&bloom, postfx_find(&bloom, "fxBloomSep.fs"), "threshold", threshold);
-    postfx_setparam(&bloom, postfx_find(&bloom, "fxBloomSep.fs"), "intensity", intensity);
-    postfx_setparam3(&bloom, postfx_find(&bloom, "fxBloomSep.fs"), "tint", tint);
-    postfx_setparam(&bloom, postfx_find(&bloom, "fxBloomH.fs"), "blur", blur.x);
-    postfx_setparam(&bloom, postfx_find(&bloom, "fxBloomV.fs"), "blur", blur.y);
+    postfx_setparam3(&bloom, fx_bloom_sep, "threshold", threshold);
+    postfx_setparam(&bloom, fx_bloom_sep, "intensity", intensity);
+    postfx_setparam3(&bloom, fx_bloom_sep, "tint", tint);
+    postfx_setparam(&bloom, fx_bloom_h, "blur", blur.x);
+    postfx_setparam(&bloom, fx_bloom_v, "blur", blur.y);
 
     fbo_bind(result_fbo.id);
     viewport_clear(true, true);
