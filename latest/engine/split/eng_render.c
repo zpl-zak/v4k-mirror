@@ -3734,6 +3734,9 @@ void postfx_destroy( postfx *fx ) {
 char* postfx_name(postfx *fx, int slot) {
     return slot < 0 || slot >= array_count(fx->pass) ? "" : fx->pass[ slot ].name;
 }
+passfx* postfx_pass(postfx *fx, int slot) {
+    return slot < 0 || slot >= array_count(fx->pass) ? NULL : &fx->pass[slot];
+}
 int postfx_find(postfx *fx, const char *name) {
     name = file_name(name);
     for( int i = 0; i < array_count(fx->pass); ++i) if(!strcmpi(fx->pass[i].name, name)) return i;
@@ -4017,6 +4020,85 @@ bool postfx_begin(postfx *fx, int width, int height) {
 
 static renderstate_t postfx_rs;
 
+void postfx_drawpass(postfx *fx, int pass, texture_t color, texture_t depth) {
+    do_once {
+        postfx_rs = renderstate();
+        // disable depth test in 2d rendering
+        postfx_rs.depth_test_enabled = 0;
+        postfx_rs.cull_face_enabled = 0;
+        postfx_rs.blend_enabled = 1;
+        postfx_rs.blend_src = GL_ONE;
+        postfx_rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+    }
+    postfx_drawpass_rs(fx, pass, color, depth, &postfx_rs);
+}
+
+void postfx_drawpass_rs(postfx *fx, int pass, texture_t color, texture_t depth, renderstate_t *rs) {
+    passfx *p = postfx_pass(fx, pass);
+    ASSERT(p);
+
+    renderstate_apply(rs);
+
+    int saved_vp[4];
+    glGetIntegerv(GL_VIEWPORT, saved_vp);
+
+    int width = saved_vp[2];
+    int height = saved_vp[3];
+
+    glUseProgram(p->program);
+
+    int old_input_state = input_blocked();
+    input_block(false);
+
+    int frame = 0;
+    float t = time_ms() / 1000.f;
+    float w = width;
+    float h = height;
+
+    glBindVertexArray(fx->vao);
+
+    if( 1 /* p->enabled */ ) {
+        // bind texture to texture unit 0
+        // shader_texture_unit(fx->diffuse[frame], 0);
+glActiveTexture(GL_TEXTURE0 + 0); glBindTexture(GL_TEXTURE_2D, color.id);
+        glUniform1i(p->uniforms[u_color], 0);
+
+        glUniform1f(p->uniforms[u_channelres0x], color.w);
+        glUniform1f(p->uniforms[u_channelres0y], color.h);
+        
+        // bind depth to texture unit 1
+        // shader_texture_unit(fx->depth[frame], 1);
+glActiveTexture(GL_TEXTURE0 + 1); glBindTexture(GL_TEXTURE_2D, depth.id);
+        glUniform1i(p->uniforms[u_depth], 1);
+
+        // bind uniforms
+        static unsigned f = 0; ++f;
+        glUniform1f(p->uniforms[u_time], t);
+        glUniform1f(p->uniforms[u_frame], f-1);
+        glUniform1f(p->uniforms[u_width], w);
+        glUniform1f(p->uniforms[u_height], h);
+
+        static vec4 smouse;
+        if(input_down(MOUSE_L) || input_down(MOUSE_R) ) smouse.z = input(MOUSE_X), smouse.w = (window_height() - input(MOUSE_Y));
+        if(input(MOUSE_L) || input(MOUSE_R)) smouse.x = input(MOUSE_X), smouse.y = (window_height() - input(MOUSE_Y));
+        vec4 m = mul4(smouse, vec4(1,1,1-2*(!input(MOUSE_L) && !input(MOUSE_R)),1-2*(input_down(MOUSE_L) || input_down(MOUSE_R))));
+
+        glUniform1f(p->uniforms[u_mousex], m.x);
+        glUniform1f(p->uniforms[u_mousey], m.y);
+        glUniform1f(p->uniforms[u_mousez], m.z);
+        glUniform1f(p->uniforms[u_mousew], m.w);
+
+        // fullscreen quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        profile_incstat("Render.num_drawcalls", +1);
+        profile_incstat("Render.num_triangles", +2);
+    }
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    input_block(old_input_state);
+}
+
 bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
     uint64_t num_active_passes = postfx_active_passes(fx);
     bool active = fx->enabled && num_active_passes;
@@ -4219,6 +4301,94 @@ texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur,
     postfx_apply(&bloom, color, dummy);
     fbo_unbind();
 
+    return result_fbo.texture_color;
+}
+
+texture_t fxt_bloom2(texture_t color, int mips_count, float radius, float strength) {
+    static postfx bloom = {0};
+    static texture_t dummy = {0};
+    static fbo_t result_fbo = {0};
+    static int fx_bloom_up = -1, fx_bloom_down = -1, fx_bloom_mix = -1, fx_gamma = -1;
+    static int w = -1, h = -1;
+    static array(fbo_t) mips = 0;
+    static renderstate_t bloom_rs = {0};
+
+    do_once {
+        result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
+        postfx_create(&bloom, 0);
+        postfx_load(&bloom, "fxt/bloom2/fxBloom*.fs");
+        postfx_load(&bloom, "fx/fxGamma.fs");
+        fx_bloom_up = postfx_find(&bloom, "fxBloomUp.fs");
+        fx_bloom_down = postfx_find(&bloom, "fxBloomDown.fs");
+        fx_bloom_mix = postfx_find(&bloom, "fxBloomMix.fs");
+        fx_gamma = postfx_find(&bloom, "fxGamma.fs");
+
+        bloom_rs = renderstate();
+        bloom_rs.depth_test_enabled = 0;
+        bloom_rs.cull_face_enabled = 0;
+        bloom_rs.blend_enabled = 1;
+        bloom_rs.blend_src = GL_ONE;
+        bloom_rs.blend_dst = GL_ONE;
+        bloom_rs.blend_func = GL_FUNC_ADD;
+    }
+
+    if (w != color.w || h != color.h || array_count(mips) != mips_count) {
+        w = color.w;
+        h = color.h;
+
+        for (int i = 0; i < array_count(mips); ++i) {
+            fbo_destroy(mips[i]);
+        }
+        array_free(mips);
+        array_resize(mips, mips_count);
+
+        for (int i = 0; i < mips_count; ++i) {
+            mips[i] = fbo(w >> (i+1), h >> (i+1), FBO_NO_DEPTH, TEXTURE_FLOAT|TEXTURE_CLAMP|TEXTURE_LINEAR);
+        }
+    }
+
+    int saved_vp[4];
+    glGetIntegerv(GL_VIEWPORT, saved_vp);
+
+    fbo_resize(&result_fbo, color.w, color.h);
+
+    fbo_bind(result_fbo.id);
+    viewport_clear(true, true);
+    glViewport(0, 0, color.w, color.h);
+    postfx_setparam(&bloom, fx_gamma, "u_gamma", 1.0/2.2);
+    postfx_drawpass(&bloom, fx_gamma, color, dummy);
+    fbo_unbind();
+
+    texture_t *current_mip = &result_fbo.texture_color;
+
+    for (int i = 0; i < mips_count; ++i) {
+        fbo_bind(mips[i].id);
+        viewport_clear(true, true);
+        glViewport(0, 0, mips[i].texture_color.w, mips[i].texture_color.h);
+        postfx_drawpass(&bloom, fx_bloom_down, *current_mip, dummy);
+        fbo_unbind();
+        current_mip = &mips[i].texture_color;
+    }
+
+    for (int i = mips_count-1; i > 0; --i) {
+        fbo_t *src = &mips[i];
+        fbo_t *dst = &mips[i-1];
+
+        fbo_bind(dst->id);
+        glViewport(0, 0, dst->texture_color.w, dst->texture_color.h);
+        postfx_setparam(&bloom, fx_bloom_up, "filterRadius", radius);
+        postfx_drawpass_rs(&bloom, fx_bloom_up, src->texture_color, dummy, &bloom_rs);
+        fbo_unbind();
+    }
+
+    fbo_bind(result_fbo.id);
+    viewport_clear(true, true);
+    glViewport(0, 0, color.w, color.h);
+    postfx_setparam(&bloom, fx_bloom_mix, "strength", strength);
+    postfx_drawpass(&bloom, fx_bloom_mix, mips[0].texture_color, dummy);
+    fbo_unbind();
+
+    glViewport(saved_vp[0], saved_vp[1], saved_vp[2], saved_vp[3]);
     return result_fbo.texture_color;
 }
 

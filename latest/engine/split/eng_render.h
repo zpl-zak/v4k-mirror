@@ -1126,6 +1126,11 @@ API void postfx_setparami(postfx *fx, int pass, const char *name, int value);
 API void postfx_setparam3(postfx *fx, int pass, const char *name, vec3 value);
 API void postfx_setparam4(postfx *fx, int pass, const char *name, vec4 value);
 API char* postfx_name(postfx *fx, int slot);
+API passfx* postfx_pass(postfx *fx, int slot);
+
+// single-pass draw
+API void postfx_drawpass_rs(postfx *fx, int pass, texture_t color, texture_t depth, renderstate_t *rs);
+API void postfx_drawpass(postfx *fx, int pass, texture_t color, texture_t depth);
 
 API int   ui_postfx(postfx *fx, int slot);
 API int   ui_postfxs(postfx *fx);
@@ -1133,6 +1138,7 @@ API int   ui_postfxs(postfx *fx);
 // multi-pass fx techniques
 
 API texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur, vec3 tint);
+API texture_t fxt_bloom2(texture_t color, int mips_count, float filter_radius, float strength);
 
 // -----------------------------------------------------------------------------
 // utils

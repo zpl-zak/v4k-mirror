@@ -1752,9 +1752,13 @@ typedef struct postfx {
  void postfx_setparam3(postfx *fx, int pass, const char *name, vec3 value);
  void postfx_setparam4(postfx *fx, int pass, const char *name, vec4 value);
  char* postfx_name(postfx *fx, int slot);
+ passfx* postfx_pass(postfx *fx, int slot);
+ void postfx_drawpass_rs(postfx *fx, int pass, texture_t color, texture_t depth, renderstate_t *rs);
+ void postfx_drawpass(postfx *fx, int pass, texture_t color, texture_t depth);
  int ui_postfx(postfx *fx, int slot);
  int ui_postfxs(postfx *fx);
  texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur, vec3 tint);
+ texture_t fxt_bloom2(texture_t color, int mips_count, float filter_radius, float strength);
  void* screenshot(int components);
  void* screenshot_async(int components);
  void ddraw_line_width(float width);
