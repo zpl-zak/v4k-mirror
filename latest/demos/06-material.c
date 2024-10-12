@@ -28,9 +28,9 @@ int main() {
 
     // fx: load all post fx files in all subdirs.
     fx_load("fx/**.fs");
-    // fx_load("**/fxTonemap*.fs");
-    // fx_load("**/fxGamma.fs");
-      //fx_enable(fx_find("fxTonemapUncharted.fs"), 1); 
+    fx_enable_ordered(fx_find("fxSSAO.fs"));
+    fx_enable_ordered(fx_find("fxTonemapACES.fs"));
+    fx_enable_ordered(fx_find("fxFXAA3.fs"));
  
     // load video, RGB texture, no audio
     video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_NO_AUDIO | VIDEO_LOOP ); video_seek(v, 30);
@@ -85,6 +85,8 @@ int main() {
     object_move(obj4, vec3(-10+6*3,0,-30));
     object_pivot(obj4, vec3(0,180,180));
 
+    obj4->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 10.0f;
+
     // spawn object5 (shadertoy)
     object_t* obj5 = scene_spawn();
     object_model(obj5, m4); 
@@ -100,9 +102,16 @@ int main() {
     // load skybox
     scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]));
  
+    vec3 threshold = vec3(0.31,0.31,0.31);
+    float intensity = 0.88f;
+    vec2 blur = vec2(8,8);
+    vec3 tint = vec3(1,1,1);
+
+    fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
 
     while(window_swap() && !input(KEY_ESC)) { 
         // draw environment 
+        fbo_resize(&main_fb, window_width(), window_height());
  
         // update video
         video_decode( v );
@@ -113,11 +122,6 @@ int main() {
         // update shadertoy
         shadertoy_render(&sh, window_delta());
 
-        // draw scene
-        fx_begin();
-        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF);
-        fx_end(0,0);
-
         // fps camera
         bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
         if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
@@ -127,8 +131,30 @@ int main() {
         camera_fps(&cam, mouselook.x,mouselook.y);
         window_cursor( !active );
 
+        fbo_bind(main_fb.id);
+            viewport_clear(true, true);
+            viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
+            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS);
+        fbo_unbind();
+
+        texture_t bloom_fb = fxt_bloom(main_fb.texture_color, threshold, intensity, blur, tint);
+
+        fbo_blit(main_fb.id, bloom_fb, FBO_BLIT_ADDITIVE);
+        fx_apply(main_fb.texture_color, main_fb.texture_depth);
+
         if (ui_panel("FXs", 0)) {
+            ui_section("Bloom");
+            ui_color3f("Threshold", &threshold.x);
+            ui_float("Intensity", &intensity);
+            ui_float2("Blur", &blur.x);
+            ui_color3f("Tint", &tint.x);
+            ui_section("FXs");
             ui_fxs();
+            ui_panel_end();
+        }
+
+        if (ui_panel("Materials", 0)) {
+            ui_materials(&obj4->model);
             ui_panel_end();
         }
 

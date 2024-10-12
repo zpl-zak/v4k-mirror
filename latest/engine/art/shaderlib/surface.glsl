@@ -92,6 +92,7 @@ surface_t surface() {
     if (!map_emissive.has_tex) {
         s.emissive.rgb = pow(s.emissive.rgb, vec3(2.2));
     }
+    s.emissive *= u_emissive_value;
 
     vec3 normalmap = texture( map_normals_tex, uvs ).xyz * vec3(2.0) - vec3(1.0);
     float normalmap_mip = textureQueryLod( map_normals_tex, uvs ).x;

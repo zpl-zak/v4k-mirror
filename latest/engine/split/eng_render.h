@@ -290,6 +290,11 @@ enum FBO_FLAGS {
     FBO_NO_COLOR = 2,
 };
 
+enum FBO_BLIT_FLAGS {
+    FBO_BLIT_NONE = 0,
+    FBO_BLIT_ADDITIVE = 1,
+};
+
 typedef struct fbo_t {
     unsigned id;
     texture_t texture_color;
@@ -308,6 +313,7 @@ API void     fbo_bind(unsigned id);
 API void     fbo_unbind();
 API void     fbo_destroy(fbo_t f);
 API void     fbo_destroy_id(unsigned id);
+API void     fbo_blit(unsigned id, texture_t texture, int flags);
 
 // -----------------------------------------------------------------------------
 // lights
@@ -1070,6 +1076,8 @@ API char *   fx_name(int pass);
 API int      fx_find(const char *name);
 API void     fx_setparam(int pass, const char *name, float value);
 API void     fx_setparami(int pass, const char *name, int value);
+API void     fx_setparam3(int pass, const char *name, vec3 value);
+API void     fx_setparam4(int pass, const char *name, vec4 value);
 API void     fx_order(int pass, unsigned priority);
 API unsigned fx_program(int pass);
 
@@ -1097,11 +1105,12 @@ typedef struct postfx {
     bool enabled;
     // rolling pass id
     unsigned rolling_id;
+    set(char*) added;
 } postfx;
 
 API void postfx_create(postfx *fx, int flags);
 API void postfx_destroy(postfx *fx);
-API bool postfx_load(postfx *fx, const char *name, const char *fragment);
+API bool postfx_load(postfx *fx, const char *filemask);
 API bool postfx_begin(postfx *fx, int width, int height);
 API bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id);
 API bool postfx_apply(postfx *fx, texture_t color_texture, texture_t depth_texture);
@@ -1114,10 +1123,16 @@ API void postfx_order(postfx *fx, int pass, unsigned priority);
 API unsigned postfx_program(postfx *fx, int pass);
 API void postfx_setparam(postfx *fx, int pass, const char *name, float value);
 API void postfx_setparami(postfx *fx, int pass, const char *name, int value);
+API void postfx_setparam3(postfx *fx, int pass, const char *name, vec3 value);
+API void postfx_setparam4(postfx *fx, int pass, const char *name, vec4 value);
 API char* postfx_name(postfx *fx, int slot);
 
 API int   ui_postfx(postfx *fx, int slot);
 API int   ui_postfxs(postfx *fx);
+
+// multi-pass fx techniques
+
+API texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur, vec3 tint);
 
 // -----------------------------------------------------------------------------
 // utils

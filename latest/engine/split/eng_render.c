@@ -2417,8 +2417,8 @@ void fullscreen_quad_rs_init() {
     }
 }
 
-void fullscreen_quad_rgb_gamma( texture_t texture, float gamma ) {
-    fullscreen_quad_rs_init();
+static
+void fullscreen_quad_rgb_gamma_rs( texture_t texture, float gamma, renderstate_t rs ) {
     static int program = -1, vao = -1, u_inv_gamma = -1;
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B_flipped.glsl");
@@ -2430,7 +2430,7 @@ void fullscreen_quad_rgb_gamma( texture_t texture, float gamma ) {
     }
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
-    renderstate_apply(&fullscreen_quad_rs);
+    renderstate_apply(&rs);
     glUseProgram( program );
     float inv_gamma = 1.0f / gamma;
     glUniform1f( u_inv_gamma, inv_gamma );
@@ -2448,9 +2448,12 @@ void fullscreen_quad_rgb_gamma( texture_t texture, float gamma ) {
     glBindVertexArray( 0 );
     glUseProgram( 0 );
 }
-
-void fullscreen_quad_rgb_flipped_gamma( texture_t texture, float gamma ) {
+void fullscreen_quad_rgb_gamma( texture_t texture, float gamma ) {
     fullscreen_quad_rs_init();
+    fullscreen_quad_rgb_gamma_rs(texture, gamma, fullscreen_quad_rs);
+}
+static
+void fullscreen_quad_rgb_flipped_gamma_rs( texture_t texture, float gamma, renderstate_t rs ) {
     static int program = -1, vao = -1, u_inv_gamma = -1;
     if( program < 0 ) {
         const char* vs = vfs_read("shaders/vs_0_2_fullscreen_quad_B.glsl");
@@ -2462,7 +2465,7 @@ void fullscreen_quad_rgb_flipped_gamma( texture_t texture, float gamma ) {
     }
 
     GLenum texture_type = texture.flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
-    renderstate_apply(&fullscreen_quad_rs);
+    renderstate_apply(&rs);
     glUseProgram( program );
     float inv_gamma = 1.0f / gamma;
     glUniform1f( u_inv_gamma, inv_gamma );
@@ -2479,6 +2482,10 @@ void fullscreen_quad_rgb_flipped_gamma( texture_t texture, float gamma ) {
     glBindTexture( texture_type, 0 );
     glBindVertexArray( 0 );
     glUseProgram( 0 );
+}
+void fullscreen_quad_rgb_flipped_gamma( texture_t texture, float gamma ) {
+    fullscreen_quad_rs_init();
+    fullscreen_quad_rgb_flipped_gamma_rs(texture, gamma, fullscreen_quad_rs);
 }
 
 void fullscreen_quad_rgb( texture_t texture_rgb ) {
@@ -3667,6 +3674,23 @@ void fbo_destroy_id(unsigned id) {
     glDeleteFramebuffers(1, &id);
 }
 
+static renderstate_t fbo_blit_state;
+
+void fbo_blit(unsigned id, texture_t texture, int flags) {
+    do_once {
+        fbo_blit_state = renderstate();
+        fbo_blit_state.depth_test_enabled = false;
+        fbo_blit_state.blend_enabled = true;
+        fbo_blit_state.front_face = GL_CW;
+        fbo_blit_state.blend_src = (flags&FBO_BLIT_ADDITIVE) ? GL_ONE : GL_SRC_ALPHA;
+        fbo_blit_state.blend_dst = (flags&FBO_BLIT_ADDITIVE) ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA;
+    }
+    renderstate_apply(&fbo_blit_state);
+    fbo_bind(id);
+        fullscreen_quad_rgb_flipped_gamma_rs(texture, 1.0, fbo_blit_state);
+    fbo_unbind();
+}
+
 // -----------------------------------------------------------------------------
 // post-fxs swapchain
 
@@ -3687,6 +3711,7 @@ void postfx_create(postfx *fx, int flags) {
     *fx = z;
     fx->enabled = 1;
     glGenVertexArrays(1, &fx->vao);
+    set_init_str(fx->added);
     (void)flags;
 }
 
@@ -3789,6 +3814,22 @@ int postfx_load_from_mem( postfx *fx, const char *name, const char *fs ) {
     
     return array_count(fx->pass)-1;
 }
+bool postfx_load( postfx *fx, const char *filemask ) {
+    for each_array( vfs_list(filemask), char*, list ) {
+        if( set_find(fx->added, list) ) continue;
+        char *name = STRDUP(list); // @leak
+        set_insert(fx->added, name);
+        (void)postfx_load_from_mem(fx, file_name(name), vfs_read(name));
+    }
+    if( 1 )
+    for each_array( file_list(filemask), char*, list ) {
+        if( set_find(fx->added, list) ) continue;
+        char *name = STRDUP(list); // @leak
+        set_insert(fx->added, name);
+        (void)postfx_load_from_mem(fx, file_name(name), file_read(name));
+    }
+    return true;
+}
 
 bool postfx_enable(postfx *fx, int pass, bool enabled) {
     if( pass < 0 || pass >= array_count(fx->pass) ) return false;
@@ -3841,6 +3882,20 @@ void postfx_setparami(postfx *fx, int pass, const char *name, int value) {
     if( !program ) return;
     unsigned oldprogram = shader_bind(program);
     shader_int(name, value);
+    shader_bind(oldprogram);
+}
+void postfx_setparam3(postfx *fx, int pass, const char *name, vec3 value) {
+    unsigned program = postfx_program(fx, pass);
+    if( !program ) return;
+    unsigned oldprogram = shader_bind(program);
+    shader_vec3(name, value);
+    shader_bind(oldprogram);
+}
+void postfx_setparam4(postfx *fx, int pass, const char *name, vec4 value) {
+    unsigned program = postfx_program(fx, pass);
+    if( !program ) return;
+    unsigned oldprogram = shader_bind(program);
+    shader_vec4(name, value);
     shader_bind(oldprogram);
 }
 int ui_postfx(postfx *fx, int pass) {
@@ -3992,6 +4047,8 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
         depth_id = fx->depth[0].id;
     }
 
+    unsigned first_pass = 1;
+
     for(int i = 0, e = array_count(fx->pass); i < e; ++i) {
         passfx *pass = &fx->pass[i];
         if( pass->enabled ) {
@@ -4000,7 +4057,7 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
 
             // bind texture to texture unit 0
             // shader_texture_unit(fx->diffuse[frame], 0);
- glActiveTexture(GL_TEXTURE0 + 0); if(frame > 0) glBindTexture(GL_TEXTURE_2D, fx->diffuse[frame].id); else glBindTexture(GL_TEXTURE_2D, texture_id);
+ glActiveTexture(GL_TEXTURE0 + 0); if(first_pass == 0) glBindTexture(GL_TEXTURE_2D, fx->diffuse[frame].id); else glBindTexture(GL_TEXTURE_2D, texture_id);
             glUniform1i(pass->uniforms[u_color], 0);
 
             glUniform1f(pass->uniforms[u_channelres0x], fx->diffuse[frame].w);
@@ -4008,8 +4065,10 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
             
             // bind depth to texture unit 1
             // shader_texture_unit(fx->depth[frame], 1);
- glActiveTexture(GL_TEXTURE0 + 1); if(frame > 0) glBindTexture(GL_TEXTURE_2D, fx->depth[frame].id); else glBindTexture(GL_TEXTURE_2D, depth_id);
+ glActiveTexture(GL_TEXTURE0 + 1); if(first_pass == 0) glBindTexture(GL_TEXTURE_2D, fx->depth[frame].id); else glBindTexture(GL_TEXTURE_2D, depth_id);
             glUniform1i(pass->uniforms[u_depth], 1);
+
+            first_pass = 0;
 
             // bind uniforms
             static unsigned f = 0; ++f;
@@ -4051,7 +4110,10 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
 }
 
 bool postfx_apply(postfx *fx, texture_t color_texture, texture_t depth_texture) {
-    if (!postfx_begin(fx, color_texture.w, color_texture.h)) return false;
+    if (!postfx_begin(fx, color_texture.w, color_texture.h)) {
+        fullscreen_quad_rgb_flipped(color_texture);
+        return false;
+    }
     return postfx_end(fx, color_texture.id, depth_texture.id);
 }
 
@@ -4062,21 +4124,7 @@ int fx_load_from_mem(const char *nameid, const char *content) {
 }
 int fx_load(const char *filemask) {
     do_once if (!fx.vao) postfx_create(&fx, 0);
-    static set(char*) added = 0; do_once set_init_str(added);
-    for each_array( vfs_list(filemask), char*, list ) {
-        if( set_find(added, list) ) continue;
-        char *name = STRDUP(list); // @leak
-        set_insert(added, name);
-        (void)postfx_load_from_mem(&fx, file_name(name), vfs_read(name));
-    }
-    if( 1 )
-    for each_array( file_list(filemask), char*, list ) {
-        if( set_find(added, list) ) continue;
-        char *name = STRDUP(list); // @leak
-        set_insert(added, name);
-        (void)postfx_load_from_mem(&fx, file_name(name), file_read(name));
-    }
-    return 1;
+    return postfx_load(&fx, filemask);
 }
 void fx_begin() {
     postfx_begin(&fx, window_width(), window_height());
@@ -4117,6 +4165,12 @@ unsigned fx_program(int pass) {
 void fx_setparam(int pass, const char *name, float value) {
     postfx_setparam(&fx, pass, name, value);
 }
+void fx_setparam3(int pass, const char *name, vec3 value) {
+    postfx_setparam3(&fx, pass, name, value);
+}
+void fx_setparam4(int pass, const char *name, vec4 value) {
+    postfx_setparam4(&fx, pass, name, value);
+}
 void fx_setparami(int pass, const char *name, int value) {
     postfx_setparami(&fx, pass, name, value);
 }
@@ -4125,6 +4179,39 @@ int ui_fx(int pass) {
 }
 int ui_fxs() {
     return ui_postfxs(&fx);
+}
+
+// multi-pass fx techniques
+
+texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur, vec3 tint) {
+    static postfx bloom;
+    static texture_t dummy = {0};
+    static fbo_t result_fbo;
+    do_once {
+        result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
+        postfx_create(&bloom, 0);
+        postfx_load(&bloom, "art/fxt/bloom/fxBloom*.fs");
+        postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomSep.fs"));
+        postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomH.fs"));
+        postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomV.fs"));
+    }
+
+    fbo_resize(&result_fbo, color.w, color.h);
+    postfx_setparam3(&bloom, postfx_find(&bloom, "fxBloomSep.fs"), "threshold", threshold);
+    postfx_setparam3(&bloom, postfx_find(&bloom, "fxBloomSep.fs"), "tint", tint);
+    postfx_setparam(&bloom, postfx_find(&bloom, "fxBloomSep.fs"), "intensity", intensity);
+    postfx_setparam(&bloom, postfx_find(&bloom, "fxBloomH.fs"), "blur", blur.x);
+    postfx_setparam(&bloom, postfx_find(&bloom, "fxBloomV.fs"), "blur", blur.y);
+
+    fbo_bind(result_fbo.id);
+    viewport_clear(true, true);
+    viewport_clip(vec2(0,0), vec2(color.w, color.h));
+    postfx_begin(&bloom, color.w, color.h);
+    fullscreen_quad_rgb_flipped(color);
+    postfx_end(&bloom, 0, 0);
+    fbo_unbind();
+
+    return result_fbo.texture_color;
 }
 
 // -----------------------------------------------------------------------------
@@ -5256,7 +5343,7 @@ bool model_load_anims(iqm_t *q, const struct iqmheader *hdr) {
 
 void ui_material(material_t *m) {
     static char* channel_names[] = {
-        "Diffuse", "Normals", "Albedo", "Roughness", "Metallic", "AO", "Ambient", "Emissive", "Parallax"
+        "Albedo", "Normals", "Roughness", "Metallic", "AO", "Ambient", "Emissive", "Parallax"
     };
     for (int i = 0; i < MAX_CHANNELS_PER_MATERIAL; i++) {
         
@@ -5270,6 +5357,10 @@ void ui_material(material_t *m) {
             if (i == MATERIAL_CHANNEL_PARALLAX) {
                 ui_float("Parallax Scale", &m->layer[i].value);
                 ui_float("Parallax Shadow Power", &m->layer[i].value2);
+            }
+
+            if (i == MATERIAL_CHANNEL_EMISSIVE) {
+                ui_float("Emissive Value", &m->layer[i].value);
             }
             
             ui_collapse_end();
@@ -5314,6 +5405,7 @@ void model_load_pbr(model_t *m, material_t *mt) {
     mt->layer[MATERIAL_CHANNEL_AMBIENT].map.color = vec4(0,0,0,1);
     mt->layer[MATERIAL_CHANNEL_EMISSIVE].map.color = vec4(0,0,0,0);
     mt->layer[MATERIAL_CHANNEL_PARALLAX].map.color = vec4(0,0,0,0);
+    mt->layer[MATERIAL_CHANNEL_EMISSIVE].value = 1.0f;
     mt->layer[MATERIAL_CHANNEL_PARALLAX].value = 0.1f;
     mt->layer[MATERIAL_CHANNEL_PARALLAX].value2 = 4.0f;
     
@@ -6000,6 +6092,7 @@ void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
             shader_colormap_model_internal(&m, "map_parallax.color", "map_parallax.has_tex", "map_parallax_tex", material->layer[MATERIAL_CHANNEL_PARALLAX].map, MODEL_TEXTURE_PARALLAX);
             shader_float("parallax_scale", material->layer[MATERIAL_CHANNEL_PARALLAX].value);
             shader_float("parallax_shadow_power", material->layer[MATERIAL_CHANNEL_PARALLAX].value2);
+            shader_float("u_emissive_value", material->layer[MATERIAL_CHANNEL_EMISSIVE].value);
         }
     }
 }

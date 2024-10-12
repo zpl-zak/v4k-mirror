@@ -1157,6 +1157,10 @@ enum FBO_FLAGS {
     FBO_NO_DEPTH = 1,
     FBO_NO_COLOR = 2,
 };
+enum FBO_BLIT_FLAGS {
+    FBO_BLIT_NONE = 0,
+    FBO_BLIT_ADDITIVE = 1,
+};
 typedef struct fbo_t {
     unsigned id;
     texture_t texture_color;
@@ -1172,6 +1176,7 @@ typedef struct fbo_t {
  void fbo_unbind();
  void fbo_destroy(fbo_t f);
  void fbo_destroy_id(unsigned id);
+ void fbo_blit(unsigned id, texture_t texture, int flags);
 enum LIGHT_TYPE {
     LIGHT_DIRECTIONAL,
     LIGHT_POINT,
@@ -1707,6 +1712,8 @@ enum BILLBOARD_MODE {
  int fx_find(const char *name);
  void fx_setparam(int pass, const char *name, float value);
  void fx_setparami(int pass, const char *name, int value);
+ void fx_setparam3(int pass, const char *name, vec3 value);
+ void fx_setparam4(int pass, const char *name, vec4 value);
  void fx_order(int pass, unsigned priority);
  unsigned fx_program(int pass);
  int ui_fx(int pass);
@@ -1725,10 +1732,11 @@ typedef struct postfx {
     passfx* pass;
     bool enabled;
     unsigned rolling_id;
+    struct { set base; struct { set_item p; char* key; } tmp, *ptr; char* *tmpval; int (*typed_cmp)(char*, char*); uint64_t (*typed_hash)(char*); } * added;
 } postfx;
  void postfx_create(postfx *fx, int flags);
  void postfx_destroy(postfx *fx);
- bool postfx_load(postfx *fx, const char *name, const char *fragment);
+ bool postfx_load(postfx *fx, const char *filemask);
  bool postfx_begin(postfx *fx, int width, int height);
  bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id);
  bool postfx_apply(postfx *fx, texture_t color_texture, texture_t depth_texture);
@@ -1741,9 +1749,12 @@ typedef struct postfx {
  unsigned postfx_program(postfx *fx, int pass);
  void postfx_setparam(postfx *fx, int pass, const char *name, float value);
  void postfx_setparami(postfx *fx, int pass, const char *name, int value);
+ void postfx_setparam3(postfx *fx, int pass, const char *name, vec3 value);
+ void postfx_setparam4(postfx *fx, int pass, const char *name, vec4 value);
  char* postfx_name(postfx *fx, int slot);
  int ui_postfx(postfx *fx, int slot);
  int ui_postfxs(postfx *fx);
+ texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur, vec3 tint);
  void* screenshot(int components);
  void* screenshot_async(int components);
  void ddraw_line_width(float width);

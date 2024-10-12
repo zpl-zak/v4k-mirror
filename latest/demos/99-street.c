@@ -43,19 +43,9 @@ int main() {
 
     scene_skybox(sky);
 
-    fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
-
-    // texture_t bloom_fb = fxs_bloom(main_fb.texture_color, 1.2f /** threshold */, 1.0f /** intensity */);
-
-    // fx_begin();
-    //     fullscreen_quad_rgb(main_fb.texture_color);
-    //     fullscreen_quad_rgb(bloom_fb);
-    // fx_end(0,0);
-
     // demo loop
     while (window_swap())
     {
-        fbo_resize(&main_fb, window_width(), window_height());
         // input
         if( input_down(KEY_ESC) ) break;
         if( input_down(KEY_F5) ) window_reload();
@@ -65,14 +55,7 @@ int main() {
 
         // fps camera
         camera_freefly(&cam);
-
-        fbo_bind(main_fb.id);
-            viewport_clear(true, true);
-            viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
-            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS);
-        fbo_unbind();
-
-        fx_apply(main_fb.texture_color, main_fb.texture_depth);
+        scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_POSTFX);
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {
