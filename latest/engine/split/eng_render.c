@@ -4304,7 +4304,7 @@ texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur,
     return result_fbo.texture_color;
 }
 
-texture_t fxt_bloom2(texture_t color, int mips_count, float radius, float strength) {
+texture_t fxt_bloom2(texture_t color, int desired_mips_count, float radius, float strength) {
     static postfx bloom = {0};
     static texture_t dummy = {0};
     static fbo_t result_fbo = {0};
@@ -4312,6 +4312,12 @@ texture_t fxt_bloom2(texture_t color, int mips_count, float radius, float streng
     static int w = -1, h = -1;
     static array(fbo_t) mips = 0;
     static renderstate_t bloom_rs = {0};
+
+    int mips_count = 1;
+    while ((color.w >> mips_count) > 1 && (color.h >> mips_count) > 1) {
+        ++mips_count;
+    }
+    mips_count = clampi(mips_count, 1, desired_mips_count);
 
     do_once {
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
@@ -5521,6 +5527,8 @@ bool model_load_anims(iqm_t *q, const struct iqmheader *hdr) {
 }
 
 void ui_material(material_t *m) {
+    ASSERT(m);
+    if (!m->_loaded) return;
     static char* channel_names[] = {
         "Albedo", "Normals", "Roughness", "Metallic", "AO", "Ambient", "Emissive", "Parallax"
     };

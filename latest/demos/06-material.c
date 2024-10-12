@@ -106,8 +106,9 @@ int main() {
     float intensity = 0.88f;
     vec2 blur = vec2(8,8);
     vec3 tint = vec3(1,1,1);
+    int mips_count = 6;
     float filter_radius = 0.005f;
-    float strength = 0.04f;
+    float strength = 0.1f;
     
     fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
 
@@ -140,7 +141,7 @@ int main() {
         fbo_unbind();
 
         // texture_t bloom_fb = fxt_bloom(main_fb.texture_color, threshold, intensity, blur, tint);
-        texture_t bloom_fb = fxt_bloom2(main_fb.texture_color, 8, filter_radius, strength);
+        texture_t bloom_fb = fxt_bloom2(main_fb.texture_color, mips_count, filter_radius, strength);
 
         // fullscreen_quad_rgb_flipped(bloom_fb);
         fbo_blit(main_fb.id, bloom_fb, FBO_BLIT_ADDITIVE);
@@ -152,6 +153,7 @@ int main() {
             ui_float("Intensity", &intensity);
             ui_float2("Blur", &blur.x);
             ui_color3f("Tint", &tint.x);
+            ui_int("Mips count", &mips_count);
             ui_float("Filter radius", &filter_radius);
             ui_float("Strength", &strength);
             ui_section("FXs");

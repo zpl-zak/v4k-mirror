@@ -197,7 +197,7 @@ void window_hints(unsigned flags) {
     #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); //osx
     #endif
-    glfwWindowHint(GLFW_OPENGL_PROFILE, 0); //osx+ems
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //osx+ems
     glfwWindowHint(GLFW_STENCIL_BITS, 8); //osx
 #if DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
@@ -697,7 +697,7 @@ void window_shutdown() {
     do_once {
         #if ENABLE_SELFIES
 
-        snprintf(screenshot_file, DIR_MAX, "%s.png", app_name());
+        snprintf(screenshot_fi le, DIR_MAX, "%s.png", app_name());
 
         int n = 3;
         void *rgb = screenshot(n);
