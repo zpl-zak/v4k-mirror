@@ -102,10 +102,10 @@ int main() {
     object_scale(obj6, vec3(3,3,3));
     object_move(obj6, vec3(-10+12*3,0,-10));
 
-    obj6->model.materials[0].layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(1,0,0,1);
+    obj6->model.materials[0].layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(1,1,1,1);
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_AMBIENT].map.color = vec4(1,1,1,1);
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].map.color = vec4(1,0,0,1);
-    obj6->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 5.0f;
+    obj6->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 50.0f;
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_AO].map.color = vec4(1,1,1,1);
  
     // scene_spawn_light(); // sun
