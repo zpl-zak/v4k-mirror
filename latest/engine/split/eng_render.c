@@ -4185,7 +4185,7 @@ int ui_fxs() {
 
 texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur, vec3 tint) {
     static postfx bloom;
-    static texture_t dummy = {0};
+    static texture_t dummy;
     static fbo_t result_fbo;
     do_once {
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
