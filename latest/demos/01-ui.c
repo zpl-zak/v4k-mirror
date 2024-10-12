@@ -21,6 +21,8 @@ int main() {
     // load video
     video_t *v = video( "pexels-pachon-in-motion-17486489.mp4", VIDEO_RGB | VIDEO_LOOP );
 
+    static fbo_t main_fb;
+(void)main_fb;
     // app loop
     while( window_swap() ) {
         // input controls
