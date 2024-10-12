@@ -102,14 +102,13 @@ int main() {
     // load skybox
     scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]));
  
-    vec3 threshold = vec3(0.31,0.31,0.31);
-    float intensity = 0.88f;
-    vec2 blur = vec2(8,8);
-    vec3 tint = vec3(1,1,1);
     int mips_count = 6;
     float filter_radius = 0.005f;
-    float strength = 0.1f;
-    
+    float strength = 0.40f;
+    float threshold = 0.10f;
+    float soft_threshold = 0.50f;
+    bool suppress_fireflies = true;
+
     fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
 
     while(window_swap() && !input(KEY_ESC)) { 
@@ -140,8 +139,16 @@ int main() {
             scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS);
         fbo_unbind();
 
-        // texture_t bloom_fb = fxt_bloom(main_fb.texture_color, threshold, intensity, blur, tint);
-        texture_t bloom_fb = fxt_bloom2(main_fb.texture_color, mips_count, filter_radius, strength);
+        bloom_params_t bloom_params = {
+            .mips_count = mips_count,
+            .filter_radius = filter_radius,
+            .strength = strength,
+            .threshold = threshold,
+            .soft_threshold = soft_threshold,
+            .suppress_fireflies = suppress_fireflies,
+        };
+
+        texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
 
         // fullscreen_quad_rgb_flipped(bloom_fb);
         fbo_blit(main_fb.id, bloom_fb, FBO_BLIT_ADDITIVE);
@@ -149,13 +156,12 @@ int main() {
 
         if (ui_panel("FXs", 0)) {
             ui_section("Bloom");
-            ui_color3f("Threshold", &threshold.x);
-            ui_float("Intensity", &intensity);
-            ui_float2("Blur", &blur.x);
-            ui_color3f("Tint", &tint.x);
+            ui_float("Threshold", &threshold);
+            ui_float("Soft threshold", &soft_threshold);
             ui_int("Mips count", &mips_count);
             ui_float("Filter radius", &filter_radius);
             ui_float("Strength", &strength);
+            ui_bool("Suppress fireflies", &suppress_fireflies);
             ui_section("FXs");
             ui_fxs();
             ui_panel_end();
@@ -179,7 +185,7 @@ int main() {
         }
 
         static int selected = 0;
-        if( ui_panel("Shadertoy", 1)) {
+        if( ui_panel("Shadertoy", 0)) {
             for( int i = 0; i < array_count(list); ++i ) {
                 bool in_use = i == selected;
                 if( ui_bool(list[i], &in_use) ) {

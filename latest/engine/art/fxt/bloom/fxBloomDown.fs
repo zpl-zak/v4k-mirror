@@ -3,7 +3,7 @@ vec3 pow_vec3(vec3 v, float p)
     return vec3(pow(v.x, p), pow(v.y, p), pow(v.z, p));
 }
 
-const float invGamma = 1.0 / 2.2;
+const float invGamma = 2.2;
 vec3 srgb_to_linear(vec3 v)   { return pow_vec3(v, invGamma); }
 
 float srgb_to_luma(vec3 col)
@@ -20,6 +20,23 @@ float karis_average(vec3 col)
 }
 
 uniform int miplevel; /// set:1
+uniform int karis_disabled; /// set:0
+uniform float threshold; /// set:1.0
+uniform float soft_threshold; /// set:0.5
+vec3 prefilter(vec3 color0) {
+    // vec3 color = srgb_to_linear(color0);
+    vec3 color = color0;
+    float brightness = max(color.r, max(color.g, color.b));
+    float knee = threshold * soft_threshold;
+    float softness = brightness - threshold + knee;
+    softness = clamp(softness, 0, 2.0 * knee);
+    softness = softness * softness / (4.0 * knee + 0.00001);
+    float contribution = max(softness, brightness - threshold);
+    contribution /= max(brightness, 0.00001);
+    // return pow_vec3(color * contribution, 1.0 / invGamma);
+    return color0 * contribution;
+}
+
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = fragCoord.xy / iResolution.xy;
@@ -65,8 +82,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     // to effectively yield this sum. We get:
     // 0.125*5 + 0.03125*4 + 0.0625*4 = 1
 
+    int miplevel1 = miplevel;
+
+    if (karis_disabled == 1) {
+        miplevel1 = -1;
+    }
+
     vec3 groups[5];
-    switch(miplevel) {
+    switch(miplevel1) {
     case 0:
         // We are writing to mip 0, so we need to apply Karis average to each block
         // of 4 samples to prevent fireflies (very bright subpixels, leads to pulsating
@@ -89,8 +112,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         fragColor.rgb += (a+c+g+i)*0.03125;
         fragColor.rgb += (b+d+f+h)*0.0625;
         fragColor.rgb += (j+k+l+m)*0.125;
+        fragColor.rgb = max(fragColor.rgb, 0.0001f);
         break;
     }
-    
+
+    fragColor.rgb = prefilter(fragColor.rgb);
     fragColor.a = 1.0;
 }

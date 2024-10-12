@@ -1757,8 +1757,15 @@ typedef struct postfx {
  void postfx_drawpass(postfx *fx, int pass, texture_t color, texture_t depth);
  int ui_postfx(postfx *fx, int slot);
  int ui_postfxs(postfx *fx);
- texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur, vec3 tint);
- texture_t fxt_bloom2(texture_t color, int mips_count, float filter_radius, float strength);
+typedef struct bloom_params_t {
+    int mips_count;
+    float filter_radius;
+    float strength;
+    float threshold;
+    float soft_threshold;
+    bool suppress_fireflies;
+} bloom_params_t;
+ texture_t fxt_bloom(texture_t color, bloom_params_t params);
  void* screenshot(int components);
  void* screenshot_async(int components);
  void ddraw_line_width(float width);

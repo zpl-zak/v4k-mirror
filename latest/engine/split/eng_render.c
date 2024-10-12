@@ -4274,37 +4274,7 @@ int ui_fxs() {
 
 // multi-pass fx techniques
 
-texture_t fxt_bloom(texture_t color, vec3 threshold, float intensity, vec2 blur, vec3 tint) {
-    static postfx bloom = {0};
-    static texture_t dummy = {0};
-    static fbo_t result_fbo = {0};
-    static int fx_bloom_sep = -1, fx_bloom_h = -1, fx_bloom_v = -1;
-    do_once {
-        result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
-        postfx_create(&bloom, 0);
-        postfx_load(&bloom, "art/fxt/bloom/fxBloom*.fs");
-        fx_bloom_sep = postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomSep.fs"));
-        fx_bloom_h = postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomH.fs"));
-        fx_bloom_v = postfx_enable_ordered(&bloom, postfx_find(&bloom, "fxBloomV.fs"));
-    }
-
-    fbo_resize(&result_fbo, color.w, color.h);
-    postfx_setparam3(&bloom, fx_bloom_sep, "threshold", threshold);
-    postfx_setparam(&bloom, fx_bloom_sep, "intensity", intensity);
-    postfx_setparam3(&bloom, fx_bloom_sep, "tint", tint);
-    postfx_setparam(&bloom, fx_bloom_h, "blur", blur.x);
-    postfx_setparam(&bloom, fx_bloom_v, "blur", blur.y);
-
-    fbo_bind(result_fbo.id);
-    viewport_clear(true, true);
-    viewport_clip(vec2(0,0), vec2(color.w, color.h));
-    postfx_apply(&bloom, color, dummy);
-    fbo_unbind();
-
-    return result_fbo.texture_color;
-}
-
-texture_t fxt_bloom2(texture_t color, int desired_mips_count, float radius, float strength) {
+texture_t fxt_bloom(texture_t color, bloom_params_t params) {
     static postfx bloom = {0};
     static texture_t dummy = {0};
     static fbo_t result_fbo = {0};
@@ -4317,13 +4287,13 @@ texture_t fxt_bloom2(texture_t color, int desired_mips_count, float radius, floa
     while ((color.w >> mips_count) > 1 && (color.h >> mips_count) > 1) {
         ++mips_count;
     }
-    mips_count = clampi(mips_count, 1, desired_mips_count);
+    mips_count = clampi(mips_count, 1, params.mips_count);
 
     do_once {
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
         postfx_create(&bloom, 0);
-        postfx_load(&bloom, "fxt/bloom2/fxBloom*.fs");
-        postfx_load(&bloom, "fx/fxGamma.fs");
+        postfx_load(&bloom, "fxt/bloom/fxBloom*.fs");
+        postfx_load(&bloom, "engine/art/fx/fxGamma.fs");
         fx_bloom_up = postfx_find(&bloom, "fxBloomUp.fs");
         fx_bloom_down = postfx_find(&bloom, "fxBloomDown.fs");
         fx_bloom_mix = postfx_find(&bloom, "fxBloomMix.fs");
@@ -4372,6 +4342,9 @@ texture_t fxt_bloom2(texture_t color, int desired_mips_count, float radius, floa
         viewport_clear(true, true);
         glViewport(0, 0, mips[i].texture_color.w, mips[i].texture_color.h);
         postfx_setparami(&bloom, fx_bloom_down, "miplevel", i);
+        postfx_setparam(&bloom, fx_bloom_down, "threshold", params.threshold);
+        postfx_setparam(&bloom, fx_bloom_down, "soft_threshold", params.soft_threshold);
+        postfx_setparami(&bloom, fx_bloom_down, "karis_disabled", !params.suppress_fireflies);
         postfx_drawpass(&bloom, fx_bloom_down, *current_mip, dummy);
         fbo_unbind();
         current_mip = &mips[i].texture_color;
@@ -4383,7 +4356,7 @@ texture_t fxt_bloom2(texture_t color, int desired_mips_count, float radius, floa
 
         fbo_bind(dst->id);
         glViewport(0, 0, dst->texture_color.w, dst->texture_color.h);
-        postfx_setparam(&bloom, fx_bloom_up, "filterRadius", radius);
+        postfx_setparam(&bloom, fx_bloom_up, "filterRadius", params.filter_radius);
         postfx_drawpass_rs(&bloom, fx_bloom_up, src->texture_color, dummy, &bloom_rs);
         fbo_unbind();
     }
@@ -4391,7 +4364,7 @@ texture_t fxt_bloom2(texture_t color, int desired_mips_count, float radius, floa
     fbo_bind(result_fbo.id);
     viewport_clear(true, true);
     glViewport(0, 0, color.w, color.h);
-    postfx_setparam(&bloom, fx_bloom_mix, "strength", strength);
+    postfx_setparam(&bloom, fx_bloom_mix, "strength", params.strength);
     postfx_drawpass(&bloom, fx_bloom_mix, mips[0].texture_color, dummy);
     fbo_unbind();
 
