@@ -4365,6 +4365,7 @@ texture_t fxt_bloom2(texture_t color, int mips_count, float radius, float streng
         fbo_bind(mips[i].id);
         viewport_clear(true, true);
         glViewport(0, 0, mips[i].texture_color.w, mips[i].texture_color.h);
+        postfx_setparami(&bloom, fx_bloom_down, "miplevel", i);
         postfx_drawpass(&bloom, fx_bloom_down, *current_mip, dummy);
         fbo_unbind();
         current_mip = &mips[i].texture_color;

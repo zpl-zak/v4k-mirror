@@ -140,7 +140,7 @@ int main() {
         fbo_unbind();
 
         // texture_t bloom_fb = fxt_bloom(main_fb.texture_color, threshold, intensity, blur, tint);
-        texture_t bloom_fb = fxt_bloom2(main_fb.texture_color, 4, filter_radius, strength);
+        texture_t bloom_fb = fxt_bloom2(main_fb.texture_color, 8, filter_radius, strength);
 
         // fullscreen_quad_rgb_flipped(bloom_fb);
         fbo_blit(main_fb.id, bloom_fb, FBO_BLIT_ADDITIVE);
