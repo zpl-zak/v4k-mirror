@@ -4390,15 +4390,25 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
 texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, texture_t matprops, mat44 proj, mat44 view, reflect_params_t params) {
     static postfx reflect = {0};
     static fbo_t result_fbo = {0};
+    static fbo_t downsample_fbo = {0};
     static int fx_reflect = -1;
 
+    int saved_vp[4];
+    glGetIntegerv(GL_VIEWPORT, saved_vp);
+
+    unsigned w = color.w >> params.downsample;
+    unsigned h = color.h >> params.downsample;
+
     do_once {
+        result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
+        downsample_fbo = fbo(w, h, FBO_NO_DEPTH, TEXTURE_FLOAT);
         postfx_create(&reflect, 0);
         postfx_load(&reflect, "fxt/reflect/fxReflect.fst");
         fx_reflect = postfx_find(&reflect, "fxReflect.fst");
     }
 
     fbo_resize(&result_fbo, color.w, color.h);
+    fbo_resize(&downsample_fbo, w, h);
 
     unsigned old_shader = last_shader;
     shader_bind(postfx_program(&reflect, fx_reflect));
@@ -4410,23 +4420,25 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     shader_mat44("u_view", view);
     shader_texture_unit("u_normal_texture", normal.id, 2);
     shader_texture_unit("u_matprops_texture", matprops.id, 3);
-    
-    shader_float("rayStep", params.ray_step);
-    shader_int("iterationCount", params.iteration_count);
-    shader_float("distanceBias", params.distance_bias);
-    shader_int("sampleCount", params.sample_count);
-    shader_bool("adaptiveStep", params.adaptive_step);
-    shader_bool("binarySearch", params.binary_search);
-    shader_float("samplingCoefficient", params.sampling_coefficient);
-    shader_float("metallicThreshold", params.metallic_threshold);
-    shader_bool("debug", params.debug);
-
-    fbo_bind(result_fbo.id);
+    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, shader_uniform("u_cubemap_texture"), params.cubemap ? params.cubemap->id : NULL, 4);
+    shader_float("u_metallic_threshold", params.metallic_threshold);
+    shader_float("u_max_distance", params.max_distance);
+    shader_float("u_reflection_strength", params.reflection_strength);
+    shader_int("u_sample_skybox", params.cubemap ? 1 : 0);
+    fbo_bind(downsample_fbo.id);
     viewport_clear(true, true);
+    viewport_area(vec2(0,0), vec2(w, h));
     postfx_drawpass(&reflect, fx_reflect, color, depth);
     fbo_unbind();
 
     shader_bind(old_shader);
+
+    fbo_bind(result_fbo.id);
+    viewport_clear(true, true);
+    viewport_area(vec2(0,0), vec2(color.w, color.h));
+    fbo_unbind();
+
+    fbo_blit(result_fbo.id, downsample_fbo.texture_color, 1);
 
     return result_fbo.texture_color;
 }
@@ -5605,7 +5617,7 @@ drawmat_t drawmat() {
     glGetIntegerv(GL_VIEWPORT, saved_vp);
 
     drawmat_t lookup = {0};
-    lookup.matprops = texture_create(saved_vp[2], saved_vp[3], 3, NULL, TEXTURE_RGB);
+    lookup.matprops = texture_create(saved_vp[2], saved_vp[3], 3, NULL, TEXTURE_RGB|TEXTURE_FLOAT);
     lookup.normals = texture_create(saved_vp[2], saved_vp[3], 3, NULL, TEXTURE_RGB);
     lookup.albedo = texture_create(saved_vp[2], saved_vp[3], 4, NULL, TEXTURE_RGBA);
     lookup.depth = texture_create(saved_vp[2], saved_vp[3], 1, NULL, TEXTURE_DEPTH);

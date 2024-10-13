@@ -44,29 +44,27 @@ int main() {
 
     scene_skybox(sky);
 
-    int mips_count = 6;
-    float filter_radius = 0.005f;
-    float strength = 0.40f;
-    float threshold = 0.10f;
-    float soft_threshold = 0.50f;
-    bool suppress_fireflies = true;
-
+    
     fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
 
     scene_t *scene = scene_get_active();
 
-    
-        reflect_params_t reflect_params = {
-            .ray_step = 0.1f,
-            .iteration_count = 100,
-            .distance_bias = 0.05f,
-            .sample_count = 0,
-            .adaptive_step = true,
-            .binary_search = true,
-            .sampling_coefficient = 0.01f,
-            .metallic_threshold = 0.0f,
-            .debug = false
-        };
+    reflect_params_t reflect_params = {
+        .max_distance = 100.0f,
+        .reflection_strength = 0.8f,
+        .metallic_threshold = 0.001f,
+        .downsample = 0,
+        .cubemap = &sky.cubemap,
+    };
+
+    bloom_params_t bloom_params = {
+        .mips_count = 6,
+        .filter_radius = 0.005f,
+        .strength = 0.40f,
+        .threshold = 0.10f,
+        .soft_threshold = 0.50f,
+        .suppress_fireflies = true
+    };
 
     // demo loop
     while (window_swap())
@@ -87,23 +85,17 @@ int main() {
             scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_DRAWMAT);
         fbo_unbind();
 
-        bloom_params_t bloom_params = {
-            .mips_count = mips_count,
-            .filter_radius = filter_radius,
-            .strength = strength,
-            .threshold = threshold,
-            .soft_threshold = soft_threshold,
-            .suppress_fireflies = suppress_fireflies,
-        };
+        reflect_params.cubemap = &sky.cubemap;
+
+        texture_t reflect_fb = fxt_reflect(main_fb.texture_color, main_fb.texture_depth, scene->drawmat.normals, scene->drawmat.matprops, cam.proj, cam.view, reflect_params);
+        fbo_blit(main_fb.id, reflect_fb, 1);
 
         texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
-        texture_t reflect_fb = fxt_reflect(main_fb.texture_color, main_fb.texture_depth, scene->drawmat.normals, scene->drawmat.matprops, cam.proj, cam.view, reflect_params);
-
+        
         // fx_apply(main_fb.texture_depth, main_fb.texture_depth);
-        fullscreen_quad_rgb_flipped(reflect_fb);
-        // fbo_blit(main_fb.id, bloom_fb, 1);
-        // fbo_blit(main_fb.id, reflect_fb, 0);
-        // fx_apply(main_fb.texture_color, main_fb.texture_depth);
+        // fullscreen_quad_rgb_flipped(reflect_fb);
+        fbo_blit(main_fb.id, bloom_fb, 1);
+        fx_apply(main_fb.texture_color, main_fb.texture_depth);
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {
@@ -115,13 +107,17 @@ int main() {
             }
             ui_float("Blend Region", &scene_get_active()->shadowmap.blend_region);
             ui_section("reflect");
-            ui_float("Ray Step", &reflect_params.ray_step);
-            ui_int("Iteration Count", &reflect_params.iteration_count);
-            ui_float("Distance Bias", &reflect_params.distance_bias);
-            ui_int("Sample Count", &reflect_params.sample_count);
-            ui_bool("Adaptive Step", &reflect_params.adaptive_step);
-            ui_bool("Binary Search", &reflect_params.binary_search);
-            ui_float("Sampling Coefficient", &reflect_params.sampling_coefficient);
+            ui_float("Max Distance", &reflect_params.max_distance);
+            ui_float("Reflection Strength", &reflect_params.reflection_strength);
+            ui_float("Metallic Threshold", &reflect_params.metallic_threshold);
+            ui_int("Downsample", &reflect_params.downsample);
+            ui_section("bloom");
+            ui_int("Mips Count", &bloom_params.mips_count);
+            ui_float("Filter Radius", &bloom_params.filter_radius);
+            ui_float("Strength", &bloom_params.strength);
+            ui_float("Threshold", &bloom_params.threshold);
+            ui_float("Soft Threshold", &bloom_params.soft_threshold);
+            ui_bool("Suppress Fireflies", &bloom_params.suppress_fireflies);
             ui_section("sunlight");
             ui_light(sun);
             ui_panel_end();

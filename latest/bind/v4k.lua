@@ -1783,15 +1783,11 @@ typedef struct bloom_params_t {
 } bloom_params_t;
  texture_t fxt_bloom(texture_t color, bloom_params_t params);
 typedef struct reflect_params_t {
-    float ray_step;
-    int iteration_count;
-    float distance_bias;
-    int sample_count;
-    bool adaptive_step;
-    bool binary_search;
-    float sampling_coefficient;
+    float max_distance;
+    float reflection_strength;
     float metallic_threshold;
-    bool debug;
+    int downsample;
+    cubemap_t *cubemap;
 } reflect_params_t;
  texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, texture_t matprops, mat44 proj, mat44 view, reflect_params_t params);
  void* screenshot(int components);

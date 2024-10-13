@@ -1170,15 +1170,11 @@ typedef struct bloom_params_t {
 API texture_t fxt_bloom(texture_t color, bloom_params_t params);
 
 typedef struct reflect_params_t {
-    float ray_step; // defaults: 0.1
-    int iteration_count; // defaults: 100
-    float distance_bias; // defaults: 0.05
-    int sample_count; // defaults: 0
-    bool adaptive_step; // defaults: true
-    bool binary_search; // defaults: true
-    float sampling_coefficient; // defaults: 0.01
-    float metallic_threshold; // defaults: 0.1
-    bool debug; // defaults: false
+    float max_distance; // defaults: 100.0
+    float reflection_strength; // defaults: 0.5
+    float metallic_threshold; // defaults: 0.001
+    int downsample; // defaults: 0
+    cubemap_t *cubemap; // defaults: NULL
 } reflect_params_t;
 
 API texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, texture_t matprops, mat44 proj, mat44 view, reflect_params_t params);
