@@ -310,6 +310,8 @@ typedef struct fbo_t {
 API fbo_t fbo(unsigned width, unsigned height, int flags, int texture_flags);
 API unsigned fbo_id(unsigned texture_color, unsigned texture_depth, int flags);
 API void     fbo_resize(fbo_t *f, unsigned width, unsigned height);
+API void     fbo_attach(unsigned id, int slot, texture_t texture);
+API void     fbo_attach_depth(unsigned id, texture_t texture);
 API void     fbo_bind(unsigned id);
 API void     fbo_unbind();
 API void     fbo_destroy(fbo_t f);

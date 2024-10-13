@@ -3593,6 +3593,7 @@ unsigned fbo_id(unsigned color_texture_id, unsigned depth_texture_id, int flags)
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     if( color_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture_id, 0);
+    else glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
     if( depth_texture_id ) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture_id, 0);
 #if 0 // this is working; it's just not enabled for now
     else {
@@ -3621,9 +3622,11 @@ unsigned fbo_id(unsigned color_texture_id, unsigned depth_texture_id, int flags)
 #endif
 
 #if 1
-    GLenum result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if( GL_FRAMEBUFFER_COMPLETE != result ) {
-        PANIC("ERROR: Framebuffer not complete.");
+    if (color_texture_id) {
+        GLenum result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if( GL_FRAMEBUFFER_COMPLETE != result ) {
+            PANIC("ERROR: Framebuffer not complete.");
+        }
     }
 #else
     switch (glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
@@ -3641,7 +3644,6 @@ unsigned fbo_id(unsigned color_texture_id, unsigned depth_texture_id, int flags)
         default: PANIC("ERROR: Framebuffer not complete. glCheckFramebufferStatus returned %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
     }
 #endif
-
     glBindFramebuffer (GL_FRAMEBUFFER, last_fb);
     return fbo;
 }
@@ -3654,6 +3656,21 @@ void fbo_resize(fbo_t *f, unsigned width, unsigned height) {
 
     fbo_destroy(*f);
     *f = fbo(width, height, f->flags, f->texture_flags);
+}
+
+API void fbo_attach(unsigned id, int slot, texture_t texture) {
+    int last_fb;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+slot, GL_TEXTURE_2D, texture.id, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
+}
+void fbo_attach_depth(unsigned id, texture_t texture) {
+    int last_fb;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture.id, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
 }
 
 static __thread array(handle) fbos;
@@ -4310,9 +4327,10 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
     static postfx bloom = {0};
     static texture_t dummy = {0};
     static fbo_t result_fbo = {0};
+    static int fbo_bloom = -1;
     static int fx_bloom_up = -1, fx_bloom_down = -1, fx_bloom_mix = -1, fx_gamma = -1;
     static int w = -1, h = -1;
-    static array(fbo_t) mips = 0;
+    static array(texture_t) mips = 0;
     static renderstate_t bloom_rs = {0};
 
     int mips_count = 1;
@@ -4323,6 +4341,7 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
 
     do_once {
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
+        fbo_bloom = fbo_id(0,0,0);
         postfx_create(&bloom, 0);
         postfx_load(&bloom, "fxt/bloom/fxBloom*.fst");
         postfx_load(&bloom, "engine/art/fx/fxGamma.fs");
@@ -4345,13 +4364,13 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
         h = color.h;
 
         for (int i = 0; i < array_count(mips); ++i) {
-            fbo_destroy(mips[i]);
+            texture_destroy(&mips[i]);
         }
         array_free(mips);
         array_resize(mips, mips_count);
 
         for (int i = 0; i < mips_count; ++i) {
-            mips[i] = fbo(w >> (i+1), h >> (i+1), FBO_NO_DEPTH, TEXTURE_FLOAT|TEXTURE_CLAMP|TEXTURE_LINEAR);
+            mips[i] = texture_create(w >> (i+1), h >> (i+1), 4, NULL, TEXTURE_FLOAT|TEXTURE_CLAMP|TEXTURE_LINEAR);
         }
     }
 
@@ -4370,34 +4389,37 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
     texture_t *current_mip = &result_fbo.texture_color;
 
     for (int i = 0; i < mips_count; ++i) {
-        fbo_bind(mips[i].id);
+        fbo_bind(fbo_bloom);
+        fbo_attach(fbo_bloom, 0, mips[i]);
         viewport_clear(true, true);
-        glViewport(0, 0, mips[i].texture_color.w, mips[i].texture_color.h);
+        glViewport(0, 0, mips[i].w, mips[i].h);
         postfx_setparami(&bloom, fx_bloom_down, "miplevel", i);
         postfx_setparam(&bloom, fx_bloom_down, "threshold", params.threshold);
         postfx_setparam(&bloom, fx_bloom_down, "soft_threshold", params.soft_threshold);
         postfx_setparami(&bloom, fx_bloom_down, "karis_disabled", !params.suppress_fireflies);
         postfx_drawpass(&bloom, fx_bloom_down, *current_mip, dummy);
         fbo_unbind();
-        current_mip = &mips[i].texture_color;
+        current_mip = &mips[i];
     }
 
     for (int i = mips_count-1; i > 0; --i) {
-        fbo_t *src = &mips[i];
-        fbo_t *dst = &mips[i-1];
+        texture_t src = mips[i];
+        texture_t dst = mips[i-1];
 
-        fbo_bind(dst->id);
-        glViewport(0, 0, dst->texture_color.w, dst->texture_color.h);
+        fbo_bind(fbo_bloom);
+        fbo_attach(fbo_bloom, 0, dst);
+        glViewport(0, 0, dst.w, dst.h);
         postfx_setparam(&bloom, fx_bloom_up, "filterRadius", params.filter_radius);
-        postfx_drawpass_rs(&bloom, fx_bloom_up, src->texture_color, dummy, &bloom_rs);
+        postfx_drawpass_rs(&bloom, fx_bloom_up, src, dummy, &bloom_rs);
         fbo_unbind();
     }
 
     fbo_bind(result_fbo.id);
     viewport_clear(true, true);
     glViewport(0, 0, color.w, color.h);
+    postfx_setparam(&bloom, fx_bloom_mix, "filterRadius", params.filter_radius);
     postfx_setparam(&bloom, fx_bloom_mix, "strength", params.strength);
-    postfx_drawpass(&bloom, fx_bloom_mix, mips[0].texture_color, dummy);
+    postfx_drawpass(&bloom, fx_bloom_mix, mips[0], dummy);
     fbo_unbind();
 
     glViewport(saved_vp[0], saved_vp[1], saved_vp[2], saved_vp[3]);

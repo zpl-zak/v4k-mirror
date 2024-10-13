@@ -1173,6 +1173,8 @@ typedef struct fbo_t {
  fbo_t fbo(unsigned width, unsigned height, int flags, int texture_flags);
  unsigned fbo_id(unsigned texture_color, unsigned texture_depth, int flags);
  void fbo_resize(fbo_t *f, unsigned width, unsigned height);
+ void fbo_attach(unsigned id, int slot, texture_t texture);
+ void fbo_attach_depth(unsigned id, texture_t texture);
  void fbo_bind(unsigned id);
  void fbo_unbind();
  void fbo_destroy(fbo_t f);
