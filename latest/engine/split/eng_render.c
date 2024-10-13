@@ -4239,7 +4239,9 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
 }
 
 bool postfx_apply(postfx *fx, texture_t color_texture, texture_t depth_texture) {
-    if (!postfx_begin(fx, color_texture.w, color_texture.h)) {
+    int saved_vp[4];
+    glGetIntegerv(GL_VIEWPORT, saved_vp);
+    if (!postfx_begin(fx, saved_vp[2], saved_vp[3])) {
         fullscreen_quad_rgb_flipped(color_texture);
         return false;
     }
