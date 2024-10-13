@@ -1176,6 +1176,7 @@ typedef struct bloom_params_t {
 API texture_t fxt_bloom(texture_t color, bloom_params_t params);
 
 typedef struct reflect_params_t {
+    bool disabled; // defaults: false
     float max_distance; // defaults: 100.0
     float reflection_strength; // defaults: 0.5
     float metallic_threshold; // defaults: 0.001

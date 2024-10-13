@@ -4433,6 +4433,7 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     shader_float("u_max_distance", params.max_distance);
     shader_float("u_reflection_strength", params.reflection_strength);
     shader_int("u_sample_skybox", params.cubemap ? 1 : 0);
+    shader_bool("u_disabled", params.disabled);
     fbo_bind(downsample_fbo.id);
     viewport_clear(true, true);
     viewport_area(vec2(0,0), vec2(w, h));

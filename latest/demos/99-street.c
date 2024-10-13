@@ -109,6 +109,7 @@ int main() {
             }
             ui_float("Blend Region", &scene_get_active()->shadowmap.blend_region);
             ui_section("reflect");
+            ui_bool("Disabled", &reflect_params.disabled);
             ui_float("Max Distance", &reflect_params.max_distance);
             ui_float("Reflection Strength", &reflect_params.reflection_strength);
             ui_float("Metallic Threshold", &reflect_params.metallic_threshold);

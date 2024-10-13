@@ -4,6 +4,7 @@ uniform samplerCube u_cubemap_texture;
 uniform mat4 u_projection;
 uniform mat4 u_view;
 uniform mat4 u_inv_projection;
+uniform bool u_disabled; /// set:0
 
 uniform float u_max_distance; /// set:100.0
 uniform float u_reflection_strength; /// set:0.5
@@ -32,6 +33,10 @@ vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, out vec3 last_pos, float m
         edge_fade = min(edge_fade, min(edge_dist.x, edge_dist.y) * 10.0);
 
         if (ray_out_of_bounds(ray_pos)) {
+            break;
+        }
+
+        if (u_disabled) {
             break;
         }
 
