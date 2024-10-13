@@ -280,7 +280,7 @@ API void       cubemap_sh_reset(cubemap_t *c);
 API void       cubemap_sh_addlight(cubemap_t *c, vec3 light, vec3 dir, float strength);
 
 // lighting probe blending
-API void       cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 *out_sh /* expects 9 vec3 coefficients */);
+API void       cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 out_sh[9]);
 
 // -----------------------------------------------------------------------------
 // fbos
@@ -293,6 +293,7 @@ enum FBO_FLAGS {
 enum FBO_BLIT_FLAGS {
     FBO_BLIT_NONE = 0,
     FBO_BLIT_ADDITIVE = 1,
+    FBO_BLIT_COPY = 2,
 };
 
 typedef struct fbo_t {
@@ -1011,6 +1012,7 @@ enum BILLBOARD_MODE {
     BILLBOARD_SPHERICAL = BILLBOARD_X|BILLBOARD_Y|BILLBOARD_Z
 };
 
+
 API model_t  model(const char *filename, int flags); //< filename == 0 for procedural models
 API model_t  model_from_mem(const void *mem, int sz, int flags); //< mem == 0 for procedural models
 API void     model_sync(model_t m, int num_vertices, model_vertex_t *vertices, int num_indices, uint32_t *indices); //< MODEL_PROCEDURAL models only
@@ -1103,6 +1105,10 @@ API unsigned fx_program(int pass);
 
 API int      ui_fx(int pass);
 API int      ui_fxs();
+
+// single-pass draw
+API void fx_drawpass_rs(int pass, texture_t color, texture_t depth, renderstate_t *rs);
+API void fx_drawpass(int pass, texture_t color, texture_t depth);
 
 // low-level API
 

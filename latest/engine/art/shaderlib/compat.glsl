@@ -113,8 +113,8 @@
 #else
     #define layoutEx(x)
 #endif
-#if !defined(GL_ARB_texture_query_lod)
-    #define textureQueryLod(t,p) (vec2(0.0))
+#if defined(GL_ARB_texture_query_lod)
+    #define textureQueryLod textureQueryLOD
 #endif
 // compatibility adjustments
 #if defined(GL_ES) && (CORE_GL_ES_VERSION < 300)

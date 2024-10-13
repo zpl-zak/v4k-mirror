@@ -21,7 +21,6 @@ int main() {
 
     // load all fx files
     fx_load("fx**.fs");
-    fx_enable_ordered(fx_find("fx/fxSSAO.fs"));
     fx_enable_ordered(fx_find("fx/fxTonemapACES.fs"));
     fx_enable_ordered(fx_find("fx/fxFXAA3.fs"));
 
@@ -58,9 +57,9 @@ int main() {
     };
 
     bloom_params_t bloom_params = {
-        .mips_count = 6,
+        .mips_count = 4,
         .filter_radius = 0.005f,
-        .strength = 0.40f,
+        .strength = 0.80f,
         .threshold = 0.10f,
         .soft_threshold = 0.50f,
         .suppress_fireflies = true
@@ -79,22 +78,25 @@ int main() {
         // fps camera
         camera_freefly(&cam);
         
+        fbo_resize(&main_fb, window_width(), window_height());
         fbo_bind(main_fb.id);
-            viewport_clear(true, true);
+            viewport_clear(false, true);
             viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
             scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_DRAWMAT);
+            fx_drawpass(fx_find("fx/fxSSAO.fs"), main_fb.texture_color, main_fb.texture_depth);
         fbo_unbind();
 
         reflect_params.cubemap = &sky.cubemap;
 
-        texture_t reflect_fb = fxt_reflect(main_fb.texture_color, main_fb.texture_depth, scene->drawmat.normals, scene->drawmat.matprops, cam.proj, cam.view, reflect_params);
-        fbo_blit(main_fb.id, reflect_fb, 1);
-
-        texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
+        {
+            texture_t reflect_fb = fxt_reflect(main_fb.texture_color, main_fb.texture_depth, scene->drawmat.normals, scene->drawmat.matprops, cam.proj, cam.view, reflect_params);
+            fbo_blit(main_fb.id, reflect_fb, 1);
         
-        // fx_apply(main_fb.texture_depth, main_fb.texture_depth);
-        // fullscreen_quad_rgb_flipped(reflect_fb);
-        fbo_blit(main_fb.id, bloom_fb, 1);
+            texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
+            fbo_blit(main_fb.id, bloom_fb, 1);
+            // fullscreen_quad_rgb_flipped(reflect_fb);
+        }
+
         fx_apply(main_fb.texture_color, main_fb.texture_depth);
 
         if( ui_panel( "Viewer", 0 ) ) {

@@ -3088,7 +3088,7 @@ void cubemap_sh_addlight(cubemap_t *c, vec3 light, vec3 dir, float strength) {
     c->sh[3] = add3(c->sh[3], scale3(scaled_light, -0.488603f * norm_dir.x));
 }
 
-void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 *out_sh) {
+void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 out_sh[9]) {
     if (count == 0) {
         memset(out_sh, 0, 9 * sizeof(vec3));
         return;
@@ -3685,7 +3685,7 @@ void fbo_blit(unsigned id, texture_t texture, int flags) {
     do_once {
         fbo_blit_state = renderstate();
         fbo_blit_state.depth_test_enabled = false;
-        fbo_blit_state.blend_enabled = true;
+        fbo_blit_state.blend_enabled = (flags&FBO_BLIT_COPY) ? false : true;
         fbo_blit_state.front_face = GL_CW;
         fbo_blit_state.blend_src = (flags&FBO_BLIT_ADDITIVE) ? GL_ONE : GL_SRC_ALPHA;
         fbo_blit_state.blend_dst = (flags&FBO_BLIT_ADDITIVE) ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA;
@@ -4286,6 +4286,14 @@ int ui_fx(int pass) {
 int ui_fxs() {
     return ui_postfxs(&fx);
 }
+
+void fx_drawpass_rs(int pass, texture_t color, texture_t depth, renderstate_t *rs) {
+    postfx_drawpass_rs(&fx, pass, color, depth, rs);
+}
+void fx_drawpass(int pass, texture_t color, texture_t depth) {
+    postfx_drawpass(&fx, pass, color, depth);
+}
+
 
 // multi-pass fx techniques
 

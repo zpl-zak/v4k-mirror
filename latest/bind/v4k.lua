@@ -1152,7 +1152,7 @@ typedef struct cubemap_t {
  void cubemap_endbake(cubemap_t *c, int step , float sky_intensity );
  void cubemap_sh_reset(cubemap_t *c);
  void cubemap_sh_addlight(cubemap_t *c, vec3 light, vec3 dir, float strength);
- void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 *out_sh );
+ void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probes, vec3 out_sh[9]);
 enum FBO_FLAGS {
     FBO_NO_DEPTH = 1,
     FBO_NO_COLOR = 2,
@@ -1160,6 +1160,7 @@ enum FBO_FLAGS {
 enum FBO_BLIT_FLAGS {
     FBO_BLIT_NONE = 0,
     FBO_BLIT_ADDITIVE = 1,
+    FBO_BLIT_COPY = 2,
 };
 typedef struct fbo_t {
     unsigned id;
@@ -1733,6 +1734,8 @@ typedef struct drawmat_t {
  unsigned fx_program(int pass);
  int ui_fx(int pass);
  int ui_fxs();
+ void fx_drawpass_rs(int pass, texture_t color, texture_t depth, renderstate_t *rs);
+ void fx_drawpass(int pass, texture_t color, texture_t depth);
 typedef struct passfx {
     char *name;
     unsigned program;

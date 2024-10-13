@@ -15,13 +15,22 @@ bool ray_out_of_bounds(vec3 screen_pos) {
     return screen_pos.x < 0.0 || screen_pos.x > 1.0 || screen_pos.y < 0.0 || screen_pos.y > 1.0;
 }
 
-vec3 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, out vec3 last_pos) {
+vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, out vec3 last_pos, float metallic, vec3 refl_view) {
     float sample_depth;
     vec3 hit_color = vec3(0.0);
+    float edge_fade = 1.0;
+
+    vec3 start_pos = ray_pos;
+    // vec3 prev_color = texture(iChannel0, start_pos.xy).rgb;
 
     for (int i = 0; i < steps; ++i) {
         last_pos = ray_pos;
         ray_pos += ray_dir;
+
+        // Calculate edge fade factor
+        vec2 edge_dist = min(ray_pos.xy, 1.0 - ray_pos.xy);
+        edge_fade = min(edge_fade, min(edge_dist.x, edge_dist.y) * 10.0);
+
         if (ray_out_of_bounds(ray_pos)) {
             break;
         }
@@ -33,7 +42,31 @@ vec3 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, out vec3 last_pos) {
             break;
         }
     }
-    return hit_color;
+
+    if (hit_color == vec3(0)) {
+        if (u_sample_skybox) {
+            vec3 world_refl = (inverse(u_view) * vec4(refl_view, 0.0)).xyz;
+            world_refl.x = -world_refl.x;
+            vec3 cubemap_color = texture(u_cubemap_texture, world_refl).rgb;
+            hit_color = mix(vec3(0), cubemap_color, u_reflection_strength*metallic);
+            edge_fade = 1.0;
+        } else {
+            edge_fade = 0.0;
+            hit_color = vec3(0);
+        }
+    } else {
+        hit_color *= u_reflection_strength*metallic;
+        if (u_sample_skybox) {
+            vec3 world_refl = (inverse(u_view) * vec4(refl_view, 0.0)).xyz;
+            world_refl.x = -world_refl.x;
+            vec3 cubemap_color = texture(u_cubemap_texture, world_refl).rgb;
+            cubemap_color = mix(vec3(0), cubemap_color, u_reflection_strength*metallic);
+            hit_color = mix(cubemap_color, hit_color, clamp(edge_fade, 0.0, 1.0));
+            edge_fade = 1.0;
+        }
+    }
+
+    return vec4(hit_color, clamp(edge_fade, 0.0, 1.0));
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
@@ -63,6 +96,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     if (refl_view.z > 0.0) {
         if (u_sample_skybox) {
             vec3 world_refl = (inverse(u_view) * vec4(refl_view, 0.0)).xyz;
+            world_refl.x = -world_refl.x;
             vec3 refl_color = texture(u_cubemap_texture, world_refl).rgb;
             vec3 result = mix(vec3(0.0), refl_color, u_reflection_strength*matprops.r);
             bool is_black = max(result.r, max(result.g, result.b)) < 0.01;
@@ -85,22 +119,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     ray_dir /= max(ss_max_distance, 0.001);
 
     vec3 last_pos;
-    vec3 refl_color = trace_ray(pos, ray_dir, ss_max_distance, last_pos);
+    fragColor = trace_ray(pos, ray_dir, ss_max_distance, last_pos, matprops.r, refl_view);
 
-    if (refl_color == vec3(0.0)) {
-        if (u_sample_skybox) {
-            vec3 world_refl = (inverse(u_view) * vec4(refl_view, 0.0)).xyz;
-            refl_color = texture(u_cubemap_texture, world_refl).rgb;
-            vec3 result = mix(vec3(0.0), refl_color, u_reflection_strength*matprops.r);
-            bool is_black = max(result.r, max(result.g, result.b)) < 0.01;
-            fragColor = vec4(result, is_black ? 0.0 : 1.0);
-        } else {
-            fragColor = vec4(0);
-        }
-        return;
-    }
-
-    vec3 result = mix(vec3(0.0), refl_color, u_reflection_strength*matprops.r);
-    bool is_black = max(result.r, max(result.g, result.b)) < 0.1;
-    fragColor = vec4(result, is_black ? 0.0 : 1.0);
+    // vec3 result = mix(vec3(0.0), refl_color, u_reflection_strength*matprops.r);
+    // bool is_black = max(result.r, max(result.g, result.b)) < 0.1;
+    // fragColor = vec4(result, is_black ? 0.0 : 1.0);
 }
