@@ -1087,9 +1087,9 @@ API void     viewport_area(vec2 from, vec2 to);
 
 API int      fx_load(const char *file);
 API int      fx_load_from_mem(const char *nameid, const char *content);
-API void     fx_begin();
-API void     fx_begin_res(int w, int h);
-API void     fx_end(unsigned texture_id, unsigned depth_id);
+API bool     fx_begin();
+API bool     fx_begin_res(int w, int h);
+API bool     fx_end(unsigned texture_id, unsigned depth_id);
 API void     fx_apply(texture_t color_texture, texture_t depth_texture);
 API void     fx_enable(int pass, int enabled);
 API int      fx_enable_ordered(int pass);

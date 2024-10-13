@@ -106,8 +106,10 @@ int main() {
         }
 
         viewport_area(vec2(0,0), vec2(window_width()>>res_shift, window_height()>>res_shift));
-        fx_begin();
-        fx_end(main_fb.texture_color.id, main_fb.texture_depth.id);
+        if (!fx_begin()) {
+            fullscreen_quad_rgb_flipped(main_fb.texture_color);
+        }
+        else fx_end(main_fb.texture_color.id, main_fb.texture_depth.id);
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {

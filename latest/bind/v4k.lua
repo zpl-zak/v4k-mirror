@@ -1717,9 +1717,9 @@ typedef struct drawmat_t {
  void viewport_area(vec2 from, vec2 to);
  int fx_load(const char *file);
  int fx_load_from_mem(const char *nameid, const char *content);
- void fx_begin();
- void fx_begin_res(int w, int h);
- void fx_end(unsigned texture_id, unsigned depth_id);
+ bool fx_begin();
+ bool fx_begin_res(int w, int h);
+ bool fx_end(unsigned texture_id, unsigned depth_id);
  void fx_apply(texture_t color_texture, texture_t depth_texture);
  void fx_enable(int pass, int enabled);
  int fx_enable_ordered(int pass);

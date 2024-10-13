@@ -4255,14 +4255,14 @@ int fx_load(const char *filemask) {
     do_once if (!fx.vao) postfx_create(&fx, 0);
     return postfx_load(&fx, filemask);
 }
-void fx_begin() {
-    postfx_begin(&fx, window_width(), window_height());
+bool fx_begin() {
+    return postfx_begin(&fx, window_width(), window_height());
 }
-void fx_begin_res(int w, int h) {
-    postfx_begin(&fx, w, h);
+bool fx_begin_res(int w, int h) {
+    return postfx_begin(&fx, w, h);
 }
-void fx_end(unsigned texture_id, unsigned depth_id) {
-    postfx_end(&fx, texture_id, depth_id);
+bool fx_end(unsigned texture_id, unsigned depth_id) {
+    return postfx_end(&fx, texture_id, depth_id);
 }
 void fx_apply(texture_t color_texture, texture_t depth_texture) {
     postfx_apply(&fx, color_texture, depth_texture);
