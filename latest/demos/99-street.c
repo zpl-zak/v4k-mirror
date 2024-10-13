@@ -105,8 +105,8 @@ int main() {
             // fullscreen_quad_rgb_flipped(reflect_fb);
         }
 
-        viewport_area(vec2(0,0), vec2(window_width()>>res_shift, window_height()>>res_shift));
         if (!fx_begin()) {
+            viewport_area(vec2(0,0), vec2(window_width(), window_height()));
             fullscreen_quad_rgb_flipped(main_fb.texture_color);
         }
         else fx_end(main_fb.texture_color.id, main_fb.texture_depth.id);
