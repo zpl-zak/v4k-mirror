@@ -4421,11 +4421,14 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     unsigned old_shader = last_shader;
     shader_bind(postfx_program(&reflect, fx_reflect));
 
-    mat44 inv_proj; invert44(inv_proj, proj);
+    mat44 inv_proj, inv_view;
+    invert44(inv_proj, proj);
+    invert44(inv_view, view);
 
     shader_mat44("u_projection", proj);
     shader_mat44("u_inv_projection", inv_proj);
     shader_mat44("u_view", view);
+    shader_mat44("u_inv_view", inv_view);
     shader_texture_unit("u_normal_texture", normal.id, 2);
     shader_texture_unit("u_matprops_texture", matprops.id, 3);
     shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, shader_uniform("u_cubemap_texture"), params.cubemap ? params.cubemap->id : NULL, 4);

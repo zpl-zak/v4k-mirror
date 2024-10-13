@@ -3,6 +3,7 @@ uniform sampler2D u_matprops_texture;
 uniform samplerCube u_cubemap_texture;
 uniform mat4 u_projection;
 uniform mat4 u_view;
+uniform mat4 u_inv_view;
 uniform mat4 u_inv_projection;
 uniform bool u_disabled; /// set:0
 
@@ -50,7 +51,7 @@ vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, out vec3 last_pos, float m
 
     if (hit_color == vec3(0)) {
         if (u_sample_skybox) {
-            vec3 world_refl = (inverse(u_view) * vec4(refl_view, 0.0)).xyz;
+            vec3 world_refl = (u_inv_view * vec4(refl_view, 0.0)).xyz;
             world_refl.x = -world_refl.x;
             vec3 cubemap_color = texture(u_cubemap_texture, world_refl).rgb;
             hit_color = mix(vec3(0), cubemap_color, u_reflection_strength*metallic);
@@ -62,7 +63,7 @@ vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, out vec3 last_pos, float m
     } else {
         hit_color *= u_reflection_strength*metallic;
         if (u_sample_skybox) {
-            vec3 world_refl = (inverse(u_view) * vec4(refl_view, 0.0)).xyz;
+            vec3 world_refl = (u_inv_view * vec4(refl_view, 0.0)).xyz;
             world_refl.x = -world_refl.x;
             vec3 cubemap_color = texture(u_cubemap_texture, world_refl).rgb;
             cubemap_color = mix(vec3(0), cubemap_color, u_reflection_strength*metallic);
@@ -100,7 +101,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec3 refl_view = normalize(reflect(pos_view.xyz, normal_view));
     if (refl_view.z > 0.0) {
         if (u_sample_skybox) {
-            vec3 world_refl = (inverse(u_view) * vec4(refl_view, 0.0)).xyz;
+            vec3 world_refl = (u_inv_view * vec4(refl_view, 0.0)).xyz;
             world_refl.x = -world_refl.x;
             vec3 refl_color = texture(u_cubemap_texture, world_refl).rgb;
             vec3 result = mix(vec3(0.0), refl_color, u_reflection_strength*matprops.r);
