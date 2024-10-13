@@ -834,6 +834,7 @@ enum RENDER_PASS {
 
     RENDER_PASS_OVERRIDES_BEGIN,
     
+    RENDER_PASS_MATERIAL,
     RENDER_PASS_SHADOW_BEGIN,
     RENDER_PASS_SHADOW_CSM,
     RENDER_PASS_SHADOW_VSM,
@@ -1056,11 +1057,29 @@ API vec3     pose(bool forward, float curframe, int minframe, int maxframe, bool
 API void ui_materials(model_t *m);
 
 // -----------------------------------------------------------------------------
+// screen-space model material lookup
+
+typedef struct drawmat_t  {
+    handle fbo_id;
+    texture_t matprops; ///< R: metallic, G: roughness, B: ao
+    texture_t normals;
+    texture_t albedo;
+    texture_t depth;
+} drawmat_t;
+
+API drawmat_t drawmat();
+API void      drawmat_destroy(drawmat_t *lookup);
+API void      drawmat_clear(drawmat_t *lookup);
+API void      drawmat_render_instanced(drawmat_t *lookup, model_t m, mat44 proj, mat44 view, mat44 *models, unsigned count);
+API void      drawmat_render(drawmat_t *lookup, model_t m, mat44 proj, mat44 view, mat44 model);
+
+// -----------------------------------------------------------------------------
 // post-fxs
 
 API void     viewport_color(unsigned color);
 API void     viewport_clear(bool color, bool depth);
 API void     viewport_clip(vec2 from, vec2 to);
+API void     viewport_area(vec2 from, vec2 to);
 
 API int      fx_load(const char *file);
 API int      fx_load_from_mem(const char *nameid, const char *content);
@@ -1078,6 +1097,7 @@ API void     fx_setparam(int pass, const char *name, float value);
 API void     fx_setparami(int pass, const char *name, int value);
 API void     fx_setparam3(int pass, const char *name, vec3 value);
 API void     fx_setparam4(int pass, const char *name, vec4 value);
+API void     fx_setparamt(int pass, const char *name, texture_t value, int unit);
 API int      fx_order(int pass, unsigned priority);
 API unsigned fx_program(int pass);
 
@@ -1125,6 +1145,7 @@ API void postfx_setparam(postfx *fx, int pass, const char *name, float value);
 API void postfx_setparami(postfx *fx, int pass, const char *name, int value);
 API void postfx_setparam3(postfx *fx, int pass, const char *name, vec3 value);
 API void postfx_setparam4(postfx *fx, int pass, const char *name, vec4 value);
+API void postfx_setparamt(postfx *fx, int pass, const char *name, texture_t value, int unit);
 API char* postfx_name(postfx *fx, int slot);
 API passfx* postfx_pass(postfx *fx, int slot);
 
@@ -1147,6 +1168,20 @@ typedef struct bloom_params_t {
 } bloom_params_t;
 
 API texture_t fxt_bloom(texture_t color, bloom_params_t params);
+
+typedef struct reflect_params_t {
+    float ray_step; // defaults: 0.1
+    int iteration_count; // defaults: 100
+    float distance_bias; // defaults: 0.05
+    int sample_count; // defaults: 0
+    bool adaptive_step; // defaults: true
+    bool binary_search; // defaults: true
+    float sampling_coefficient; // defaults: 0.01
+    float metallic_threshold; // defaults: 0.1
+    bool debug; // defaults: false
+} reflect_params_t;
+
+API texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, texture_t matprops, mat44 proj, mat44 view, reflect_params_t params);
 
 // -----------------------------------------------------------------------------
 // utils

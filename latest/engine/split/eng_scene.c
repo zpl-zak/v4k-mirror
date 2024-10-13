@@ -632,6 +632,26 @@ void scene_render(int flags) {
             shadowmap_end(sm);
         }
 
+        if (flags & SCENE_DRAWMAT) {
+            drawmat_clear(&last_scene->drawmat);
+
+            // if(flags & SCENE_BACKGROUND) {
+            //     if(last_scene->skybox.program) {
+            //         skybox_push_state(&last_scene->skybox, cam->proj, cam->view);
+            //         mesh_render(&last_scene->skybox.geometry);
+            //         skybox_pop_state();
+            //     }
+            // }
+
+            for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
+                object_t *obj = scene_index(j);
+                model_t *model = &obj->model;
+                if (obj->model.iqm && !obj->was_batched) {
+                    drawmat_render_instanced(&last_scene->drawmat, *model, cam->proj, cam->view, obj->instances, obj->num_instances);
+                }
+            }
+        }
+
         /* Collect all transparency enabled models and sort them by distance */
         static array(object_t*) transparent_objects = 0;
         for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {

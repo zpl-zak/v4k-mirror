@@ -98,6 +98,7 @@ enum SCENE_FLAGS {
     SCENE_UPDATE_SH_COEF = 16,
     SCENE_SHADOWS = 32,
     SCENE_POSTFX = 64,
+    SCENE_DRAWMAT = 128,
     // SCENE_DISABLE_BATCHING = 64,
 };
 
@@ -109,6 +110,7 @@ typedef struct scene_t {
     skybox_t skybox;
     int u_coefficients_sh;
     shadowmap_t shadowmap;
+    drawmat_t drawmat;
 } scene_t;
 
 API scene_t*  scene_push();

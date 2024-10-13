@@ -3556,6 +3556,11 @@ void viewport_clip(vec2 from, vec2 to) {
     glScissor(x, y, w, h);
 }
 
+void viewport_area(vec2 from, vec2 to) {
+    float x = from.x, y = from.y, w = to.x-from.x, h = to.y-from.y;
+    glViewport(x, y, w, h);
+}
+
 // -----------------------------------------------------------------------------
 // fbos
 
@@ -3908,6 +3913,13 @@ void postfx_setparam4(postfx *fx, int pass, const char *name, vec4 value) {
     if( !program ) return;
     unsigned oldprogram = shader_bind(program);
     shader_vec4(name, value);
+    shader_bind(oldprogram);
+}
+void postfx_setparamt(postfx *fx, int pass, const char *name, texture_t value, int unit) {
+    unsigned program = postfx_program(fx, pass);
+    if( !program ) return;
+    unsigned oldprogram = shader_bind(program);
+    shader_texture_unit(name, value.id, unit);
     shader_bind(oldprogram);
 }
 int ui_postfx(postfx *fx, int pass) {
@@ -4265,6 +4277,9 @@ void fx_setparam4(int pass, const char *name, vec4 value) {
 void fx_setparami(int pass, const char *name, int value) {
     postfx_setparami(&fx, pass, name, value);
 }
+void fx_setparamt(int pass, const char *name, texture_t value, int unit) {
+    postfx_setparamt(&fx, pass, name, value, unit);
+}
 int ui_fx(int pass) {
     return ui_postfx(&fx, pass);
 }
@@ -4292,11 +4307,11 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
     do_once {
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
         postfx_create(&bloom, 0);
-        postfx_load(&bloom, "fxt/bloom/fxBloom*.fs");
+        postfx_load(&bloom, "fxt/bloom/fxBloom*.fst");
         postfx_load(&bloom, "engine/art/fx/fxGamma.fs");
-        fx_bloom_up = postfx_find(&bloom, "fxBloomUp.fs");
-        fx_bloom_down = postfx_find(&bloom, "fxBloomDown.fs");
-        fx_bloom_mix = postfx_find(&bloom, "fxBloomMix.fs");
+        fx_bloom_up = postfx_find(&bloom, "fxBloomUp.fst");
+        fx_bloom_down = postfx_find(&bloom, "fxBloomDown.fst");
+        fx_bloom_mix = postfx_find(&bloom, "fxBloomMix.fst");
         fx_gamma = postfx_find(&bloom, "fxGamma.fs");
 
         bloom_rs = renderstate();
@@ -4369,6 +4384,50 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
     fbo_unbind();
 
     glViewport(saved_vp[0], saved_vp[1], saved_vp[2], saved_vp[3]);
+    return result_fbo.texture_color;
+}
+
+texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, texture_t matprops, mat44 proj, mat44 view, reflect_params_t params) {
+    static postfx reflect = {0};
+    static fbo_t result_fbo = {0};
+    static int fx_reflect = -1;
+
+    do_once {
+        postfx_create(&reflect, 0);
+        postfx_load(&reflect, "fxt/reflect/fxReflect.fst");
+        fx_reflect = postfx_find(&reflect, "fxReflect.fst");
+    }
+
+    fbo_resize(&result_fbo, color.w, color.h);
+
+    unsigned old_shader = last_shader;
+    shader_bind(postfx_program(&reflect, fx_reflect));
+
+    mat44 inv_proj; invert44(inv_proj, proj);
+
+    shader_mat44("u_projection", proj);
+    shader_mat44("u_inv_projection", inv_proj);
+    shader_mat44("u_view", view);
+    shader_texture_unit("u_normal_texture", normal.id, 2);
+    shader_texture_unit("u_matprops_texture", matprops.id, 3);
+    
+    shader_float("rayStep", params.ray_step);
+    shader_int("iterationCount", params.iteration_count);
+    shader_float("distanceBias", params.distance_bias);
+    shader_int("sampleCount", params.sample_count);
+    shader_bool("adaptiveStep", params.adaptive_step);
+    shader_bool("binarySearch", params.binary_search);
+    shader_float("samplingCoefficient", params.sampling_coefficient);
+    shader_float("metallicThreshold", params.metallic_threshold);
+    shader_bool("debug", params.debug);
+
+    fbo_bind(result_fbo.id);
+    viewport_clear(true, true);
+    postfx_drawpass(&reflect, fx_reflect, color, depth);
+    fbo_unbind();
+
+    shader_bind(old_shader);
+
     return result_fbo.texture_color;
 }
 
@@ -4709,9 +4768,10 @@ typedef struct iqm_t {
     mat34 *baseframe, *inversebaseframe, *outframe, *frames;
     GLint bonematsoffset;
     uint32_t instancing_checksum;
-    int uniforms[2][NUM_MODEL_UNIFORMS];
+    int uniforms[3][NUM_MODEL_UNIFORMS];
     handle program;
     handle shadow_program;
+    handle material_program;
     unsigned light_ubo;
     int texture_unit;
 } iqm_t;
@@ -4971,7 +5031,7 @@ void model_set_uniforms(model_t m, int shader, mat44 mv, mat44 proj, mat44 view,
     if(!m.iqm) return;
     iqm_t *q = m.iqm;
 
-    int slot = shader == q->shadow_program ? 1 : 0;
+    int slot = shader == q->shadow_program ? 1 : shader == q->material_program ? 2 : 0;
     if (q->uniforms[slot][MODEL_UNIFORM_MODEL] == -1) {
         model_init_uniforms(q, slot, shader);
     }
@@ -5535,6 +5595,73 @@ void ui_materials(model_t *m) {
             ui_collapse_end();
         }
     }
+}
+
+// -----------------------------------------------------------------------------
+// screen-space model material lookup
+
+drawmat_t drawmat() {
+    int saved_vp[4];
+    glGetIntegerv(GL_VIEWPORT, saved_vp);
+
+    drawmat_t lookup = {0};
+    lookup.matprops = texture_create(saved_vp[2], saved_vp[3], 3, NULL, TEXTURE_RGB);
+    lookup.normals = texture_create(saved_vp[2], saved_vp[3], 3, NULL, TEXTURE_RGB);
+    lookup.albedo = texture_create(saved_vp[2], saved_vp[3], 4, NULL, TEXTURE_RGBA);
+    lookup.depth = texture_create(saved_vp[2], saved_vp[3], 1, NULL, TEXTURE_DEPTH);
+
+    glGenFramebuffers(1, &lookup.fbo_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, lookup.fbo_id);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lookup.matprops.id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, lookup.normals.id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, lookup.albedo.id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, lookup.depth.id, 0);
+
+    GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(3, draw_buffers);
+
+    GLenum result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if( GL_FRAMEBUFFER_COMPLETE != result ) {
+        PANIC("ERROR: Framebuffer not complete.");
+    }
+
+    return lookup;
+}
+
+void drawmat_destroy(drawmat_t *lookup) {
+    texture_destroy(&lookup->matprops);
+    texture_destroy(&lookup->normals);
+    texture_destroy(&lookup->albedo);
+    texture_destroy(&lookup->depth);
+    glDeleteFramebuffers(1, &lookup->fbo_id);
+}
+
+void drawmat_clear(drawmat_t *lookup) {
+    fbo_bind(lookup->fbo_id);
+    glClearColor(0,0,0,0);
+    viewport_clear(true, true);
+    fbo_unbind();
+}
+
+void drawmat_render_instanced(drawmat_t *lookup, model_t m, mat44 proj, mat44 view, mat44 *models, unsigned count) {
+    int saved_vp[4];
+    glGetIntegerv(GL_VIEWPORT, saved_vp);
+
+    if (lookup->depth.w != saved_vp[2] || lookup->depth.h != saved_vp[3]) {
+        drawmat_destroy(lookup);
+        *lookup = drawmat();
+    }
+
+    unsigned pass = model_setpass(RENDER_PASS_MATERIAL);
+    fbo_bind(lookup->fbo_id);
+    model_render_instanced(m, proj, view, models, count);
+    fbo_unbind();
+    model_setpass(pass);
+}
+
+void drawmat_render(drawmat_t *lookup, model_t m, mat44 proj, mat44 view, mat44 model) {
+    drawmat_render_instanced(lookup, m, proj, view, (mat44*)model, 1);
 }
 
 // prevents crash on osx when strcpy'ing non __restrict arguments
@@ -6402,6 +6529,13 @@ void model_render_instanced_pass(model_t mdl, mat44 proj, mat44 view, mat44* mod
         return;
     }
 
+    if (model_getpass() == RENDER_PASS_MATERIAL) {
+        shader = mdl.iqm->material_program;
+        model_set_uniforms(mdl, shader, mv, proj, view, pass_model_matrices[0]);
+        model_draw_call(mdl, shader, pass, pos44(view), pass_model_matrices[0], proj, view);
+        return;
+    }
+
     shader_bind(shader);
 
     if (mdl.lights.count > 0) {
@@ -6494,8 +6628,20 @@ void model_setshader(model_t *m, int shading, const char *vs, const char *fs, co
             va("SHADOW_CAST,%s", final_defines));
         q->shadow_program = shaderprog;
     }
+    
+    {
+        int shaderprog = shader(vs, vfs_read("shaders/fs_32_4_model_material.glsl"),
+            "att_position,att_texcoord,att_normal,att_tangent,att_instanced_matrix,,,,att_indexes,att_weights,att_vertexindex,att_color,att_bitangent,att_texcoord2",NULL,
+            va("%s,%s", final_defines,shading_define));
+        q->material_program = shaderprog;
+
+        glBindFragDataLocation(shaderprog, 0, "out_matprops");
+        glBindFragDataLocation(shaderprog, 1, "out_normals");
+        glBindFragDataLocation(shaderprog, 2, "out_albedo");
+    }
     model_init_uniforms(q, 0, q->program);
     model_init_uniforms(q, 1, q->shadow_program);
+    model_init_uniforms(q, 2, q->material_program);
 
     unsigned block_index = glGetUniformBlockIndex(q->program, "LightBuffer");
     glUniformBlockBinding(q->program, block_index, 0);

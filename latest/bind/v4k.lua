@@ -1515,6 +1515,7 @@ enum RENDER_PASS {
     RENDER_PASS_OPAQUE,
     RENDER_PASS_TRANSPARENT,
     RENDER_PASS_OVERRIDES_BEGIN,
+    RENDER_PASS_MATERIAL,
     RENDER_PASS_SHADOW_BEGIN,
     RENDER_PASS_SHADOW_CSM,
     RENDER_PASS_SHADOW_VSM,
@@ -1695,9 +1696,22 @@ enum BILLBOARD_MODE {
  unsigned model_setpass(unsigned pass);
  vec3 pose(bool forward, float curframe, int minframe, int maxframe, bool loop, float *opt_retframe);
  void ui_materials(model_t *m);
+typedef struct drawmat_t {
+    handle fbo_id;
+    texture_t matprops;
+    texture_t normals;
+    texture_t albedo;
+    texture_t depth;
+} drawmat_t;
+ drawmat_t drawmat();
+ void drawmat_destroy(drawmat_t *lookup);
+ void drawmat_clear(drawmat_t *lookup);
+ void drawmat_render_instanced(drawmat_t *lookup, model_t m, mat44 proj, mat44 view, mat44 *models, unsigned count);
+ void drawmat_render(drawmat_t *lookup, model_t m, mat44 proj, mat44 view, mat44 model);
  void viewport_color(unsigned color);
  void viewport_clear(bool color, bool depth);
  void viewport_clip(vec2 from, vec2 to);
+ void viewport_area(vec2 from, vec2 to);
  int fx_load(const char *file);
  int fx_load_from_mem(const char *nameid, const char *content);
  void fx_begin();
@@ -1714,6 +1728,7 @@ enum BILLBOARD_MODE {
  void fx_setparami(int pass, const char *name, int value);
  void fx_setparam3(int pass, const char *name, vec3 value);
  void fx_setparam4(int pass, const char *name, vec4 value);
+ void fx_setparamt(int pass, const char *name, texture_t value, int unit);
  int fx_order(int pass, unsigned priority);
  unsigned fx_program(int pass);
  int ui_fx(int pass);
@@ -1751,6 +1766,7 @@ typedef struct postfx {
  void postfx_setparami(postfx *fx, int pass, const char *name, int value);
  void postfx_setparam3(postfx *fx, int pass, const char *name, vec3 value);
  void postfx_setparam4(postfx *fx, int pass, const char *name, vec4 value);
+ void postfx_setparamt(postfx *fx, int pass, const char *name, texture_t value, int unit);
  char* postfx_name(postfx *fx, int slot);
  passfx* postfx_pass(postfx *fx, int slot);
  void postfx_drawpass_rs(postfx *fx, int pass, texture_t color, texture_t depth, renderstate_t *rs);
@@ -1766,6 +1782,18 @@ typedef struct bloom_params_t {
     bool suppress_fireflies;
 } bloom_params_t;
  texture_t fxt_bloom(texture_t color, bloom_params_t params);
+typedef struct reflect_params_t {
+    float ray_step;
+    int iteration_count;
+    float distance_bias;
+    int sample_count;
+    bool adaptive_step;
+    bool binary_search;
+    float sampling_coefficient;
+    float metallic_threshold;
+    bool debug;
+} reflect_params_t;
+ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, texture_t matprops, mat44 proj, mat44 view, reflect_params_t params);
  void* screenshot(int components);
  void* screenshot_async(int components);
  void ddraw_line_width(float width);
@@ -1899,6 +1927,7 @@ enum SCENE_FLAGS {
     SCENE_UPDATE_SH_COEF = 16,
     SCENE_SHADOWS = 32,
     SCENE_POSTFX = 64,
+    SCENE_DRAWMAT = 128,
 };
 typedef struct scene_t {
     object_t* objs;
@@ -1906,6 +1935,7 @@ typedef struct scene_t {
     skybox_t skybox;
     int u_coefficients_sh;
     shadowmap_t shadowmap;
+    drawmat_t drawmat;
 } scene_t;
  scene_t* scene_push();
  void scene_pop();

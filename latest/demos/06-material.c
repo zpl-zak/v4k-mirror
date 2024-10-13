@@ -125,6 +125,8 @@ int main() {
 
     fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
 
+    scene_t *scene = scene_get_active();
+
     while(window_swap() && !input(KEY_ESC)) { 
         // draw environment 
         fbo_resize(&main_fb, window_width(), window_height());
@@ -150,7 +152,7 @@ int main() {
         fbo_bind(main_fb.id);
             viewport_clear(true, true);
             viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
-            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS);
+            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_DRAWMAT);
         fbo_unbind();
 
         bloom_params_t bloom_params = {
@@ -164,7 +166,7 @@ int main() {
 
         texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
 
-        // fullscreen_quad_rgb_flipped(bloom_fb);
+        // fullscreen_quad_rgb_flipped(scene->drawmat.albedo);
         fbo_blit(main_fb.id, bloom_fb, FBO_BLIT_ADDITIVE);
         fx_apply(main_fb.texture_color, main_fb.texture_depth);
 
