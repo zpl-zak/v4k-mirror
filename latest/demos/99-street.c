@@ -52,7 +52,7 @@ int main() {
         .max_distance = 100.0f,
         .reflection_strength = 0.8f,
         .metallic_threshold = 0.001f,
-        .downsample = 0,
+        .downsample = 1,
         .cubemap = &sky.cubemap,
     };
 

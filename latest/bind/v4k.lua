@@ -1157,10 +1157,10 @@ enum FBO_FLAGS {
     FBO_NO_DEPTH = 1,
     FBO_NO_COLOR = 2,
 };
-enum FBO_BLIT_FLAGS {
-    FBO_BLIT_NONE = 0,
-    FBO_BLIT_ADDITIVE = 1,
-    FBO_BLIT_COPY = 2,
+enum FBO_BLIT_MODE {
+    FBO_BLIT_COPY,
+    FBO_BLIT_ADDITIVE,
+    FBO_BLIT_COPY_ALPHA,
 };
 typedef struct fbo_t {
     unsigned id;
@@ -1177,7 +1177,7 @@ typedef struct fbo_t {
  void fbo_unbind();
  void fbo_destroy(fbo_t f);
  void fbo_destroy_id(unsigned id);
- void fbo_blit(unsigned id, texture_t texture, int flags);
+ void fbo_blit(unsigned id, texture_t texture, int mode);
 enum LIGHT_TYPE {
     LIGHT_DIRECTIONAL,
     LIGHT_POINT,

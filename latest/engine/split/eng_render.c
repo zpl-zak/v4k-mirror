@@ -3681,14 +3681,19 @@ void fbo_destroy_id(unsigned id) {
 
 static renderstate_t fbo_blit_state;
 
-void fbo_blit(unsigned id, texture_t texture, int flags) {
+void fbo_blit(unsigned id, texture_t texture, int mode) {
     do_once {
         fbo_blit_state = renderstate();
         fbo_blit_state.depth_test_enabled = false;
-        fbo_blit_state.blend_enabled = (flags&FBO_BLIT_COPY) ? false : true;
+        fbo_blit_state.blend_enabled = (mode==FBO_BLIT_COPY) ? false : true;
         fbo_blit_state.front_face = GL_CW;
-        fbo_blit_state.blend_src = (flags&FBO_BLIT_ADDITIVE) ? GL_ONE : GL_SRC_ALPHA;
-        fbo_blit_state.blend_dst = (flags&FBO_BLIT_ADDITIVE) ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA;
+        fbo_blit_state.blend_src = GL_SRC_ALPHA;
+        fbo_blit_state.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+
+        if (mode == FBO_BLIT_ADDITIVE) {
+            fbo_blit_state.blend_src = GL_ONE;
+            fbo_blit_state.blend_dst = GL_ONE;
+        }
     }
     renderstate_apply(&fbo_blit_state);
     fbo_bind(id);
@@ -4404,12 +4409,17 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     int saved_vp[4];
     glGetIntegerv(GL_VIEWPORT, saved_vp);
 
+    while ((color.w >> params.downsample) < 1 || (color.h >> params.downsample) < 1) {
+        params.downsample--;
+    }
+    params.downsample = max(params.downsample, 0);
+
     unsigned w = color.w >> params.downsample;
     unsigned h = color.h >> params.downsample;
 
     do_once {
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
-        downsample_fbo = fbo(w, h, FBO_NO_DEPTH, TEXTURE_FLOAT);
+        downsample_fbo = fbo(w, h, FBO_NO_DEPTH, TEXTURE_FLOAT|TEXTURE_LINEAR);
         postfx_create(&reflect, 0);
         postfx_load(&reflect, "fxt/reflect/fxReflect.fst");
         fx_reflect = postfx_find(&reflect, "fxReflect.fst");
@@ -4450,9 +4460,10 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     viewport_area(vec2(0,0), vec2(color.w, color.h));
     fbo_unbind();
 
-    fbo_blit(result_fbo.id, downsample_fbo.texture_color, 1);
+    fbo_blit(result_fbo.id, downsample_fbo.texture_color, FBO_BLIT_ADDITIVE);
 
-    return result_fbo.texture_color;
+    glViewport(saved_vp[0], saved_vp[1], saved_vp[2], saved_vp[3]);
+    return downsample_fbo.texture_color;
 }
 
 // -----------------------------------------------------------------------------

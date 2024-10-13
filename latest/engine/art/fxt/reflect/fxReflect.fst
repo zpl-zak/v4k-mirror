@@ -17,35 +17,31 @@ bool ray_out_of_bounds(vec3 screen_pos) {
     return screen_pos.x < 0.0 || screen_pos.x > 1.0 || screen_pos.y < 0.0 || screen_pos.y > 1.0;
 }
 
-vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, out vec3 last_pos, float metallic, vec3 refl_view) {
+vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, float metallic, vec3 refl_view) {
     float sample_depth;
     vec3 hit_color = vec3(0.0);
     float edge_fade = 1.0;
 
     vec3 start_pos = ray_pos;
-    // vec3 prev_color = texture(iChannel0, start_pos.xy).rgb;
 
-    for (int i = 0; i < steps; ++i) {
-        last_pos = ray_pos;
-        ray_pos += ray_dir;
+    if (!u_disabled) {
+        for (int i = 0; i < steps; ++i) {
+            ray_pos += ray_dir;
 
-        // Calculate edge fade factor
-        vec2 edge_dist = min(ray_pos.xy, 1.0 - ray_pos.xy);
-        edge_fade = min(edge_fade, min(edge_dist.x, edge_dist.y) * 10.0);
+            // Calculate edge fade factor
+            vec2 edge_dist = min(ray_pos.xy, 1.0 - ray_pos.xy);
+            edge_fade = min(edge_fade, min(edge_dist.x, edge_dist.y) * 10.0);
 
-        if (ray_out_of_bounds(ray_pos)) {
-            break;
-        }
+            if (ray_out_of_bounds(ray_pos)) {
+                break;
+            }
 
-        if (u_disabled) {
-            break;
-        }
-
-        sample_depth = texture(iChannel1, ray_pos.xy).r;
-        float depth_delta = ray_pos.z - sample_depth;
-        if (depth_delta >= 0.0 && depth_delta < EPSILON) {
-            hit_color = texture(iChannel0, ray_pos.xy).rgb;
-            break;
+            sample_depth = texture(iChannel1, ray_pos.xy).r;
+            float depth_delta = ray_pos.z - sample_depth;
+            if (depth_delta >= 0.0 && depth_delta < EPSILON) {
+                hit_color = texture(iChannel0, ray_pos.xy).rgb;
+                break;
+            }
         }
     }
 
@@ -76,7 +72,7 @@ vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, out vec3 last_pos, float m
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-    vec2 uv = vec2(fragCoord.x / iChannelRes0x, fragCoord.y / iChannelRes0y);
+    vec2 uv = vec2(fragCoord.x / iResolution.x, fragCoord.y / iResolution.y);
     vec4 color_pixel = texture(iChannel0, uv);
 
     vec3 matprops = texture(u_matprops_texture, uv).rgb;
@@ -124,10 +120,5 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     int ss_max_distance = max(abs(ss_distance.x), abs(ss_distance.y)) / 2;
     ray_dir /= max(ss_max_distance, 0.001);
 
-    vec3 last_pos;
-    fragColor = trace_ray(pos, ray_dir, ss_max_distance, last_pos, matprops.r, refl_view);
-
-    // vec3 result = mix(vec3(0.0), refl_color, u_reflection_strength*matprops.r);
-    // bool is_black = max(result.r, max(result.g, result.b)) < 0.1;
-    // fragColor = vec4(result, is_black ? 0.0 : 1.0);
+    fragColor = trace_ray(pos, ray_dir, ss_max_distance, matprops.r, refl_view);
 }
