@@ -3551,7 +3551,7 @@ void viewport_clear(bool color, bool depth) {
 void viewport_clip(vec2 from, vec2 to) {
     float x = from.x, y = from.y, w = to.x-from.x, h = to.y-from.y;
 
-    y = window_height()-y-h;
+    // y = window_height()-y-h;
     glViewport(x, y, w, h);
     glScissor(x, y, w, h);
 }
@@ -4044,7 +4044,7 @@ void postfx_drawpass(postfx *fx, int pass, texture_t color, texture_t depth) {
         postfx_rs.depth_test_enabled = 0;
         postfx_rs.cull_face_enabled = 0;
         postfx_rs.blend_enabled = 1;
-        postfx_rs.blend_src = GL_ONE;
+        postfx_rs.blend_src = GL_SRC_ALPHA;
         postfx_rs.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
     }
     postfx_drawpass_rs(fx, pass, color, depth, &postfx_rs);
@@ -4155,6 +4155,7 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
         depth_id = fx->depth[0].id;
     }
 
+
     unsigned first_pass = 1;
 
     for(int i = 0, e = array_count(fx->pass); i < e; ++i) {
@@ -4175,6 +4176,9 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
             // shader_texture_unit(fx->depth[frame], 1);
  glActiveTexture(GL_TEXTURE0 + 1); if(first_pass == 0) glBindTexture(GL_TEXTURE_2D, fx->depth[frame].id); else glBindTexture(GL_TEXTURE_2D, depth_id);
             glUniform1i(pass->uniforms[u_depth], 1);
+
+            glUniform1f(pass->uniforms[u_channelres1x], fx->depth[frame].w);
+            glUniform1f(pass->uniforms[u_channelres1y], fx->depth[frame].h);
 
             first_pass = 0;
 
@@ -4315,7 +4319,7 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
     while ((color.w >> mips_count) > 1 && (color.h >> mips_count) > 1) {
         ++mips_count;
     }
-    mips_count = clampi(mips_count, 1, params.mips_count);
+    if (params.mips_count > 0) mips_count = clampi(mips_count, 1, params.mips_count);
 
     do_once {
         result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);

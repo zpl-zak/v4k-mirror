@@ -57,11 +57,16 @@ int main() {
     };
 
     bloom_params_t bloom_params = {
-        .mips_count = 4,
+        .mips_count = 6,
         .filter_radius = 0.005f,
-        .strength = 0.20f,
-        .suppress_fireflies = true
+        .strength = 0.10f,
     };
+
+    bool do_bloom = true;
+    bool do_sspr = true;
+    bool do_drawmat = true;
+    bool do_shadows = true;
+    bool do_lowres = false;
 
     // demo loop
     while (window_swap())
@@ -75,27 +80,34 @@ int main() {
 
         // fps camera
         camera_freefly(&cam);
-        
-        fbo_resize(&main_fb, window_width(), window_height());
+
+        int res_shift = !!do_lowres;
+        fbo_resize(&main_fb, window_width()>>res_shift, window_height()>>res_shift);
         fbo_bind(main_fb.id);
             viewport_clear(false, true);
-            viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
-            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_DRAWMAT);
+            viewport_area(vec2(0,0), vec2(window_width()>>res_shift, window_height()>>res_shift));
+            int shadows = do_shadows ? SCENE_SHADOWS : 0;
+            int drawmat_flags = do_drawmat ? SCENE_DRAWMAT : 0;
+            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|shadows|drawmat_flags);
             fx_drawpass(fx_find("fx/fxSSAO.fs"), main_fb.texture_color, main_fb.texture_depth);
         fbo_unbind();
 
         reflect_params.cubemap = &sky.cubemap;
 
-        {
+        if (do_sspr) {
             texture_t reflect_fb = fxt_reflect(main_fb.texture_color, main_fb.texture_depth, scene->drawmat.normals, scene->drawmat.matprops, cam.proj, cam.view, reflect_params);
             fbo_blit(main_fb.id, reflect_fb, 1);
+        }
         
+        if (do_bloom) {
             texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
             fbo_blit(main_fb.id, bloom_fb, 1);
             // fullscreen_quad_rgb_flipped(reflect_fb);
         }
 
-        fx_apply(main_fb.texture_color, main_fb.texture_depth);
+        viewport_area(vec2(0,0), vec2(window_width()>>res_shift, window_height()>>res_shift));
+        fx_begin();
+        fx_end(main_fb.texture_color.id, main_fb.texture_depth.id);
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {
@@ -105,7 +117,15 @@ int main() {
                     scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]));
                 }
             }
+            ui_section("scene");
+            ui_bool("LowRes", &do_lowres);
+            ui_bool("Shadows", &do_shadows);
+            ui_bool("Bloom", &do_bloom);
+            ui_bool("SSPR", &do_sspr);
+            ui_bool("DrawMat", &do_drawmat);
             ui_float("Blend Region", &scene_get_active()->shadowmap.blend_region);
+            ui_int("Shadow Filter Size", &scene->shadowmap.filter_size);
+            ui_int("Shadow Window Size", &scene->shadowmap.window_size);
             ui_section("reflect");
             ui_bool("Disabled", &reflect_params.disabled);
             ui_float("Max Distance", &reflect_params.max_distance);

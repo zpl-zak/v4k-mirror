@@ -2,10 +2,11 @@ uniform float filterRadius; /// set:0.005
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = fragCoord.xy / iResolution.xy;
+    float aspectRatio = iResolution.x / iResolution.y;
     // The filter kernel is applied with a radius, specified in texture
     // coordinates, so that the radius will vary across mip resolutions.
     float x = filterRadius;
-    float y = filterRadius;
+    float y = filterRadius * aspectRatio;
 
     // Take 9 samples around current texel:
     // a - b - c

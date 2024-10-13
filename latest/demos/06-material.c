@@ -20,7 +20,7 @@ const char *skyboxes[][3] = { // reflection, rad, env
 
 int main() {
     // create the window
-    window_create( 0.75f, 0 );
+    window_create( 0.75f, WINDOW_VSYNC );
     window_color( GRAY );
 
     // create camera
@@ -28,7 +28,6 @@ int main() {
 
     // fx: load all post fx files in all subdirs.
     fx_load("fx/**.fs");
-    fx_enable_ordered(fx_find("fxSSAO.fs"));
     fx_enable_ordered(fx_find("fxTonemapACES.fs"));
     fx_enable_ordered(fx_find("fxFXAA3.fs"));
  
@@ -86,7 +85,7 @@ int main() {
     object_move(obj4, vec3(-10+6*3,0,-30));
     object_pivot(obj4, vec3(0,180,180));
 
-    obj4->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 10.0f;
+    obj4->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 30.0f;
 
     // spawn object5 (shadertoy)
     object_t* obj5 = scene_spawn();
@@ -105,7 +104,7 @@ int main() {
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(1,1,1,1);
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_AMBIENT].map.color = vec4(1,1,1,1);
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].map.color = vec4(1,0,0,1);
-    obj6->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 50.0f;
+    obj6->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 10.0f;
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_AO].map.color = vec4(1,1,1,1);
  
     // scene_spawn_light(); // sun
@@ -116,18 +115,19 @@ int main() {
     // load skybox
     scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]));
  
-    int mips_count = 6;
-    float filter_radius = 0.005f;
-    float strength = 0.40f;
-    float threshold = 0.10f;
-    float soft_threshold = 0.50f;
-    bool suppress_fireflies = true;
-
     fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
 
     scene_t *scene = scene_get_active();
 
+    bloom_params_t bloom_params = {
+        .mips_count = 12,
+        .filter_radius = 0.005f,
+        .strength = 0.04f,
+    };
+
     while(window_swap() && !input(KEY_ESC)) { 
+        if( input_down(KEY_F11) ) window_fullscreen( window_has_fullscreen() ^ 1 );
+
         // draw environment 
         fbo_resize(&main_fb, window_width(), window_height());
  
@@ -141,44 +141,25 @@ int main() {
         shadertoy_render(&sh, window_delta());
 
         // fps camera
-        bool active = ui_active() || ui_hover() || gizmo_active() ? false : input(MOUSE_L) || input(MOUSE_M) || input(MOUSE_R);
-        if( active ) cam.speed = clampf(cam.speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
-        vec2 mouselook = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
-        vec3 wasdec = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-input(KEY_C),input(KEY_W)-input(KEY_S)), cam.speed);
-        camera_moveby(&cam, scale3(wasdec, window_delta() * 60));
-        camera_fps(&cam, mouselook.x,mouselook.y);
-        window_cursor( !active );
+        camera_freefly(&cam);
 
+        fbo_resize(&main_fb, window_width(), window_height());
         fbo_bind(main_fb.id);
-            viewport_clear(true, true);
+            viewport_clear(false, true);
             viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
             scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_DRAWMAT);
+            fx_drawpass(fx_find("fx/fxSSAO.fs"), main_fb.texture_color, main_fb.texture_depth);
         fbo_unbind();
 
-        bloom_params_t bloom_params = {
-            .mips_count = mips_count,
-            .filter_radius = filter_radius,
-            .strength = strength,
-            .threshold = threshold,
-            .soft_threshold = soft_threshold,
-            .suppress_fireflies = suppress_fireflies,
-        };
+        {
+            texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
+            fbo_blit(main_fb.id, bloom_fb, 1);
+            // fullscreen_quad_rgb_flipped(reflect_fb);
+        }
 
-        texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
-
-        // fullscreen_quad_rgb_flipped(scene->drawmat.albedo);
-        fbo_blit(main_fb.id, bloom_fb, FBO_BLIT_ADDITIVE);
         fx_apply(main_fb.texture_color, main_fb.texture_depth);
 
         if (ui_panel("FXs", 0)) {
-            ui_section("Bloom");
-            ui_float("Threshold", &threshold);
-            ui_float("Soft threshold", &soft_threshold);
-            ui_int("Mips count", &mips_count);
-            ui_float("Filter radius", &filter_radius);
-            ui_float("Strength", &strength);
-            ui_bool("Suppress fireflies", &suppress_fireflies);
-            ui_section("FXs");
             ui_fxs();
             ui_panel_end();
         }
@@ -197,6 +178,14 @@ int main() {
                     scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]));
                 }
             }
+            ui_section("bloom");
+            ui_int("Mips Count", &bloom_params.mips_count);
+            ui_float("Filter Radius", &bloom_params.filter_radius);
+            ui_float("Strength", &bloom_params.strength);
+            ui_float("Threshold", &bloom_params.threshold);
+            ui_float("Soft Threshold", &bloom_params.soft_threshold);
+            ui_bool("Suppress Fireflies", &bloom_params.suppress_fireflies);
+            ui_float("Cube emission",  &obj6->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value);
             ui_panel_end();
         }
 

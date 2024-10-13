@@ -88,34 +88,30 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         miplevel1 = -1;
     }
 
-    vec3 groups[5];
-    switch(miplevel1) {
-    case 0:
+    if (miplevel1 == 0) {
+        vec3 groups[5];
         // We are writing to mip 0, so we need to apply Karis average to each block
         // of 4 samples to prevent fireflies (very bright subpixels, leads to pulsating
         // artifacts).
-        groups[0] = (a+b+d+e) * (0.125f/4.0f);
-        groups[1] = (b+c+e+f) * (0.125f/4.0f);
-        groups[2] = (d+e+g+h) * (0.125f/4.0f);
-        groups[3] = (e+f+h+i) * (0.125f/4.0f);
-        groups[4] = (j+k+l+m) * (0.5f/4.0f);
+        groups[0] = (a+b+d+e) * (0.125*0.25);
+        groups[1] = (b+c+e+f) * (0.125*0.25);
+        groups[2] = (d+e+g+h) * (0.125*0.25);
+        groups[3] = (e+f+h+i) * (0.125*0.25);
+        groups[4] = (j+k+l+m) * (0.5*0.25);
         groups[0] *= karis_average(groups[0]);
         groups[1] *= karis_average(groups[1]);
         groups[2] *= karis_average(groups[2]);
         groups[3] *= karis_average(groups[3]);
         groups[4] *= karis_average(groups[4]);
         fragColor.rgb = groups[0]+groups[1]+groups[2]+groups[3]+groups[4];
-        fragColor.rgb = max(fragColor.rgb, 0.0001f);
-        break;
-    default:
+    } else {
         fragColor.rgb = e*0.125;
         fragColor.rgb += (a+c+g+i)*0.03125;
         fragColor.rgb += (b+d+f+h)*0.0625;
         fragColor.rgb += (j+k+l+m)*0.125;
-        fragColor.rgb = max(fragColor.rgb, 0.0001f);
-        break;
     }
 
+    fragColor.rgb = max(fragColor.rgb, 0.0001f);
     fragColor.rgb = prefilter(fragColor.rgb);
     fragColor.a = 1.0;
 }
