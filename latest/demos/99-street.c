@@ -59,9 +59,7 @@ int main() {
     bloom_params_t bloom_params = {
         .mips_count = 4,
         .filter_radius = 0.005f,
-        .strength = 0.80f,
-        .threshold = 0.10f,
-        .soft_threshold = 0.50f,
+        .strength = 0.20f,
         .suppress_fireflies = true
     };
 

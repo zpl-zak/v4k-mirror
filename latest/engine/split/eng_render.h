@@ -1165,12 +1165,12 @@ API int   ui_postfxs(postfx *fx);
 // multi-pass fx techniques
 
 typedef struct bloom_params_t {
-    int mips_count;
-    float filter_radius;
-    float strength;
-    float threshold;
-    float soft_threshold;
-    bool suppress_fireflies;
+    int mips_count; // defaults: 4
+    float filter_radius; // defaults: 0.005
+    float strength; // defaults: 0.80
+    float threshold; // defaults: 0.00
+    float soft_threshold; // defaults: 0.00
+    bool suppress_fireflies; // defaults: true
 } bloom_params_t;
 
 API texture_t fxt_bloom(texture_t color, bloom_params_t params);
