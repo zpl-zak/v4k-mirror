@@ -223,8 +223,8 @@ surface_t surface() {
 
         vec3 color = s.fragcolor.rgb;
         // color = color / ( vec3(1.) + color );
-        color = pow( color, vec3(1. / 2.2) );
         // color = pow( color, vec3(1. / 2.2) );
+        color = pow( color, vec3(1. / 2.2) );
         // float dither = random( uvec3( floatBitsToUint( gl_FragCoord.xy ), frame_count ) );
         // color += vec3( (-1.0/256.) + (2./256.) * dither );
         s.fragcolor.rgb = color;

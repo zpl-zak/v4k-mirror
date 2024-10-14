@@ -1453,51 +1453,68 @@ texture_t texture_compressed_from_mem(const void *data, int len, unsigned flags)
     // create texture
     GLuint id;
     glGenTextures(1, &id);
-    glBindTexture(target, id);
+
+    // apply common flags (note: we do not update pixels data at this point)
+    texture_t t = {0};
+    t.id = id;
+    t.flags = flags;
+    t.w = ktx_textures[0].width;
+    t.h = ktx_textures[0].height;
+    t.d = ktx_textures[0].depth;
+    t.n = hdr.glFormat;
+    /**/ if( t.n == GL_RG || t.n == GL_RG_INTEGER ) t.n = 2;
+    else if( t.n == GL_RGB || t.n == GL_BGR || t.n == GL_RGB_INTEGER || t.n == GL_BGR_INTEGER ) t.n = 3;
+    else if( t.n == GL_RGBA || t.n == GL_BGRA || t.n == GL_RGBA_INTEGER || t.n == GL_RGBA_INTEGER ) t.n = 4;
+    else t.n = 1;
+
+    texture_update(&t, t.w, t.h, t.n, NULL, flags);
 
     // filtering
-    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, hdr.num_mipmaps > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+    glBindTexture(target, id);
+    // glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glTexParameteri(target, GL_TEXTURE_MIN_FILTER, hdr.num_mipmaps > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 
-    // wrapping
-    if( dimensions > 0 ) glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    if( dimensions > 1 ) glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    if( dimensions > 2 ) glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_REPEAT);
-    if( flags&TEXTURE_CLAMP && dimensions > 0 ) glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    if( flags&TEXTURE_CLAMP && dimensions > 1 ) glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if( flags&TEXTURE_CLAMP && dimensions > 2 ) glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    // // wrapping
+    // if( dimensions > 0 ) glTexParameteri(target, GL_TEXTURE_WRAP_S, flags & TEXTURE_CLAMP ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+    // if( dimensions > 1 ) glTexParameteri(target, GL_TEXTURE_WRAP_T, flags & TEXTURE_CLAMP ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+    // if( dimensions > 2 ) glTexParameteri(target, GL_TEXTURE_WRAP_R, flags & TEXTURE_CLAMP ? GL_CLAMP_TO_EDGE : GL_REPEAT);
 
     if( target == GL_TEXTURE_CUBE_MAP ) target = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
-    // GLenum internalFormat = flags & TEXTURE_SRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8; // @fixme
+    GLenum internalFormat = flags & TEXTURE_SRGB ? GL_SRGB8_ALPHA8 : hdr.glInternalFormat;
+
+    bool checked_transparency = false;
 
     int bytes = 0;
     enum { border = 0 };
-    for( int m = 0; m < hdr.num_mipmaps; ++m ) {
-        for( int s = 0; s < hdr.num_surfaces; ++s ) {
-            for( int f = 0; f < hdr.num_faces; ++f ) {
-                int d3 = target == GL_TEXTURE_3D, compr = hdr.glType == 0, mode = d3+compr*2;
-                ktx_texture *t = &ktx_textures[f+s*hdr.num_faces+m*hdr.num_faces*hdr.num_surfaces];
-                /**/ if(mode==0) glTexImage2D(target+f,m,hdr.glInternalFormat,t->width,t->height,                   border,hdr.glFormat,hdr.glType,t->data);
-                else if(mode==1) glTexImage3D(target  ,m,hdr.glInternalFormat,t->width,t->height,t->depth,          border,hdr.glFormat,hdr.glType,t->data);
-                else if(mode==2) glCompressedTexImage2D(target+f,m,hdr.glInternalFormat,t->width,t->height,         border,t->size,t->data);
-                else if(mode==3) glCompressedTexImage3D(target  ,m,hdr.glInternalFormat,t->width,t->height,t->depth,border,t->size,t->data);
-                bytes += t->size;
+    if (hdr.num_mipmaps) {
+        for( int m = 0; m < hdr.num_mipmaps; ++m ) {
+            for( int s = 0; s < hdr.num_surfaces; ++s ) {
+                for( int f = 0; f < hdr.num_faces; ++f ) {
+                    int d3 = target == GL_TEXTURE_3D, compr = hdr.glType == 0, mode = d3+compr*2;
+                    ktx_texture *texture = &ktx_textures[f+s*hdr.num_faces+m*hdr.num_faces*hdr.num_surfaces];
+                    /**/ if(mode==0) glTexImage2D(target+f,m,internalFormat,texture->width,texture->height,                   border,hdr.glFormat,hdr.glType,texture->data);
+                    else if(mode==1) glTexImage3D(target  ,m,internalFormat,texture->width,texture->height,texture->depth,          border,hdr.glFormat,hdr.glType,texture->data);
+                    else if(mode==2) glCompressedTexImage2D(target+f,m,internalFormat,texture->width,texture->height,         border,texture->size,texture->data);
+                    else if(mode==3) glCompressedTexImage3D(target  ,m,internalFormat,texture->width,texture->height,texture->depth,border,texture->size,texture->data);
+                    bytes += texture->size;
+
+                    if (t.n == 4 && !checked_transparency) {
+                        checked_transparency = true;
+                        for (int i = 0; i < texture->width * texture->height; i++) {
+                            if (((uint8_t *)texture->data)[i * 4 + 3] < 255) {
+                                t.transparent = 1;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
-//    if( !hdr.num_mipmaps )
-//    if( flags & TEXTURE_MIPMAPS ) glGenerateMipmap(target);
-
-    texture_t t = {0};
-    t.id = id;
-    t.w = ktx_textures[0].width;
-    t.h = ktx_textures[0].height;
-    t.d = ktx_textures[0].depth;
-    // t.transparent = 1;
-    // t->filename = t->filename ? t->filename : "";
-    // @todo: reconstruct flags
+   if( hdr.num_mipmaps==1 )
+   if( flags & TEXTURE_MIPMAPS ) glGenerateMipmap(target);
 
     PRINTF("dims:%dx%dx%d,size:%.2fMiB,mips:%d,layers:%d,faces:%d\n", t.w, t.h, t.d, bytes / 1024.0 / 1024.0, hdr.num_mipmaps, hdr.num_surfaces, hdr.num_faces);
     return t;
