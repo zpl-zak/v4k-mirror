@@ -1495,7 +1495,7 @@ texture_t texture_compressed_from_mem(const void *data, int len, unsigned flags)
     t.w = ktx_textures[0].width;
     t.h = ktx_textures[0].height;
     t.d = ktx_textures[0].depth;
-    t.transparent = 1;
+    // t.transparent = 1;
     // t->filename = t->filename ? t->filename : "";
     // @todo: reconstruct flags
 
@@ -3623,29 +3623,6 @@ unsigned fbo_id(unsigned color_texture_id, unsigned depth_texture_id, int flags)
     if(flags&FBO_NO_COLOR) glReadBuffer(GL_NONE);
 #endif
 
-#if 1
-    if (color_texture_id) {
-        GLenum result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if( GL_FRAMEBUFFER_COMPLETE != result ) {
-            PANIC("ERROR: Framebuffer not complete.");
-        }
-    }
-#else
-    switch (glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
-        case GL_FRAMEBUFFER_COMPLETE: break;
-        case GL_FRAMEBUFFER_UNDEFINED: PANIC("GL_FRAMEBUFFER_UNDEFINED");
-        case GL_FRAMEBUFFER_UNSUPPORTED: PANIC("GL_FRAMEBUFFER_UNSUPPORTED");
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: PANIC("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: PANIC("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
-        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: PANIC("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
-//      case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT");
-        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: PANIC("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS");
-//      case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT");
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
-        default: PANIC("ERROR: Framebuffer not complete. glCheckFramebufferStatus returned %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
-    }
-#endif
     glBindFramebuffer (GL_FRAMEBUFFER, last_fb);
     return fbo;
 }
@@ -3660,12 +3637,35 @@ void fbo_resize(fbo_t *f, unsigned width, unsigned height) {
     *f = fbo(width, height, f->flags, f->texture_flags);
 }
 
+static inline
+void fbo_check_attachments(unsigned id) {
+    int last_fb;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+    switch (glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
+        case GL_FRAMEBUFFER_COMPLETE: break;
+        case GL_FRAMEBUFFER_UNDEFINED: PANIC("GL_FRAMEBUFFER_UNDEFINED");
+        case GL_FRAMEBUFFER_UNSUPPORTED: PANIC("GL_FRAMEBUFFER_UNSUPPORTED");
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: PANIC("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: PANIC("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: PANIC("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
+//      case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT");
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: PANIC("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS");
+//      case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT");
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+        default: PANIC("ERROR: Framebuffer not complete. glCheckFramebufferStatus returned %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
+}
+
 API void fbo_attach(unsigned id, int slot, texture_t texture) {
     int last_fb;
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
     glBindFramebuffer(GL_FRAMEBUFFER, id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+slot, GL_TEXTURE_2D, texture.id, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
+    if (texture.id) fbo_check_attachments(id);
 }
 void fbo_attach_depth(unsigned id, texture_t texture) {
     int last_fb;
@@ -3673,6 +3673,7 @@ void fbo_attach_depth(unsigned id, texture_t texture) {
     glBindFramebuffer(GL_FRAMEBUFFER, id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture.id, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
+    if (texture.id) fbo_check_attachments(id);
 }
 
 static __thread array(handle) fbos;
@@ -5927,7 +5928,7 @@ void model_set_renderstates(model_t *m) {
     // Opaque pass
     renderstate_t *opaque_rs = &m->rs[RENDER_PASS_OPAQUE];
     {
-        opaque_rs->blend_enabled = 1;
+        opaque_rs->blend_enabled = 0;
         opaque_rs->cull_face_mode = GL_BACK;
         opaque_rs->front_face = GL_CW;
     }

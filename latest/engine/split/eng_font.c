@@ -1520,6 +1520,7 @@ typedef struct font_t {
     unsigned *cp2iter;
     unsigned *iter2cp;
     unsigned begin; // first glyph. used in cp2iter table to clamp into a lesser range
+    unsigned charCount;
 
     // font info and data
     int height;      // bitmap height
@@ -1713,11 +1714,11 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
     // pack and create bitmap
     unsigned char *bitmap = (unsigned char*)MALLOC(f->height*f->width);
 
-        int charCount = *array_back(sorted) - sorted[0] + 1; // 0xEFFFF;
-        f->cdata = (stbtt_packedchar*)CALLOC(1, sizeof(stbtt_packedchar) * charCount);
-        f->iter2cp = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
-        f->cp2iter = (unsigned*)MALLOC( sizeof(unsigned) * charCount );
-        for( int i = 0; i < charCount; ++i )
+        f->charCount = *array_back(sorted) - sorted[0] + 1; // 0xEFFFF;
+        f->cdata = (stbtt_packedchar*)CALLOC(1, sizeof(stbtt_packedchar) * f->charCount);
+        f->iter2cp = (unsigned*)MALLOC( sizeof(unsigned) * f->charCount );
+        f->cp2iter = (unsigned*)MALLOC( sizeof(unsigned) * f->charCount );
+        for( int i = 0; i < f->charCount; ++i )
             f->iter2cp[i] = f->cp2iter[i] = 0xFFFD; // default invalid glyph
 
         // find first char
@@ -1760,7 +1761,7 @@ void font_face_from_mem(const char *tag, const void *ttf_data, unsigned ttf_len,
         stbtt_PackEnd(&pc);
         f->num_glyphs = count;
 
-        assert( f->num_glyphs < charCount );
+        assert( f->num_glyphs < f->charCount );
 
     array_free(sorted);
 
@@ -2063,6 +2064,7 @@ vec2 font_draw_ex(const char *text, vec2 offset, vec4 rect, const char *col, voi
         int cp = ch - f->begin; // f->cp2iter[ch - f->begin];
         //if(cp == 0xFFFD) continue;
         //if (cp > f->num_glyphs) continue;
+        if( cp >= f->charCount ) continue;
 
         *t++ = X;
         *t++ = Y;
@@ -2526,4 +2528,3 @@ void *font_colorize(const char *text, const char *comma_types, const char *comma
     FREE(str);
     return col;
 }
-
