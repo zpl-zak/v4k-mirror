@@ -59,7 +59,7 @@ int main() {
     bloom_params_t bloom_params = {
         .mips_count = 6,
         .filter_radius = 0.005f,
-        .strength = 0.10f,
+        .strength = 0.04f,
     };
 
     bool do_bloom = true;
