@@ -54,3 +54,5 @@ tools/*.obj
 !tools/*.exe
 !tools/assimp-vc*-mt.dll
 !tools/tcc/*
+!tools/cuttlefish.*
+!tools/PVRTexLib.dll
