@@ -1495,6 +1495,8 @@ texture_t texture_compressed_from_mem(const void *data, int len, unsigned flags)
     t.w = ktx_textures[0].width;
     t.h = ktx_textures[0].height;
     t.d = ktx_textures[0].depth;
+    t.transparent = 1;
+    // t->filename = t->filename ? t->filename : "";
     // @todo: reconstruct flags
 
     PRINTF("dims:%dx%dx%d,size:%.2fMiB,mips:%d,layers:%d,faces:%d\n", t.w, t.h, t.d, bytes / 1024.0 / 1024.0, hdr.num_mipmaps, hdr.num_surfaces, hdr.num_faces);
@@ -5925,7 +5927,7 @@ void model_set_renderstates(model_t *m) {
     // Opaque pass
     renderstate_t *opaque_rs = &m->rs[RENDER_PASS_OPAQUE];
     {
-        opaque_rs->blend_enabled = 0;
+        opaque_rs->blend_enabled = 1;
         opaque_rs->cull_face_mode = GL_BACK;
         opaque_rs->front_face = GL_CW;
     }
