@@ -9,6 +9,8 @@ void main() {
     vec4 albedo = get_diffuse_map();
     if (albedo.a < u_cutout_alpha) discard;
 
+    albedo.rgb = pow( albedo.rgb, vec3(1. / 2.2) );
+
     vec2 uvs = v_texcoord;
     float metallic = 0.0;
     float roughness = 1.0;

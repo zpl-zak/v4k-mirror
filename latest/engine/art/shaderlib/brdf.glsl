@@ -183,7 +183,7 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
         prefiltered = textureLod( tex_skycube, R, mip ).rgb * exposure;
     }
 
-    // prefiltered = pow(prefiltered, vec3(1.2));
+    prefiltered = pow(prefiltered, vec3(1.0 / 2.2));
 
     float NdotV = dot( N, V );
 
@@ -199,7 +199,7 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
     // A precomputed lookup table contains a scale and a bias term for specular intensity (called "fresnel" here).
     // See equation (8) in Karis' course notes mentioned above.
     vec2 envBRDF = texture( tex_brdf_lut, vec2(NdotV, roughness) ).xy; // (NdotV,1-roughtness) for green top-left (NdotV,roughness) for green bottom-left
-    envBRDF = pow(envBRDF, vec2(2.2));
+    // envBRDF = pow(envBRDF, vec2(2.2));
     vec3 specular = prefiltered * (fresnel * envBRDF.x + vec3(envBRDF.y));
 
     return specular;

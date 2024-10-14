@@ -63,7 +63,7 @@ int main() {
     };
 
     bool do_bloom = true;
-    bool do_sspr = true;
+    bool do_ssr = true;
     bool do_drawmat = true;
     bool do_shadows = true;
     bool do_lowres = false;
@@ -94,7 +94,7 @@ int main() {
 
         reflect_params.cubemap = &sky.cubemap;
 
-        if (do_sspr) {
+        if (do_ssr) {
             texture_t reflect_fb = fxt_reflect(main_fb.texture_color, main_fb.texture_depth, scene->drawmat.normals, scene->drawmat.matprops, cam.proj, cam.view, reflect_params);
             fbo_blit(main_fb.id, reflect_fb, 1);
         }
@@ -102,11 +102,11 @@ int main() {
         if (do_bloom) {
             texture_t bloom_fb = fxt_bloom(main_fb.texture_color, bloom_params);
             fbo_blit(main_fb.id, bloom_fb, 1);
-            // fullscreen_quad_rgb_flipped(reflect_fb);
         }
 
         viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
         fx_apply(main_fb.texture_color, main_fb.texture_depth);
+        // fullscreen_quad_rgb_flipped(scene->drawmat.albedo);
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {
@@ -120,7 +120,7 @@ int main() {
             ui_bool("LowRes", &do_lowres);
             ui_bool("Shadows", &do_shadows);
             ui_bool("Bloom", &do_bloom);
-            ui_bool("SSPR", &do_sspr);
+            ui_bool("SSR", &do_ssr);
             ui_bool("DrawMat", &do_drawmat);
             ui_float("Blend Region", &scene_get_active()->shadowmap.blend_region);
             ui_int("Shadow Filter Size", &scene->shadowmap.filter_size);
