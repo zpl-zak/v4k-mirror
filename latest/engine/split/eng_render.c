@@ -3586,6 +3586,28 @@ fbo_t fbo( unsigned width, unsigned height, int flags, int texture_flags ) {
     return f;
 }
 
+static inline
+void fbo_check_attachments(unsigned id) {
+    int last_fb;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+    switch (glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
+        case GL_FRAMEBUFFER_COMPLETE: break;
+        case GL_FRAMEBUFFER_UNDEFINED: PANIC("GL_FRAMEBUFFER_UNDEFINED");
+        case GL_FRAMEBUFFER_UNSUPPORTED: PANIC("GL_FRAMEBUFFER_UNSUPPORTED");
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: PANIC("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: PANIC("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: PANIC("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
+//      case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT");
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: PANIC("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS");
+//      case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT");
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+        default: PANIC("ERROR: Framebuffer not complete. glCheckFramebufferStatus returned %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
+}
+
 unsigned fbo_id(unsigned color_texture_id, unsigned depth_texture_id, int flags) {
     int last_fb;
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
@@ -3623,6 +3645,10 @@ unsigned fbo_id(unsigned color_texture_id, unsigned depth_texture_id, int flags)
     if(flags&FBO_NO_COLOR) glReadBuffer(GL_NONE);
 #endif
 
+    if (color_texture_id) {
+        fbo_check_attachments(fbo);
+    }
+
     glBindFramebuffer (GL_FRAMEBUFFER, last_fb);
     return fbo;
 }
@@ -3635,28 +3661,6 @@ void fbo_resize(fbo_t *f, unsigned width, unsigned height) {
 
     fbo_destroy(*f);
     *f = fbo(width, height, f->flags, f->texture_flags);
-}
-
-static inline
-void fbo_check_attachments(unsigned id) {
-    int last_fb;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fb);
-    glBindFramebuffer(GL_FRAMEBUFFER, id);
-    switch (glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
-        case GL_FRAMEBUFFER_COMPLETE: break;
-        case GL_FRAMEBUFFER_UNDEFINED: PANIC("GL_FRAMEBUFFER_UNDEFINED");
-        case GL_FRAMEBUFFER_UNSUPPORTED: PANIC("GL_FRAMEBUFFER_UNSUPPORTED");
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: PANIC("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: PANIC("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
-        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: PANIC("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
-//      case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT");
-        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: PANIC("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS");
-//      case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT");
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: PANIC("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
-        default: PANIC("ERROR: Framebuffer not complete. glCheckFramebufferStatus returned %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, last_fb);
 }
 
 API void fbo_attach(unsigned id, int slot, texture_t texture) {
