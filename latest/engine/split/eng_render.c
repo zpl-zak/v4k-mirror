@@ -92,8 +92,10 @@ renderstate_t renderstate() {
     // Disable blending by default
     state.blend_enabled = GL_FALSE;
     state.blend_func = GL_FUNC_ADD;
-    state.blend_src = GL_ONE;
-    state.blend_dst = GL_ZERO;
+    state.blend_src = GL_SRC_ALPHA;
+    state.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+    state.blend_src_alpha = GL_SRC_ALPHA;
+    state.blend_dst_alpha = GL_ONE_MINUS_SRC_ALPHA;
 
     // Disable culling by default but cull back faces
     state.cull_face_enabled = GL_FALSE;
@@ -205,7 +207,8 @@ void renderstate_apply(const renderstate_t *state) {
         if (state->blend_enabled) {
             glEnable(GL_BLEND);
             glBlendEquation(state->blend_func);
-            glBlendFunc(state->blend_src, state->blend_dst);
+            // glBlendFunc(state->blend_src, state->blend_dst);
+            glBlendFuncSeparate(state->blend_src, state->blend_dst, state->blend_src_alpha, state->blend_dst_alpha);
         } else {
             glDisable(GL_BLEND);
         }
@@ -3725,18 +3728,19 @@ static renderstate_t fbo_blit_state;
 void fbo_blit(unsigned id, texture_t texture, int mode) {
     do_once {
         fbo_blit_state = renderstate();
-        fbo_blit_state.depth_test_enabled = false;
-        fbo_blit_state.blend_enabled = (mode==FBO_BLIT_COPY) ? false : true;
-        fbo_blit_state.front_face = GL_CW;
-        fbo_blit_state.blend_src = GL_SRC_ALPHA;
-        fbo_blit_state.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
-
-        if (mode == FBO_BLIT_ADDITIVE) {
-            fbo_blit_state.blend_src = GL_ONE;
-            fbo_blit_state.blend_dst = GL_ONE;
-        }
     }
-    renderstate_apply(&fbo_blit_state);
+    fbo_blit_state.depth_test_enabled = false;
+    fbo_blit_state.front_face = GL_CW;
+    fbo_blit_state.blend_enabled = true;
+    fbo_blit_state.blend_src = GL_SRC_ALPHA;
+    fbo_blit_state.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+    fbo_blit_state.blend_src_alpha = GL_ONE;
+    fbo_blit_state.blend_dst_alpha = GL_ZERO;
+
+    if (mode == FBO_BLIT_ADDITIVE) {
+        fbo_blit_state.blend_src = GL_ONE;
+        fbo_blit_state.blend_dst = GL_ONE;
+    }
     fbo_bind(id);
         fullscreen_quad_rgb_flipped_gamma_rs(texture, 1.0, fbo_blit_state);
     fbo_unbind();
@@ -4454,7 +4458,6 @@ texture_t fxt_bloom(texture_t color, bloom_params_t params) {
 
 texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, texture_t matprops, mat44 proj, mat44 view, reflect_params_t params) {
     static postfx reflect = {0};
-    static fbo_t result_fbo = {0};
     static fbo_t downsample_fbo = {0};
     static int fx_reflect = -1;
 
@@ -4470,14 +4473,12 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     unsigned h = color.h >> params.downsample;
 
     do_once {
-        result_fbo = fbo(color.w, color.h, FBO_NO_DEPTH, TEXTURE_FLOAT);
-        downsample_fbo = fbo(w, h, FBO_NO_DEPTH, TEXTURE_FLOAT|TEXTURE_LINEAR);
+        downsample_fbo = fbo(w, h, FBO_NO_DEPTH, TEXTURE_FLOAT|TEXTURE_LINEAR|TEXTURE_RGBA);
         postfx_create(&reflect, 0);
         postfx_load(&reflect, "fxt/reflect/fxReflect.fst");
         fx_reflect = postfx_find(&reflect, "fxReflect.fst");
     }
 
-    fbo_resize(&result_fbo, color.w, color.h);
     fbo_resize(&downsample_fbo, w, h);
 
     unsigned old_shader = last_shader;
@@ -4506,13 +4507,6 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     fbo_unbind();
 
     shader_bind(old_shader);
-
-    fbo_bind(result_fbo.id);
-    viewport_clear(true, true);
-    viewport_area(vec2(0,0), vec2(color.w, color.h));
-    fbo_unbind();
-
-    fbo_blit(result_fbo.id, downsample_fbo.texture_color, FBO_BLIT_ADDITIVE);
 
     glViewport(saved_vp[0], saved_vp[1], saved_vp[2], saved_vp[3]);
     return downsample_fbo.texture_color;
@@ -5692,7 +5686,7 @@ drawmat_t drawmat() {
     glGetIntegerv(GL_VIEWPORT, saved_vp);
 
     drawmat_t lookup = {0};
-    lookup.matprops = texture_create(saved_vp[2], saved_vp[3], 3, NULL, TEXTURE_RGB|TEXTURE_FLOAT);
+    lookup.matprops = texture_create(saved_vp[2], saved_vp[3], 4, NULL, TEXTURE_RGBA|TEXTURE_FLOAT);
     lookup.normals = texture_create(saved_vp[2], saved_vp[3], 3, NULL, TEXTURE_RGB);
     lookup.albedo = texture_create(saved_vp[2], saved_vp[3], 4, NULL, TEXTURE_RGBA);
     lookup.depth = texture_create(saved_vp[2], saved_vp[3], 1, NULL, TEXTURE_DEPTH);
@@ -5960,6 +5954,8 @@ void model_set_renderstates(model_t *m) {
         transparent_rs->blend_enabled = 1;
         transparent_rs->blend_src = GL_SRC_ALPHA;
         transparent_rs->blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+        transparent_rs->blend_src_alpha = GL_SRC_ALPHA;
+        transparent_rs->blend_dst_alpha = GL_ONE_MINUS_SRC_ALPHA;
         transparent_rs->cull_face_mode = GL_BACK;
         transparent_rs->front_face = GL_CW;
     }
@@ -6454,6 +6450,7 @@ void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
     shader_colormap_model_internal(&m, "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map, MODEL_TEXTURE_ALBEDO);
 
     shader_float("u_cutout_alpha", material->cutout_alpha);
+    shader_bool("u_use_ssr", material->use_ssr);
 
     if (m.shading == SHADING_PBR) {
         if (rs_idx < RENDER_PASS_SHADOW_BEGIN || rs_idx > RENDER_PASS_SHADOW_END) {

@@ -183,10 +183,9 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
         prefiltered = textureLod( tex_skycube, R, mip ).rgb * exposure;
     }
 
-    prefiltered = pow(prefiltered, vec3(1.0 / 2.2));
+    // prefiltered = pow(prefiltered, vec3(1.0 / 2.2));
 
     float NdotV = dot( N, V );
-
     // dot( N, V ) seems to produce negative values so we can try to stretch it a bit behind the silhouette
     // to avoid black pixels.
     if (USE_WRAPAROUND_SPECULAR)
@@ -204,5 +203,5 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
 
     return specular;
 }
-#endif
-#endif
+#endif // SHADING_PBR
+#endif // BRDF_GLSL

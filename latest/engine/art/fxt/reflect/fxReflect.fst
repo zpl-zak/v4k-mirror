@@ -68,15 +68,15 @@ vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, float metallic, vec3 refl_
         }
     }
 
-    return vec4(hit_color, clamp(edge_fade, 0.0, 1.0));
+    return vec4(hit_color, 1);
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = vec2(fragCoord.x / iResolution.x, fragCoord.y / iResolution.y);
     vec4 color_pixel = texture(iChannel0, uv);
 
-    vec3 matprops = texture(u_matprops_texture, uv).rgb;
-    if (matprops.r * color_pixel.a < u_metallic_threshold) {
+    vec4 matprops = texture(u_matprops_texture, uv);
+    if (matprops.r * color_pixel.a * matprops.a < u_metallic_threshold) {
         fragColor = vec4(0);
         return;
     }

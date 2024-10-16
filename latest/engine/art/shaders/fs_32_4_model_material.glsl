@@ -1,7 +1,7 @@
 #include "model_fs.glsl"
 #include "surface.glsl"
 
-out vec3 out_matprops;
+out vec4 out_matprops;
 out vec3 out_normals;
 out vec4 out_albedo;
 
@@ -55,7 +55,7 @@ void main() {
     }
 #endif
 
-    out_matprops = vec3(metallic, roughness, ao);
+    out_matprops = vec4(metallic, roughness, ao, u_use_ssr ? 1.0 : 0.0);
     out_normals = N;
     out_albedo = albedo*u_global_alpha*u_global_opacity;
 }

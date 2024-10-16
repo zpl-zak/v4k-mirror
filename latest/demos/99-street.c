@@ -31,6 +31,10 @@ int main() {
     model_t street, street_shadow;
     street = model(option("--model","Highway_Interchange.obj"), 0);
 
+    for (int i = 0; i < array_count(street.materials); i++) {
+        street.materials[i].use_ssr = true;
+    }
+
     // camera
     camera_t cam = camera();
 
@@ -43,7 +47,6 @@ int main() {
 
     scene_skybox(sky);
 
-    
     fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
 
     scene_t *scene = scene_get_active();
@@ -97,6 +100,7 @@ int main() {
         if (do_ssr) {
             texture_t reflect_fb = fxt_reflect(main_fb.texture_color, main_fb.texture_depth, scene->drawmat.normals, scene->drawmat.matprops, cam.proj, cam.view, reflect_params);
             fbo_blit(main_fb.id, reflect_fb, 1);
+            // fullscreen_quad_rgb_flipped(reflect_fb);
         }
         
         if (do_bloom) {
@@ -106,7 +110,7 @@ int main() {
 
         viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
         fx_apply(main_fb.texture_color, main_fb.texture_depth);
-        // fullscreen_quad_rgb_flipped(scene->drawmat.albedo);
+        // fullscreen_quad_rgb_flipped(main_fb.texture_color);
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {

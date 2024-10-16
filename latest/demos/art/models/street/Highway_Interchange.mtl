@@ -287,7 +287,7 @@ illum 1
 map_Kd textures/Trees_Sheet_baseColor.png
 map_d textures/Trees_Sheet_baseColor.png
 
-newmtl Water+Water_Metallic.png+Water_Roughness.png
+newmtl Water+Water_Metallic.png+Water_Roughness.png+Water_AO.png
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000

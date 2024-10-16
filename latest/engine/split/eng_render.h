@@ -36,6 +36,8 @@ typedef struct renderstate_t {
     unsigned blend_func;
     unsigned blend_src;
     unsigned blend_dst;
+    unsigned blend_src_alpha;
+    unsigned blend_dst_alpha;
 
     // Culling
     bool cull_face_enabled;
@@ -696,6 +698,7 @@ typedef struct material_t {
     char *name;
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
     float cutout_alpha;
+    bool use_ssr;
 
     // internal
     bool _loaded;

@@ -43,7 +43,9 @@ surface_t surface() {
     
     // SH lighting
     vec3 result = sh_lighting(s.normal);
-    if((result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) s.light_indirect = result;
+    if((result.x*result.x+result.y*result.y+result.z*result.z) > 0.0 ) {
+        s.light_indirect = result;
+    }
 
 #ifdef SHADING_PHONG
     material_t dummy_mat;
@@ -126,7 +128,7 @@ surface_t surface() {
     vec3 F0 = vec3(0.04);
     F0 = mix( F0, s.albedo.rgb, s.metallic );
 
-    bool use_ibl = has_tex_skysphere || has_tex_skycube;
+    bool use_ibl = has_tex_skysphere;// || has_tex_skycube;
 
     material_t pbr_mat;
     pbr_mat.albedo = s.albedo.rgb;
@@ -146,7 +148,7 @@ surface_t surface() {
     vec3 diffuse_ambient;
     vec3 specular_ambient;
 
-    if ( use_ibl )
+    if ( use_ibl && s.ao > 0.0 )
     {
         // Image based lighting.
         // Based on https://learnopengl.com/PBR/IBL/Diffuse-irradiance
