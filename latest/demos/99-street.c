@@ -70,6 +70,8 @@ int main() {
     bool do_drawmat = true;
     bool do_shadows = true;
     bool do_lowres = false;
+    bool do_ssao = true;
+    bool do_post = true;
 
     // demo loop
     while (window_swap())
@@ -92,7 +94,9 @@ int main() {
             int shadows = do_shadows ? SCENE_SHADOWS : 0;
             int drawmat_flags = do_drawmat ? SCENE_DRAWMAT : 0;
             scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|shadows|drawmat_flags);
-            fx_drawpass(fx_find("fx/fxSSAO.fs"), main_fb.texture_color, main_fb.texture_depth);
+            if (do_ssao) {
+                fx_drawpass(fx_find("fx/fxSSAO.fs"), main_fb.texture_color, main_fb.texture_depth);
+            }
         fbo_unbind();
 
         reflect_params.cubemap = &sky.cubemap;
@@ -109,8 +113,11 @@ int main() {
         }
 
         viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
-        fx_apply(main_fb.texture_color, main_fb.texture_depth);
-        // fullscreen_quad_rgb_flipped(main_fb.texture_color);
+        if (do_post) {
+            fx_apply(main_fb.texture_color, main_fb.texture_depth);
+        } else {
+            fullscreen_quad_rgb_flipped(main_fb.texture_color);
+        }
 
         if( ui_panel( "Viewer", 0 ) ) {
             for( int i = 0; i < countof(skyboxes); i++ ) {
@@ -121,11 +128,19 @@ int main() {
                 }
             }
             ui_section("scene");
+            if (ui_button("Enable all")) {
+                do_shadows = do_bloom = do_ssr = do_drawmat = do_ssao = do_post = true;
+            }
+            if (ui_button("Disable all")) {
+                do_shadows = do_bloom = do_ssr = do_drawmat = do_ssao = do_post = false;
+            }
             ui_bool("LowRes", &do_lowres);
             ui_bool("Shadows", &do_shadows);
             ui_bool("Bloom", &do_bloom);
             ui_bool("SSR", &do_ssr);
             ui_bool("DrawMat", &do_drawmat);
+            ui_bool("SSAO", &do_ssao);
+            ui_bool("Post", &do_post);
             ui_float("Blend Region", &scene_get_active()->shadowmap.blend_region);
             ui_int("Shadow Filter Size", &scene->shadowmap.filter_size);
             ui_int("Shadow Window Size", &scene->shadowmap.window_size);
