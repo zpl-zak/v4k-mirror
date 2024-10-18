@@ -92,10 +92,10 @@ renderstate_t renderstate() {
     // Disable blending by default
     state.blend_enabled = GL_FALSE;
     state.blend_func = GL_FUNC_ADD;
-    state.blend_src = GL_SRC_ALPHA;
-    state.blend_dst = GL_ONE_MINUS_SRC_ALPHA;
-    state.blend_src_alpha = GL_SRC_ALPHA;
-    state.blend_dst_alpha = GL_ONE_MINUS_SRC_ALPHA;
+    state.blend_src = GL_ONE;
+    state.blend_dst = GL_ZERO;
+    state.blend_src_alpha = GL_ONE;
+    state.blend_dst_alpha = GL_ZERO;
 
     // Disable culling by default but cull back faces
     state.cull_face_enabled = GL_FALSE;
@@ -207,8 +207,8 @@ void renderstate_apply(const renderstate_t *state) {
         if (state->blend_enabled) {
             glEnable(GL_BLEND);
             glBlendEquation(state->blend_func);
-            // glBlendFunc(state->blend_src, state->blend_dst);
-            glBlendFuncSeparate(state->blend_src, state->blend_dst, state->blend_src_alpha, state->blend_dst_alpha);
+            glBlendFunc(state->blend_src, state->blend_dst);
+            //glBlendFuncSeparate(state->blend_src, state->blend_dst, state->blend_src_alpha, state->blend_dst_alpha);
         } else {
             glDisable(GL_BLEND);
         }
@@ -4494,7 +4494,7 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     shader_mat44("u_inv_view", inv_view);
     shader_texture_unit("u_normal_texture", normal.id, 2);
     shader_texture_unit("u_matprops_texture", matprops.id, 3);
-    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, shader_uniform("u_cubemap_texture"), params.cubemap ? params.cubemap->id : NULL, 4);
+    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, shader_uniform("u_cubemap_texture"), params.cubemap ? params.cubemap->id : 0, 4);
     shader_float("u_metallic_threshold", params.metallic_threshold);
     shader_float("u_max_distance", params.max_distance);
     shader_float("u_reflection_strength", params.reflection_strength);
