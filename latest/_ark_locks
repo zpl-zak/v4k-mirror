@@ -1,0 +1,75 @@
+# This file defines what files will request locks automatically when changed.
+# You'll want to flag files that are to be considered binary, which means
+# that there's not an easy way to merge conflicts.
+# However, you may want to flag other kinds of files that may be
+# problematic to merge manually (e.g. files that the content can be shuffled when
+# saving).
+#
+# It follows the same format as the .ark_ignore file, which means:
+# - you add 1 entry per line
+# - entries are case insensitive, so build, BUILD, and Build are all the same
+# - # starts a comment, anything after this is ignored
+# - * represents any amount of characters
+# - ! at the start of the line represents an exclusion
+#
+# Here's a set of basic ones, feel free to remove any that don't apply to your project.
+
+# Images
+*.psd
+*.png
+*.gif
+*.jpg
+*.jpeg
+*.bmp
+*.tga
+*.tiff
+*.raw
+*.svg
+
+# Misc
+*.docx
+*.xlsx
+*.rtf
+*.pdf
+*.zip
+*.ttf
+
+# 3D
+*.fbx
+*.obj
+*.mtl
+*.max
+*.3ds
+*.blend
+*.usd
+*.dae
+*.iqm
+*.gltf
+*.glb
+
+# Audio
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.aiff
+*.m4a
+*.wma
+*.aac
+
+# Video
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.vob
+
+# Unreal
+*.uasset
+
+# Unity 
+*.prefab
+*.unity
