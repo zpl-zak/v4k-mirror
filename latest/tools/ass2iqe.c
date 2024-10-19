@@ -324,6 +324,16 @@ char *find_material(struct aiMaterial *material)
         strcat(shader, get_base_name(str.data));
     else if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE_REFLECTION(0), &str))
         strcat(shader, get_base_name(str.data));
+    else if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_BASE_COLOR, 0), &str))
+        strcat(shader, get_base_name(str.data));
+    else if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_NORMAL_CAMERA, 0), &str))
+        strcat(shader, get_base_name(str.data));
+    else if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_EMISSION_COLOR, 0), &str))
+        strcat(shader, get_base_name(str.data));
+    else if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_METALNESS, 0), &str))
+        strcat(shader, get_base_name(str.data));
+    else if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE_ROUGHNESS, 0), &str))
+        strcat(shader, get_base_name(str.data));
     else
         strcat(shader, "unknown");
     p = strrchr(shader, '.');
@@ -1069,6 +1079,18 @@ void export_node(FILE *out, const struct aiScene *scene, const struct aiNode *no
                 { strcat(buffer, "+"); strcat(buffer, get_base_name(str.data)); }
             if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_UNKNOWN, 0), &str)) // AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE
                 { strcat(buffer, "+"); strcat(buffer, get_base_name(str.data)); }
+            if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_BASE_COLOR, 0), &str))
+                { strcat(buffer, "+"); strcat(buffer, get_base_name(str.data)); semantic=aiTextureType_BASE_COLOR; }
+            if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_NORMAL_CAMERA, 0), &str))
+                { strcat(buffer, "+"); strcat(buffer, get_base_name(str.data)); semantic=aiTextureType_NORMAL_CAMERA; }
+            if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_EMISSION_COLOR, 0), &str))
+                { strcat(buffer, "+"); strcat(buffer, get_base_name(str.data)); semantic=aiTextureType_EMISSION_COLOR; }
+            if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_METALNESS, 0), &str))
+                { strcat(buffer, "+"); strcat(buffer, get_base_name(str.data)); semantic=aiTextureType_METALNESS; }
+            if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE_ROUGHNESS, 0), &str))
+                { strcat(buffer, "+"); strcat(buffer, get_base_name(str.data)); semantic=aiTextureType_DIFFUSE_ROUGHNESS; }
+            if (!aiGetMaterialString(material, AI_MATKEY_TEXTURE(aiTextureType_AMBIENT_OCCLUSION, 0), &str))
+                { strcat(buffer, "+"); strcat(buffer, get_base_name(str.data)); semantic=aiTextureType_AMBIENT_OCCLUSION; }
 
 #if 1 // material colors
             char colorbuffer[32] = {0};

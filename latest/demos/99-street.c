@@ -159,6 +159,8 @@ int main() {
             ui_bool("Suppress Fireflies", &bloom_params.suppress_fireflies);
             ui_section("sunlight");
             ui_light(sun);
+            ui_section("street");
+            ui_materials(&street);
             ui_panel_end();
         }
     }

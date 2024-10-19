@@ -76,13 +76,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec4 color_pixel = texture(iChannel0, uv);
 
     vec4 matprops = texture(u_matprops_texture, uv);
-    if (matprops.r * color_pixel.a * matprops.a < u_metallic_threshold) {
+    if (matprops.r * matprops.g * color_pixel.a * matprops.a < u_metallic_threshold) {
         fragColor = vec4(0);
         return;
-    }
-
-    if (matprops.r == 0.0) {
-        matprops.r = 1.0;
     }
 
     vec3 pos;

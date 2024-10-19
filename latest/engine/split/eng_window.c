@@ -514,6 +514,8 @@ bool window_create_from_handle(void *handle, float scale, unsigned flags) {
         glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
         gl_reversez = 1;
     }
+#else
+    gl_reversez = 0;
 #endif
 
     v4k_post_init(mode->refreshRate);
