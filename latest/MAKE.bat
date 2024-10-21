@@ -19,6 +19,7 @@ if "%1"=="help" (
     echo %0 [html5]                 ; build HTML5 demo
     echo %0 [web]                   ; run Python webserver in html5 dir
     echo %0 [push]                  ; sync with VCS
+    echo %0 [pull]                  ; pull from VCS
     echo %0 [sync]                  ; Push changes to GitHub mirror
     echo %0 [shipit]                ; Release a new version to GitHub
     echo %0 [fuse]                  ; fuse all binaries and cooked zipfiles found together
@@ -148,6 +149,13 @@ if "%1"=="push" (
         call tools\ark.exe commit -ws_cl 1
     )
 
+    exit /b
+)
+
+if "%1"=="pull" (
+    if exist ".ark" (
+        call tools\ark.exe get -cl latest
+    )
     exit /b
 )
 
