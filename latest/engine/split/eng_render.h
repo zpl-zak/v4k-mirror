@@ -197,6 +197,7 @@ typedef struct texture_t {
     unsigned flags;
     char* filename;
     bool transparent;
+    bool mipmaps_generated;
     unsigned fbo; // for texture recording
     union { unsigned userdata, delay; };
 } texture_t;
@@ -213,6 +214,7 @@ API int       texture_unit(); // returns rolling counter up to GL_MAX_COMBINED_T
 // textureLod(filename, dir, lod);
 // void texture_add_loader( int(*loader)(const char *filename, int *w, int *h, int *bpp, int reqbpp, int flags) );
 API unsigned  texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const void *pixels, int flags);
+API void      texture_params(texture_t *t, unsigned flags);
 
 API bool      texture_rec_begin(texture_t *t, unsigned w, unsigned h); // texture_rec
 API void      texture_rec_end(texture_t *t); // texture_rec
@@ -698,12 +700,13 @@ typedef struct material_t {
     char *name;
     material_layer_t layer[MAX_CHANNELS_PER_MATERIAL];
     float cutout_alpha;
-    bool use_ssr;
+    float ssr_strength;
 
     // internal
     bool _loaded;
 } material_t;
 
+API void material_texparams(material_t *m, unsigned texture_flags);
 API uint32_t material_checksum(material_t *m);
 API void ui_material(material_t *m);
 
@@ -1016,7 +1019,6 @@ enum BILLBOARD_MODE {
     BILLBOARD_CYLINDRICAL = BILLBOARD_X|BILLBOARD_Z,
     BILLBOARD_SPHERICAL = BILLBOARD_X|BILLBOARD_Y|BILLBOARD_Z
 };
-
 
 API model_t  model(const char *filename, int flags); //< filename == 0 for procedural models
 API model_t  model_from_mem(const void *mem, int sz, int flags); //< mem == 0 for procedural models

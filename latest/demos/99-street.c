@@ -32,7 +32,7 @@ int main() {
     street = model(option("--model","Highway_Interchange.obj"), 0);
 
     for (int i = 0; i < array_count(street.materials); i++) {
-        street.materials[i].use_ssr = true;
+        street.materials[i].ssr_strength = 1.0f;
     }
 
     // camera

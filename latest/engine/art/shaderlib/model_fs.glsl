@@ -23,7 +23,7 @@ uniform ColorMap map_parallax;  uniform sampler2D map_parallax_tex;
     (ColorMap_.has_tex ? texture( ColorMap_##_tex, uv_ ) : ColorMap_.color)
 
 uniform mat4 model, view, inv_view;
-uniform bool u_use_ssr;
+uniform float u_ssr_strength;
 uniform vec3 u_coefficients_sh[9];
 uniform bool u_lit; /// set:0
 uniform bool u_matcaps; /// set:0

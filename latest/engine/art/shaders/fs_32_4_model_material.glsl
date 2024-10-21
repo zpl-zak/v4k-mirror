@@ -55,7 +55,7 @@ void main() {
     }
 #endif
 
-    out_matprops = vec4(metallic, roughness, ao, u_use_ssr ? 1.0 : 0.0);
+    out_matprops = vec4(metallic, roughness, ao, u_ssr_strength);
     out_normals = N;
     out_albedo = albedo*u_global_alpha*u_global_opacity;
 }

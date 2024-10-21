@@ -989,9 +989,6 @@ unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const 
     GLenum pixel_storage = flags & TEXTURE_FLOAT ? GL_FLOAT : GL_UNSIGNED_BYTE;
     GLuint pixel_type = pixel_types[ n ];
     GLuint texel_type = t->texel_type = pixel_types[ n + 5 * !!(flags & TEXTURE_FLOAT) ];
-    GLenum wrap = GL_CLAMP_TO_EDGE;
-    GLenum min_filter = GL_NEAREST, mag_filter = GL_NEAREST;
-//    GLfloat color = (flags&7)/7.f, border_color[4] = { color, color, color, 1.f };
 
     if( flags & TEXTURE_BGR )  if( pixel_type == GL_RGB )  pixel_type = GL_BGR;
     if( flags & TEXTURE_BGR )  if( pixel_type == GL_RGBA ) pixel_type = GL_BGRA;
@@ -1002,12 +999,6 @@ unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const 
     if( flags & TEXTURE_BC2 ) texel_type = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
     if( flags & TEXTURE_BC3 ) texel_type = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
     if( flags & TEXTURE_DEPTH ) texel_type = pixel_type = GL_DEPTH_COMPONENT; // GL_DEPTH_COMPONENT32
-
-    if( flags & TEXTURE_REPEAT ) wrap = GL_REPEAT;
-    if( flags & TEXTURE_BORDER ) wrap = GL_CLAMP_TO_BORDER;
-    if( flags & TEXTURE_LINEAR ) min_filter = GL_LINEAR, mag_filter = GL_LINEAR;
-    if( flags & TEXTURE_MIPMAPS  ) min_filter = flags & TEXTURE_LINEAR ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_LINEAR; // : GL_LINEAR_MIPMAP_NEAREST; maybe?
-    if( flags & TEXTURE_MIPMAPS  ) mag_filter = flags & TEXTURE_LINEAR ? GL_LINEAR : GL_NEAREST;
 
 #if 0
     if( 0 ) { // flags & TEXTURE_PREMULTIPLY_ALPHA )
@@ -1029,32 +1020,8 @@ GLenum texture_type = t->flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTUR
 //glActiveTexture(GL_TEXTURE0 + (flags&7));
     glBindTexture(texture_type, t->id);
     glTexImage2D(texture_type, 0, texel_type, w, h, 0, pixel_type, pixel_storage, pixels);
-    glTexParameteri(texture_type, GL_TEXTURE_WRAP_S, wrap);
-    glTexParameteri(texture_type, GL_TEXTURE_WRAP_T, wrap);
-    glTexParameteri(texture_type, GL_TEXTURE_MIN_FILTER, min_filter);
-    glTexParameteri(texture_type, GL_TEXTURE_MAG_FILTER, mag_filter);
-
-    if (flags & TEXTURE_ANISOTROPY) {
-        GLfloat value, max_anisotropy = 16.0f;
-        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &value);
-
-        value = (value > max_anisotropy) ? max_anisotropy : value;
-        glTexParameterf(texture_type, GL_TEXTURE_MAX_ANISOTROPY, value);
-    }
-
-#if 0 // only for sampler2DShadow
-    if( flags & TEXTURE_DEPTH )   glTexParameteri(texture_type, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-    if( flags & TEXTURE_DEPTH )   glTexParameteri(texture_type, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-#endif
-//  if( flags & TEXTURE_BORDER )  glTexParameterfv(texture_type, GL_TEXTURE_BORDER_COLOR, border_color);
-    if( flags & TEXTURE_MIPMAPS ) glGenerateMipmap(texture_type);
-
-if( flags & TEXTURE_MIPMAPS ) {
-        GLfloat max_aniso = 0;
-//        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_aniso);
-max_aniso = 4;
-       glTexParameterf(texture_type, GL_TEXTURE_MAX_ANISOTROPY, max_aniso);
-}
+    
+    texture_params(t, flags);
 
     // glBindTexture(texture_type, 0); // do not unbind. current code expects texture to be bound at function exit
 
@@ -1075,6 +1042,50 @@ max_aniso = 4;
     }
 
     return t->id;
+}
+
+void texture_params(texture_t *t, unsigned flags) {    
+    ASSERT( t && t->id );
+    GLenum wrap = GL_CLAMP_TO_EDGE;
+    GLenum min_filter = GL_NEAREST, mag_filter = GL_NEAREST;
+
+    if( flags & TEXTURE_REPEAT ) wrap = GL_REPEAT;
+    if( flags & TEXTURE_BORDER ) wrap = GL_CLAMP_TO_BORDER;
+    if( flags & TEXTURE_LINEAR ) min_filter = GL_LINEAR, mag_filter = GL_LINEAR;
+    if( flags & TEXTURE_MIPMAPS  ) min_filter = flags & TEXTURE_LINEAR ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_LINEAR; // : GL_LINEAR_MIPMAP_NEAREST; maybe?
+    if( flags & TEXTURE_MIPMAPS  ) mag_filter = flags & TEXTURE_LINEAR ? GL_LINEAR : GL_NEAREST;
+    GLenum texture_type = t->flags & TEXTURE_ARRAY ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D; // @fixme: test GL_TEXTURE_2D_ARRAY
+
+    glBindTexture(texture_type, t->id);
+    glTexParameteri(texture_type, GL_TEXTURE_WRAP_S, wrap);
+    glTexParameteri(texture_type, GL_TEXTURE_WRAP_T, wrap);
+    glTexParameteri(texture_type, GL_TEXTURE_MIN_FILTER, min_filter);
+    glTexParameteri(texture_type, GL_TEXTURE_MAG_FILTER, mag_filter);
+
+    if (flags & TEXTURE_ANISOTROPY) {
+        GLfloat value, max_anisotropy = 16.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &value);
+
+        value = (value > max_anisotropy) ? max_anisotropy : value;
+        glTexParameterf(texture_type, GL_TEXTURE_MAX_ANISOTROPY, value);
+    }
+
+#if 0 // only for sampler2DShadow
+    if( flags & TEXTURE_DEPTH )   glTexParameteri(texture_type, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+    if( flags & TEXTURE_DEPTH )   glTexParameteri(texture_type, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+#endif
+//  if( flags & TEXTURE_BORDER )  glTexParameterfv(texture_type, GL_TEXTURE_BORDER_COLOR, border_color);
+    if( flags & TEXTURE_MIPMAPS && !t->mipmaps_generated ) {
+        glGenerateMipmap(texture_type);
+        t->mipmaps_generated = true;
+    }
+
+    if( flags & TEXTURE_MIPMAPS ) {
+        GLfloat max_aniso = 0;
+        //        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_aniso);
+        max_aniso = 4;
+        glTexParameterf(texture_type, GL_TEXTURE_MAX_ANISOTROPY, max_aniso);
+    }
 }
 
 texture_t texture_create(unsigned w, unsigned h, unsigned n, const void *pixels, int flags) {
@@ -6069,6 +6080,12 @@ model_t model_from_mem(const void *mem, int len, int flags) {
         glGenBuffers(1, &m.vao_instanced);
         model_set_state(m);
         model_setstyle(&m, !(flags & MODEL_NO_PBR) ? SHADING_PBR : SHADING_PHONG);
+
+        if (m.flags & MODEL_NO_FILTERING) {
+            for (int i = 0; i < array_count(m.materials); i++) {
+                material_texparams(&m.materials[i], TEXTURE_NEAREST|TEXTURE_REPEAT);
+            }
+        }
     }
     return m;
 }
@@ -6079,6 +6096,14 @@ model_t model(const char *filename, int flags) {
     int len;  // vfs_pushd(filedir(filename))
     char *ptr = vfs_load(filename, &len); // + vfs_popd
     return model_from_mem( ptr, len, flags );
+}
+
+void material_texparams(material_t *m, unsigned texture_flags) {
+    for (int i = 0; i < MAX_CHANNELS_PER_MATERIAL; i++) {
+        if (m->layer[i].map.texture) {
+            texture_params(m->layer[i].map.texture, texture_flags);
+        }
+    }
 }
 
 uint32_t material_checksum(material_t *m) {
@@ -6450,7 +6475,7 @@ void model_set_mesh_material(model_t m, int mesh, int shader, int rs_idx) {
     shader_colormap_model_internal(&m, "map_albedo.color", "map_albedo.has_tex", "map_albedo_tex", material->layer[MATERIAL_CHANNEL_ALBEDO].map, MODEL_TEXTURE_ALBEDO);
 
     shader_float("u_cutout_alpha", material->cutout_alpha);
-    shader_bool("u_use_ssr", material->use_ssr);
+    shader_float("u_ssr_strength", material->ssr_strength);
 
     if (m.shading == SHADING_PBR) {
         if (rs_idx < RENDER_PASS_SHADOW_BEGIN || rs_idx > RENDER_PASS_SHADOW_END) {
