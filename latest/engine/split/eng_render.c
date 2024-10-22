@@ -5807,7 +5807,7 @@ void model_load_pbr(model_t *m, material_t *mt) {
         else
         if( strstri(t, "_M.") || strstri(t, "Metallic") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_METALLIC], t, 0); continue; }
         else
-        if( strstri(t, "_E.") || strstri(t, "Emissive") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_EMISSIVE], t, 1); continue; }
+        if( strstri(t, "_E.") || strstri(t, "Emissive") || strstri(t, "Emission") )   { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_EMISSIVE], t, 1); continue; }
         else
         if( strstri(t, "_AO.") || strstri(t, "AO") || strstri(t, "Occlusion") ) { model_load_pbr_layer(&mt->layer[MATERIAL_CHANNEL_AO], t, 0); continue; }
         else
