@@ -383,8 +383,14 @@ scene_t* scene_push() {
     return s;
 }
 
+static inline
+void scene_cleanup(scene_t *s) {
+    array_free(s->objs);
+    array_free(s->lights);
+}
+
 void scene_pop() {
-    // @fixme: fix leaks, scene_cleanup();
+    scene_cleanup(last_scene);
     scene_t clear = {0};
     *last_scene = clear;
     array_pop(scenes);
@@ -493,7 +499,7 @@ light_t* scene_index_light(unsigned light_index) {
 }
 
 void scene_skybox(skybox_t sky) {
-    skybox_destroy(&last_scene->skybox);
+    // skybox_destroy(&last_scene->skybox);
     last_scene->skybox = sky;
 }
 
