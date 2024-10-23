@@ -113,11 +113,11 @@ static int fullscreen, xprev, yprev, wprev, hprev;
 static uint64_t frame_count;
 static double t, dt, fps, hz = 0.00;
 static char msaa = 0;
-static bool gl_reversez = 0;
 static char title[128] = {0};
 static char screenshot_file[DIR_MAX];
 static int locked_aspect_ratio = 0;
 static vec4 winbgcolor = {0,0,0,1};
+bool gl_reversez = 0;
 
 vec4 window_getcolor_() { return winbgcolor; } // internal
 
