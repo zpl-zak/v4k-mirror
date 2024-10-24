@@ -1,8 +1,0 @@
-Model Information:
-* title:	[FIXED] New York, Highway Interstate 95
-* source:	https://sketchfab.com/3d-models/fixed-new-york-highway-interstate-95-f668f36f01d44a6cae4b6bfa2f9b3021
-* author:	99.Miles (https://sketchfab.com/99.Miles)
-
-Model License:
-* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
-* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
