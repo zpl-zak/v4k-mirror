@@ -8,7 +8,7 @@ int main() {
     window_fps_unlock();
 
     // load skybox
-    skybox_t sky = skybox("bridge3", 0); 
+    skybox_t sky = skybox("bridge3", 0);
 
     // load static scene
     model_t map;

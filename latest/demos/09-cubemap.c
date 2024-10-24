@@ -2,10 +2,10 @@
 
 int SKY_DIR = 0;
 const char *SKY_DIRS[] = {
+    "hdr/Tokyo_BigSight_1k.hdr",
     "cubemaps/bridge3/",
     "cubemaps/colors/",
     "cubemaps/colors2/",
-    "hdr/Tokyo_BigSight_1k.hdr",
 };
 
 int OBJ_MDL = 0;

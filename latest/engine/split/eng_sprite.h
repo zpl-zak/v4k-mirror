@@ -149,7 +149,7 @@ typedef struct sprite_t { OBJ
     //atlas_t own; // owned
 } sprite_t;
 
-OBJTYPEDEF(sprite_t,10);
+OBJTYPEDEF(sprite_t,OBJTYPE_sprite);
 API void     sprite_ctor(sprite_t *s);
 API void     sprite_dtor(sprite_t *s);
 API void     sprite_tick(sprite_t *s);

@@ -6,11 +6,11 @@ int main() {
 
     // load skybox: launch with --mie for rayleigh/mie scattering
     skybox_t sky = skybox(flag("--mie") ? 0 : "cubemaps/stardust", 0);
-    light_t *l = scene_spawn_light();
+    light_t l = light();
 
     // terrain model
     model_t mdl = model("rabbit.obj", 0); {
-        model_light(&mdl, 1, l);
+        model_light(&mdl, 1, &l);
     }
 
     // camera

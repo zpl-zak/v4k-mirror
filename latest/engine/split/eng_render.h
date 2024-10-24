@@ -180,6 +180,8 @@ enum TEXTURE_FLAGS {
     TEXTURE_RGBA = IMAGE_RGBA,
     TEXTURE_FLIP = IMAGE_FLIP,
 
+    TEXTURE_UNIQUE = 1 << 31,
+
     // @fixme
     TEXTURE_SRGB = 1 << 24,
     TEXTURE_BGR = 1 << 25,
@@ -273,8 +275,7 @@ typedef struct cubemap_t {
     vec3 pos;
 } cubemap_t;
 
-API cubemap_t  cubemap( const image_t image, int flags ); // 1 equirectangular panorama
-API cubemap_t  cubemap6( const image_t images[6], int flags ); // 6 cubemap faces
+API cubemap_t  cubemap( texture_t texture, int flags ); // 1 equirectangular panorama
 API void       cubemap_destroy(cubemap_t *c);
 API cubemap_t* cubemap_get_active();
 API void       cubemap_beginbake(cubemap_t *c, vec3 pos, unsigned width, unsigned height);
@@ -335,7 +336,7 @@ enum SHADOW_TECHNIQUE {
     SHADOW_CSM,
 };
 
-typedef struct light_t {
+typedef struct light_t { OBJ
     char *name;
     unsigned type;
     vec3 diffuse, specular, ambient;
@@ -366,6 +367,7 @@ typedef struct light_t {
     bool cached; //< used by scene to invalidate cached light data
     bool processed_shadows;
 } light_t;
+OBJTYPEDEF(light_t,OBJTYPE_light);
 
 API light_t light();
 // API void    light_flags(int flags);
@@ -665,6 +667,7 @@ API skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);
 API skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_map);
 API int      skybox_render(skybox_t *sky, mat44 proj, mat44 view);
 API void     skybox_destroy(skybox_t *sky);
+API void     skybox_calc_sh(skybox_t *probe, skybox_t *sky, float sky_intensity);
 API void     skybox_mie_calc_sh(skybox_t *sky, float sky_intensity);
 API void     skybox_sh_reset(skybox_t *sky);  /* @deprecated */
 API void     skybox_sh_shader(skybox_t *sky);  /* @deprecated */
@@ -818,8 +821,13 @@ enum MODEL_FLAGS {
     MODEL_TRANSPARENT = 128,
     MODEL_STREAM = 256, // useful with model_sync()
 
+    // model cache
+    MODEL_CACHED = 0, // shared mesh, unique materials
+    MODEL_SHARED = 512, // shared mesh, shared materials
+    MODEL_UNIQUE = 1024, // unique mesh, unique materials
+
     // internal
-    MODEL_PROCEDURAL = 512,
+    MODEL_PROCEDURAL = 2048,
 };
 
 enum SHADING_MODE {
@@ -951,6 +959,7 @@ typedef struct model_shaderinfo_t {
 
 typedef struct model_t {
     struct iqm_t *iqm; // private
+    char *filename;
 
     int shading; // based on SHADING_MODE
     unsigned num_textures;

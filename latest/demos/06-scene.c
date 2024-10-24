@@ -16,6 +16,8 @@ int main() {
     // load all postfx files in all subdirs
     fx_load("fx**.fs");
 
+    scene_t *scene = obj_new(scene_t);
+
     // scene loading
     #define SCENE(...) #__VA_ARGS__
     const char *my_scene = SCENE([
@@ -37,26 +39,28 @@ int main() {
             rotation: [90.0,-90.0,0.0],
             scale:2.20,
             mesh:'models/witch/witch_object.obj',
-            texture:'models/witch/witch_object_diffuse.tga.png',
+            texture:'models/witch/witch_node_diffuse.tga.png',
             flipuv:false,
             fullbright:true,
             pbr:false,
         },
     ]);
-    int num_spawned = scene_merge(my_scene);
-    object_t *obj1 = scene_index(0);
-    object_t *obj2 = scene_index(1);
+    int num_spawned = scene_merge(scene, my_scene);
+    node_t **children = (node_t**)*obj_children(scene);
+    node_t *obj1 = children[1];
+    node_t *obj2 = children[2];
 
     // manual spawn & loading
     model_t m1 = model("kgirl/kgirls01.fbx", MODEL_NO_PBR); //MODEL_NO_ANIMS);
     texture_t t1 = texture("kgirl/g01_texture.png", 0);
-    object_t* obj3 = scene_spawn();
+    node_t* obj3 = obj_new(node_t);
     obj3->fullbright = true;
-    object_model(obj3, m1);
-    object_diffuse(obj3, t1);
-    object_scale(obj3, vec3(3,3,3));
-    object_move(obj3, vec3(-10,0,-10));
-    object_pivot(obj3, vec3(0,90,-90));
+    node_model(obj3, m1);
+    node_diffuse(obj3, t1);
+    node_scale(obj3, vec3(3,3,3));
+    node_move(obj3, vec3(-10,0,-10));
+    node_pivot(obj3, vec3(0,90,-90));
+    obj_attach(scene, obj3);
 
     // camera
     camera_t cam = camera();
@@ -80,19 +84,19 @@ int main() {
         // queue model scale bounces
         float t = fmod(window_time(), 0.3) / 0.3;
         float s = 0.01f * ease_ping_pong(t, EASE_IN|EASE_CUBIC,EASE_OUT|EASE_CUBIC);
-        object_scale(obj1, vec3(0.20f - s,0.20f + s,0.20f - s));
-        object_scale(obj2, vec3(0.20f - s,0.20f + s,0.20f - s));
+        node_scale(obj1, vec3(0.20f - s,0.20f + s,0.20f - s));
+        node_scale(obj2, vec3(0.20f - s,0.20f + s,0.20f - s));
 
         // queue model billboard
-        object_billboard(obj1, (do_billboard_x << 2)|(do_billboard_y << 1)|(do_billboard_z << 0));
-        object_billboard(obj2, (do_billboard_x << 2)|(do_billboard_y << 1)|(do_billboard_z << 0));
+        node_billboard(obj1, (do_billboard_x << 2)|(do_billboard_y << 1)|(do_billboard_z << 0));
+        node_billboard(obj2, (do_billboard_x << 2)|(do_billboard_y << 1)|(do_billboard_z << 0));
 
         // queue model rotation
-        //object_rotate(obj3, vec3(0,1*window_time() * 20,0));
+        //node_rotate(obj3, vec3(0,1*window_time() * 20,0));
 
         // flush render scene (background objects: skybox)
         profile("Scene background") {
-            scene_render(SCENE_BACKGROUND);
+            scene_render(scene, SCENE_BACKGROUND);
         }
 
         // queue debug drawcalls
@@ -112,7 +116,7 @@ int main() {
             int scene_flags = 0;
             scene_flags |= do_wireframe ? SCENE_WIREFRAME : 0;
             scene_flags |= do_twosided ? 0 : SCENE_CULLFACE;
-            scene_render(SCENE_FOREGROUND | scene_flags);
+            scene_render(scene, SCENE_FOREGROUND | scene_flags);
         }
 
         profile("Skeletal update") if(!window_has_pause()) {
@@ -144,7 +148,7 @@ int main() {
 // material demo
 // - rlyeh, public domain
 //
-// @todo: object_print(obj, "");
+// @todo: node_print(obj, "");
 
 // create camera
 camera_t cam = camera();
@@ -158,28 +162,28 @@ model_t m1 = model("suzanne.obj", MODEL_NO_ANIMATIONS);
 model_t m2 = model("suzanne.obj", MODEL_NO_ANIMATIONS|MODEL_MATCAPS);
 
 // spawn object1 (diffuse)
-object_t* obj1 = scene_spawn();
-object_model(obj1, m1);
-object_diffuse(obj1, t1);
-object_scale(obj1, vec3(3,3,3));
-object_move(obj1, vec3(-10+5*0,0,-10));
-object_pivot(obj1, vec3(0,90,0));
+node_t* obj1 = scene_spawn();
+node_model(obj1, m1);
+node_diffuse(obj1, t1);
+node_scale(obj1, vec3(3,3,3));
+node_move(obj1, vec3(-10+5*0,0,-10));
+node_pivot(obj1, vec3(0,90,0));
 
 // spawn object2 (matcap)
-object_t* obj2 = scene_spawn();
-object_model(obj2, m2);
-object_diffuse(obj2, t2);
-object_scale(obj2, vec3(3,3,3));
-object_move(obj2, vec3(-10+5*2,0,-10));
-object_pivot(obj2, vec3(0,90,0));
+node_t* obj2 = scene_spawn();
+node_model(obj2, m2);
+node_diffuse(obj2, t2);
+node_scale(obj2, vec3(3,3,3));
+node_move(obj2, vec3(-10+5*2,0,-10));
+node_pivot(obj2, vec3(0,90,0));
 
 // spawn object2 (video)
-object_t* obj3 = scene_spawn();
-object_model(obj3, m1);
-object_diffuse(obj3, video_textures(v)[0]);
-object_scale(obj3, vec3(3,3,3));
-object_move(obj3, vec3(-10+5*1,0,-10));
-object_pivot(obj3, vec3(0,90,0));
+node_t* obj3 = scene_spawn();
+node_model(obj3, m1);
+node_diffuse(obj3, video_textures(v)[0]);
+node_scale(obj3, vec3(3,3,3));
+node_move(obj3, vec3(-10+5*1,0,-10));
+node_pivot(obj3, vec3(0,90,0));
 
 // @todo: add shadertoy material
         static model_t cube; do_once cube = model("cube.obj", 0);

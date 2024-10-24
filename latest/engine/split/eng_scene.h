@@ -4,7 +4,7 @@
 
 // camera
 
-typedef struct camera_t {
+typedef struct camera_t { OBJ
     mat44 view, proj;
     vec3 position, updir, lookdir, rightdir;
     float yaw, pitch, roll; // mirror of (x,y) lookdir in deg;
@@ -22,6 +22,7 @@ typedef struct camera_t {
     // vec2 polarity = { +1,-1 }; // @todo
     // vec2 sensitivity = { 2,2 }; // @todo
 } camera_t;
+OBJTYPEDEF(camera_t,OBJTYPE_camera);
 
 API camera_t camera();
 API void camera_teleport(camera_t *cam, vec3 pos);
@@ -39,9 +40,9 @@ API camera_t *camera_get_active();
 API int  ui_camera(camera_t *cam);
 API void ddraw_camera(camera_t *cam);
 
-// object
+// scene node
 
-typedef struct object_t {
+typedef struct node_t { OBJ
     uint64_t renderbucket;
     mat44 transform;
     quat rot;
@@ -62,31 +63,30 @@ typedef struct object_t {
     array(texture_t) old_textures;
     float distance;
     bool skip_draw;
-    bool light_cached; //< used by scene to update light data
     bool was_batched;
     array(mat44) instances;
     unsigned num_instances;
     array(unsigned) pair_instance;
     uint32_t checksum;
-} object_t;
+} node_t;
+OBJTYPEDEF(node_t,OBJTYPE_node);
 
-API object_t object();
-API bool object_compare(object_t *obj1, object_t *obj2);
-API void object_rotate(object_t *obj, vec3 euler);
-API void object_pivot(object_t *obj, vec3 euler);
-API void object_teleport(object_t *obj, vec3 pos);
-API void object_move(object_t *obj, vec3 inc);
-API vec3 object_position(object_t *obj);
-API void object_scale(object_t *obj, vec3 sca);
-API void object_batchable(object_t *obj, bool batchable);
+API bool node_compare(node_t *obj1, node_t *obj2);
+API void node_rotate(node_t *obj, vec3 euler);
+API void node_pivot(node_t *obj, vec3 euler);
+API void node_teleport(node_t *obj, vec3 pos);
+API void node_move(node_t *obj, vec3 inc);
+API vec3 node_position(node_t *obj);
+API void node_scale(node_t *obj, vec3 sca);
+API void node_batchable(node_t *obj, bool batchable);
 //
-API void object_model(object_t *obj, model_t model);
-API void object_model_shadow(object_t *obj, model_t model);
-API void object_anim(object_t *obj, anim_t anim, float speed);
-API void object_diffuse(object_t *obj, texture_t tex);
-API void object_diffuse_push(object_t *obj, texture_t tex);
-API void object_diffuse_pop(object_t *obj);
-API void object_billboard(object_t *obj, unsigned mode);
+API void node_model(node_t *obj, model_t model);
+API void node_model_shadow(node_t *obj, model_t model);
+API void node_anim(node_t *obj, anim_t anim, float speed);
+API void node_diffuse(node_t *obj, texture_t tex);
+API void node_diffuse_push(node_t *obj, texture_t tex);
+API void node_diffuse_pop(node_t *obj);
+API void node_billboard(node_t *obj, unsigned mode);
 
 // scene
 
@@ -102,30 +102,17 @@ enum SCENE_FLAGS {
     // SCENE_DISABLE_BATCHING = 64,
 };
 
-typedef struct scene_t {
-    array(object_t) objs;
-    array(light_t) lights;
+typedef struct scene_t { OBJ
+    int flags; // used by obj2
+    array(node_t*) renderlist;
+    array(light_t*) lights;
 
     // special objects below:
     skybox_t skybox;
-    int u_coefficients_sh;
     shadowmap_t shadowmap;
     drawmat_t drawmat;
 } scene_t;
+OBJTYPEDEF(scene_t,OBJTYPE_scene);
 
-API scene_t*  scene_push();
-API void      scene_pop();
-API scene_t*  scene_get_active();
-
-API int       scene_merge(const char *source);
-API void      scene_render(int flags);
-
-API object_t* scene_spawn();
-API unsigned  scene_count();
-API object_t* scene_index(unsigned index);
-
-API light_t*  scene_spawn_light();
-API void      scene_merge_lights(const char *source);
-API unsigned  scene_count_light();
-API light_t*  scene_index_light(unsigned index);
-API void      scene_skybox(skybox_t sky);
+API int  scene_merge(scene_t *s, const char *source);
+API void scene_render(scene_t *s, int flags);

@@ -7,8 +7,10 @@ int main() {
     window_title(__FILE__);
     window_fps_unlock();
 
+    scene_t *scene = obj_new(scene_t);
+
     // load skybox
-    scene_skybox(skybox("bridge3", 0)); 
+    scene->skybox = skybox("bridge3", 0); 
 
     // load static scene
     model_t map, prop;
@@ -16,11 +18,13 @@ int main() {
     prop = model(option("--model","sorting_test2.obj"), MODEL_NO_PBR); // MODEL_NO_TEXTURES);
 
     // define scene
-    object_t *prop_obj = scene_spawn();
-    object_model(prop_obj, prop);
+    node_t *prop_obj = obj_new(node_t);
+    node_model(prop_obj, prop);
+    obj_attach(scene, prop_obj);
 
-    object_t *map_obj = scene_spawn();
-    object_model(map_obj, map);
+    node_t *map_obj = obj_new(node_t);
+    node_model(map_obj, map);
+    obj_attach(scene, map_obj);
 
     // camera
     camera_t cam = camera();
@@ -44,6 +48,6 @@ int main() {
         camera_fps(&cam, mouse.x,mouse.y);
         window_cursor( !active );
 
-        scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND);
+        scene_render(scene, SCENE_BACKGROUND|SCENE_FOREGROUND);
     }
 }

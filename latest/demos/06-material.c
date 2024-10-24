@@ -1,16 +1,16 @@
 // material demo
 // - rlyeh, public domain
 //
-// @todo: object_print(obj, "");
+// @todo: node_print(obj, "");
 
 #include "v4k.h"
 
 
 const char *skyboxes[][3] = { // reflection, rad, env
-    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
-    {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Rad.hdr","hdr/Factory_Catwalk_Env.hdr"},
     {"hdr/graffiti_shelter_4k.hdr","hdr/graffiti_shelter_Rad.hdr","hdr/graffiti_shelter_Env.hdr"},
     {"hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_1k.hdr","hdr/Tokyo_BigSight_Env.hdr"},
+    {"hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_1k.hdr","hdr/GCanyon_C_YumaPoint_Env.hdr"},
+    {"hdr/Factory_Catwalk_1k.hdr","hdr/Factory_Catwalk_Rad.hdr","hdr/Factory_Catwalk_Env.hdr"},
     {"hdr/music_hall_01_4k.hdr","hdr/music_hall_01_4k.hdr","hdr/music_hall_01_Env.hdr"},
     {"hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_2k.hdr","hdr/the_sky_is_on_fire_Env.hdr"},
     {"hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_1k.hdr","hdr/MonValley_G_DirtRoad_Env.hdr"},
@@ -57,49 +57,56 @@ int main() {
     sh.dims.y = 1024;
     shadertoy_render(&sh, 0);
 
+    scene_t *scene = obj_new(scene_t);
+
     // spawn object1 (diffuse)
-    object_t* obj1 = scene_spawn();
-    object_model(obj1, m1);
-    object_diffuse(obj1, t1);
-    object_scale(obj1, vec3(3,3,3));
-    object_move(obj1, vec3(-10+5*0,0,-10));
+    node_t* obj1 = obj_new(node_t);
+    node_model(obj1, m1);
+    node_diffuse(obj1, t1);
+    node_scale(obj1, vec3(3,3,3));
+    node_move(obj1, vec3(-10+5*0,0,-10));
+    obj_attach(scene, obj1);
 
     // spawn object2 (matcap)
-    object_t* obj2 = scene_spawn();
-    object_model(obj2, m2);
-    object_diffuse(obj2, t2);
-    object_scale(obj2, vec3(3,3,3));
-    object_move(obj2, vec3(-10+5*2,0,-10));
+    node_t* obj2 = obj_new(node_t);
+    node_model(obj2, m2);
+    node_diffuse(obj2, t2);
+    node_scale(obj2, vec3(3,3,3));
+    node_move(obj2, vec3(-10+5*2,0,-10));
+    obj_attach(scene, obj2);
 
     // spawn object3 (video)
-    object_t* obj3 = scene_spawn();
-    object_model(obj3, m5);
-    object_diffuse(obj3, video_textures(v)[0]);
-    object_scale(obj3, vec3(3,3,3));
-    object_move(obj3, vec3(-10+5*1,0,-10));
+    node_t* obj3 = obj_new(node_t);
+    node_model(obj3, m5);
+    node_diffuse(obj3, video_textures(v)[0]);
+    node_scale(obj3, vec3(3,3,3));
+    node_move(obj3, vec3(-10+5*1,0,-10));
+    obj_attach(scene, obj3);
 
     // spawn object4 (pbr)
-    object_t* obj4 = scene_spawn();
-    object_model(obj4, m3);
-    object_scale(obj4, vec3(3,3,3));
-    object_move(obj4, vec3(-10+6*3,0,-30));
-    object_pivot(obj4, vec3(0,180,180));
-
+    node_t* obj4 = obj_new(node_t);
+    node_model(obj4, m3);
+    node_scale(obj4, vec3(3,3,3));
+    node_move(obj4, vec3(-10+6*3,0,-30));
+    node_pivot(obj4, vec3(0,180,180));
+    obj_attach(scene, obj4);
     obj4->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 30.0f;
 
     // spawn object5 (shadertoy)
-    object_t* obj5 = scene_spawn();
-    object_model(obj5, m4); 
-    object_diffuse(obj5, sh.tx); 
-    object_scale(obj5, vec3(3,3,3));
-    object_move(obj5, vec3(-10+8*3,0,-10));
+    node_t* obj5 = obj_new(node_t);
+    node_model(obj5, m4); 
+    node_diffuse(obj5, sh.tx); 
+    node_scale(obj5, vec3(3,3,3));
+    node_move(obj5, vec3(-10+8*3,0,-10));
+    obj_attach(scene, obj5);
 
     // spawn object6 (solid)
-    object_t* obj6 = scene_spawn();
-    object_model(obj6, m6); 
-    // object_diffuse(obj6, (texture)); 
-    object_scale(obj6, vec3(3,3,3));
-    object_move(obj6, vec3(-10+12*3,0,-10));
+    node_t* obj6 = obj_new(node_t);
+    node_model(obj6, m6); 
+    // node_diffuse(obj6, (texture)); 
+    node_scale(obj6, vec3(3,3,3));
+    node_move(obj6, vec3(-10+12*3,0,-10));
+    obj_attach(scene, obj6);
 
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(1,1,1,1);
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_AMBIENT].map.color = vec4(1,1,1,1);
@@ -107,17 +114,15 @@ int main() {
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_EMISSIVE].value = 10.0f;
     obj6->model.materials[0].layer[MATERIAL_CHANNEL_AO].map.color = vec4(1,1,1,1);
  
-    // scene_spawn_light(); // sun
-    light_t* l = scene_spawn_light(); 
+    light_t* l = obj_new(light_t); 
     light_type(l, LIGHT_POINT);
     l->diffuse = vec3(1,1,1);
+    obj_attach(scene, l);
  
     // load skybox
-    scene_skybox(skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]));
+    scene->skybox = skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]);
  
     fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
-
-    scene_t *scene = scene_get_active();
 
     bloom_params_t bloom_params = {
         .mips_count = 12,
@@ -147,7 +152,7 @@ int main() {
         fbo_bind(main_fb.id);
             viewport_clear(false, true);
             viewport_clip(vec2(0,0), vec2(window_width(), window_height()));
-            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_DRAWMAT);
+            scene_render(scene, SCENE_BACKGROUND|SCENE_FOREGROUND|SCENE_SHADOWS|SCENE_DRAWMAT);
             fx_drawpass(fx_find("fx/fxSSAO.fs"), main_fb.texture_color, main_fb.texture_depth);
         fbo_unbind();
 
@@ -175,7 +180,7 @@ int main() {
                 // bool selected = !strcmp(g_skybox.reflection->filename, file_name(filename));
                 bool selected = false; 
                 if( ui_bool( filename, &selected ) ) {
-                    scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]));
+                    scene->skybox = skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]);
                 }
             }
             ui_section("bloom");
@@ -198,7 +203,7 @@ int main() {
                     sh.dims.x = 1024;
                     sh.dims.y = 1024;
                     shadertoy_render(&sh, 0);
-                    object_diffuse(obj5, sh.tx);
+                    node_diffuse(obj5, sh.tx);
                 }
             }
             ui_panel_end();

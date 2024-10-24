@@ -17,7 +17,7 @@ uniform float skysphere_mip_count;
 uniform float exposure; /// set:1.0
 uniform float specular_shininess;
 
-uniform samplerCube tex_skycube;
+uniform sampler2D tex_skycube;
 uniform sampler2D tex_skysphere;
 uniform sampler2D tex_skyenv;
 uniform sampler2D tex_brdf_lut;
@@ -71,9 +71,17 @@ float geometry_smith( vec3 N, vec3 V, vec3 L, float roughness )
     return geometry_schlick_ggx( N, V, k ) * geometry_schlick_ggx( N, L, k );
 }
 
+// vec2 sphere_to_polar( vec3 normal ) {
+//     normal = normalize( normal );
+//     float theta = atan( -normal.x, normal.z );
+//     float phi = acos( normal.y );
+//     float u = (theta + PI) / (2*PI);
+//     float v = phi / PI;
+//     return vec2( u, v );
+// }
 vec2 sphere_to_polar( vec3 normal ) {
     normal = normalize( normal );
-    return vec2( 1-atan( normal.z, normal.x ) / PI + 0.5 , acos( normal.y ) / PI  );
+    return vec2( atan( -normal.x, normal.z ) / PI + 0.5 , acos( normal.y ) / PI  );
 }
 
 // Our vertically GL_CLAMPed textures seem to blend towards black when sampling the half-pixel edge.
@@ -129,19 +137,20 @@ vec3 sample_irradiance_slow( vec3 normal, vec3 vertex_tangent )
 vec3 sample_irradiance_fast( vec3 normal, vec3 vertex_tangent )
 {
     // Sample the irradiance map if it exists, otherwise fall back to blurred reflection map.
+    vec2 polar = sphere_to_polar( normal );
     if ( has_tex_skyenv )
     {
-        vec2 polar = sphere_to_polar( normal );
         return textureLod( tex_skyenv, polar, 0.0 ).rgb * exposure;
     }
     else if (has_tex_skysphere)
     {
-        vec2 polar = sphere_to_polar( normal );
         return textureLod( tex_skysphere, polar, 0.80 * skysphere_mip_count ).rgb * exposure;
     }
     else
     {
-        return textureLod(tex_skycube, normal, 0.0).rgb * exposure;
+        vec3 color = textureLod( tex_skycube, polar, 0.0 ).rgb * exposure;
+        color = pow(color, vec3(1.0/2.2));
+        return color;
     }
 }
 
@@ -160,11 +169,8 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
     //
     // For details, see Brian Karis, "Real Shading in Unreal Engine 4", 2013.
 
-    // vec3 R = 2. * dot( V, N ) * N - V;
-    vec3 R = reflect(-V, N);
-
-    R.x = -R.x;
-
+    vec3 R = 2. * dot( V, N ) * N - V;
+    // vec3 R = reflect(-V, N);
     vec2 polar = sphere_to_polar( R );
 
     // Map roughness from range [0, 1] into a mip LOD [0, skysphere_mip_count].
@@ -180,7 +186,8 @@ vec3 specular_ibl( vec3 V, vec3 N, float roughness, vec3 fresnel, float metallic
     }
     else
     {
-        prefiltered = textureLod( tex_skycube, R, mip ).rgb * exposure;
+        prefiltered = textureLod( tex_skycube, polar, mip ).rgb * exposure;
+        prefiltered = pow(prefiltered, vec3(1.0/2.2));
     }
 
     // prefiltered = pow(prefiltered, vec3(1.0 / 2.2));

@@ -361,4 +361,11 @@ typedef enum OBJTYPE_BUILTINS {
     OBJTYPE_mat44  =  8,
     OBJTYPE_vec2i  =  9,
     OBJTYPE_vec3i  = 10,
+
+    /// --
+    OBJTYPE_sprite = 11,
+    OBJTYPE_camera = 12,
+    OBJTYPE_node   = 13,
+    OBJTYPE_scene  = 14,
+    OBJTYPE_light  = 15,
 } OBJTYPE_BUILTINS;

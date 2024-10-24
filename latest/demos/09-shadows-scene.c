@@ -1,7 +1,7 @@
 // material demo
 // - rlyeh, public domain
 //
-// @todo: object_print(obj, "");
+// @todo: node_print(obj, "");
 
 #include "v4k.h"
 
@@ -51,65 +51,70 @@ int main() {
         array_push(list, STRDUP(file_name(dir)));
     }
 
+    scene_t *scene = obj_new(scene_t);
+
     shadertoy_t sh = shadertoy(*list, SHADERTOY_IGNORE_MOUSE|SHADERTOY_FLIP_Y); // 0:no flags
     sh.dims.x = 1024;
     sh.dims.y = 1024;
     shadertoy_render(&sh, 0);
 
     // spawn object1 (diffuse)
-    object_t* obj1 = scene_spawn();
-    object_model(obj1, m1);
-    object_diffuse(obj1, t1);
-    object_scale(obj1, vec3(3,3,3));
-    object_move(obj1, vec3(-10+5*0,0,-10));
+    node_t* obj1 = obj_new(node_t);
+    node_model(obj1, m1);
+    node_diffuse(obj1, t1);
+    node_scale(obj1, vec3(3,3,3));
+    node_move(obj1, vec3(-10+5*0,0,-10));
+    obj_attach(scene, obj1);
 
     // spawn object2 (matcap)
-    object_t* obj2 = scene_spawn();
-    object_model(obj2, m2);
-    object_diffuse(obj2, t2);
-    object_scale(obj2, vec3(3,3,3));
-    object_move(obj2, vec3(-10+5*2,0,-10));
+    node_t* obj2 = obj_new(node_t);
+    node_model(obj2, m2);
+    node_diffuse(obj2, t2);
+    node_scale(obj2, vec3(3,3,3));
+    node_move(obj2, vec3(-10+5*2,0,-10));
+    obj_attach(scene, obj2);
+
 
     // spawn object3 (video)
-    object_t* obj3 = scene_spawn();
-    object_model(obj3, m5);
-    object_diffuse(obj3, video_textures(v)[0]);
-    object_scale(obj3, vec3(3,3,3));
-    object_move(obj3, vec3(-10+5*1,0,-10));
+    node_t* obj3 = obj_new(node_t);
+    node_model(obj3, m5);
+    node_diffuse(obj3, video_textures(v)[0]);
+    node_scale(obj3, vec3(3,3,3));
+    node_move(obj3, vec3(-10+5*1,0,-10));
+    obj_attach(scene, obj3);
 
     // spawn object4 (pbr)
-    object_t* obj4 = scene_spawn();
-    object_model(obj4, m3);
-    object_scale(obj4, vec3(3,3,3));
-    object_move(obj4, vec3(-10+6*3,0,-10));
-    object_pivot(obj4, vec3(-180,0,0));
+    node_t* obj4 = obj_new(node_t);
+    node_model(obj4, m3);
+    node_scale(obj4, vec3(3,3,3));
+    node_move(obj4, vec3(-10+6*3,0,-10));
+    node_pivot(obj4, vec3(-180,0,0));
+    obj_attach(scene, obj4);
+
 
     // spawn object5 (shadertoy)
-    object_t* obj5 = scene_spawn();
-    object_model(obj5, m4);
-    object_diffuse(obj5, sh.tx);
-    object_scale(obj5, vec3(3,3,3));
-    object_move(obj5, vec3(-10+8*3,0,-10));
+    node_t* obj5 = obj_new(node_t);
+    node_model(obj5, m4);
+    node_diffuse(obj5, sh.tx);
+    node_scale(obj5, vec3(3,3,3));
+    node_move(obj5, vec3(-10+8*3,0,-10));
+    obj_attach(scene, obj5);
 
     // spawn object6
-    object_t* obj6 = scene_spawn();
-    object_model(obj6, m6);
-    object_move(obj6, vec3(-9,-4,3));
-    object_scale(obj6, vec3(3,3,3));
+    node_t* obj6 = obj_new(node_t);
+    node_model(obj6, m6);
+    node_move(obj6, vec3(-9,-4,3));
+    node_scale(obj6, vec3(3,3,3));
+    obj_attach(scene, obj6);
 
-
-    light_t* sun = scene_spawn_light();
+    // spawn light
+    light_t* sun = obj_new(light_t);
     light_type(sun, LIGHT_DIRECTIONAL);
     sun->dir = vec3(0.5,-1,-0.5);
-    
-    // create point light
-    // light_t* l = scene_spawn_light();
-    // light_type(l, LIGHT_POINT);
-    // l->diffuse = vec3(0,0,0);
-
+    obj_attach(scene, sun);
 
     // load skybox
-    scene_get_active()->skybox = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);
+    scene->skybox = skybox_pbr(skyboxes[0][0], skyboxes[0][0], skyboxes[0][1]);
 
 
     while(window_swap() && !input(KEY_ESC)) {
@@ -127,7 +132,7 @@ int main() {
 
         // draw scene
         fx_begin();
-        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF|SCENE_SHADOWS);
+        scene_render(scene, SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_UPDATE_SH_COEF|SCENE_SHADOWS);
         fx_end(0,0);
 
         // fps camera
@@ -150,7 +155,7 @@ int main() {
                 // bool selected = !strcmp(g_skybox.reflection->filename, file_name(filename));
                 bool selected = false;
                 if( ui_bool( filename, &selected ) ) {
-                    scene_get_active()->skybox = skybox_pbr(skyboxes[i][0], skyboxes[i][0], skyboxes[i][1]);
+                    scene->skybox = skybox_pbr(skyboxes[i][0], skyboxes[i][0], skyboxes[i][1]);
                 }
             }
             ui_panel_end();
@@ -165,7 +170,7 @@ int main() {
                     sh.dims.x = 1024;
                     sh.dims.y = 1024;
                     shadertoy_render(&sh, 0);
-                    object_diffuse(obj5, sh.tx);
+                    node_diffuse(obj5, sh.tx);
                 }
             }
             ui_panel_end();

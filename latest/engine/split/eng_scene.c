@@ -3,43 +3,77 @@
 
 static camera_t *last_camera;
 
+static
+void camera_ctor(camera_t *cam) {
+    cam->speed = 0.50f;
+    cam->accel = 0.5f;
+    cam->position = vec3(10,10,10);
+    cam->updir = vec3(0,1,0);
+    cam->rightdir = vec3(1,0,0);
+    cam->fov = 45;
+    cam->aspect = 0.0f;
+    cam->frustum_fov_multiplier = 1.0f;
+    cam->orthographic = false;
+    cam->distance = 3; // len3(cam->position);
+    cam->near_clip = 0.1f;
+    cam->far_clip = 1000.f;
+
+    cam->damping = false;
+    cam->move_friction = 0.09f;
+    cam->move_damping = 0.96f;
+    cam->look_friction = 0.30f;
+    cam->look_damping = 0.96f;
+    cam->last_look = vec3(0,0,0);
+    cam->last_move = vec3(0,0,0);
+
+    // update proj & view
+    camera_lookat(cam,vec3(-5,0,-5));
+
+    // @todo: remove this hack that is used to consolidate dampings
+    if( 1 ) {
+        vec3 zero = {0};
+        for( int i = 0; i < 1000; ++i ) {
+            camera_moveby(cam, zero);
+            camera_fps(cam,0,0);
+        }
+    }
+}
+
+AUTORUN {
+    STRUCT(camera_t,mat44,view,"View matrix");
+    STRUCT(camera_t,mat44,proj,"Projection matrix");
+    STRUCT(camera_t,vec3,position,"Camera position");
+    STRUCT(camera_t,vec3,updir,"Up direction vector");
+    STRUCT(camera_t,vec3,lookdir,"Look direction vector");
+    STRUCT(camera_t,vec3,rightdir,"Right direction vector");
+    STRUCT(camera_t,float,yaw,"Yaw angle in degrees");
+    STRUCT(camera_t,float,pitch,"Pitch angle in degrees");
+    STRUCT(camera_t,float,roll,"Roll angle in degrees");
+    STRUCT(camera_t,float,speed,"Camera movement speed");
+    STRUCT(camera_t,float,accel,"Camera acceleration");
+    STRUCT(camera_t,float,fov,"Field of view in degrees");
+    STRUCT(camera_t,float,aspect,"Aspect ratio");
+    STRUCT(camera_t,float,near_clip,"Near clipping plane distance");
+    STRUCT(camera_t,float,far_clip,"Far clipping plane distance");
+    STRUCT(camera_t,float,frustum_fov_multiplier,"Frustum FOV multiplier");
+    STRUCT(camera_t,float,move_friction,"Movement friction");
+    STRUCT(camera_t,float,move_damping,"Movement damping");
+    STRUCT(camera_t,float,look_friction,"Look friction");
+    STRUCT(camera_t,float,look_damping,"Look damping");
+    STRUCT(camera_t,vec3,last_look,"Last look direction for friction and damping");
+    STRUCT(camera_t,vec3,last_move,"Last movement for friction and damping");
+    STRUCT(camera_t,bool,damping,"Damping enabled flag");
+    STRUCT(camera_t,bool,orthographic,"Orthographic projection flag");
+    STRUCT(camera_t,float,distance,"Distance to pivot when orbiting");
+    obj_ctor[OBJTYPE_camera] = camera_ctor;
+}
+
 camera_t camera() {
     camera_t *old = last_camera;
 
     static camera_t cam = {0};
     do_once {
-        cam.speed = 0.50f;
-        cam.accel = 0.5f;
-        cam.position = vec3(10,10,10);
-        cam.updir = vec3(0,1,0);
-        cam.rightdir = vec3(1,0,0);
-        cam.fov = 45;
-        cam.aspect = 0.0f;
-        cam.frustum_fov_multiplier = 1.0f;
-        cam.orthographic = false;
-        cam.distance = 3; // len3(cam.position);
-        cam.near_clip = 0.1f;
-        cam.far_clip = 1000.f;
-
-        cam.damping = false;
-        cam.move_friction = 0.09f;
-        cam.move_damping = 0.96f;
-        cam.look_friction = 0.30f;
-        cam.look_damping = 0.96f;
-        cam.last_look = vec3(0,0,0);
-        cam.last_move = vec3(0,0,0);
-
-        // update proj & view
-        camera_lookat(&cam,vec3(-5,0,-5));
-
-        // @todo: remove this hack that is used to consolidate dampings
-        if( 1 ) {
-            vec3 zero = {0};
-            for( int i = 0; i < 1000; ++i ) {
-                camera_moveby(&cam, zero);
-                camera_fps(&cam,0,0);
-            }
-        }
+        camera_ctor(&cam);
     }
 
     if (!last_camera)
@@ -241,6 +275,9 @@ int ui_camera( camera_t *cam ) {
     ui_separator();
     changed |= ui_float("Speed", &cam->speed);
     changed |= ui_float3("Position", cam->position.v3);
+    changed |= ui_float("Pitch", &cam->pitch);
+    changed |= ui_float("Yaw", &cam->yaw);
+    changed |= ui_float("Roll", &cam->roll);
     changed |= ui_float3("LookDir", cam->lookdir.v3);
     changed |= ui_float3("UpDir", cam->updir.v3);
     ui_disable();
@@ -258,26 +295,62 @@ int ui_camera( camera_t *cam ) {
 // -----------------------------------------------------------------------------
 
 static
-void object_update(object_t *obj) {
+void node_update(node_t *obj) {
     quat p = eulerq(vec3(obj->pivot.x,obj->pivot.y,obj->pivot.z));
     quat e = eulerq(vec3(obj->euler.x,obj->euler.y,obj->euler.z));
     compose44(obj->transform, obj->pos, mulq(e, p), obj->sca);
 }
 
-object_t object() {
-    object_t obj = {0};
-    identity44(obj.transform);
-    //obj.rot = idq();
-    obj.sca = vec3(1,1,1);
-    //obj.bounds = aabb(vec3(0,0,0),vec3(1,1,1)); // defaults to small 1-unit cube
-    object_rotate(&obj, vec3(0,0,0));
-    //array_init(obj.textures);
-    obj.cast_shadows = true;
-    obj.batchable = true;
+static 
+void node_ctor(node_t *obj) {
+    identity44(obj->transform);
+    obj->sca = vec3(1,1,1);
+    node_rotate(obj, vec3(0,0,0));
+    obj->cast_shadows = true;
+    obj->batchable = true;
+}
+
+AUTORUN {
+    STRUCT(node_t, uint64_t, renderbucket, "Render bucket");
+    STRUCT(node_t, mat44, transform, "Transform matrix");
+    STRUCT(node_t, quat, rot, "Rotation quaternion");
+    STRUCT(node_t, vec3, sca, "Scale vector");
+    STRUCT(node_t, vec3, pos, "Position vector");
+    STRUCT(node_t, vec3, euler, "Euler angles");
+    STRUCT(node_t, vec3, pivot, "Pivot point");
+    STRUCT(node_t, array(texture_t), textures, "Textures array");
+    STRUCT(node_t, model_t, model, "Model");
+    STRUCT(node_t, model_t, model_shadow, "Shadow model");
+    STRUCT(node_t, anim_t, anim, "Animation");
+    STRUCT(node_t, float, anim_speed, "Animation speed");
+    STRUCT(node_t, aabb, bounds, "Bounding box");
+    STRUCT(node_t, unsigned, billboard, "Billboard mode"); // [0..7] x(4),y(2),z(1) masks
+    STRUCT(node_t, bool, disable_frustum_check, "Disable frustum check");
+    STRUCT(node_t, bool, cast_shadows, "Cast shadows");
+    STRUCT(node_t, bool, fullbright, "Fullbright");
+    STRUCT(node_t, bool, batchable, "Batchable");
+
+    // internal states
+    STRUCT(node_t, array(handle), old_texture_ids, "_Old texture IDs");
+    STRUCT(node_t, array(texture_t), old_textures, "_Old textures");
+    STRUCT(node_t, float, distance, "_Distance");
+    STRUCT(node_t, bool, skip_draw, "_Skip draw");
+    STRUCT(node_t, bool, was_batched, "_Was batched");
+    STRUCT(node_t, array(mat44), instances, "_Instances");
+    STRUCT(node_t, unsigned, num_instances, "_Number of instances");
+    STRUCT(node_t, array(unsigned), pair_instance, "_Pair instance");
+    STRUCT(node_t, uint32_t, checksum, "_Checksum");
+
+    obj_ctor[OBJTYPE_node] = node_ctor;
+}
+
+node_t object() {
+    node_t obj = {0};
+    node_ctor(&obj);
     return obj;
 }
 
-bool object_compare(object_t *obj1, object_t *obj2) {
+bool node_compare(node_t *obj1, node_t *obj2) {
     // if (obj1->renderbucket != obj2->renderbucket) return false;
     // if (memcmp(obj1->transform, obj2->transform, sizeof(mat44))) return false;
     // if (memcmp(&obj1->rot, &obj2->rot, sizeof(quat))) return false;
@@ -294,117 +367,100 @@ bool object_compare(object_t *obj1, object_t *obj2) {
     return true;
 }
 
-void object_pivot(object_t *obj, vec3 euler) {
+void node_pivot(node_t *obj, vec3 euler) {
     obj->pivot = euler;
-    object_update(obj);
+    node_update(obj);
 }
 
-void object_rotate(object_t *obj, vec3 euler) {
+void node_rotate(node_t *obj, vec3 euler) {
     quat p = eulerq(vec3(obj->pivot.x,obj->pivot.y,obj->pivot.z));
     quat e = eulerq(vec3(euler.x,euler.y,euler.z));
     obj->rot = mulq(p,e);
     obj->euler = euler;
-    object_update(obj);
+    node_update(obj);
 }
 
-void object_teleport(object_t *obj, vec3 pos) {
+void node_teleport(node_t *obj, vec3 pos) {
     obj->pos = pos;
-    object_update(obj);
+    node_update(obj);
 }
 
-void object_move(object_t *obj, vec3 inc) {
+void node_move(node_t *obj, vec3 inc) {
     obj->pos = add3(obj->pos, inc);
-    object_update(obj);
+    node_update(obj);
 }
 
-void object_scale(object_t *obj, vec3 sca) {
+void node_scale(node_t *obj, vec3 sca) {
     obj->sca = vec3(sca.x, sca.y, sca.z);
-    object_update(obj);
+    node_update(obj);
 }
 
-void object_batchable(object_t *obj, bool batchable) {
+void node_batchable(node_t *obj, bool batchable) {
     obj->batchable = batchable;
 }
 
-vec3 object_position(object_t *obj) {
+vec3 node_position(node_t *obj) {
     return vec3(obj->transform[12], obj->transform[13], obj->transform[14]);
 }
 
-void object_model(object_t *obj, model_t model) {
+void node_model(node_t *obj, model_t model) {
     obj->model = model;
 }
 
-void object_model_shadow(object_t *obj, model_t model) {
+void node_model_shadow(node_t *obj, model_t model) {
     obj->model_shadow = model;
 }
 
-void object_anim(object_t *obj, anim_t anim, float speed) {
+void node_anim(node_t *obj, anim_t anim, float speed) {
     obj->anim = anim;
     obj->anim_speed = speed;
 }
 
-void object_push_diffuse(object_t *obj, texture_t tex) {
+void node_push_diffuse(node_t *obj, texture_t tex) {
     array_push(obj->textures, tex);
 }
 
-void object_pop_diffuse(object_t *obj) {
+void node_pop_diffuse(node_t *obj) {
     array_pop(obj->textures);
 }
 
-void object_diffuse(object_t *obj, texture_t tex) {
+void node_diffuse(node_t *obj, texture_t tex) {
     array_clear(obj->textures);
-    object_push_diffuse(obj, tex);
+    node_push_diffuse(obj, tex);
 }
 
-void object_billboard(object_t *obj, unsigned mode) {
+void node_billboard(node_t *obj, unsigned mode) {
     obj->billboard = mode;
 }
 
 // -----------------------------------------------------------------------------
 
-array(scene_t*) scenes;
-scene_t* last_scene;
+static
+void scene_ctor(scene_t *s) {
+    // s->skybox = skybox(NULL, 0);
+}
+
+static
+void scene_dtor(scene_t *s) {
+    // skybox_destroy(&s->skybox);
+    drawmat_destroy(&s->drawmat);
+    shadowmap_destroy(&s->shadowmap);
+}
 
 static void scene_init() {
 #ifndef __EMSCRIPTEN__ // @fixme ems -> shaders
-    do_once scene_push();      // create an empty scene by default
+    // do_once scene_push();      // create an empty scene by default
 #endif
 }
 
-scene_t* scene_get_active() {
-    return last_scene;
-}
-
-scene_t* scene_push() {
-    scene_t *s = REALLOC(0, sizeof(scene_t)), clear = {0}; *s = clear;
-    s->skybox = skybox(NULL, 0);
-    array_push(scenes, s);
-    last_scene = s;
-    return s;
-}
-
-static inline
-void scene_cleanup(scene_t *s) {
-    array_free(s->objs);
-    array_free(s->lights);
-}
-
-void scene_pop() {
-    scene_cleanup(last_scene);
-    scene_t clear = {0};
-    *last_scene = clear;
-    array_pop(scenes);
-    last_scene = *array_back(scenes);
-}
-
-int scene_merge(const char *source) {
+int scene_merge(scene_t *s, const char *source) {
     int count = 0;
     if( json_push(source) ) {
         for(int i = 0, e = json_count("/") - 1; i <= e ; ++i) {
             const char *skybox_folder = json_string("/[%d]/skybox",i);
             if( skybox_folder[0] ) {
                 PRINTF("Loading skybox folder: %s\n", skybox_folder);
-                last_scene->skybox = skybox( skybox_folder, 0 );
+                s->skybox = skybox( skybox_folder, 0 );
                 continue;
             }
             const char *mesh_file = json_string("/[%d]/mesh",i);
@@ -425,16 +481,17 @@ int scene_merge(const char *source) {
             PRINTF("Scene %d/%d Scale: (%f,%f,%f)\n", i, e, scale.x, scale.y, scale.z);
             PRINTF("Scene %d/%d Swap_ZY: %d\n", i, e, opt_swap_zy );
             PRINTF("Scene %d/%d Flip_UV: %d\n", i, e, opt_flip_uv );
-            model_t m = model_from_mem(vfs_read(mesh_file), vfs_size(mesh_file), enable_pbr ? 0 : MODEL_NO_PBR);
+            model_t m = model(mesh_file, enable_pbr ? 0 : MODEL_NO_PBR);
             //char *a = archive_read(animation_file);
-            object_t *o = scene_spawn();
-            object_model(o, m);
-            if( texture_file[0] ) object_diffuse(o, texture_from_mem(vfs_read(texture_file), vfs_size(texture_file), (opt_flip_uv ? IMAGE_FLIP : 0)) );
-            object_scale(o, scale);
-            object_teleport(o, position);
-            object_pivot(o, rotation); // object_rotate(o, rotation);
+            node_t *o = obj_new(node_t);
+            node_model(o, m);
+            if( texture_file[0] ) node_diffuse(o, texture_compressed(texture_file, (opt_flip_uv ? IMAGE_FLIP : 0)) );
+            node_scale(o, scale);
+            node_teleport(o, position);
+            node_pivot(o, rotation); // node_rotate(o, rotation);
             o->fullbright = opt_fullbright;
-            //object_name(x), scene_find(name)
+            obj_attach(s, o);
+            //node_name(x), scene_find(name)
 // o->bounds = aabb(mul3(m.bounds.min,o->sca),mul3(m.bounds.max,o->sca));
 // PRINTF("aabb={%f,%f,%f},{%f,%f,%f}\n", o->bounds.min.x, o->bounds.min.y, o->bounds.min.z, o->bounds.max.x, o->bounds.max.y, o->bounds.max.z);
 
@@ -455,64 +512,42 @@ int scene_merge(const char *source) {
     return count;
 }
 
-object_t* scene_spawn() {
-    object_t obj = object();
-    array_push(last_scene->objs, obj);
-
-    return array_back(last_scene->objs);
-}
-
-unsigned scene_count() {
-    return array_count(last_scene->objs);
-}
-
-object_t* scene_index(unsigned obj_index) {
-    unsigned obj_count = scene_count();
-    ASSERT(obj_index < obj_count, "Object index %d exceeds number (%d) of spawned objects", obj_index, obj_count);
-    return &last_scene->objs[obj_index];
-}
-
-light_t* scene_spawn_light() {
-    light_t l = light();
-    array_push(last_scene->lights, l);
-
-    return array_back(last_scene->lights);
-}
-
-void scene_merge_lights(const char *source) {
-    light_t *lights = lightlist(source);
-    for (unsigned i = 0; i < array_count(lights); ++i) {
-        light_t *l = &lights[i];
-        array_push(last_scene->lights, *l);
-    }
-    array_free(lights);
-}
-
-unsigned scene_count_light() {
-    return array_count(last_scene->lights);
-}
-
-light_t* scene_index_light(unsigned light_index) {
-    unsigned light_count = scene_count_light();
-    ASSERT(light_index < light_count, "Light index %d exceeds number (%d) of spawned lights", light_index, light_count);
-    return &last_scene->lights[light_index];
-}
-
-void scene_skybox(skybox_t sky) {
-    // skybox_destroy(&last_scene->skybox);
-    last_scene->skybox = sky;
-}
-
 static
 int scene_obj_distance_compare(const void *a, const void *b) {
-    const object_t *da = a, *db = b;
+    const node_t *da = a, *db = b;
     return da->distance < db->distance ? 1 : da->distance > db->distance ? -1 : 0;
 }
 
-void scene_render(int flags) {
-    camera_t *cam = camera_get_active();
+static
+void scene_collect_nodes(scene_t *root, obj *parent) {
+    for each_objchild(parent, obj*, o) {
+        if (obj_typeid(o) == OBJTYPE_node) {
+            array_push(root->renderlist, (node_t*)o);
+        }
+        else if (obj_typeid(o) == OBJTYPE_light) {
+            array_push(root->lights, (light_t*)o);
+        }
+        scene_collect_nodes(root, o);
+    }
+}
 
-    shadowmap_t *sm = &last_scene->shadowmap;
+static
+int scene_draw(scene_t *s) {
+    int flags = s->flags;
+    camera_t *cam = camera_get_active();
+    shadowmap_t *sm = &s->shadowmap;
+
+    array_clear(s->renderlist);
+    array_clear(s->lights);
+    scene_collect_nodes(s, (obj*)s);
+
+    static light_t light_block[MAX_LIGHTS];
+    int light_count = 0;
+    for (int i = 0; i < array_count(s->lights); ++i) {
+        if (light_count >= MAX_LIGHTS) break;
+        light_t *l = s->lights[i];
+        light_block[light_count++] = *l;
+    }
 
     if (flags & SCENE_POSTFX) {
         fx_begin();
@@ -527,9 +562,9 @@ void scene_render(int flags) {
     }
 
     if(flags & SCENE_BACKGROUND) {
-        if(last_scene->skybox.program) {
-            skybox_push_state(&last_scene->skybox, cam->proj, cam->view);
-            mesh_render(&last_scene->skybox.geometry);
+        if(s->skybox.program) {
+            skybox_push_state(&s->skybox, cam->proj, cam->view);
+            mesh_render(&s->skybox.geometry);
             skybox_pop_state();
         }
 
@@ -537,19 +572,10 @@ void scene_render(int flags) {
     }
 
     if( flags & SCENE_FOREGROUND ) {
-        bool do_relighting = 0;
-        for (unsigned j = 0; j < array_count(last_scene->lights); ++j) {
-            if (!last_scene->lights[j].cached) {
-                do_relighting = 1;
-                break;
-            }
-        }
-
-        for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
-            object_t *obj = scene_index(j);
+        for(unsigned j = 0, obj_count = array_count(s->renderlist); j < obj_count; ++j ) {
+            node_t *obj = s->renderlist[j];
             model_t *model = &obj->model;
             obj->was_batched = false;
-            // array_resize(obj->pair_instance, obj_count);
 
             model->billboard = obj->billboard;
             for (int p = 0; p < RENDER_PASS_OVERRIDES_BEGIN; ++p) {
@@ -559,8 +585,8 @@ void scene_render(int flags) {
             obj->checksum = obj->model.iqm ? model_checksum(&obj->model) : 0;
         }
 
-        for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
-            object_t *obj = scene_index(j);
+        for(unsigned j = 0, obj_count = array_count(s->renderlist); j < obj_count; ++j ) {
+            node_t *obj = s->renderlist[j];
             model_t *model = &obj->model;
             anim_t *anim = &obj->anim;
             mat44 *views = (mat44*)(&cam->view);
@@ -574,7 +600,7 @@ void scene_render(int flags) {
             }
 
             if (!obj->fullbright) {
-                model_skybox(model, last_scene->skybox);
+                model_skybox(model, s->skybox);
             } else {
                 skybox_t sb = {0};
                 model_skybox(model, sb);
@@ -585,8 +611,8 @@ void scene_render(int flags) {
 
             int num_instances = 1;
             for (unsigned k = j+1; k < obj_count; ++k) {
-                object_t *obj2 = scene_index(k);
-                if (!obj2->batchable || obj2->skip_draw || !object_compare(obj, obj2)) {
+                node_t *obj2 = s->renderlist[k];
+                if (!obj2->batchable || obj2->skip_draw || !node_compare(obj, obj2)) {
                     continue;
                 }
                 if (num_instances >= array_count(obj->instances)) {
@@ -609,25 +635,18 @@ void scene_render(int flags) {
                     *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = (*array_back(obj->textures));
                 }
             }
-
-            if ( do_relighting || !obj->light_cached ) {
-                obj->light_cached = 1;
-                // shader_bind(model->iqm->program);
-                // light_update(array_count(last_scene->lights), last_scene->lights);
-                // @todo: rework light caching
-            }
         }
 
         /* Build shadowmaps */
         if (flags & SCENE_SHADOWS) { 
             shadowmap_begin(sm);
-            for (unsigned j = 0; j < array_count(last_scene->lights); ++j) {
-                light_t *l = &last_scene->lights[j];
+            for (unsigned j = 0; j < light_count; ++j) {
+                light_t *l = &light_block[j];
                 while (shadowmap_step(sm)) {
                     shadowmap_light(sm, l, cam->proj, cam->view);
                     if (!l->processed_shadows) continue;
-                    for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
-                        object_t *obj = scene_index(j);
+                    for(unsigned j = 0, obj_count = array_count(s->renderlist); j < obj_count; ++j ) {
+                        node_t *obj = s->renderlist[j];
                         model_t *model = obj->model_shadow.iqm ? &obj->model_shadow : &obj->model;
                         if (obj->model.iqm && obj->cast_shadows && !obj->was_batched) {
                             model_render_instanced(*model, cam->proj, cam->view, obj->instances, obj->num_instances);
@@ -639,22 +658,22 @@ void scene_render(int flags) {
         }
 
         if (flags & SCENE_DRAWMAT) {
-            drawmat_clear(&last_scene->drawmat);
+            drawmat_clear(&s->drawmat);
 
-            for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
-                object_t *obj = scene_index(j);
+            for(unsigned j = 0, obj_count = array_count(s->renderlist); j < obj_count; ++j ) {
+                node_t *obj = s->renderlist[j];
                 model_t *model = &obj->model;
                 if (!model->iqm) continue;
                 if (obj->skip_draw) continue;
                 if (obj->was_batched) continue;
-                drawmat_render_instanced(&last_scene->drawmat, *model, cam->proj, cam->view, obj->instances, obj->num_instances);
+                drawmat_render_instanced(&s->drawmat, *model, cam->proj, cam->view, obj->instances, obj->num_instances);
             }
         }
 
         /* Collect all transparency enabled models and sort them by distance */
-        static array(object_t*) transparent_objects = 0;
-        for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
-            object_t *obj = scene_index(j);
+        static array(node_t*) transparent_objects = 0;
+        for(unsigned j = 0, obj_count = array_count(s->renderlist); j < obj_count; ++j ) {
+            node_t *obj = s->renderlist[j];
             model_t *model = &obj->model;
 
             if (!model->iqm) continue;
@@ -670,35 +689,35 @@ void scene_render(int flags) {
         array_sort(transparent_objects, scene_obj_distance_compare);
 
         /* Opaque pass */
-        for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
-            object_t *obj = scene_index(j);
+        for(unsigned j = 0, obj_count = array_count(s->renderlist); j < obj_count; ++j ) {
+            node_t *obj = s->renderlist[j];
             model_t *model = &obj->model;
             if (!model->iqm) continue;
             if (obj->skip_draw) continue;
             if (obj->was_batched) continue;
 
             model_shadow(model, sm);
-            model_light(model, array_count(last_scene->lights), last_scene->lights);
+            model_light(model, light_count, light_block);
             model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, obj->num_instances, RENDER_PASS_OPAQUE);
         }
 
         /* Transparency pass */
         for (unsigned j = 0; j < array_count(transparent_objects); ++j) {
-            object_t *obj = transparent_objects[j];
+            node_t *obj = transparent_objects[j];
             model_t *model = &obj->model;
             if (!model->iqm) continue;
             if (obj->skip_draw) continue;
             if (obj->was_batched) continue;
 
             model_shadow(model, sm);
-            model_light(model, array_count(last_scene->lights), last_scene->lights);
+            model_light(model, light_count, light_block);
             model_render_instanced_pass(*model, cam->proj, cam->view, obj->instances, obj->num_instances, RENDER_PASS_TRANSPARENT);
         }
 
         array_resize(transparent_objects, 0);
 
-        for(unsigned j = 0, obj_count = scene_count(); j < obj_count; ++j ) {
-            object_t *obj = scene_index(j);
+        for(unsigned j = 0, obj_count = array_count(s->renderlist); j < obj_count; ++j ) {
+            node_t *obj = s->renderlist[j];
             model_t *model = &obj->model;
             if (obj->skip_draw) continue;
             if (obj->was_batched) continue;
@@ -722,4 +741,23 @@ void scene_render(int flags) {
     if (flags & SCENE_POSTFX) {
         fx_end(0,0);
     }
+    return 1;
+}
+
+AUTORUN {
+    STRUCT(scene_t, int, flags, "Flags");
+
+    // special objects below:
+    STRUCT(scene_t, skybox_t, skybox, "Skybox");
+    STRUCT(scene_t, shadowmap_t, shadowmap, "Shadowmap");
+    STRUCT(scene_t, drawmat_t, drawmat, "Drawmat");
+
+    obj_ctor[OBJTYPE_scene] = scene_ctor;
+    obj_dtor[OBJTYPE_scene] = scene_dtor;
+    obj_draw[OBJTYPE_scene] = scene_draw;
+}
+
+void scene_render(scene_t *s, int flags) {
+    s->flags = flags;
+    scene_draw(s);
 }

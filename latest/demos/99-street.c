@@ -24,8 +24,10 @@ int main() {
     fx_enable_ordered(fx_find("fx/fxTonemapACES.fs"));
     fx_enable_ordered(fx_find("fx/fxFXAA3.fs"));
 
+    scene_t *scene = obj_new(scene_t);
+
     // load skybox
-    skybox_t sky = skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]);
+    scene->skybox = skybox_pbr(skyboxes[0][0], skyboxes[0][1], skyboxes[0][2]);
 
     // load static scene
     model_t street, street_shadow;
@@ -38,25 +40,23 @@ int main() {
     // camera
     camera_t cam = camera();
 
-    object_t *obj = scene_spawn();
-    object_model(obj, street);
+    node_t *obj = obj_new(node_t);
+    node_model(obj, street);
+    obj_attach(scene, obj);
 
     double sky_update_until = 0.0;
 
-    light_t *sun = scene_spawn_light();
-
-    scene_skybox(sky);
+    light_t *sun = obj_new(light_t);
+    obj_attach(scene, sun);
 
     fbo_t main_fb = fbo(window_width(), window_height(), 0, TEXTURE_FLOAT);
-
-    scene_t *scene = scene_get_active();
 
     reflect_params_t reflect_params = {
         .max_distance = 100.0f,
         .reflection_strength = 0.8f,
         .metallic_threshold = 0.001f,
         .downsample = 1,
-        .cubemap = &sky.cubemap,
+        .cubemap = &scene->skybox.cubemap,
     };
 
     bloom_params_t bloom_params = {
@@ -93,13 +93,13 @@ int main() {
             viewport_area(vec2(0,0), vec2(window_width()>>res_shift, window_height()>>res_shift));
             int shadows = do_shadows ? SCENE_SHADOWS : 0;
             int drawmat_flags = do_drawmat ? SCENE_DRAWMAT : 0;
-            scene_render(SCENE_BACKGROUND|SCENE_FOREGROUND|shadows|drawmat_flags);
+            scene_render(scene, SCENE_BACKGROUND|SCENE_FOREGROUND|shadows|drawmat_flags);
             if (do_ssao) {
                 fx_drawpass(fx_find("fx/fxSSAO.fs"), main_fb.texture_color, main_fb.texture_depth);
             }
         fbo_unbind();
 
-        reflect_params.cubemap = &sky.cubemap;
+        reflect_params.cubemap = &scene->skybox.cubemap;
 
         if (do_ssr) {
             texture_t reflect_fb = fxt_reflect(main_fb.texture_color, main_fb.texture_depth, scene->drawmat.normals, scene->drawmat.matprops, cam.proj, cam.view, reflect_params);
@@ -124,7 +124,7 @@ int main() {
                 const char *filename = skyboxes[i][0];
                 bool selected = false; 
                 if( ui_bool( filename, &selected ) ) {
-                    scene_skybox(skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]));
+                    scene->skybox = skybox_pbr(skyboxes[i][0], skyboxes[i][1], skyboxes[i][2]);
                 }
             }
             ui_section("scene");
@@ -141,7 +141,7 @@ int main() {
             ui_bool("DrawMat", &do_drawmat);
             ui_bool("SSAO", &do_ssao);
             ui_bool("Post", &do_post);
-            ui_float("Blend Region", &scene_get_active()->shadowmap.blend_region);
+            ui_float("Blend Region", &scene->shadowmap.blend_region);
             ui_int("Shadow Filter Size", &scene->shadowmap.filter_size);
             ui_int("Shadow Window Size", &scene->shadowmap.window_size);
             ui_section("reflect");

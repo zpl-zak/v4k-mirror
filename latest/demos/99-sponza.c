@@ -69,6 +69,6 @@ int main() {
         model_render(sponza, cam.proj, cam.view, M);
 
         // post-fxs end here
-        fx_end(0);
+        fx_end(0, 0);
     }
 }

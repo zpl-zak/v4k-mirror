@@ -1,6 +1,6 @@
 uniform sampler2D u_normal_texture;
 uniform sampler2D u_matprops_texture;
-uniform samplerCube u_cubemap_texture;
+uniform sampler2D u_cubemap_texture;
 uniform mat4 u_projection;
 uniform mat4 u_view;
 uniform mat4 u_inv_view;
@@ -12,6 +12,17 @@ uniform float u_reflection_strength; /// set:0.5
 uniform float u_metallic_threshold; /// set:0.001
 uniform bool u_sample_skybox; /// set:0
 const float EPSILON = 0.0001;
+
+#define PI 3.14159265
+
+vec2 sphere_to_polar( vec3 normal ) {
+    normal = normalize( normal );
+    float theta = atan( -normal.x, normal.z );
+    float phi = acos( normal.y );
+    float u = (theta + PI) / (2*PI);
+    float v = phi / PI;
+    return vec2( u, v );
+}
 
 bool ray_out_of_bounds(vec3 screen_pos) {
     return screen_pos.x < 0.0 || screen_pos.x > 1.0 || screen_pos.y < 0.0 || screen_pos.y > 1.0;
@@ -48,8 +59,8 @@ vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, float metallic, vec3 refl_
     if (hit_color == vec3(0)) {
         if (u_sample_skybox) {
             vec3 world_refl = (u_inv_view * vec4(refl_view, 0.0)).xyz;
-            world_refl.x = -world_refl.x;
-            vec3 cubemap_color = texture(u_cubemap_texture, world_refl).rgb;
+            vec3 cubemap_color = texture(u_cubemap_texture, sphere_to_polar(world_refl)).rgb;
+            cubemap_color.rgb = pow(cubemap_color.rgb, vec3(1.0/2.2));
             hit_color = mix(vec3(0), cubemap_color, u_reflection_strength*metallic);
             edge_fade = 1.0;
         } else {
@@ -60,8 +71,8 @@ vec4 trace_ray(vec3 ray_pos, vec3 ray_dir, int steps, float metallic, vec3 refl_
         hit_color *= u_reflection_strength*metallic;
         if (u_sample_skybox) {
             vec3 world_refl = (u_inv_view * vec4(refl_view, 0.0)).xyz;
-            world_refl.x = -world_refl.x;
-            vec3 cubemap_color = texture(u_cubemap_texture, world_refl).rgb;
+            vec3 cubemap_color = texture(u_cubemap_texture, sphere_to_polar(world_refl)).rgb;
+            cubemap_color.rgb = pow(cubemap_color.rgb, vec3(1.0/2.2));
             cubemap_color = mix(vec3(0), cubemap_color, u_reflection_strength*metallic);
             hit_color = mix(cubemap_color, hit_color, clamp(edge_fade, 0.0, 1.0));
             edge_fade = 1.0;
@@ -94,8 +105,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     if (refl_view.z > 0.0) {
         if (u_sample_skybox) {
             vec3 world_refl = (u_inv_view * vec4(refl_view, 0.0)).xyz;
-            world_refl.x = -world_refl.x;
-            vec3 refl_color = texture(u_cubemap_texture, world_refl).rgb;
+            vec3 refl_color = texture(u_cubemap_texture, sphere_to_polar(world_refl)).rgb;
+            refl_color.rgb = pow(refl_color.rgb, vec3(1.0/2.2));
             vec3 result = mix(vec3(0.0), refl_color, u_reflection_strength*matprops.r);
             bool is_black = max(result.r, max(result.g, result.b)) < 0.01;
             fragColor = vec4(result, is_black ? 0.0 : 1.0);

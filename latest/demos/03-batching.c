@@ -29,31 +29,35 @@ int main() {
         camera_fps(&cam, 0, 0);
     }
     skybox_t sky = skybox("cubemaps/stardust", 0);
-    model_t  mdl = model("cube.obj", 0);
     model_t  plane = model("plane.obj", 0);
-    scene_skybox(sky);
 
-    light_t *light = scene_spawn_light();
-    light->type = LIGHT_DIRECTIONAL; 
+    scene_t *main_scene = obj_new(scene_t);
+    main_scene->skybox = sky;
+
+    light_t* sun = obj_new(light_t);
+    sun->type = LIGHT_DIRECTIONAL;
+    obj_attach(main_scene, sun);
 
     int NUM_INSTANCES = 1024;
     for(int z = 0, i = 0; z < 128; ++z) {
         for(int x = 0; x < 128; ++x, ++i) {
             if (i >= NUM_INSTANCES) break;
-            object_t *obj = scene_spawn();
+            node_t *obj = obj_new(node_t);
             vec3 pos = vec3(-x*3,1.05,-z*3);
             vec3 rot = vec3(0,180,0);
             vec3 sca = vec3(1,1,1);
-            object_teleport(obj, pos);
-            object_rotate(obj, rot);
-            object_scale(obj, sca);
-            object_model(obj, mdl);
+            node_teleport(obj, pos);
+            node_rotate(obj, rot);
+            node_scale(obj, sca);
+            node_model(obj, model("cube.obj", 0));
+            obj_attach(main_scene, obj);
         }
     }
 
-    object_t *obj_plane = scene_spawn();
-    object_model(obj_plane, plane);
-    object_scale(obj_plane, vec3(100,100,100));
+    node_t *obj_plane = obj_new(node_t);
+    node_model(obj_plane, plane);
+    node_scale(obj_plane, vec3(100,100,100));
+    obj_attach(main_scene, obj_plane);
 
     while( window_swap() && !input(KEY_ESC) ) {
         // fps camera
@@ -73,13 +77,13 @@ int main() {
         ddraw_ground(0);
         // ddraw_flush();
         
-        scene_render(SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_SHADOWS|SCENE_POSTFX);
+        scene_render(main_scene, SCENE_FOREGROUND|SCENE_BACKGROUND|SCENE_SHADOWS|SCENE_POSTFX);
 
         // fullscreen_quad_rgb_flipped(fb_tex);
 
         if (ui_panel("Scene", 0)) {
             ui_separator();
-            ui_light(light);
+            ui_light(sun);
             ui_panel_end();
         }
     }

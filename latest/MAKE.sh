@@ -1,279 +1,578 @@
 #!/bin/bash
 
-# linux + osx -----------------------------------------------------------------
-cd `dirname $0`
+set -e
 
-# copy demos to root folder. local changes are preserved
-# cp -n demos/*.c .
+# show help
+if [[ "$1" == "-?" || "$1" == "/?" || "$1" == "-h" || "$1" == "help" ]]; then
+    echo "$0                         ; compile everything: \`make dll dev\` alias"
+    echo "$0 [help]                  ; show this screen"
+    echo "$0 [docs]                  ; generate tools/docs/docs.html file"
+    echo "$0 [cook]                  ; cook .zipfiles with tools/cook.ini cookbook"
+    echo "$0 [build_cook]            ; build cook tool in release mode"
+    echo "$0 [lua]                   ; execute lua script with v4k"
+    echo "$0 [html5]                 ; build HTML5 demo"
+    echo "$0 [web]                   ; run Python webserver in html5 dir"
+    echo "$0 [push]                  ; sync with VCS"
+    echo "$0 [pull]                  ; pull from VCS"
+    echo "$0 [sync]                  ; Push changes to GitHub mirror"
+    echo "$0 [shipit]                ; Release a new version to GitHub"
+    echo "$0 [fuse]                  ; fuse all binaries and cooked zipfiles found together"
+    echo "$0 [vps]                   ; upload the release to VPS"
+    echo "$0 [tidy]                  ; clean up temp files"
+    echo "$0 [bind]                  ; generate lua bindings"
+    echo "$0 [checkmem]              ; check untracked allocators in V4K"
+    echo "$0 [test]                  ; run autotests"
+    echo "$0 [todo]                  ; check for @fixme and @todo"
+    echo "$0 [leak]                  ; check for @leak"
+    echo "$0 [lua]                   ; execute lua script with v4k"
+    echo "$0 [sln]                   ; generate a xcode/gmake/ninja/visual studio solution"
+    echo "$0 [addons[ names ] ]      ; specify list of addons you want to compile with the engine"
+    echo "$0 [cl|tcc|cc|gcc|clang|clang-cl] [dbg|dev|rel|ret] [static|dll] [nov4k|nodemos|editor] [vis] [-- args]"
+    echo "   cl       \\"
+    echo "   tcc      |"
+    echo "   cc       | select compiler. must be accessible in PATH"
+    echo "   gcc      | (will be autodetected when no option is provided)"
+    echo "   clang    |"
+    echo "   clang-cl /"
+    echo "   dbg      \   debug build: [x] ASAN [x] poison [x] asserts [x] profiler [x] symbols                    [ ] zero optimizations"
+    echo "   dev      | develop build: [ ] ASAN [x] poison [x] asserts [x] profiler [x] symbols                    [*] some optimizations (default)"
+    echo "   rel      / release build: [ ] ASAN [ ] poison [ ] asserts [ ] profiler [x] symbols (cl,clang-cl only) [x] many optimizations"
+    echo "   static   \ link v4k as static library"
+    echo "   dll      / link v4k as dynamic library (dll) (default)"
+    echo "   nov4k    \ do not compile framework"
+    echo "   demos    | do compile demos"
+    echo "   editor   / do compile editor"
+    echo "   run      | run compiled .exe"
+    echo "   vis      > visualize invokation cmdline."
+    echo "   args     > after \`--\` separator is found, pass all remaining arguments to compiler as-is"
+    echo "   run_args > after \`//\` separator is found, pass all remaining arguments to runtime exe as-is"
+    echo
+    exit 0
+fi
 
-# rem tests
-# clang editor.c -I. -lm -lX11 -g -fsanitize=address,undefined && ./a.out
-# cl editor.c -I. -fsanitize=address /DEBUG /Zi && editor
+# cook asset files
+if [[ "$1" == "cook" ]]; then
+    # generate cooker twice: use multi-threaded version if available (cl). then cook.
+    # gcc tools/cook.c -Iengine engine/v4k.c
+    #              cl tools/cook.c -Iengine engine/v4k.c
+    # cook
+    tools/cook
+    exit 0
+fi
+
+if [[ "$1" == "build_cook" ]]; then
+    pushd tools
+        gcc cook.c -I../engine -fopenmp -Os -O2 -ffast-math -march=native -mtune=native -DNDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections
+    popd
+    exit 0
+fi
+
+# generate bindings
+if [[ "$1" == "bind" ]]; then
+    # luajit
+    tools/luajit tools/luajit_make_bindings.lua > v4k.lua
+    mv -f v4k.lua bind
+    exit 0
+fi
+
+if [[ "$1" == "lua" ]]; then
+    pushd bind
+        luajit "../$2"
+    popd
+    exit 0
+fi
+
+if [[ -d ".ark" ]]; then
+    config_file=".ark/workspace.cfg"
+
+    if [[ -f "$config_file" ]]; then
+        while IFS='=' read -r key value; do
+            if [[ "$key" == "current_cl_id" ]]; then
+                current_cl_id="$value"
+            fi
+            if [[ "$key" == "branch_id" ]]; then
+                current_branch="$value"
+            fi
+        done < "$config_file"
+    else
+        echo "The file $config_file does not exist."
+    fi
+    BUILD_CHANGELIST="$current_cl_id"
+    BUILD_BRANCH="$current_branch"
+fi
+
+# generate documentation
+if [[ "$1" == "docs" ]]; then
+    # set symbols...
+    VERSION=$(cat VERSION)
+    CHANGELIST="$BUILD_CHANGELIST"
+    BRANCH="$BUILD_BRANCH"
+    LAST_MODIFIED=$(date)
+    # git --no-pager log --pretty="format:[%h](https://dev.v4.games/v4games/v4k/commit/%H): %s (**%cN**)" > changelog.txt
+    cat CHANGELOG.md > changelog.txt
+
+    # ...and generate docs
+    # gcc tools/docs/docs.c engine/v4k.c -Iengine -O2 -DNDEBUG $2
+
+    # Concatenate all eng_*.h files into v4k_header_temp
+    > v4k_header_temp
+    for f in engine/split/eng_*.h; do
+        echo "#line 1 \"${f##*/}\"" >> v4k_header_temp
+        cat "$f" >> v4k_header_temp
+    done
+
+    tools/docs v4k_header_temp --excluded=3rd_glad.h,v4k.h,eng_compat.h, > v4k.html
+    mv -f v4k.html engine/
+    rm changelog.txt
+    rm v4k_header_temp
+
+    exit 0
+fi
+
+if [[ "$1" == "push" ]]; then
+    bash make.sh bind
+    # bash make.sh vps
+    # bash make.sh tidy
+
+    if [[ -d ".ark" ]]; then
+        tools/ark commit -ws_cl 1
+    fi
+
+    exit 0
+fi
+
+if [[ "$1" == "pull" ]]; then
+    if [[ -d ".ark" ]]; then
+        tools/ark get -cl latest
+    fi
+    exit 0
+fi
+
+if [[ "$1" == "sync" ]]; then
+    ssh -i ~/.ssh/id_rsa node@192.168.1.28 "/bin/bash /home/node/sync.sh"
+    exit 0
+fi
+
+if [[ "$1" == "shipit" ]]; then
+    ssh -i ~/.ssh/id_rsa node@192.168.1.28 "/bin/bash /home/node/release.sh $2"
+    exit 0
+fi
+
+# fuse binaries and zipfiles
+if [[ "$1" == "fuse" ]]; then
+    if [[ "$2" == "cook" ]]; then
+        rm -f *.zip
+        tools/cook --cook-jobs=1
+    fi
+    for i in *.exe; do
+        if [[ "${i:0:6}" != "fused_" ]]; then
+            cp -f "$i" "fused_$i" 2>/dev/null
+            tools/fuser "fused_$i" *.zip
+        fi
+    done
+    exit 0
+fi
+
+# run autotests
+if [[ "$1" == "test" ]]; then
+    bash TEST.sh
+    exit $?
+fi
+
+# check memory api calls
+if [[ "$1" == "checkmem" ]]; then
+    grep -RnC "[^_xv]realloc("  engine/split/eng*
+    grep -RnC "[^_xv]REALLOC("  engine/split/eng*
+    grep -RnC "[^_xv]MALLOC("   engine/split/eng*
+    grep -RnC "[^_xv]xrealloc(" engine/split/eng*
+    grep -RnC "[^_xv]malloc("   engine/split/eng*
+    grep -RnC "[^_xv]free("     engine/split/eng*
+    grep -RnC "[^_xv]calloc("   engine/split/eng*
+    grep -RnC "[^_xv]strdup("   engine/split/eng*
+    grep -RnC "[^_xv]array_init("   engine/split/eng*
+    grep -RnC "[^_xv]array_resize("   engine/split/eng*
+    grep -RnC "[^_xv]array_reserve("   engine/split/eng*
+    grep -RnC "[^_xv]array_push("   engine/split/eng*
+    grep -RnC "[^_xv]array_push_front("   engine/split/eng*
+    grep -RnC "[^_xv]array_free("   engine/split/eng*
+    grep -RnC "[^_xv]array_free("   engine/split/eng*
+    grep -RnC "[^_xv]set_init("   engine/split/eng*
+    grep -RnC "[^_xv]set_insert("   engine/split/eng*
+    grep -RnC "[^_xv]map_init("   engine/split/eng*
+    grep -RnC "[^_xv]map_insert("   engine/split/eng*
+    exit 0
+fi
+
+if [[ "$1" == "todo" ]]; then
+    grep -RnC "[^_xv]@todo"  engine/split/eng*
+    grep -RnC "[^_xv]@fixme"  engine/split/eng*
+    exit 0
+fi
+
+if [[ "$1" == "leak" ]]; then
+    grep -RnC "[^_xv]@leak"  engine/split/eng*
+    exit 0
+fi
+
+if [[ "$1" == "html5" ]]; then
+    bash MAKE.sh prep
+    pushd demos/html5
+        bash make.sh $2
+    popd
+    exit 0
+fi
+
+if [[ "$1" == "web" ]]; then
+    python demos/html5/host.py --directory demos/html5 --bind 127.0.0.1 8000
+    exit 0
+fi
+
+if [[ "$1" == "vps" ]]; then
+    bash make.sh docs
+    scp -i ~/.ssh/id_rsa engine/v4k.html app@192.168.1.21:/home/v4k/htdocs/v4k.dev/index.html
+    exit 0
+fi
 
 # tidy environment
-if [ "$1" = "tidy" ]; then
-    rm 0?-* 2> /dev/null
-    rm v4k.o 2> /dev/null
-    rm .art*.zip 2> /dev/null
-    rm demos/lua/.art*.zip 2> /dev/null
-    rm demos/lua/libv4k* 2> /dev/null
-    rm demos/html5/.art*.zip 2> /dev/null
-    rm v4k_*.* 2> /dev/null
-    rm 3rd_*.* 2> /dev/null
-    rm libv4k* 2> /dev/null
-    rm -rf *.dSYM 2> /dev/null
-    rm *.png 2> /dev/null
-    rm *.mp4 2> /dev/null
-    rm editor 2> /dev/null
-    rm temp_* 2> /dev/null
-    rm hello 2> /dev/null
-    exit
-fi
-# shortcuts for split & join scripts
-if [ "$1" = "split" ]; then
-    sh tools/split.bat
-    exit
-fi
-if [ "$1" = "join" ]; then
-    sh tools/join.bat
-    exit
-fi
-# cook
-if [ "$1" = "cook" ]; then
-    cc -o cook tools/cook.c -Iengine
-    ./cook
-    exit
-fi
-# sync
-if [ "$1" = "sync" ]; then
-    git reset --hard HEAD^1 && git pull
-    sh MAKE.bat tidy
-    exit
+if [[ "$1" == "tidy" ]]; then
+    bash demos/html5/make.sh tidy      > /dev/null 2>&1
+    mv -f ??-*.png demos          > /dev/null 2>&1
+    mv -f ??-*.c demos            > /dev/null 2>&1
+    rm -f bind/v4k.dll                > /dev/null 2>&1
+    rm -f bind/*.zip                  > /dev/null 2>&1
+    rm -f .temp*.*                    > /dev/null 2>&1
+    rm -f *.zip                       > /dev/null 2>&1
+    rm -f *.mem                       > /dev/null 2>&1
+    rm -f *.exp                       > /dev/null 2>&1
+    rm -f *.exe.manifest              > /dev/null 2>&1
+    rm -f tools/*.exp                 > /dev/null 2>&1
+    rm -f *.lib                       > /dev/null 2>&1
+    rm -f *.tmp                       > /dev/null 2>&1
+    rm -f *.exe                       > /dev/null 2>&1
+    rm -f *.log                       > /dev/null 2>&1
+    rm -f *.obj                       > /dev/null 2>&1
+    rm -f tools/*.obj                 > /dev/null 2>&1
+    rm -f *.o                         > /dev/null 2>&1
+    rm -f *.a                         > /dev/null 2>&1
+    rm -f *.pdb                       > /dev/null 2>&1
+    rm -f *.ilk                       > /dev/null 2>&1
+    rm -f *.png                       > /dev/null 2>&1
+    rm -f *.mp4                       > /dev/null 2>&1
+    rm -f *.def                       > /dev/null 2>&1
+    rm -f *.dll                       > /dev/null 2>&1
+    rm -f *.ini                       > /dev/null 2>&1
+    rm -f *.csv                       > /dev/null 2>&1
+    rm -f 3rd_*.*                     > /dev/null 2>&1
+    rm -f v4k_*.*                     > /dev/null 2>&1
+    rm -f v4k.html                    > /dev/null 2>&1
+    rm -f changelog.txt               > /dev/null 2>&1
+    rm -f steam_appid.txt             > /dev/null 2>&1
+# rm -f ??-*.*                      > /dev/null 2>&1
+    rm -f temp_*.*                    > /dev/null 2>&1
+    rm -rf .vs                    > /dev/null 2>&1
+    rm -rf _debug                 > /dev/null 2>&1
+    rm -rf _devel                 > /dev/null 2>&1
+    rm -rf _release               > /dev/null 2>&1
+    rm -rf _cache                 > /dev/null 2>&1
+    rm -rf _deploy                > /dev/null 2>&1
+    rm -rf tests/out              > /dev/null 2>&1
+    rm -rf tests/diff             > /dev/null 2>&1
+# rm -rf _project               > /dev/null 2>&1
+    rm -f tcc.sh                     > /dev/null 2>&1
+    rm -f sh.sh                      > /dev/null 2>&1
+    exit 0
 fi
 
-export dll=dll
-export build=dev
-export args=
-export cc=cc
-export app=$1
+cc=${cc:-}
+dll=dll
+build=dev
+args="-Iengine"
+run_args=""
+other=""
+v4k=yes
+hello=no
+demos=no
+lab=no
+editor=no
+vis=no
+proj=no
+rc=0
+run=no
+share=no
+addons=""
+addons_names=""
+addons_includes=""
 
-while [ $# -ge 1 ]; do
-    if [ "$1" = "help" ]; then 
-        echo sh MAKE.bat
-        echo sh MAKE.bat [gcc,clang,tcc] [dbg,dev,rel] [dll,static]
-        echo sh MAKE.bat [tidy]
-        echo sh MAKE.bat [split,join]
-        echo sh MAKE.bat [cook]
-        echo sh MAKE.bat [proj]
-        exit
-    fi
-    if [ "$1" = "dll" ]; then 
-        export dll=dll
-    fi
-    if [ "$1" = "static" ]; then 
-        export dll=static
-    fi
-    if [ "$1" = "dbg" ]; then 
-        export build=dbg
-        export flags="-O0 -g -DDEBUG"
-    fi
-    if [ "$1" = "dev" ]; then 
-        export build=dev
-        export flags="-O0 -g -DNDEBUG=1"
-    fi
-    if [ "$1" = "ret" ]; then 
-        export build=ret
-        export flags="-O3 -DNDEBUG=3 -DENABLE_RETAIL"
-    fi
-    if [ "$1" = "rel" ]; then 
-        export build=rel
-        export flags="-O3 -DNDEBUG=2"
-    fi
-    if [ "$1" = "gcc" ]; then 
-        export cc=gcc
-    fi
-    if [ "$1" = "clang" ]; then 
-        export cc=clang
-    fi
-    if [ "$1" = "tcc" ]; then 
-        export cc="tcc -D__STDC_NO_VLA__"
-    fi
-    if [ "$1" = "proj" ]; then
-        if [ "$(uname)" != "Darwin" ]; then
-            chmod +x tools/premake5.linux
-            tools/premake5.linux gmake
-            tools/premake5.linux ninja
-            exit
+if [[ "$1" == "addons[" ]]; then
+    # plugins are always included in form "<gh username>/<gh repo>/plugin.h"
+    addon_includes="-Iplugins $addon_includes"
+    shift
+    while [[ "$1" != "]" ]]; do
+        addon_names="$1 $addon_names"
+
+        # depot folder
+        if [[ -d "depot/deps/$1" ]]; then
+            addon_includes="-Idepot/deps/$1 $addon_includes"
+            if [[ -f "depot/deps/$1/$1.cpp" ]]; then
+                addons="depot/deps/$1/$1.cpp $addons"
+            else
+                addons="depot/deps/$1/$1.c $addons"
+            fi
+            if [[ -d "depot/deps/$1/include" ]]; then
+                addon_includes="-Idepot/deps/$1/include $addon_includes"
+            fi
         fi
-        if [ "$(uname)" = "Darwin" ]; then
-            chmod +x tools/premake5.osx
-            tools/premake5.osx xcode4
-            tools/premake5.osx ninja
-            exit
+        if [[ -d "plugins/$1" ]]; then
+            # addon_includes="-Iplugins/$1 $addon_includes"
+            if [[ -f "plugins/$1/$1.cpp" ]]; then
+                addons="plugins/$1/$1.cpp $addons"
+            else
+                addons="plugins/$1/$1.c $addons"
+            fi
+            if [[ -f "plugins/$1/plugin.cpp" ]]; then
+                addons="plugins/$1/plugin.cpp $addons"
+            else
+                addons="plugins/$1/plugin.c $addons"
+            fi
+            if [[ -d "plugins/$1/include" ]]; then
+                addon_includes="-Iplugins/$1/include $addon_includes"
+            fi
+        fi
+        shift
+    done
+    shift
+fi
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --) shift; break ;;
+            //) shift; run_args="$*"; break ;;
+            dll) dll="$1" ;;
+            static) dll="$1" ;;
+            dbg|dev|rel|ret) build="$1" ;;
+            debug) build="dbg" ;;
+            devel|develop|developer|development) build="dev" ;;
+            release) build="rel" ;;
+            vis) vis=yes ;;
+            nov4k) v4k=no ;;
+            nodemos) demos=no ;;
+            demos) demos=yes; hello=no ;;
+            lab) lab=yes; hello=no ;;
+            noeditor) editor=no ;;
+            editor) editor=yes; v4k=yes; hello=no ;;
+            run) run=yes ;;
+            share) share=yes; dll=static; cc=gcc ;;
+            all) v4k=yes; demos=yes; lab=yes; hello=yes ;;
+            tcc|cl|cc|gcc|clang|clang-cl) cc="$1" ;;
+            vc) cc=gcc ;;
+            proj) proj=yes ;;
+            *) other="$other $1"; editor=no; demos=no ;;
+        esac
+        shift
+    done
+    
+    while [[ $# -gt 0 ]]; do
+        compiler_flag="${1//=/ }"
+        args="$args $compiler_flag"
+        shift
+    done
+}
+
+parse_args "$@"
+
+vs=00
+# detect setup
+if [[ -z "$cc" ]]; then
+    cc=gcc
+    echo "GCC!"
+    if ! command -v gcc &> /dev/null; then
+        echo "Detecting GCC ..."
+        if ! command -v gcc &> /dev/null; then
+            echo "Detecting TCC ..."
+            cc=tcc
         fi
     fi
-    if [ "$1" = "--" ]; then 
-        shift
-        export args=$*
-        shift $#
-    fi
-    if [ $# -ge 1 ]; then
-        shift
-    fi
-done
+fi
 
-if [ "$(uname)" != "Darwin" ]; then
-
-    # setup (ArchLinux)
-    [ ! -f ".setup" ] && sudo pacman -S --noconfirm tcc && echo>.setup
-    # setup (Debian, Ubuntu, etc)
-    [ ! -f ".setup" ] && sudo apt-get -y update
-    [ ! -f ".setup" ] && sudo apt-get -y install tcc libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev && echo>.setup       # absolute minimum
-    #                      sudo apt-get -y install clang xorg-dev                                                                             # memorable, around 100 mib
-    #                      sudo apt-get -y install clang xorg-dev libglfw3-dev libassimp-dev gcc                                              # initial revision
-    #                      sudo apt-get -y install ffmpeg || (sudo apt-get install snapd && sudo snap install ffmpeg)                         # variant
-
-    # pipeline
-    #cc tools/ass2iqe.c   -o tools/ass2iqe.linux  -lm -ldl -lpthread -w -g -lassimp
-    #cc tools/iqe2iqm.cpp -o tools/iqe2iqm.linux  -lm -ldl -lpthread -w -g -lstdc++
-    #cc tools/mid2wav.c   -o tools/mid2wav.linux  -lm -ldl -lpthread -w -g
-
-    # change permissions of precompiled tools binaries because of 'Permission denied' runtime error (@procedural)
-    chmod +x tools/ass2iqe.linux
-    chmod +x tools/cook.linux
-    chmod +x tools/cuttlefish.linux
-    chmod +x tools/ffmpeg.linux
-    chmod +x tools/furnace.linux
-    chmod +x tools/iqe2iqm.linux
-    chmod +x tools/mid2wav.linux
-    chmod +x tools/mod2wav.linux
-    chmod +x tools/PVRTexToolCLI.linux
-    chmod +x tools/sfxr2wav.linux
-    chmod +x tools/xlsx2ini.linux
-    chmod +x tools/premake5.linux
-    chmod +x tools/ninja.linux
-    chmod +x demos/lua/luajit.linux
-
-    export args="-lm -ldl -lpthread -lX11 -w -Iengine/ $args"
-    echo build=$build, type=$dll, cc=$cc, args=$args
-
-    # framework (as dynamic library)
-    if [ "$dll" = "dll" ]; then
-        echo libv4k.so  && $cc -o libv4k.so engine/v4k.c -shared -fPIC $flags $args
-        cp libv4k.so demos/lua/
-        export import="libv4k.so -Wl,-rpath,./"
+# solution. @todo: lin/osx
+if [[ "$proj" == "yes" ]]; then
+    if [[ "$vs" != "00" ]]; then
+        pushd tools && premake5 vs20$vs && popd
     else
-    # framework (static)
-        echo v4k        && $cc -c engine/v4k.c -w    $flags $args
-        export import=v4k.o
+        pushd tools && premake5 vs2013 && popd
     fi
-
-    # editor
-    echo editor        && $cc -o editor        tools/editor/editor.c $flags $import $args &
-
-    # demos
-    echo hello         && $cc -o hello         hello.c               $flags         $args &
-    echo 00-loop       && $cc -o 00-loop       demos/00-loop.c       $flags $import $args &
-    echo 00-script     && $cc -o 00-script     demos/00-script.c     $flags $import $args &
-    echo 01-demo2d     && $cc -o 01-demo2d     demos/01-demo2d.c     $flags $import $args &
-    echo 01-ui         && $cc -o 01-ui         demos/01-ui.c         $flags $import $args &
-    echo 01-easing     && $cc -o 01-easing     demos/01-easing.c     $flags $import $args &
-    echo 01-font       && $cc -o 01-font       demos/01-font.c       $flags $import $args &
-    echo 02-ddraw      && $cc -o 02-ddraw      demos/02-ddraw.c      $flags $import $args &
-    echo 02-frustum    && $cc -o 02-frustum    demos/02-frustum.c    $flags $import $args &
-    echo 03-anims      && $cc -o 03-anims      demos/03-anims.c      $flags $import $args &
-    echo 04-actor      && $cc -o 04-actor      demos/04-actor.c      $flags $import $args &
-    echo 06-scene      && $cc -o 06-scene      demos/06-scene.c      $flags $import $args &
-    echo 07-netsync    && $cc -o 07-netsync    demos/07-netsync.c    $flags $import $args &
-    echo 06-material   && $cc -o 06-material   demos/06-material.c   $flags $import $args &
-    echo 07-network    && $cc -o 07-network    demos/07-network.c    $flags $import $args &
-    echo 08-audio      && $cc -o 08-audio      demos/08-audio.c      $flags $import $args &
-    echo 08-video      && $cc -o 08-video      demos/08-video.c      $flags $import $args &
-    echo 09-cubemap    && $cc -o 09-cubemap    demos/09-cubemap.c    $flags $import $args &
-    echo 09-shadertoy  && $cc -o 09-shadertoy  demos/09-shadertoy.c  $flags $import $args
+    pushd tools && premake5 ninja && popd
+    pushd tools && premake5 gmake && popd
+    exit 0
 fi
 
-if [ "$(uname)" = "Darwin" ]; then
-    # setup (osx)
-    export SDKROOT=$(xcrun --show-sdk-path)
-    # brew install glfw
+if [[ "$share" == "yes" ]]; then
+    bash make.sh tidy
+fi
 
-    # pipeline
-    #cc tools/ass2iqe.c   -o tools/ass2iqe.osx  -w -g -lassimp
-    #cc tools/iqe2iqm.cpp -o tools/iqe2iqm.osx  -w -g -lstdc++
-    #cc tools/mid2wav.c   -o tools/mid2wav.osx  -w -g
+echo "build=$build, type=$dll, cc=$cc, other=$other, args=$args"
+echo "import=$import, export=$export"
+echo "addons=$addon_names"
 
-    # change permissions of precompiled tools binaries because of 'Permission denied' runtime error (@procedural)
-    chmod +x tools/ass2iqe.osx
-    chmod +x tools/cook.osx
-    chmod +x tools/cuttlefish.osx
-    chmod +x tools/ffmpeg.osx
-    chmod +x tools/furnace.osx
-    chmod +x tools/iqe2iqm.osx
-    chmod +x tools/mid2wav.osx
-    chmod +x tools/mod2wav.osx
-    chmod +x tools/PVRTexToolCLI.osx
-    chmod +x tools/sfxr2wav.osx
-    chmod +x tools/xlsx2ini.osx
-    chmod +x tools/premake5.osx
-    chmod +x tools/ninja.osx
-    chmod +x demos/lua/luajit.osx
+if [[ -z "$BUILD_CHANGELIST" ]]; then BUILD_CHANGELIST=0; fi
+if [[ -z "$BUILD_BRANCH" ]]; then BUILD_BRANCH=0; fi
 
-    export args="-w -Iengine/ -framework cocoa -framework iokit -framework CoreFoundation -framework CoreAudio -framework AudioToolbox $args $flags"
-    echo build=$build, type=$dll, cc=$cc, args=$args
+LAST_MODIFIED=$(date)
 
-    if [ ! -f libv4k.dylib ]; then
-        # framework (as dynamic library)
-        if [ "$dll" = "dll" ]; then
-            echo libv4k    && cc -ObjC -dynamiclib -o libv4k.dylib engine/v4k.c $flags $args
-            cp libv4k.dylib demos/lua
-            export import=libv4k.dylib
-        else
-        # framework
-            echo v4k       && cc -c -ObjC engine/v4k.c $flags $args
-            export import=v4k.o
+args="-DBUILD_VERSION=\"$LAST_MODIFIED$BUILD_CHANGELIST-$BUILD_BRANCH-$build-$dll\" $args"
+
+if [[ "$cc" == "tcc" ]]; then cc="tools/tcc"; fi
+
+# detect whether user-defined sources use single-header distro
+# if so, remove API=IMPORT flags and also do not produce v4k.dll by default
+if [[ -n "$other" ]]; then
+    if grep -q "V4K_IMPLEMENTATION" $other; then
+        echo "V4K_IMPLEMENTATION found in $other"
+    fi
+fi
+
+# framework
+if [[ "$v4k" == "yes" ]]; then
+    tools/file2hash engine/v4k.c engine/v4k.h engine/v4k $addons -- $build $import $export $args $dll > /dev/null
+    cache="_cache/.$?"
+    mkdir -p _cache
+
+    if [[ ! -f "$cache" ]]; then
+        echo "v4k"
+        $cc engine/v4k.c $addons -DADDON $addon_includes $export $args || rc=1
+        if [[ "$rc" != "1" ]]; then
+            if [[ "$dll" == "dll" ]]; then cp -f v4k.dll bind/v4k.dll > /dev/null; fi
+
+            # cache for `make rel` gcc:48s->25s, tcc:3.3s->1.8s
+            touch "$cache"
+            [[ -f v4k.o ]] && cp -f v4k.o "$cache.o" 2>/dev/null
+            [[ -f v4k.obj ]] && cp -f v4k.obj "$cache.obj" 2>/dev/null
+            [[ -f v4k.lib ]] && cp -f v4k.lib "$cache.lib" 2>/dev/null
+            [[ -f v4k.dll ]] && cp -f v4k.dll "$cache.dll" 2>/dev/null
+            [[ -f v4k.def ]] && cp -f v4k.def "$cache.def" 2>/dev/null
+            [[ -f v4k.pdb ]] && cp -f v4k.pdb "$cache.pdb" 2>/dev/null
         fi
-    fi
+    else
+        # cached. do not compile...
+        echo "v4k.c (cached)"
+        if [[ "$dll" == "dll" ]]; then cp -f "$cache.dll" bind/v4k.dll > /dev/null || rc=1; fi
 
-    # User-defined apps
-    if [ -n "$app" ]; then
-        echo "$app" && $cc -ObjC "$app" libv4k.dylib $args -o "v4k.osx" || rc=1
-        # echo "$app" && $cc -ObjC "$app" engine/v4k.c $args -o "v4k.osx" || rc=1
+        [[ -f "$cache.o" ]] && cp -f "$cache.o" v4k.o 2>/dev/null
+        [[ -f "$cache.obj" ]] && cp -f "$cache.obj" v4k.obj 2>/dev/null
+        [[ -f "$cache.lib" ]] && cp -f "$cache.lib" v4k.lib 2>/dev/null
+        [[ -f "$cache.dll" ]] && cp -f "$cache.dll" v4k.dll 2>/dev/null
+        [[ -f "$cache.def" ]] && cp -f "$cache.def" v4k.def 2>/dev/null
+        [[ -f "$cache.pdb" ]] && cp -f "$cache.pdb" v4k.pdb 2>/dev/null
     fi
+fi
 
-    # if [ "$run" == "yes" ]; then
-    #     exename="$1.osx"
-    #     if [ -n "$other" ]; then
-    #         exename=$(basename "$other" .exe)
-    #     fi
-    #     echo "run $exename $run_args"
-    #     ./"$exename" $run_args || rc=1
+# editor
+if [[ "$editor" == "yes" ]]; then
+    edit="-DCOOK_ON_DEMAND"
+    # edit="-DUI_LESSER_SPACING -DUI_ICONS_SMALL $edit"
+    echo "editor"
+    $cc -o editor engine/editor.c engine/v4k.c $addon_includes $edit $args || rc=1
+
+    # if [[ "$cc" == "gcc" ]]; then
+    # plug_export="-shared"
+    # elif [[ "$cc" == "clang" ]]; then
+    # plug_export="-shared"
+    # else
+    # plug_export="-shared"
     # fi
 
+    # for f in workbench/plugins/*.c; do
+    #     echo "${f##*/}"
+    #     $cc -o "${f%.*}.so" "$f" -Iworkbench $plug_export $args $import || rc=1
+    # done
 
-    # # editor
-    # echo editor        && cc -o editor        tools/editor/editor.c $import $flags $args &
-
-    # # demos
-    # echo hello         && cc -o hello -ObjC   hello.c                       $flags $args &
-    # echo 00-loop       && cc -o 00-loop       demos/00-loop.c       $import $flags $args &
-    # echo 00-script     && cc -o 00-script     demos/00-script.c     $import $flags $args &
-    # echo 01-demo2d     && cc -o 01-demo2d     demos/01-demo2d.c     $import $flags $args &
-    # echo 01-ui         && cc -o 01-ui         demos/01-ui.c         $import $flags $args &
-    # echo 01-easing     && cc -o 01-easing     demos/01-easing.c     $import $flags $args &
-    # echo 01-font       && cc -o 01-font       demos/01-font.c       $import $flags $args &
-    # echo 02-ddraw      && cc -o 02-ddraw      demos/02-ddraw.c      $import $flags $args &
-    # echo 02-frustum    && cc -o 02-frustum    demos/02-frustum.c    $import $flags $args &
-    # echo 03-anims      && cc -o 03-anims      demos/03-anims.c      $import $flags $args &
-    # echo 04-actor      && cc -o 04-actor      demos/04-actor.c      $import $flags $args &
-    # echo 06-scene      && cc -o 06-scene      demos/06-scene.c      $import $flags $args &
-    # echo 07-netsync    && cc -o 07-netsync    demos/07-netsync.c    $import $flags $args &
-    # echo 06-material   && cc -o 06-material   demos/06-material.c   $import $flags $args &
-    # echo 07-network    && cc -o 07-network    demos/07-network.c    $import $flags $args &
-    # echo 08-audio      && cc -o 08-audio      demos/08-audio.c      $import $flags $args &
-    # echo 08-video      && cc -o 08-video      demos/08-video.c      $import $flags $args &
-    # echo 09-cubemap    && cc -o 09-cubemap    demos/09-cubemap.c    $import $flags $args &
-    # echo 09-shadertoy  && cc -o 09-shadertoy  demos/09-shadertoy.c  $import $flags $args
+    # echo "workbench"
+    # $cc -o workbench workbench/workbench.c -Iworkbench $args $import || rc=1
 fi
 
-exit
+# demos
+if [[ "$demos" == "yes" ]]; then
+    for f in demos/??-*; do
+        fname="${f##*/}"
+        fname="${fname%.*}"
+        if [[ "$fname" =~ ^[0-9][0-9]- ]]; then
+            if [[ "${fname:0:2}" != "99" ]]; then
+                limport="$import"
+                if grep -q "V4K_IMPLEMENTATION" "demos/$fname.c"; then
+                    echo "V4K_IMPLEMENTATION found in demos/$fname.c"
+                fi
+                echo "$fname"
+                $cc -o "$fname" "demos/$fname.c" $addon_includes $limport $args || rc=1
+            fi
+        fi
+    done
+fi
+
+# lab
+if [[ "$lab" == "yes" ]]; then
+    for f in demos/99-*; do
+        limport="$import"
+        if grep -q "V4K_IMPLEMENTATION" "$f"; then
+            echo "V4K_IMPLEMENTATION found in $f"
+        fi
+        echo "${f##*/}"
+        $cc -o "${f%.*}" "$f" $addon_includes $limport $args || rc=1
+    done
+fi
+
+# user-defined apps
+if [[ -n "$other" ]]; then
+    if [[ "$vis" == "yes" ]]; then echo "$cc $other $import $args"; fi
+    # if [[ "$cc" == "gcc" ]]; then
+    #     if [[ "$build" == "rel" ]]; then
+    #         import="$import engine/v4k_win32_rel_glue.c"
+    #         args="$args -mwindows"
+    #     fi
+    # fi
+    for f in $other; do
+        exename="${f%.*}"
+        rm -f "$exename"
+        echo "$f"
+        $cc "$f" $addon_includes $import $args || rc=1
+    done
+fi
+
+if [[ "$run" == "yes" ]]; then
+    if [[ "$rc" == "1" ]]; then
+        echo "build failed. skipping run!"
+    else
+        exename="hello"
+        if [[ -n "$other" ]]; then
+            exename="${other%.*}"
+        fi
+        if [[ "$build" == "dbg" ]]; then
+            echo "dbg $exename $run_args"
+            # if ! pgrep -x "gdb" > /dev/null; then
+                gdb --args "./$exename" $run_args || rc=1
+            # else
+            #     echo "gdb is already running. Skipping launch."
+            # fi
+        else
+            echo "run $exename $run_args"
+            "./$exename" $run_args || rc=1
+        fi
+    fi
+fi
+
+if [[ "$share" == "yes" ]]; then
+    if [[ "$rc" == "1" ]]; then
+        echo "build failed. skipping run!"
+    else
+        exename="hello"
+        if [[ -n "$other" ]]; then
+            exename="${other%.*}"
+        fi
+        echo "run $exename $run_args"
+        "./$exename" --cook-on-demand=1 $run_args || rc=1
+        # tools/upx "$exename"
+        bash make.sh fuse
+    fi
+fi
+
+exit $rc

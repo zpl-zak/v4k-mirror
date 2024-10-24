@@ -973,9 +973,10 @@ vec3 bilinear(image_t in, vec2 uv) { // image_bilinear_pixel() ?
 
 static int textureUnit = 0, totalTextureUnits = 0;
 int texture_unit() {
-    do_once glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &totalTextureUnits);
+    return 0;
+    // do_once glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &totalTextureUnits);
     // ASSERT(textureUnit < totalTextureUnits, "%d texture units exceeded", totalTextureUnits);
-    return textureUnit++ % totalTextureUnits;
+    // return textureUnit++ % totalTextureUnits;
 }
 
 unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const void *pixels, int flags) {
@@ -1164,13 +1165,24 @@ texture_t texture(const char *pathfile, int flags) {
     if (ptr) {
         texture_t t = texture_from_mem(ptr, filesize, flags);
         t.filename = STRDUP(pathfile);
-        array_push(texture_cache, t);
+
+        if (!(flags & TEXTURE_UNIQUE)) {
+            array_push(texture_cache, t);
+        }
         return t;
     }
     return texture_checker();
 }
 
 void texture_destroy( texture_t *t ) {
+    if (t->filename && t->filename[0]) {
+        for (int i = 0; i < array_count(texture_cache); i++) {
+            if (texture_cache[i].filename == t->filename) {
+                array_erase_slow(texture_cache, i);
+                break;
+            }
+        }
+    }
     if(t->filename && t->filename[0]) FREE(t->filename), t->filename = 0;
     if(t->fbo) fbo_destroy_id(t->fbo), t->fbo = 0;
     if(t->id) glDeleteTextures(1, &t->id), t->id = 0;
@@ -1544,34 +1556,79 @@ texture_t texture_compressed(const char *pathfile, unsigned flags) {
     char *data = vfs_load(pathfile, &size);
     texture_t t = texture_compressed_from_mem(data, size, flags);
     t.filename = STRDUP(pathfile);
-    array_push(texture_cache, t);
+    if (!(flags & TEXTURE_UNIQUE)) {
+        array_push(texture_cache, t);
+    }
     return t;
 }
 
 
 // -----------------------------------------------------------------------------
 
+static
+void light_ctor(light_t *l) {
+    l->diffuse = vec3(1,1,1);
+    l->dir = vec3(1,-1,-1);
+    l->falloff.constant = 1.0f;
+    l->falloff.linear = 0.09f;
+    l->falloff.quadratic = 0.0032f;
+    l->specularPower = 32.f;
+    l->innerCone = 0.85f;// 31 deg
+    l->outerCone = 0.9f; // 25 deg
+    l->cast_shadows = true;
+    l->processed_shadows = false;
+    l->hard_shadows = false;
+    l->shadow_distance = 400.0f;
+    l->shadow_near_clip = 0.01f;
+    l->shadow_bias = 0.003f;
+    l->normal_bias = 0.0025f;
+    l->shadow_softness = 3.0f;
+    l->penumbra_size = 2.0f;
+    l->min_variance = 0.00002f;
+    l->variance_transition = 0.2f;
+}
+
+AUTORUN {
+    STRUCT(light_t, char*, name, "Light name");
+    STRUCT(light_t, unsigned, type, "Light type");
+    STRUCT(light_t, vec3, diffuse, "Diffuse color");
+    STRUCT(light_t, vec3, specular, "Specular color");
+    STRUCT(light_t, vec3, ambient, "Ambient color");
+    STRUCT(light_t, vec3, pos, "Position");
+    STRUCT(light_t, vec3, dir, "Direction");
+    STRUCT(light_t, float, falloff.constant, "Falloff constant");
+    STRUCT(light_t, float, falloff.linear, "Falloff linear");
+    STRUCT(light_t, float, falloff.quadratic, "Falloff quadratic");
+    STRUCT(light_t, float, radius, "Radius");
+    STRUCT(light_t, float, specularPower, "Specular power");
+    STRUCT(light_t, float, innerCone, "Inner cone angle");
+    STRUCT(light_t, float, outerCone, "Outer cone angle");
+    //@todo: cookie, flare
+
+    // Shadowmapping
+    STRUCT(light_t, bool, cast_shadows, "Cast shadows flag");
+    STRUCT(light_t, bool, hard_shadows, "Hard shadows flag");
+    STRUCT(light_t, unsigned, shadow_technique, "Shadow technique");
+    STRUCT(light_t, float, shadow_distance, "Shadow distance");
+    STRUCT(light_t, float, shadow_near_clip, "Shadow near clip distance");
+    STRUCT(light_t, mat44[NUM_SHADOW_CASCADES], shadow_matrix, "Shadow matrices");
+    STRUCT(light_t, float, min_variance, "Minimum variance for VSM");
+    STRUCT(light_t, float, variance_transition, "Variance transition for VSM");
+    STRUCT(light_t, float, shadow_bias, "Shadow bias for CSM");
+    STRUCT(light_t, float, normal_bias, "Normal bias for CSM");
+    STRUCT(light_t, float, shadow_softness, "Shadow softness");
+    STRUCT(light_t, float, penumbra_size, "Penumbra size");
+
+    // internals
+    STRUCT(light_t, bool, cached, "_Cached flag");
+    STRUCT(light_t, bool, processed_shadows, "_Processed shadows flag");
+
+    obj_ctor[OBJTYPE_light] = light_ctor;
+}
+
 light_t light() {
     light_t l = {0};
-    l.diffuse = vec3(1,1,1);
-    l.dir = vec3(1,-1,-1);
-    l.falloff.constant = 1.0f;
-    l.falloff.linear = 0.09f;
-    l.falloff.quadratic = 0.0032f;
-    l.specularPower = 32.f;
-    l.innerCone = 0.85f;// 31 deg
-    l.outerCone = 0.9f; // 25 deg
-    l.cast_shadows = true;
-    l.processed_shadows = false;
-    l.hard_shadows = false;
-    l.shadow_distance = 400.0f;
-    l.shadow_near_clip = 0.01f;
-    l.shadow_bias = 0.003f;
-    l.normal_bias = 0.0025f;
-    l.shadow_softness = 3.0f;
-    l.penumbra_size = 2.0f;
-    l.min_variance = 0.00002f;
-    l.variance_transition = 0.2f;
+    light_ctor(&l);
     return l;
 }
 
@@ -1675,7 +1732,7 @@ char *light_fieldname(const char *fmt, ...) {
     return buf;
 }
 
-typedef struct light_object_t {
+typedef struct light_node_t {
     vec4 diffuse;
     vec4 specular;
     vec4 ambient;
@@ -1697,7 +1754,7 @@ typedef struct light_object_t {
     int type;
     int processed_shadows;
     int hard_shadows;
-} light_object_t;
+} light_node_t;
 
 static inline
 void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
@@ -1705,9 +1762,9 @@ void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
         num_lights = MAX_LIGHTS;
     }
 
-    light_object_t lights[MAX_LIGHTS] = {0};
+    light_node_t lights[MAX_LIGHTS] = {0};
     for (unsigned i = 0; i < num_lights; i++) {
-        light_object_t *light = &lights[i];
+        light_node_t *light = &lights[i];
         {
             light->type = lv[i].type;
             light->diffuse = vec34(lv[i].diffuse, 0.0f);
@@ -1737,9 +1794,9 @@ void light_update(unsigned* ubo, unsigned num_lights, light_t *lv) {
     ASSERT(ubo);
 
     if (*ubo == 0 /* buffer not created */) {
-        *ubo = ubo_create(&lights[0], sizeof(light_object_t) * MAX_LIGHTS, STREAM_DRAW);
+        *ubo = ubo_create(&lights[0], sizeof(light_node_t) * MAX_LIGHTS, STREAM_DRAW);
     } else {
-        ubo_update(*ubo, 0, &lights[0], sizeof(light_object_t) * num_lights);
+        ubo_update(*ubo, 0, &lights[0], sizeof(light_node_t) * num_lights);
     }
 
     ubo_bind(*ubo, 0);
@@ -1773,6 +1830,7 @@ void ui_light(light_t *l) {
     ui_float("Outer Cone", &l->outerCone);
     ui_bool("Cast Shadows", &l->cast_shadows);
     ui_bool("Hard Shadows", &l->hard_shadows);
+    ui_float_("Shadow Distance", &l->shadow_distance, 0.00005);
     ui_float_("Shadow Bias", &l->shadow_bias, 0.00005);
     ui_float_("Normal Bias", &l->normal_bias, 0.00005);
     ui_float_("Shadow Softness", &l->shadow_softness, 0.5);
@@ -2014,10 +2072,16 @@ void shadowmap_begin(shadowmap_t *s) {
     s->saved_pass = model_getpass();
 }
 
-static void shadowmap_light_point(shadowmap_t *s, light_t *l, int dir) {
+static void shadowmap_light_point(shadowmap_t *s, light_t *l, float cam_far, int dir) {
     if(dir<0) return;
+
+    float shadow_distance = l->shadow_distance;
+    if (shadow_distance == 0.0f) {
+        shadow_distance = cam_far;
+    }
+
     mat44 P, V, PV;
-    perspective44(P, 90.0f, 1.0f, l->shadow_near_clip, l->shadow_distance);
+    perspective44(P, 90.0f, 1.0f, l->shadow_near_clip, shadow_distance);
     vec3 lightPos = l->pos;
 
     /**/ if(dir == 0) lookat44(V, lightPos, add3(lightPos, vec3(+1,  0,  0)), vec3(0, -1,  0)); // +X
@@ -2069,15 +2133,20 @@ static void shadowmap_light_directional(shadowmap_t *s, light_t *l, int dir, flo
     float far_plane = 0.0f;
     float near_plane = 0.0f;
 
+    float shadow_distance = l->shadow_distance;
+    if (shadow_distance == 0.0f) {
+        shadow_distance = cam_far;
+    }
+
     if (s->cascade_index == 0) {
         near_plane = l->shadow_near_clip;
-        far_plane = l->shadow_distance * s->cascade_splits[0];
+        far_plane = shadow_distance * s->cascade_splits[0];
     } else if (s->cascade_index < NUM_SHADOW_CASCADES - 1) {
-        near_plane = l->shadow_distance * s->cascade_splits[s->cascade_index-1]*SHADOW_CASCADE_BLEND_REGION;
-        far_plane = l->shadow_distance * s->cascade_splits[s->cascade_index];
+        near_plane = shadow_distance * s->cascade_splits[s->cascade_index-1]*SHADOW_CASCADE_BLEND_REGION;
+        far_plane = shadow_distance * s->cascade_splits[s->cascade_index];
     } else {
-        near_plane = l->shadow_distance * s->cascade_splits[NUM_SHADOW_CASCADES-1]*SHADOW_CASCADE_BLEND_REGION;
-        far_plane = cam_far;
+        near_plane = shadow_distance * s->cascade_splits[NUM_SHADOW_CASCADES-1]*SHADOW_CASCADE_BLEND_REGION;
+        far_plane = shadow_distance == 0.0f ? cam_far : shadow_distance;
     }
 
     mat44 proj; 
@@ -2203,7 +2272,7 @@ void shadowmap_light(shadowmap_t *s, light_t *l, mat44 cam_proj, mat44 cam_view)
         }
 
         if (l->type == LIGHT_POINT || l->type == LIGHT_SPOT) {
-            shadowmap_light_point(s, l, step);
+            shadowmap_light_point(s, l, cam_far, step);
         } else if (l->type == LIGHT_DIRECTIONAL) {
             shadowmap_light_directional(s, l, step, cam_fov, cam_far, cam_view);
         }
@@ -2714,144 +2783,9 @@ void quad_render( texture_t texture, vec2 tex_start, vec2 tex_end, int rgba, vec
 // -----------------------------------------------------------------------------
 // cubemaps
 
-// project cubemap coords into sphere normals
-static
-vec3 cubemap2polar(int face, int x, int y, int texture_width) {
-    float u = (x / (texture_width - 1.f)) * 2 - 1;
-    float v = (y / (texture_width - 1.f)) * 2 - 1;
-    /**/ if( face == 0 ) return vec3( u, -1, -v);
-    else if( face == 1 ) return vec3(-v, -u,  1);
-    else if( face == 2 ) return vec3(-1, -u, -v);
-    else if( face == 3 ) return vec3(-u,  1, -v);
-    else if( face == 4 ) return vec3( v, -u, -1);
-    else                 return vec3( 1,  u, -v);
-}
-// project normal in a sphere as 2d texcoord
-static
-vec2 polar2uv(vec3 n) {
-    n = norm3(n);
-    float theta = atan2(n.y, n.x);
-    float phi = atan2(n.z, hypot(n.x, n.y));
-    float u = (theta + C_PI) / C_PI;
-    float v = (C_PI/2 - phi) / C_PI;
-    return vec2(u, v);
-}
-
-// equirectangular panorama (2:1) to cubemap - in RGB, out RGB
-static
-void panorama2cubemap_(image_t out[6], const image_t in, int width){
-    int face;
-    #pragma omp parallel for
-    for( face = 0; face < 6; ++face ) {
-        out[face] = image_create(width, width, IMAGE_RGB);
-        for (int j=0; j < width; ++j) {
-            uint32_t *line = &out[ face ].pixels32[ 0 + j * width ];
-            for (int i=0; i < width; ++i) {
-                vec3 polar = cubemap2polar(face, i, j, width);
-                vec2 uv = polar2uv(polar);
-                uv = scale2(uv, in.h-1); // source coords (assumes 2:1, 2*h == w)
-                vec3 rgb = bilinear(in, uv);
-                union color {
-                    struct { uint8_t r,g,b,a; };
-                    uint32_t rgba;
-                } c = { rgb.x, rgb.y, rgb.z, 255 };
-                line[i] = c.rgba;
-            }
-        }
-    }
-}
-// equirectangular panorama (2:1) to cubemap - in RGB, out RGBA
-void panorama2cubemap(image_t out[6], const image_t in, int width) {
-    int face;
-    #pragma omp parallel for
-    for( face = 0; face < 6; ++face ) {
-        out[face] = image_create(width, width, IMAGE_RGBA);
-        for (int j=0; j < width; ++j) {
-            uint32_t *line = &out[ face ].pixels32[ 0 + j * width ];
-            for (int i=0; i < width; ++i) {
-                vec3 polar = cubemap2polar(face, i, j, width);
-                vec2 uv = polar2uv(polar);
-                uv = scale2(uv, in.h-1); // source coords (assumes 2:1, 2*h == w)
-                vec3 rgb = bilinear(in, uv);
-                union color {
-                    struct { uint8_t r,g,b,a; };
-                    uint32_t rgba;
-                } c = { rgb.x, rgb.y, rgb.z, 255 };
-                line[i] = c.rgba;
-            }
-        }
-    }
-}
-
-
-cubemap_t cubemap6( const image_t images[6], int flags ) {
-    cubemap_t c = {0}, z = {0};
-
-    glGenTextures(1, &c.id);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, c.id);
-
-    int samples = 0;
-    for (int i = 0; i < 6; i++) {
-        image_t img = images[i]; //image(textures[i], IMAGE_RGB);
-
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, img.w, img.h, 0, img.n == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, img.pixels);
-
-        // calculate SH coefficients (@ands)
-        const vec3 skyDir[] = {{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1}};
-        const vec3 skyX[]   = {{ 0, 0,-1},{ 0, 0, 1},{ 1, 0, 0},{ 1, 0, 0},{ 1, 0, 0},{-1, 0, 0}};
-        const vec3 skyY[]   = {{ 0, 1, 0},{ 0, 1, 0},{ 0, 0,-1},{ 0, 0, 1},{ 0, 1, 0},{ 0, 1, 0}};
-        int step = 16;
-        for (int y = 0; y < img.h; y += step) {
-            unsigned char *p = (unsigned char*)img.pixels + y * img.w * img.n;
-            for (int x = 0; x < img.w; x += step) {
-                vec3 n = add3(
-                    add3(
-                        scale3(skyX[i],  2.0f * (x / (img.w - 1.0f)) - 1.0f),
-                        scale3(skyY[i], -2.0f * (y / (img.h - 1.0f)) + 1.0f)),
-                    skyDir[i]); // texelDirection;
-                float l = len3(n);
-                vec3 light = scale3(vec3(p[0], p[1], p[2]), 1 / (255.0f * l * l * l)); // texelSolidAngle * texel_radiance;
-                n = norm3(n);
-                c.sh[0] = add3(c.sh[0], scale3(light,  0.282095f));
-                c.sh[1] = add3(c.sh[1], scale3(light, -0.488603f * n.y * 2.0 / 3.0));
-                c.sh[2] = add3(c.sh[2], scale3(light,  0.488603f * n.z * 2.0 / 3.0));
-                c.sh[3] = add3(c.sh[3], scale3(light, -0.488603f * n.x * 2.0 / 3.0));
-                c.sh[4] = add3(c.sh[4], scale3(light,  1.092548f * n.x * n.y / 4.0));
-                c.sh[5] = add3(c.sh[5], scale3(light, -1.092548f * n.y * n.z / 4.0));
-                c.sh[6] = add3(c.sh[6], scale3(light,  0.315392f * (3.0f * n.z * n.z - 1.0f) / 4.0));
-                c.sh[7] = add3(c.sh[7], scale3(light, -1.092548f * n.x * n.z / 4.0));
-                c.sh[8] = add3(c.sh[8], scale3(light,  0.546274f * (n.x * n.x - n.y * n.y) / 4.0));
-                p += img.n * step;
-                samples++;
-            }
-        }
-    }
-
-
-    for (int s = 0; s < 9; s++) {
-        c.sh[s] = scale3(c.sh[s], 32.f / samples);
-    }
-
-    // if( glGenerateMipmap )
-    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, /* glGenerateMipmap ?*/ GL_LINEAR_MIPMAP_LINEAR /*: GL_LINEAR*/);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-    return c;
-}
-
-cubemap_t cubemap( const image_t in, int flags ) {
-    ASSERT( in.n == 4 );
-    image_t out[6];
-    panorama2cubemap(out, in, in.h);
-    image_t swap[6] = { out[0],out[3],out[1],out[4],out[2],out[5] };
-    cubemap_t c = cubemap6(swap, flags);
-    int i;
-    #pragma omp parallel for
-    for( i = 0; i < 6; ++i) image_destroy(&out[i]);
+cubemap_t cubemap( texture_t texture, int flags ) {
+    cubemap_t c = {0};
+    c.id = texture.id;
     return c;
 }
 
@@ -3155,6 +3089,17 @@ void cubemap_sh_blend(vec3 pos, float max_dist, unsigned count, cubemap_t *probe
 // -----------------------------------------------------------------------------
 // skyboxes
 
+static inline
+texture_t load_env_tex( const char *pathfile, unsigned flags ) {
+    stbi_hdr_to_ldr_gamma(2.2f);
+    int flags_hdr = strendi(pathfile, ".hdr") ? TEXTURE_FLOAT | TEXTURE_RGBA : 0;
+    texture_t t = texture_compressed(pathfile, flags | TEXTURE_LINEAR | TEXTURE_REPEAT | TEXTURE_UNIQUE | flags_hdr);
+    glBindTexture( GL_TEXTURE_2D, t.id );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+    return t;
+}
+
 skybox_t skybox(const char *asset, int flags) {
     skybox_t sky = {0};
 
@@ -3177,19 +3122,14 @@ skybox_t skybox(const char *asset, int flags) {
         int is_panorama = vfs_size( asset );
         if( is_panorama ) { // is file
             stbi_hdr_to_ldr_gamma(2.2f);
-            image_t panorama = image( asset, IMAGE_RGBA );
-            sky.cubemap = cubemap( panorama, 0 ); // RGBA required
-            image_destroy(&panorama);
+            texture_t panorama = load_env_tex( asset, 0 );
+            sky.cubemap = cubemap( panorama, 0 );
+            skybox_t probe = {0};
+            skybox_calc_sh(&probe, &sky, 1.0/2.2);
+            memcpy(sky.cubemap.sh, probe.cubemap.sh, 9 * sizeof(vec3));
+            skybox_destroy(&probe);
         } else { // is folder
-            image_t images[6] = {0};
-            images[0] = image( va("%s/posx", asset), IMAGE_RGB ); // cubepx
-            images[1] = image( va("%s/negx", asset), IMAGE_RGB ); // cubenx
-            images[2] = image( va("%s/posy", asset), IMAGE_RGB ); // cubepy
-            images[3] = image( va("%s/negy", asset), IMAGE_RGB ); // cubeny
-            images[4] = image( va("%s/posz", asset), IMAGE_RGB ); // cubepz
-            images[5] = image( va("%s/negz", asset), IMAGE_RGB ); // cubenz
-            sky.cubemap = cubemap6( images, 0 );
-            for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
+            PRINTF("[warn] Folder-based skyboxes are not supported anymore!");
         }
     } else {
         // set up mie defaults // @fixme: use shader params instead
@@ -3208,17 +3148,6 @@ skybox_t skybox(const char *asset, int flags) {
     }
 
     return sky;
-}
-
-static inline
-texture_t load_env_tex( const char *pathfile, unsigned flags ) {
-    stbi_hdr_to_ldr_gamma(2.2f);
-    int flags_hdr = strendi(pathfile, ".hdr") ? TEXTURE_FLOAT | TEXTURE_RGBA : 0;
-    texture_t t = texture(pathfile, flags | TEXTURE_LINEAR | TEXTURE_MIPMAPS | TEXTURE_REPEAT | flags_hdr);
-    glBindTexture( GL_TEXTURE_2D, t.id );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    return t;
 }
 
 skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_map) {
@@ -3240,26 +3169,21 @@ skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_m
         int is_panorama = vfs_size( sky_map );
         if( is_panorama ) { // is file
             stbi_hdr_to_ldr_gamma(2.2f);
-            image_t panorama = image( sky_map, IMAGE_RGBA );
-            sky.cubemap = cubemap( panorama, 0 ); // RGBA required
-            image_destroy(&panorama);
+            texture_t panorama = load_env_tex( sky_map, 0 );
+            sky.cubemap = cubemap( panorama, 0 );
+            skybox_t probe = {0};
+            skybox_calc_sh(&probe, &sky, 1.0/2.2);
+            memcpy(sky.cubemap.sh, probe.cubemap.sh, 9 * sizeof(vec3));
+            skybox_destroy(&probe);
         } else { // is folder
-            image_t images[6] = {0};
-            images[0] = image( va("%s/posx", sky_map), IMAGE_RGB ); // cubepx
-            images[1] = image( va("%s/negx", sky_map), IMAGE_RGB ); // cubenx
-            images[2] = image( va("%s/posy", sky_map), IMAGE_RGB ); // cubepy
-            images[3] = image( va("%s/negy", sky_map), IMAGE_RGB ); // cubeny
-            images[4] = image( va("%s/posz", sky_map), IMAGE_RGB ); // cubepz
-            images[5] = image( va("%s/negz", sky_map), IMAGE_RGB ); // cubenz
-            sky.cubemap = cubemap6( images, 0 );
-            for( int i = 0; i < countof(images); ++i ) image_destroy(&images[i]);
+            PRINTF("[warn] Folder-based skyboxes are not supported anymore!");
         }
     }
     if( refl_map ) {
-        sky.refl = load_env_tex(refl_map, 0);
+        sky.refl = load_env_tex(refl_map, TEXTURE_MIPMAPS);
     }
     if( env_map ) {
-        sky.env = load_env_tex(env_map, 0);
+        sky.env = load_env_tex(env_map, TEXTURE_MIPMAPS);
     }
 
     return sky;
@@ -3294,6 +3218,15 @@ void skybox_render_rayleigh(skybox_t *sky, mat44 proj, mat44 view) {
 
     renderstate_apply(&skybox_rs);
     mesh_render(&sky->geometry);
+}
+
+void skybox_calc_sh(skybox_t *probe, skybox_t *sky, float sky_intensity) {
+    cubemap_beginbake(&probe->cubemap, vec3(0, 0, 0), 1024, 1024);
+    mat44 proj, view;
+    while (cubemap_stepbake(&probe->cubemap, proj, view)) {
+        skybox_render(sky, proj, view);
+    }
+    cubemap_endbake(&probe->cubemap, 0, sky_intensity);
 }
 
 void skybox_mie_calc_sh(skybox_t *sky, float sky_intensity) {
@@ -3336,7 +3269,7 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     //glDepthMask(GL_FALSE);
     shader_bind(sky->program);
     shader_mat44("u_mvp", mvp);
-    shader_cubemap("u_cubemap", sky->cubemap.id);
+    shader_texture_unit("u_skybox", sky->cubemap.id, 0);
 
     renderstate_apply(&skybox_rs);
     return 0; // @fixme: return sortable hash here?
@@ -4505,7 +4438,7 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     shader_mat44("u_inv_view", inv_view);
     shader_texture_unit("u_normal_texture", normal.id, 2);
     shader_texture_unit("u_matprops_texture", matprops.id, 3);
-    shader_texture_unit_kind_(GL_TEXTURE_CUBE_MAP, shader_uniform("u_cubemap_texture"), params.cubemap ? params.cubemap->id : 0, 4);
+    shader_texture_unit("u_cubemap_texture", params.cubemap ? params.cubemap->id : 0, 4);
     shader_float("u_metallic_threshold", params.metallic_threshold);
     shader_float("u_max_distance", params.max_distance);
     shader_float("u_reflection_strength", params.reflection_strength);
@@ -5449,6 +5382,7 @@ bool model_load_meshes(iqm_t *q, const struct iqmheader *hdr, model_t *m) {
     q->numtris = hdr->num_triangles;
     q->numverts = hdr->num_vertexes;
     q->numjoints = hdr->num_joints;
+    q->numframes = hdr->num_frames;
     q->outframe = CALLOC(hdr->num_joints, sizeof(mat34));
 
     float *inposition = NULL, *innormal = NULL, *intangent = NULL, *intexcoord = NULL, *invertexindex = NULL;
@@ -6089,13 +6023,143 @@ model_t model_from_mem(const void *mem, int len, int flags) {
     }
     return m;
 }
+
+array(model_t) model_cache;
+
+static inline
+void model_duplicate_mesh(model_t *m) {
+    struct iqm_t *q = m->iqm;
+
+    // duplicate mesh data
+    void *old_verts = m->verts;
+    m->verts = MALLOC(q->numverts * sizeof(iqm_vertex));
+    memcpy(m->verts, old_verts, q->numverts * sizeof(iqm_vertex));
+
+    void *old_tris = m->tris;
+    m->tris = MALLOC(q->numtris * sizeof(struct iqmtriangle));
+    memcpy(m->tris, old_tris, q->numtris * sizeof(struct iqmtriangle));
+
+    glGenVertexArrays(1, &m->vao);
+    glBindVertexArray(m->vao);
+
+    glGenBuffers(1, &q->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, q->vbo);
+    glBufferData(GL_ARRAY_BUFFER, q->numverts * sizeof(iqm_vertex), m->verts, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &q->ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, q->ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, q->numtris * sizeof(struct iqmtriangle), m->tris, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &m->vao_instanced);
+    
+    // duplicate iqm_t
+    struct iqm_t *old_iqm = m->iqm;
+    q = m->iqm = CALLOC(1, sizeof(iqm_t));
+    memcpy(q, old_iqm, sizeof(struct iqm_t));
+    q->instancing_checksum = 0; // reset checksum so the next draw call will update the buffer
+    q->light_ubo = 0;
+
+    {
+        if (old_iqm->buf) {
+            q->buf = MALLOC(old_iqm->nummeshes * sizeof(uint8_t));
+            memcpy(q->buf, old_iqm->buf, old_iqm->nummeshes * sizeof(uint8_t));
+        }
+        if (old_iqm->meshdata) {
+            q->meshdata = MALLOC(old_iqm->nummeshes * sizeof(uint8_t));
+            memcpy(q->meshdata, old_iqm->meshdata, old_iqm->nummeshes * sizeof(uint8_t));
+        }
+        if (old_iqm->animdata) {
+            q->animdata = MALLOC(old_iqm->nummeshes * sizeof(uint8_t));
+            memcpy(q->animdata, old_iqm->animdata, old_iqm->nummeshes * sizeof(uint8_t));
+        }
+        if (old_iqm->mesh_materials) {
+            q->mesh_materials = MALLOC(old_iqm->nummeshes * sizeof(unsigned));
+            memcpy(q->mesh_materials, old_iqm->mesh_materials, old_iqm->nummeshes * sizeof(unsigned));
+        }
+        if (old_iqm->meshes) {
+            q->meshes = MALLOC(old_iqm->nummeshes * sizeof(struct iqmmesh));
+            memcpy(q->meshes, old_iqm->meshes, old_iqm->nummeshes * sizeof(struct iqmmesh));
+        }
+        if (old_iqm->joints) {
+            q->joints = MALLOC(old_iqm->numjoints * sizeof(struct iqmjoint));
+            memcpy(q->joints, old_iqm->joints, old_iqm->numjoints * sizeof(struct iqmjoint));
+        }
+        if (old_iqm->poses) {
+            q->poses = MALLOC(max(1, old_iqm->numframes) * sizeof(struct iqmpose));
+            memcpy(q->poses, old_iqm->poses, max(1, old_iqm->numframes) * sizeof(struct iqmpose));
+        }
+        if (old_iqm->anims) {
+            q->anims = MALLOC(old_iqm->numanims * sizeof(struct iqmanim));
+            memcpy(q->anims, old_iqm->anims, old_iqm->numanims * sizeof(struct iqmanim));
+        }
+        if (old_iqm->bounds) {
+            q->bounds = MALLOC(max(1, old_iqm->numframes) * sizeof(struct iqmbounds));
+            memcpy(q->bounds, old_iqm->bounds, max(1, old_iqm->numframes) * sizeof(struct iqmbounds));
+        }
+        if (old_iqm->baseframe) {
+            q->baseframe = MALLOC(old_iqm->numjoints * sizeof(mat34));
+            memcpy(q->baseframe, old_iqm->baseframe, old_iqm->numjoints * sizeof(mat34));
+        }
+        if (old_iqm->inversebaseframe) {
+            q->inversebaseframe = MALLOC(old_iqm->numjoints * sizeof(mat34));
+            memcpy(q->inversebaseframe, old_iqm->inversebaseframe, old_iqm->numjoints * sizeof(mat34));
+        }
+        if (old_iqm->outframe) {
+            q->outframe = MALLOC(old_iqm->numjoints * sizeof(mat34));
+            memcpy(q->outframe, old_iqm->outframe, old_iqm->numjoints * sizeof(mat34));
+        }
+        if (old_iqm->frames) {
+            q->frames = MALLOC(max(1, old_iqm->numframes) * old_iqm->numjoints * sizeof(mat34));
+            memcpy(q->frames, old_iqm->frames, max(1, old_iqm->numframes) * old_iqm->numjoints * sizeof(mat34));
+        }
+    }
+
+    model_setshader(m, m->shaderinfo.shading, 
+                       m->shaderinfo.vs ? STRDUP(m->shaderinfo.vs) : NULL, 
+                       m->shaderinfo.fs ? STRDUP(m->shaderinfo.fs) : NULL, 
+                       m->shaderinfo.defines ? STRDUP(m->shaderinfo.defines) : NULL);
+}
+
+static inline
+void model_duplicate_materials(model_t *m) {
+    material_t *old_materials = m->materials;
+    m->materials = 0;
+    for (int i = 0; i < array_count(old_materials); i++) {
+        material_t new_mt = old_materials[i];
+        new_mt.name = STRDUP(old_materials[i].name);
+        array_push(m->materials, new_mt);
+    }
+}
+
 model_t model(const char *filename, int flags) {
     if (!filename) {
-        return model_from_mem( NULL, 0, flags|MODEL_PROCEDURAL );
+        return model_from_mem( NULL, 0, flags|MODEL_PROCEDURAL);
     }
-    int len;  // vfs_pushd(filedir(filename))
-    char *ptr = vfs_load(filename, &len); // + vfs_popd
-    return model_from_mem( ptr, len, flags );
+    model_t *m = NULL;
+    for (int i = 0; i < array_count(model_cache); i++) {
+        if (strcmp(model_cache[i].filename, filename) == 0) {
+            m = &model_cache[i];
+            break;
+        }
+    }
+    if (m) {
+        if (flags & MODEL_SHARED) return *m;
+        if (flags & MODEL_UNIQUE) {
+            model_duplicate_mesh(m);
+        }
+
+        model_duplicate_materials(m);
+        return *m;
+    } else {
+        int len;  // vfs_pushd(filedir(filename))
+        char *ptr = vfs_load(filename, &len); // + vfs_popd
+        model_t new_model = model_from_mem( ptr, len, flags );
+        new_model.filename = STRDUP(filename);
+        if (!(flags & MODEL_UNIQUE)) {
+            array_push(model_cache, new_model);
+        }
+        return new_model;
+    }
 }
 
 void material_texparams(material_t *m, unsigned texture_flags) {
@@ -7129,28 +7193,39 @@ void model_lod(model_t *mdl, float lo_detail, float hi_detail, float morph) {
 
 
 void model_destroy(model_t m) {
-    FREE(m.verts);
-    for( int i = 0, end = array_count(m.texture_names); i < end; ++i ) {
-        FREE(m.texture_names[i]);
-    }
-    array_free(m.texture_names);
+    bool can_delete = m.flags & MODEL_UNIQUE;
 
-    if (m.iqm->light_ubo) {
-        ubo_destroy(m.iqm->light_ubo);
-    }
+    if (can_delete) {
+        for (int i = 0; i < array_count(model_cache); i++) {
+            if (model_cache[i].filename == m.filename) {
+                array_erase_slow(model_cache, i);
+                break;
+            }
+        }
+        FREE(m.verts);
+        for( int i = 0, end = array_count(m.texture_names); i < end; ++i ) {
+            FREE(m.texture_names[i]);
+        }
+        array_free(m.texture_names);
+        array_free(m.materials);
 
-    iqm_t *q = m.iqm;
-//    if(m.mesh) mesh_destroy(m.mesh);
-    FREE(q->outframe);
-    FREE(q->mesh_materials);
-    FREE(q->baseframe);
-    FREE(q->inversebaseframe);
-    if(q->animdata != q->meshdata) FREE(q->animdata);
-    //FREE(q->meshdata);
-    FREE(q->frames);
-    FREE(q->buf);
-    FREE(q);
-    array_free(m.uniforms);
+        if (m.iqm->light_ubo) {
+            ubo_destroy(m.iqm->light_ubo);
+        }
+
+        iqm_t *q = m.iqm;
+    //    if(m.mesh) mesh_destroy(m.mesh);
+        FREE(q->outframe);
+        FREE(q->mesh_materials);
+        FREE(q->baseframe);
+        FREE(q->inversebaseframe);
+        if(q->animdata != q->meshdata) FREE(q->animdata);
+        //FREE(q->meshdata);
+        FREE(q->frames);
+        FREE(q->buf);
+        FREE(q);
+        array_free(m.uniforms);
+    }
 }
 
 static unsigned model_renderpass = RENDER_PASS_OPAQUE;
