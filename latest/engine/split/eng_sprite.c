@@ -287,7 +287,7 @@ static void sprite_render_meshes_group(batch_group_t* sprites, int alpha_key, in
 
         for each_map_ptr(*sprites, int,texture_id, batch_t,bt) {
             if( bt->dirty ) {
-                shader_texture_id("u_texture", *texture_id, 0);
+                shader_texture("u_texture", *texture_id, 0);
                 mesh_render(&bt->mesh);
             }
         }

@@ -462,10 +462,8 @@ API     void shader_vec3(const char *uniform, vec3 v);
 API     void shader_vec3v(const char *uniform, int count, vec3 *v);
 API     void shader_vec4(const char *uniform, vec4 v);
 API     void shader_mat44(const char *uniform, mat44 m);
-API     void shader_texture(const char *sampler, texture_t texture, unsigned unit);
-API     void shader_texture_id(const char *sampler, unsigned texture, unsigned unit);
-API     void shader_cubemap(const char *sampler, texture_t texture, unsigned unit);
-API     void shader_cubemap_id(const char *sampler, unsigned texture, unsigned unit);
+API     void shader_texture(const char *sampler, unsigned texture, unsigned unit);
+API     void shader_cubemap(const char *sampler, unsigned texture, unsigned unit);
 API unsigned shader_get_active();
 API void     shader_destroy(unsigned shader);
 

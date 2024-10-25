@@ -814,20 +814,14 @@ void shader_vec3(const char *uniform, vec3 v)   { glUniform3fv(shader_uniform(un
 void shader_vec3v(const char *uniform, int count, vec3 *v) { glUniform3fv(shader_uniform(uniform), count, &v[0].x); }
 void shader_vec4(const char *uniform, vec4 v)   { glUniform4fv(shader_uniform(uniform), 1, &v.x); }
 void shader_mat44(const char *uniform, mat44 m) { glUniformMatrix4fv(shader_uniform(uniform), 1, GL_FALSE/*GL_TRUE*/, m); }
-void shader_cubemap(const char *sampler, texture_t texture, unsigned unit) { 
-    shader_cubemap_id(sampler, texture.id, unit);
-}
-void shader_cubemap_id(const char *sampler, unsigned id, unsigned unit) {
+void shader_cubemap(const char *sampler, unsigned id, unsigned unit) {
     glUniform1i(shader_uniform(sampler), unit);
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 }
 void shader_bool(const char *uniform, bool x) { glUniform1i(shader_uniform(uniform), x); }
 void shader_uint(const char *uniform, unsigned x ) { glUniform1ui(shader_uniform(uniform), x); }
-void shader_texture(const char *sampler, texture_t texture, unsigned unit) {
-    shader_texture_id(sampler, texture.id, unit);
-}
-void shader_texture_id(const char *sampler, unsigned id, unsigned unit) {
+void shader_texture(const char *sampler, unsigned id, unsigned unit) {
     glUniform1i(shader_uniform(sampler), unit);
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_2D, id);
@@ -3250,7 +3244,7 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     //glDepthMask(GL_FALSE);
     shader_bind(sky->program);
     shader_mat44("u_mvp", mvp);
-    shader_texture_id("u_skybox", sky->cubemap.id, 0);
+    shader_texture("u_skybox", sky->cubemap.id, 0);
 
     renderstate_apply(&skybox_rs);
     return 0; // @fixme: return sortable hash here?
@@ -3894,7 +3888,7 @@ void postfx_setparamt(postfx *fx, int pass, const char *name, texture_t value, i
     unsigned program = postfx_program(fx, pass);
     if( !program ) return;
     unsigned oldprogram = shader_bind(program);
-    shader_texture_id(name, value.id, unit);
+    shader_texture(name, value.id, unit);
     shader_bind(oldprogram);
 }
 int ui_postfx(postfx *fx, int pass) {
@@ -4413,9 +4407,9 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     shader_mat44("u_inv_projection", inv_proj);
     shader_mat44("u_view", view);
     shader_mat44("u_inv_view", inv_view);
-    shader_texture_id("u_normal_texture", normal.id, 2);
-    shader_texture_id("u_matprops_texture", matprops.id, 3);
-    shader_texture_id("u_cubemap_texture", params.cubemap ? params.cubemap->id : 0, 4);
+    shader_texture("u_normal_texture", normal.id, 2);
+    shader_texture("u_matprops_texture", matprops.id, 3);
+    shader_texture("u_cubemap_texture", params.cubemap ? params.cubemap->id : 0, 4);
     shader_float("u_metallic_threshold", params.metallic_threshold);
     shader_float("u_max_distance", params.max_distance);
     shader_float("u_reflection_strength", params.reflection_strength);
