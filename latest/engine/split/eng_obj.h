@@ -323,14 +323,22 @@ API int         obj_pop(void *o);
 // ----------------------------------------------------------------------------
 // components
 
-API bool        obj_addcomponent(entity *e, unsigned c, void *ptr);
-API bool        obj_hascomponent(entity *e, unsigned c);
-API void*       obj_getcomponent(entity *e, unsigned c);
-API bool        obj_delcomponent(entity *e, unsigned c);
-API bool        obj_usecomponent(entity *e, unsigned c);
-API bool        obj_offcomponent(entity *e, unsigned c);
+API bool        entity_addcomponent(entity *e, unsigned c, void *ptr);
+API bool        entity_hascomponent(entity *e, unsigned c);
+API void*       entity_getcomponent(entity *e, unsigned c);
+API bool        entity_delcomponent(entity *e, unsigned c);
+API bool        entity_usecomponent(entity *e, unsigned c);
+API bool        entity_offcomponent(entity *e, unsigned c);
 
 API char*       entity_save(entity *self);
+
+#define entity_addcomponent(e,c,p) entity_addcomponent((entity*)e, c, p)
+#define entity_hascomponent(e,c)   entity_hascomponent((entity*)e, c)
+#define entity_getcomponent(e,c)   entity_getcomponent((entity*)e, c)
+#define entity_delcomponent(e,c)   entity_delcomponent((entity*)e, c)
+#define entity_usecomponent(e,c)   entity_usecomponent((entity*)e, c)
+#define entity_offcomponent(e,c)   entity_offcomponent((entity*)e, c)
+#define entity_save(e)             entity_save((entity*)e)
 
 // ----------------------------------------------------------------------------
 // reflection

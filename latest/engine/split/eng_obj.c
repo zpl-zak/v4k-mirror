@@ -878,32 +878,32 @@ void test_obj_serialization(void *o1, void *o2) {
 // ----------------------------------------------------------------------------
 // components
 
-bool obj_addcomponent(entity *e, unsigned c, void *ptr) {
+bool (entity_addcomponent)(entity *e, unsigned c, void *ptr) {
     e->cflags |= (3ULL << c);
     e->c[c & (OBJCOMPONENTS_MAX-1)] = ptr;
     return 1;
 }
-bool obj_hascomponent(entity *e, unsigned c) {
+bool (entity_hascomponent)(entity *e, unsigned c) {
     return !!(e->cflags & (3ULL << c));
 }
-void* obj_getcomponent(entity *e, unsigned c) {
+void* (entity_getcomponent)(entity *e, unsigned c) {
     return e->c[c & (OBJCOMPONENTS_MAX-1)];
 }
-bool obj_delcomponent(entity *e, unsigned c) {
+bool (entity_delcomponent)(entity *e, unsigned c) {
     e->cflags &= ~(3ULL << c);
     e->c[c & (OBJCOMPONENTS_MAX-1)] = NULL;
     return 1;
 }
-bool obj_usecomponent(entity *e, unsigned c) {
+bool (entity_usecomponent)(entity *e, unsigned c) {
     e->cflags |= (1ULL << c);
     return 1;
 }
-bool obj_offcomponent(entity *e, unsigned c) {
+bool (entity_offcomponent)(entity *e, unsigned c) {
     e->cflags &= ~(1ULL << c);
     return 0;
 }
 
-char *entity_save(entity *self) {
+char *(entity_save)(entity *self) {
     char *sav = obj_saveini(self);
     return sav;
 }

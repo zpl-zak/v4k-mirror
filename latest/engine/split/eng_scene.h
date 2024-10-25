@@ -42,7 +42,7 @@ API void ddraw_camera(camera_t *cam);
 
 // scene node
 
-typedef struct node_t { OBJ
+typedef struct node_t { ENTITY
     uint64_t renderbucket;
     mat44 transform;
     quat rot;

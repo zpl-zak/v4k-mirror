@@ -28,7 +28,7 @@ int main() {
         cam.pitch = 0;
         camera_fps(&cam, 0, 0);
     }
-    skybox_t sky = skybox("cubemaps/stardust", 0);
+    skybox_t sky = skybox(0, 0);
     model_t  plane = model("plane.obj", 0);
 
     scene_t *main_scene = obj_new(scene_t);

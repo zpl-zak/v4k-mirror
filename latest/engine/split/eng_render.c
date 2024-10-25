@@ -44,13 +44,6 @@ void glDebugEnable() {
     }
 }
 
-static
-void glCopyBackbufferToTexture( texture_t *tex ) { // unused
-    glActiveTexture( GL_TEXTURE0 + texture_unit() );
-    glBindTexture( GL_TEXTURE_2D, tex->id );
-    glCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, 0, 0, window_width(), window_height(), 0 );
-}
-
 // ----------------------------------------------------------------------------
 // renderstate
 
@@ -795,8 +788,7 @@ static inline void shader_vec3_(int uniform, vec3 v)   { glUniform3fv(uniform, 1
 static inline void shader_vec3v_(int uniform, int count, vec3 *v) { glUniform3fv(uniform, count, &v[0].x); }
 static inline void shader_vec4_(int uniform, vec4 v)   { glUniform4fv(uniform, 1, &v.x); }
 static inline void shader_mat44_(int uniform, mat44 m) { glUniformMatrix4fv(uniform, 1, GL_FALSE/*GL_TRUE*/, m); }
-static inline void shader_cubemap_(int sampler, unsigned texture) { 
-    int id = texture_unit();
+static inline void shader_cubemap_(int sampler, unsigned id, unsigned texture) { 
     glUniform1i(sampler, id); 
     glActiveTexture(GL_TEXTURE0 + id); 
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
@@ -813,7 +805,6 @@ static inline void shader_texture_unit_(int sampler, unsigned id, unsigned unit)
     glBindTexture(GL_TEXTURE_2D, id);
     glUniform1i(sampler, unit);
 }
-static inline void shader_texture_(int sampler, texture_t t) { shader_texture_unit_(sampler, t.id, texture_unit()); }
 
 // public api
 void shader_int(const char *uniform, int i)     { glUniform1i(shader_uniform(uniform), i); }
@@ -823,16 +814,20 @@ void shader_vec3(const char *uniform, vec3 v)   { glUniform3fv(shader_uniform(un
 void shader_vec3v(const char *uniform, int count, vec3 *v) { glUniform3fv(shader_uniform(uniform), count, &v[0].x); }
 void shader_vec4(const char *uniform, vec4 v)   { glUniform4fv(shader_uniform(uniform), 1, &v.x); }
 void shader_mat44(const char *uniform, mat44 m) { glUniformMatrix4fv(shader_uniform(uniform), 1, GL_FALSE/*GL_TRUE*/, m); }
-void shader_cubemap(const char *sampler, unsigned texture) { 
-    int id = texture_unit();
-    glUniform1i(shader_uniform(sampler), id); 
-    glActiveTexture(GL_TEXTURE0 + id); 
-    glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+void shader_cubemap(const char *sampler, texture_t texture, unsigned unit) { 
+    shader_cubemap_id(sampler, texture.id, unit);
+}
+void shader_cubemap_id(const char *sampler, unsigned id, unsigned unit) {
+    glUniform1i(shader_uniform(sampler), unit);
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 }
 void shader_bool(const char *uniform, bool x) { glUniform1i(shader_uniform(uniform), x); }
 void shader_uint(const char *uniform, unsigned x ) { glUniform1ui(shader_uniform(uniform), x); }
-void shader_texture(const char *sampler, texture_t t) { shader_texture_unit(sampler, t.id, texture_unit()); }
-void shader_texture_unit(const char *sampler, unsigned id, unsigned unit) {
+void shader_texture(const char *sampler, texture_t texture, unsigned unit) {
+    shader_texture_id(sampler, texture.id, unit);
+}
+void shader_texture_id(const char *sampler, unsigned id, unsigned unit) {
     glUniform1i(shader_uniform(sampler), unit);
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_2D, id);
@@ -843,13 +838,6 @@ void shader_image(texture_t t, unsigned unit, unsigned level, int layer /* -1 to
 void shader_image_unit(unsigned texture, unsigned unit, unsigned level, int layer, unsigned texel_type, unsigned access){
     static GLenum gl_access[] = {GL_READ_ONLY, GL_WRITE_ONLY, GL_READ_WRITE};
     glBindImageTexture(unit, texture, level, layer!=-1, layer!=-1?layer:0, gl_access[access], texel_type);
-}
-
-void shader_colormap(const char *name, colormap_t c ) {
-    // assumes shader uses `struct { vec4 color; bool has_tex } name + sampler2D name_tex;`
-    shader_vec4( va("%s.color", name), c.color );
-    shader_bool( va("%s.has_tex", name), c.texture != NULL );
-    if( c.texture ) shader_texture( va("%s_tex", name), *c.texture );
 }
 
 // -----------------------------------------------------------------------------
@@ -970,14 +958,6 @@ vec3 bilinear(image_t in, vec2 uv) { // image_bilinear_pixel() ?
 
 // -----------------------------------------------------------------------------
 // textures
-
-static int textureUnit = 0, totalTextureUnits = 0;
-int texture_unit() {
-    return 0;
-    // do_once glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &totalTextureUnits);
-    // ASSERT(textureUnit < totalTextureUnits, "%d texture units exceeded", totalTextureUnits);
-    // return textureUnit++ % totalTextureUnits;
-}
 
 unsigned texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const void *pixels, int flags) {
     if( t && !t->id ) {
@@ -3133,6 +3113,7 @@ skybox_t skybox(const char *asset, int flags) {
         }
     } else {
         // set up mie defaults // @fixme: use shader params instead
+        sky.rayleigh_immediate = true;
         shader_bind(sky.rayleigh_program);
         shader_vec3("uSunPos", vec3( 0, 0.1, -1 ));
         shader_vec3("uRayOrigin", vec3(0.0, 6372000.0, 0.0));
@@ -3269,7 +3250,7 @@ int skybox_push_state(skybox_t *sky, mat44 proj, mat44 view) {
     //glDepthMask(GL_FALSE);
     shader_bind(sky->program);
     shader_mat44("u_mvp", mvp);
-    shader_texture_unit("u_skybox", sky->cubemap.id, 0);
+    shader_texture_id("u_skybox", sky->cubemap.id, 0);
 
     renderstate_apply(&skybox_rs);
     return 0; // @fixme: return sortable hash here?
@@ -3913,7 +3894,7 @@ void postfx_setparamt(postfx *fx, int pass, const char *name, texture_t value, i
     unsigned program = postfx_program(fx, pass);
     if( !program ) return;
     unsigned oldprogram = shader_bind(program);
-    shader_texture_unit(name, value.id, unit);
+    shader_texture_id(name, value.id, unit);
     shader_bind(oldprogram);
 }
 int ui_postfx(postfx *fx, int pass) {
@@ -4065,7 +4046,6 @@ void postfx_drawpass_rs(postfx *fx, int pass, texture_t color, texture_t depth, 
 
     if( 1 /* p->enabled */ ) {
         // bind texture to texture unit 0
-        // shader_texture_unit(fx->diffuse[frame], 0);
 glActiveTexture(GL_TEXTURE0 + 0); glBindTexture(GL_TEXTURE_2D, color.id);
         glUniform1i(p->uniforms[u_color], 0);
 
@@ -4073,7 +4053,6 @@ glActiveTexture(GL_TEXTURE0 + 0); glBindTexture(GL_TEXTURE_2D, color.id);
         glUniform1f(p->uniforms[u_channelres0y], color.h);
         
         // bind depth to texture unit 1
-        // shader_texture_unit(fx->depth[frame], 1);
 glActiveTexture(GL_TEXTURE0 + 1); glBindTexture(GL_TEXTURE_2D, depth.id);
         glUniform1i(p->uniforms[u_depth], 1);
 
@@ -4154,7 +4133,6 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
             glUseProgram(pass->program);
 
             // bind texture to texture unit 0
-            // shader_texture_unit(fx->diffuse[frame], 0);
  glActiveTexture(GL_TEXTURE0 + 0); if(first_pass == 0) glBindTexture(GL_TEXTURE_2D, fx->diffuse[frame].id); else glBindTexture(GL_TEXTURE_2D, texture_id);
             glUniform1i(pass->uniforms[u_color], 0);
 
@@ -4162,7 +4140,6 @@ bool postfx_end(postfx *fx, unsigned texture_id, unsigned depth_id) {
             glUniform1f(pass->uniforms[u_channelres0y], fx->diffuse[frame].h);
             
             // bind depth to texture unit 1
-            // shader_texture_unit(fx->depth[frame], 1);
  glActiveTexture(GL_TEXTURE0 + 1); if(first_pass == 0) glBindTexture(GL_TEXTURE_2D, fx->depth[frame].id); else glBindTexture(GL_TEXTURE_2D, depth_id);
             glUniform1i(pass->uniforms[u_depth], 1);
 
@@ -4436,9 +4413,9 @@ texture_t fxt_reflect(texture_t color, texture_t depth, texture_t normal, textur
     shader_mat44("u_inv_projection", inv_proj);
     shader_mat44("u_view", view);
     shader_mat44("u_inv_view", inv_view);
-    shader_texture_unit("u_normal_texture", normal.id, 2);
-    shader_texture_unit("u_matprops_texture", matprops.id, 3);
-    shader_texture_unit("u_cubemap_texture", params.cubemap ? params.cubemap->id : 0, 4);
+    shader_texture_id("u_normal_texture", normal.id, 2);
+    shader_texture_id("u_matprops_texture", matprops.id, 3);
+    shader_texture_id("u_cubemap_texture", params.cubemap ? params.cubemap->id : 0, 4);
     shader_float("u_metallic_threshold", params.metallic_threshold);
     shader_float("u_max_distance", params.max_distance);
     shader_float("u_reflection_strength", params.reflection_strength);
@@ -5872,6 +5849,7 @@ bool model_load_textures(iqm_t *q, const struct iqmheader *hdr, model_t *model, 
         mt.layer[MATERIAL_CHANNEL_ALBEDO].map.color = vec4(1,1,1,1);
         mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
         mt.layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id = texture_checker().id;
+        q->mesh_materials[0] = 0;
 
         array_push(model->materials, mt);
     }
@@ -6128,6 +6106,12 @@ void model_duplicate_materials(model_t *m) {
         material_t new_mt = old_materials[i];
         new_mt.name = STRDUP(old_materials[i].name);
         array_push(m->materials, new_mt);
+    }
+
+    model_uniform_t *old_uniforms = m->uniforms;
+    m->uniforms = 0;
+    for (int i = 0; i < array_count(old_uniforms); i++) {
+        array_push(m->uniforms, old_uniforms[i]);
     }
 }
 

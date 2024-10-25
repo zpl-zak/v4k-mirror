@@ -563,9 +563,7 @@ int scene_draw(scene_t *s) {
 
     if(flags & SCENE_BACKGROUND) {
         if(s->skybox.program) {
-            skybox_push_state(&s->skybox, cam->proj, cam->view);
-            mesh_render(&s->skybox.geometry);
-            skybox_pop_state();
+            skybox_render(&s->skybox, cam->proj, cam->view);
         }
 
         ddraw_flush();

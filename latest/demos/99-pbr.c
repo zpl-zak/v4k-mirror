@@ -237,13 +237,13 @@ void ModelRender( Model *G, const mat44 _worldRootMatrix ) {
                 continue;
 
             const material_t *material = &G->m.materials[ mesh->material_idx ];
-            shader_colormap( "map_normals", material->layer[MATERIAL_CHANNEL_NORMALS].map );
-            shader_colormap( "map_albedo", material->layer[MATERIAL_CHANNEL_ALBEDO].map );
-            shader_colormap( "map_roughness", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map );
-            shader_colormap( "map_metallic", material->layer[MATERIAL_CHANNEL_METALLIC].map );
-            shader_colormap( "map_ao", material->layer[MATERIAL_CHANNEL_AO].map );
-            shader_colormap( "map_ambient", material->layer[MATERIAL_CHANNEL_AMBIENT].map );
-            shader_colormap( "map_emissive", material->layer[MATERIAL_CHANNEL_EMISSIVE].map );
+            shader_texture_id( "map_normals", material->layer[MATERIAL_CHANNEL_NORMALS].map.texture->id, 0 );
+            shader_texture_id( "map_albedo", material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture->id, 1 );
+            shader_texture_id( "map_roughness", material->layer[MATERIAL_CHANNEL_ROUGHNESS].map.texture->id, 2 );
+            shader_texture_id( "map_metallic", material->layer[MATERIAL_CHANNEL_METALLIC].map.texture->id, 3 );
+            shader_texture_id( "map_ao", material->layer[MATERIAL_CHANNEL_AO].map.texture->id, 4 );
+            shader_texture_id( "map_ambient", material->layer[MATERIAL_CHANNEL_AMBIENT].map.texture->id, 5 );
+            shader_texture_id( "map_emissive", material->layer[MATERIAL_CHANNEL_EMISSIVE].map.texture->id, 6 );
             // shader_float( "specular_shininess", material->specular_shininess ); // unused, basic_specgloss.fs only
 
             shader_vec2( "resolution", vec2(window_width(),window_height()));
@@ -542,13 +542,13 @@ int main() {
             shader_bool( "has_tex_skyenv", g_skybox.env != NULL );
             if( g_skybox.reflection ) {
                 float mipCount = floor( log2( g_skybox.reflection->h ) );
-                shader_texture( "tex_skysphere", *g_skybox.reflection );
+                shader_texture( "tex_skysphere", *g_skybox.reflection, 0 );
                 shader_float( "skysphere_mip_count", mipCount );
             }
             if( g_skybox.env ) {
-                shader_texture( "tex_skyenv", *g_skybox.env );
+                shader_texture( "tex_skyenv", *g_skybox.env, 1 );
             }
-            shader_texture( "tex_brdf_lut", brdf_lut() );
+            shader_texture( "tex_brdf_lut", brdf_lut(), 2 );
             shader_float( "exposure", skyExposure );
             shader_uint( "frame_count", (unsigned)window_frame() );
         }
@@ -593,12 +593,12 @@ int main() {
 
             if( g_skybox.reflection ) {
                 const float mipCount = floor( log2( g_skybox.reflection->h ) );
-                shader_texture( "tex_skysphere", *g_skybox.reflection );
+                shader_texture( "tex_skysphere", *g_skybox.reflection, 0 );
                 shader_float( "skysphere_mip_count", mipCount );
             }
 
             if( g_skybox.env ) {
-                shader_texture( "tex_skyenv", *g_skybox.env );
+                shader_texture( "tex_skyenv", *g_skybox.env, 1 );
             }
 
             shader_vec4( "background_color", skyBackgroundColor );

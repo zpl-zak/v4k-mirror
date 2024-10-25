@@ -212,9 +212,6 @@ API texture_t texture_from_mem(const void* ptr, int len, int flags);
 API texture_t texture_create(unsigned w, unsigned h, unsigned n, const void *pixels, int flags);
 API texture_t texture_checker();
 API void      texture_destroy(texture_t *t);
-API int       texture_unit(); // returns rolling counter up to GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS
-// textureLod(filename, dir, lod);
-// void texture_add_loader( int(*loader)(const char *filename, int *w, int *h, int *bpp, int reqbpp, int flags) );
 API unsigned  texture_update(texture_t *t, unsigned w, unsigned h, unsigned n, const void *pixels, int flags);
 API void      texture_params(texture_t *t, unsigned flags);
 
@@ -465,9 +462,10 @@ API     void shader_vec3(const char *uniform, vec3 v);
 API     void shader_vec3v(const char *uniform, int count, vec3 *v);
 API     void shader_vec4(const char *uniform, vec4 v);
 API     void shader_mat44(const char *uniform, mat44 m);
-API     void shader_texture(const char *sampler, texture_t texture);
-API     void shader_texture_unit(const char *sampler, unsigned texture, unsigned unit);
-API     void shader_colormap(const char *name, colormap_t cm);
+API     void shader_texture(const char *sampler, texture_t texture, unsigned unit);
+API     void shader_texture_id(const char *sampler, unsigned texture, unsigned unit);
+API     void shader_cubemap(const char *sampler, texture_t texture, unsigned unit);
+API     void shader_cubemap_id(const char *sampler, unsigned texture, unsigned unit);
 API unsigned shader_get_active();
 API void     shader_destroy(unsigned shader);
 
@@ -663,7 +661,7 @@ typedef struct skybox_t {
     texture_t sky, refl, env;
 } skybox_t;
 
-API skybox_t skybox(const char *panorama_or_cubemap_folder, int flags);
+API skybox_t skybox(const char *panorama, int flags);
 API skybox_t skybox_pbr(const char *sky_map, const char *refl_map, const char *env_map);
 API int      skybox_render(skybox_t *sky, mat44 proj, mat44 view);
 API void     skybox_destroy(skybox_t *sky);
