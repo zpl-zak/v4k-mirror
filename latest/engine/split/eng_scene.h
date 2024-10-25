@@ -59,8 +59,6 @@ typedef struct node_t { ENTITY
     bool batchable;
 
     // internal states
-    array(handle) old_texture_ids;
-    array(texture_t) old_textures;
     float distance;
     bool skip_draw;
     bool was_batched;
@@ -84,8 +82,6 @@ API void node_model(node_t *obj, model_t model);
 API void node_model_shadow(node_t *obj, model_t model);
 API void node_anim(node_t *obj, anim_t anim, float speed);
 API void node_diffuse(node_t *obj, texture_t tex);
-API void node_diffuse_push(node_t *obj, texture_t tex);
-API void node_diffuse_pop(node_t *obj);
 API void node_billboard(node_t *obj, unsigned mode);
 
 // scene

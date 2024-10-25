@@ -331,8 +331,6 @@ AUTORUN {
     STRUCT(node_t, bool, batchable, "Batchable");
 
     // internal states
-    STRUCT(node_t, array(handle), old_texture_ids, "_Old texture IDs");
-    STRUCT(node_t, array(texture_t), old_textures, "_Old textures");
     STRUCT(node_t, float, distance, "_Distance");
     STRUCT(node_t, bool, skip_draw, "_Skip draw");
     STRUCT(node_t, bool, was_batched, "_Was batched");
@@ -416,17 +414,13 @@ void node_anim(node_t *obj, anim_t anim, float speed) {
     obj->anim_speed = speed;
 }
 
-void node_push_diffuse(node_t *obj, texture_t tex) {
-    array_push(obj->textures, tex);
-}
-
-void node_pop_diffuse(node_t *obj) {
-    array_pop(obj->textures);
-}
-
 void node_diffuse(node_t *obj, texture_t tex) {
-    array_clear(obj->textures);
-    node_push_diffuse(obj, tex);
+    if (!obj->model.iqm) return;
+    material_layer_t *layer = &obj->model.materials[obj->model.iqm->mesh_materials[0]].layer[MATERIAL_CHANNEL_ALBEDO];
+    if (!layer->map.texture) {
+        layer->map.texture = CALLOC(1, sizeof(texture_t));
+    }
+    *layer->map.texture = tex;
 }
 
 void node_billboard(node_t *obj, unsigned mode) {
@@ -620,19 +614,6 @@ int scene_draw(scene_t *s) {
                 obj2->was_batched = true;
             }
             obj->num_instances = num_instances;
-
-            int do_retexturing = model->iqm && array_count(obj->textures) > 0;
-            if( do_retexturing ) {
-                for(int i = 0; i < model->iqm->nummeshes; ++i) {
-                    material_t *material = &model->materials[model->iqm->mesh_materials[i]];
-                    if (!material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture) {
-                        material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = CALLOC(1, sizeof(texture_t));
-                        *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = texture_checker();
-                    }
-                    array_push(obj->old_textures, *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture);
-                    *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = (*array_back(obj->textures));
-                }
-            }
         }
 
         /* Build shadowmaps */
@@ -713,26 +694,6 @@ int scene_draw(scene_t *s) {
         }
 
         array_resize(transparent_objects, 0);
-
-        for(unsigned j = 0, obj_count = array_count(s->renderlist); j < obj_count; ++j ) {
-            node_t *obj = s->renderlist[j];
-            model_t *model = &obj->model;
-            if (obj->skip_draw) continue;
-            if (obj->was_batched) continue;
-
-            int do_retexturing = model->iqm && model->shading != SHADING_PBR && array_count(obj->textures) > 0;
-            if( do_retexturing ) {
-                for(int i = 0; i < model->iqm->nummeshes; ++i) {
-                    material_t *material = &model->materials[model->iqm->mesh_materials[i]];
-                    if (i < array_count(obj->old_textures)) {
-                        if (material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture)
-                            *material->layer[MATERIAL_CHANNEL_ALBEDO].map.texture = obj->old_textures[i];
-                    }
-                }
-                array_resize(obj->old_texture_ids, 0);
-                array_resize(obj->old_textures, 0);
-            }
-        }
         glBindVertexArray(0);
     }
 
