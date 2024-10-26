@@ -155,6 +155,7 @@ void*   obj_free(void *o);
 #define obj_quit(o,...) obj_method(quit, o, ##__VA_ARGS__)
 #define obj_tick(o,...) obj_method(tick, o, ##__VA_ARGS__)
 #define obj_draw(o,...) obj_method(draw, o, ##__VA_ARGS__)
+#define obj_phys(o,...) obj_method(phys, o, ##__VA_ARGS__)
 
 #define obj_lerp(o,...) obj_method(lerp, o, ##__VA_ARGS__)
 #define obj_edit(o,...) obj_method(edit, o, ##__VA_ARGS__)
@@ -213,6 +214,7 @@ API extern int   (*obj_quit[256])(); ///-
 API extern int   (*obj_tick[256])(); ///-
 API extern int   (*obj_draw[256])(); ///-
 API extern int   (*obj_lerp[256])(); ///-
+API extern bool  (*obj_phys[256])(); ///-
 
 API extern int   (*obj_aabb[256])(); ///-
 API extern int   (*obj_edit[256])(); ///-
@@ -326,7 +328,7 @@ API int         obj_pop(void *o);
 API bool        entity_addcomponent(entity *e, unsigned c, void *ptr);
 API bool        entity_hascomponent(entity *e, unsigned c);
 API void*       entity_getcomponent(entity *e, unsigned c);
-API bool        entity_delcomponent(entity *e, unsigned c);
+API bool        entity_delcomponent(entity *e, unsigned c); 
 API bool        entity_usecomponent(entity *e, unsigned c);
 API bool        entity_offcomponent(entity *e, unsigned c);
 
