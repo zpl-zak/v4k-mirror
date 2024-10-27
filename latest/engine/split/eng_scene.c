@@ -17,6 +17,8 @@ void camera_ctor(camera_t *cam) {
     cam->distance = 3; // len3(cam->position);
     cam->near_clip = 0.1f;
     cam->far_clip = 1000.f;
+    cam->sensitivity_x = 5.0f;
+    cam->sensitivity_y = 5.0f;
 
     cam->damping = false;
     cam->move_friction = 0.09f;
@@ -153,7 +155,7 @@ void camera_freefly(camera_t *cam) {
 
     static float speed_buildup = 1.0f;
     if( active ) cam->speed = clampf(cam->speed + input_diff(MOUSE_W) / 10, 0.05f, 5.0f);
-    vec2 mouse = scale2(vec2(input_diff(MOUSE_X), -input_diff(MOUSE_Y)), 0.2f * active);
+    vec2 mouse = scale2(vec2(input_diff(MOUSE_X)*cam->sensitivity_x, -input_diff(MOUSE_Y)*cam->sensitivity_y), active * window_delta());
     vec3 wasdecq = scale3(vec3(input(KEY_D)-input(KEY_A),input(KEY_E)-(input(KEY_C)||input(KEY_Q)),input(KEY_W)-input(KEY_S)), cam->speed);
     if ( len3sq(wasdecq) ) speed_buildup += (cam->speed * cam->accel * (2.0f * mult_speed + 1.0f) * window_delta());
     // if (!active) speed_buildup = 1.0f;
